@@ -1,3 +1,9 @@
-allowBuilds:
-  esbuild: true
-  vue-demi: set this to true or false
+minimumReleaseAgeExclude:
+  - '@schema-platform/platform-shared@1.0.0'
+  - '@schema-platform/flow-shared@1.0.0'
+  - '@schema-platform/flow-shared@1.0.1'
+  - '@schema-platform/platform-shared@1.0.2'
+onlyBuiltDependencies:
+  - esbuild
+  - vue-demi
+  - '@parcel/watcher'

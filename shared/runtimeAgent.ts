@@ -8,7 +8,7 @@
  * - AI: 提供智能分析和预测
  */
 
-import type { TaskInstanceData, FlowInstanceData } from '@schema-form/flow-shared'
+import type { TaskInstanceData, FlowInstanceData } from '@schema-platform/flow-shared'
 
 // ────────────────────────────────────────────
 // AI 介入请求类型

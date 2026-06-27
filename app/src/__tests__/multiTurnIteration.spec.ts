@@ -21,7 +21,7 @@ import { getConversations } from '@/api/aiApi'
 // ---- WebSocket mock ----
 // 模拟服务端 chat:event 推送
 let chatEventHandler: ((event: Record<string, unknown>) => void) | null = null
-vi.mock('@schema-form/platform-shared/socket', () => ({
+vi.mock('@schema-platform/platform-shared/socket', () => ({
   emitChatSend: vi.fn(),
   emitChatCancel: vi.fn(),
   emitChatResume: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock('@schema-form/platform-shared/socket', () => ({
   }),
 }))
 
-import { emitChatSend } from '@schema-form/platform-shared/socket'
+import { emitChatSend } from '@schema-platform/platform-shared/socket'
 
 /** 模拟服务端推送事件到客户端 */
 function pushChatEvent(event: Record<string, unknown>) {

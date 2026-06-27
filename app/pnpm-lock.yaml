@@ -17,9 +17,9 @@ importers:
       '@iconify/vue':
         specifier: ^5.0.1
         version: 5.0.1(vue@3.5.39(typescript@5.7.3))
-      '@schema-form/platform-shared':
-        specifier: file:../../schema-form-platform-shared
-        version: '@schema-platform/platform-shared@file:../../schema-form-platform-shared(element-plus@2.14.2(vue@3.5.39(typescript@5.7.3)))(typescript@5.7.3)(vue@3.5.39(typescript@5.7.3))'
+      '@schema-platform/platform-shared':
+        specifier: ^1.0.2
+        version: 1.0.2(element-plus@2.14.2(vue@3.5.39(typescript@5.7.3)))(typescript@5.7.3)(vue@3.5.39(typescript@5.7.3))
       '@vue-flow/background':
         specifier: ^1.3.2
         version: 1.3.2(@vue-flow/core@1.48.2(vue@3.5.39(typescript@5.7.3)))(vue@3.5.39(typescript@5.7.3))
@@ -561,8 +561,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@schema-platform/platform-shared@file:../../schema-form-platform-shared':
-    resolution: {directory: ../../schema-form-platform-shared, type: directory}
+  '@schema-platform/platform-shared@1.0.2':
+    resolution: {integrity: sha512-H6jBASLs37vIE97t9YhWzUBeanbNLE0poymhA4MSD6jJ3DKTB870g615h/Ad2mhCvlcYrFDp4GhHD5sqoU+FMg==, tarball: https://npm.pkg.github.com/download/@schema-platform/platform-shared/1.0.2/7fc29dbef579b1e414a0319c89e3290d77b7c0d7}
     peerDependencies:
       element-plus: ^2.9.1
       vue: ^3.5.13
@@ -2063,7 +2063,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.62.2':
     optional: true
 
-  '@schema-platform/platform-shared@file:../../schema-form-platform-shared(element-plus@2.14.2(vue@3.5.39(typescript@5.7.3)))(typescript@5.7.3)(vue@3.5.39(typescript@5.7.3))':
+  '@schema-platform/platform-shared@1.0.2(element-plus@2.14.2(vue@3.5.39(typescript@5.7.3)))(typescript@5.7.3)(vue@3.5.39(typescript@5.7.3))':
     dependencies:
       '@element-plus/icons-vue': 2.3.2(vue@3.5.39(typescript@5.7.3))
       '@iconify-icons/ep': 1.2.12

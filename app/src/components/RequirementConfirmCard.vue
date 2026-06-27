@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import AppIcon from '@schema-form/platform-shared/components/common/AppIcon.vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 interface ConfirmQuestion {
   id: string

@@ -11,7 +11,7 @@
  */
 
 import { ref, onMounted, computed } from 'vue'
-import { message, confirmDanger } from '@schema-form/platform-shared/utils/message'
+import { message, confirmDanger } from '@schema-platform/platform-shared/utils/message'
 import { useDataLoading } from '@schema-platform/platform-shared/utils/useDataLoading'
 import {
   getRagStatus,

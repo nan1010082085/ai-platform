@@ -1,0 +1,2 @@
+minimumReleaseAgeExclude:
+  - '@schema-platform/flow-shared@1.0.0'

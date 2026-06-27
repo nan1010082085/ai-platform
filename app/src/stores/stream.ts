@@ -22,7 +22,7 @@ import {
   emitChatCancel,
   emitChatResume,
   onChatEvent,
-} from '@schema-form/platform-shared/socket'
+} from '@schema-platform/platform-shared/socket'
 
 export const useStreamStore = defineStore('stream', () => {
   // ---- State ----

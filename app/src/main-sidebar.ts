@@ -6,11 +6,11 @@
  */
 
 import 'element-plus/dist/index.css'
-import '@schema-form/platform-shared/styles/theme.scss'
-import '@schema-form/platform-shared/styles/css-variables.scss'
+import '@schema-platform/platform-shared/styles/theme.scss'
+import '@schema-platform/platform-shared/styles/css-variables.scss'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { setupElementPlus } from '@schema-form/platform-shared/config/element'
+import { setupElementPlus } from '@schema-platform/platform-shared/config/element'
 import './global.css'
 import './styles/ai-theme-bridge.css'
 

@@ -641,7 +641,7 @@ export const useAiStore = defineStore('ai', () => {
 
     // 发送确认响应到服务器
     // 通过 WebSocket 发送 requirement_confirm_response 事件
-    const { emitChatSend } = await import('@schema-form/platform-shared/socket')
+    const { emitChatSend } = await import('@schema-platform/platform-shared/socket')
     emitChatSend({
       conversationId: conversationStore.currentConversationId ?? undefined,
       message: JSON.stringify({ type: 'requirement_confirm_response', answers }),
@@ -686,7 +686,7 @@ export const useAiStore = defineStore('ai', () => {
     msg.toolCalls = newToolCalls
 
     // 发送跳过确认到服务器
-    const { emitChatSend } = await import('@schema-form/platform-shared/socket')
+    const { emitChatSend } = await import('@schema-platform/platform-shared/socket')
     emitChatSend({
       conversationId: conversationStore.currentConversationId ?? undefined,
       message: JSON.stringify({ type: 'requirement_confirm_response', skipped: true }),

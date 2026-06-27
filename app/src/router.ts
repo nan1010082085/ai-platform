@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, createMemoryHistory } from 'vue-router'
-import { useQiankun } from '@schema-form/platform-shared/qiankun'
-import { APP_CONFIGS } from '@schema-form/platform-shared/qiankun/config'
-import { SSOClient } from '@schema-form/platform-shared/utils/sso'
+import { useQiankun } from '@schema-platform/platform-shared/qiankun'
+import { APP_CONFIGS } from '@schema-platform/platform-shared/qiankun/config'
+import { SSOClient } from '@schema-platform/platform-shared/utils/sso'
 
 // SSO 客户端配置
 const SSO_CLIENT_ID = 'ai'

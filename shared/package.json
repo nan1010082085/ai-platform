@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc"
+  },
   "exports": {
     ".": "./dist/index.js",
     "./package.json": "./package.json",
@@ -12,7 +16,7 @@
     "./systemKnowledge": "./dist/systemKnowledge.js"
   },
   "dependencies": {
-    "@schema-form/flow-shared": "file:../../schema-form-flow-shared"
+    "@schema-platform/flow-shared": "^1.0.0"
   },
   "devDependencies": {
     "typescript": "~5.7.3"
