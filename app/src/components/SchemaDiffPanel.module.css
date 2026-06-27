@@ -1,0 +1,135 @@
+.panel {
+  border: 1px solid var(--ai-border-light, #EBEDF3);
+  border-radius: 8px;
+  background: var(--ai-bg-white, #FFFFFF);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(0, 212, 255, 0.04);
+  border-bottom: 1px solid var(--ai-border-light, #EBEDF3);
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ai-text-primary, #333333);
+}
+
+.count {
+  font-size: 12px;
+  color: var(--ai-color-primary, #00d4ff);
+  background: rgba(0, 212, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.undoBtn,
+.dismissBtn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all 0.2s;
+}
+
+.undoBtn {
+  background: rgba(255, 171, 64, 0.06);
+  border-color: rgba(255, 171, 64, 0.3);
+  color: var(--ai-color-warning, #ffab40);
+}
+
+.undoBtn:hover {
+  background: rgba(255, 171, 64, 0.12);
+}
+
+.dismissBtn {
+  background: var(--ai-gradient-primary, linear-gradient(135deg, #00d4ff 0%, #009fcc 100%));
+  border-color: transparent;
+  color: #333333;
+}
+
+.dismissBtn:hover {
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+.description {
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--ai-text-secondary, #666666);
+  border-bottom: 1px solid var(--ai-border-light, #EBEDF3);
+  background: var(--ai-bg-gray, #F5F7FA);
+}
+
+.diffList {
+  padding: 8px 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.diffItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.badge {
+  display: inline-block;
+  min-width: 42px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.added .badge {
+  background: rgba(0, 230, 118, 0.1);
+  color: var(--ai-color-success, #00e676);
+}
+
+.modified .badge {
+  background: rgba(255, 171, 64, 0.1);
+  color: var(--ai-color-warning, #ffab40);
+}
+
+.removed .badge {
+  background: rgba(255, 82, 82, 0.1);
+  color: var(--ai-color-danger, #ff5252);
+}
+
+.unchanged .badge {
+  background: var(--ai-bg-gray, #F5F7FA);
+  color: var(--ai-text-hint, #999999);
+}
+
+.itemType {
+  font-weight: 500;
+  color: var(--ai-text-primary, #333333);
+  font-family: Consolas, Monaco, monospace;
+  font-size: 12px;
+}
+
+.itemLabel {
+  color: var(--ai-text-secondary, #666666);
+}
+
+.changes {
+  font-size: 11px;
+  color: var(--ai-text-hint, #999999);
+}

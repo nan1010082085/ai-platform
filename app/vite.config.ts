@@ -1,0 +1,24 @@
+import { fileURLToPath } from 'node:url'
+import { createViteConfig, fixQiankunLifecyclePlugin } from '@schema-form/platform-shared/config/vite'
+import qiankun from 'vite-plugin-qiankun'
+
+const isProd = process.env.NODE_ENV === 'production'
+
+export default createViteConfig('ai', import.meta.url, {
+  base: isProd ? '/schema-platform/micro/ai/' : '/',
+  plugins: [
+    qiankun('ai', { useDevMode: true }),
+    fixQiankunLifecyclePlugin(),
+  ],
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        sidebar: fileURLToPath(new URL('./index-sidebar.html', import.meta.url)),
+      },
+    },
+  },
+  server: {
+    port: 5300,
+  },
+})

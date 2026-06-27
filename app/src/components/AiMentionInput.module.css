@@ -1,0 +1,330 @@
+.wrapper {
+  position: relative;
+}
+
+/* Mention trigger indicator */
+.mentionHint {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  font-size: 10px;
+  color: var(--ai-color-primary, #00d4ff);
+  background: rgba(0, 212, 255, 0.1);
+  padding: 1px 6px;
+  border-radius: var(--ai-radius-sm, 6px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.mentionHint.visible {
+  opacity: 1;
+}
+
+/* Search panel overlay */
+.panel {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  background: var(--ai-bg-white, #FFFFFF);
+  border: 1px solid var(--ai-border-light, #EBEDF3);
+  border-radius: var(--ai-radius-md, 8px);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.12), 0 4px 16px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+
+/* Search input inside panel */
+.panelSearch {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ai-border-light, #EBEDF3);
+  flex-shrink: 0;
+}
+
+.panelInput {
+  width: 100%;
+  border: 1px solid var(--ai-border-light, #EBEDF3);
+  border-radius: var(--ai-radius-sm, 6px);
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--ai-text-primary, #333333);
+  outline: none;
+  background: var(--ai-bg-gray, #F5F7FA);
+  transition: border-color 0.15s;
+}
+
+.panelInput:focus {
+  border-color: rgba(0, 212, 255, 0.35);
+  background: var(--ai-bg-white, #FFFFFF);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.12);
+}
+
+.panelInput::placeholder {
+  color: var(--ai-text-disabled, #C0C4CC);
+}
+
+/* Textarea */
+.textarea {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 13.5px;
+  color: var(--ai-text-primary, #333333);
+  font-family: inherit;
+  line-height: 1.5;
+  min-height: 36px;
+  max-height: 102px;
+  resize: none;
+  background: transparent;
+  padding: 0;
+}
+
+.textarea::placeholder {
+  color: var(--ai-text-disabled, #C0C4CC);
+}
+
+.textarea:disabled {
+  cursor: not-allowed;
+}
+
+/* Category tabs */
+.tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--ai-border-light, #EBEDF3);
+  flex-shrink: 0;
+}
+
+.tab {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ai-text-hint, #999999);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--ai-text-primary, #333333);
+}
+
+.tab.active {
+  color: var(--ai-color-primary, #00d4ff);
+  border-bottom-color: var(--ai-color-primary, #00d4ff);
+}
+
+/* Results list */
+.results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.results::-webkit-scrollbar {
+  width: 4px;
+}
+
+.results::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.15);
+  border-radius: 2px;
+}
+
+/* Single result item */
+.resultItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--ai-radius-sm, 6px);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.resultItem:hover,
+.resultItem.highlighted {
+  background: var(--ai-bg-hover, #F5F7FA);
+}
+
+/* Type icon badge */
+.typeBadge {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ai-radius-sm, 6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.typeBadge.schema {
+  background: rgba(0, 230, 118, 0.1);
+  color: var(--ai-color-success, #00e676);
+}
+
+.typeBadge.flow {
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--ai-color-primary, #00d4ff);
+}
+
+.typeBadge.widget {
+  background: rgba(255, 171, 64, 0.1);
+  color: var(--ai-color-warning, #ffab40);
+}
+
+/* Result info */
+.resultInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.resultName {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ai-text-primary, #333333);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.resultMeta {
+  font-size: 10px;
+  color: var(--ai-text-hint, #999999);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  margin-top: 1px;
+}
+
+/* Empty / loading states */
+.empty {
+  text-align: center;
+  padding: 24px 0;
+  font-size: 12px;
+  color: var(--ai-text-disabled, #C0C4CC);
+}
+
+.loading {
+  text-align: center;
+  padding: 16px 0;
+  font-size: 12px;
+  color: var(--ai-text-hint, #999999);
+}
+
+.loadingDot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ai-color-primary, #00d4ff);
+  box-shadow: 0 0 4px rgba(0, 212, 255, 0.4);
+  margin: 0 2px;
+  animation: loadPulse 1.2s ease-in-out infinite;
+}
+
+.loadingDot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loadingDot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes loadPulse {
+  0%, 80%, 100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* Mention tag */
+.mentionTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: var(--ai-radius-sm, 6px);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  vertical-align: baseline;
+}
+
+.mentionTag.schema {
+  background: rgba(0, 230, 118, 0.1);
+  color: var(--ai-color-success, #00e676);
+}
+
+.mentionTag.flow {
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--ai-color-primary, #00d4ff);
+}
+
+.mentionTag.widget {
+  background: rgba(255, 171, 64, 0.1);
+  color: var(--ai-color-warning, #ffab40);
+}
+
+/* Selected mention chips */
+.mentionChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.mentionChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--ai-radius-sm, 6px);
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--ai-bg-gray, #F5F7FA);
+  border: 1px solid var(--ai-border-light, #EBEDF3);
+  color: var(--ai-text-primary, #333333);
+}
+
+.chipIcon {
+  font-size: 10px;
+}
+
+.chipRemove {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--ai-text-hint, #999999);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.15s;
+}
+
+.chipRemove:hover {
+  background: rgba(255, 82, 82, 0.1);
+  color: var(--ai-color-danger, #ff5252);
+}

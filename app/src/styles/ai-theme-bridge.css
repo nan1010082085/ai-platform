@@ -1,0 +1,59 @@
+/**
+ * AI 主题桥接层
+ *
+ * 将 AI 组件使用的 --ai-* 变量映射到 Element Plus 的 --el-* 变量。
+ * 删除 theme-tech.scss 后，此文件确保 683 处 var(--ai-*) 引用自动跟随共享主题。
+ */
+:root {
+  /* 品牌色 → Element Plus 主色 */
+  --ai-color-primary: var(--el-color-primary);
+  --ai-color-primary-hover: var(--el-color-primary-light-3);
+  --ai-color-primary-bg: var(--el-color-primary-light-9);
+  --ai-color-primary-light: var(--el-color-primary-light-9);
+
+  /* 功能色 */
+  --ai-color-success: var(--el-color-success);
+  --ai-color-success-bg: var(--el-color-success-light-9, rgba(38, 160, 54, 0.1));
+  --ai-color-info: var(--el-color-info);
+  --ai-color-info-bg: var(--el-color-info-light-9, rgba(69, 129, 233, 0.08));
+  --ai-color-warning: var(--el-color-warning);
+  --ai-color-warning-bg: var(--el-color-warning-light-9, rgba(240, 151, 0, 0.1));
+  --ai-color-danger: var(--el-color-danger);
+  --ai-color-danger-bg: var(--el-color-danger-light-9, rgba(229, 1, 19, 0.08));
+  --ai-color-purple: var(--el-color-info);
+  --ai-color-purple-bg: var(--el-color-info-light-9, rgba(69, 129, 233, 0.08));
+
+  /* 文字色 */
+  --ai-text-primary: var(--el-text-color-primary);
+  --ai-text-secondary: var(--el-text-color-regular);
+  --ai-text-hint: var(--el-text-color-secondary);
+  --ai-text-disabled: var(--el-text-color-disabled);
+  --ai-text-inverse: var(--el-color-white, #fff);
+
+  /* 背景色 */
+  --ai-bg-white: var(--el-fill-color-blank, #fff);
+  --ai-bg-gray: var(--el-fill-color-light, #f5f7fa);
+  --ai-bg-hover: var(--el-fill-color-lighter, #ebeef5);
+  --ai-bg-dark: var(--el-fill-color-dark, #e4e7ed);
+
+  /* 边框 */
+  --ai-border-light: var(--el-border-color-lighter);
+  --ai-border-base: var(--el-border-color);
+
+  /* 阴影 */
+  --ai-shadow-sm: var(--el-box-shadow-lighter);
+  --ai-shadow-md: var(--el-box-shadow-light);
+  --ai-shadow-lg: var(--el-box-shadow);
+
+  /* 圆角 */
+  --ai-radius-sm: var(--el-border-radius-small);
+  --ai-radius-md: var(--el-border-radius-base);
+  --ai-radius-lg: var(--el-border-radius-large);
+
+  /* 间距 */
+  --ai-spacing-xs: 4px;
+  --ai-spacing-sm: 8px;
+  --ai-spacing-md: 16px;
+  --ai-spacing-lg: 24px;
+  --ai-spacing-xl: 32px;
+}
