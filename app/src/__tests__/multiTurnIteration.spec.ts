@@ -38,7 +38,7 @@ function pushChatEvent(event: Record<string, unknown>) {
   chatEventHandler?.(event)
 }
 
-/** 模拟完整的 SSE 流式响应（通过 WebSocket mock 实现） */
+/** 模拟完整的流式响应（通过 WebSocket mock 实现） */
 function mockChatStream(events: Array<Record<string, unknown>>) {
   // 事件驱动：emitChatSend 触发时同步推送所有事件
   // 使用 queueMicrotask 让 Vue 的响应式更新先处理

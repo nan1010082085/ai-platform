@@ -1,8 +1,4 @@
-minimumReleaseAgeExclude:
-  - '@schema-platform/platform-shared@1.0.0'
-  - '@schema-platform/flow-shared@1.0.0'
-  - '@schema-platform/flow-shared@1.0.1'
-  - '@schema-platform/platform-shared@1.0.2'
+minimumReleaseAge: 0
 onlyBuiltDependencies:
   - esbuild
   - vue-demi

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, nextTick, watch } from 'vue'
+import { ref, nextTick, watch, computed } from 'vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import AiMessage from './AiMessage.vue'
 import TaskChainBar from './TaskChainBar.vue'
 import AiRagSearch from './AiRagSearch.vue'
 import AiMentionInput from './AiMentionInput.vue'
 import { uploadFile } from '@/api/aiApi'
-import type { AIMessage, AgentType, Attachment, TaskChainStep, SSEConnectionStatus, MentionReference, RagSearchResult } from '@/types'
+import type { AIMessage, AgentType, Attachment, TaskChainStep, StreamConnectionStatus, MentionReference, RagSearchResult } from '@/types'
 import type { MessageEmbeddedCard } from './AiMessage.vue'
 
 export interface AiChatPanelProps {
@@ -18,8 +18,10 @@ export interface AiChatPanelProps {
   agentOptions?: Array<{ value: AgentType; label: string }>
   taskChain?: TaskChainStep[]
   taskChainIndex?: number
-  /** SSE 连接状态 */
-  sseStatus?: SSEConnectionStatus
+  /** 流式连接状态 */
+  streamStatus?: StreamConnectionStatus
+  /** @deprecated 使用 streamStatus 替代 */
+  sseStatus?: StreamConnectionStatus
   /** 当前自动重试次数 */
   retryCount?: number
   /** 最大自动重试次数 */
@@ -38,6 +40,7 @@ const props = withDefaults(defineProps<AiChatPanelProps>(), {
     { value: 'editor', label: 'Editor' },
     { value: 'flow', label: 'Flow' },
   ],
+  streamStatus: 'idle',
   sseStatus: 'idle',
   retryCount: 0,
   maxRetries: 3,
@@ -68,6 +71,9 @@ const selectedAgent = ref<AgentType>('auto')
 const messagesRef = ref<HTMLElement>()
 const mentionInputRef = ref<InstanceType<typeof AiMentionInput>>()
 const ragVisible = ref(false)
+
+// 向后兼容：优先使用 streamStatus，fallback 到 sseStatus
+const currentStreamStatus = computed(() => props.streamStatus ?? props.sseStatus ?? 'idle')
 
 // ---- 多模态输入 ----
 const fileInputRef = ref<HTMLInputElement>()
@@ -267,23 +273,23 @@ function handleCardAction(
         <span :class="[$style.roleBadge, $style[agent]]">
           {{ agent === 'auto' ? 'Auto' : agent === 'editor' ? 'Editor' : 'Flow' }}
         </span>
-        <!-- SSE 连接状态指示器 -->
+        <!-- 流式连接状态指示器 -->
         <span
-          v-if="sseStatus === 'connecting'"
+          v-if="currentStreamStatus === 'connecting'"
           :class="[$style.connStatus, $style.connConnecting]"
         >
           <span :class="$style.connDot" />
           连接中
         </span>
         <span
-          v-else-if="sseStatus === 'reconnecting'"
+          v-else-if="currentStreamStatus === 'reconnecting'"
           :class="[$style.connStatus, $style.connReconnecting]"
         >
           <span :class="$style.connDot" />
           重连中 {{ retryCount }}/{{ maxRetries }}
         </span>
         <span
-          v-else-if="sseStatus === 'disconnected'"
+          v-else-if="currentStreamStatus === 'disconnected'"
           :class="[$style.connStatus, $style.connDisconnected]"
         >
           <span :class="$style.connDot" />
@@ -369,8 +375,8 @@ function handleCardAction(
       />
     </div>
 
-    <!-- Retry Banner (SSE disconnected) -->
-    <div v-if="sseStatus === 'disconnected'" :class="$style.retryBanner">
+    <!-- Retry Banner (Stream disconnected) -->
+    <div v-if="currentStreamStatus === 'disconnected'" :class="$style.retryBanner">
       <span :class="$style.retryBannerText">连接已断开，请重新发送</span>
       <el-button :class="$style.retryBannerBtn" @click="emit('retry')">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -15,7 +15,7 @@ import type {
   ChatSettings,
   Widget,
   FlowGraph,
-  SSEEvent,
+  StreamEvent,
 } from '@/types'
 import {
   emitChatSend,
@@ -83,7 +83,7 @@ export const useStreamStore = defineStore('stream', () => {
     assistantIndex: number,
     messages: AIMessage[],
     handlers: {
-      onStreamEvent: (event: SSEEvent, assistantIndex: number) => void
+      onStreamEvent: (event: StreamEvent, assistantIndex: number) => void
       onDone: (conversationId?: string) => void
       getContext: () => {
         context: ChatContext
@@ -126,7 +126,7 @@ export const useStreamStore = defineStore('stream', () => {
           streamStatus.value = 'connected'
         }
 
-        const event = chatEvent as unknown as SSEEvent
+        const event = chatEvent as unknown as StreamEvent
         console.log('[stream] received event', event.type, event.content?.substring(0, 20))
 
         if (event.type === 'done') {
@@ -195,7 +195,7 @@ export const useStreamStore = defineStore('stream', () => {
     confirmed: boolean,
     messages: AIMessage[],
     handlers: {
-      onStreamEvent: (event: SSEEvent, assistantIndex: number) => void
+      onStreamEvent: (event: StreamEvent, assistantIndex: number) => void
       onDone: (conversationId?: string) => void
       getContext: () => {
         currentConversationId: string | null
@@ -230,7 +230,7 @@ export const useStreamStore = defineStore('stream', () => {
 
     unsubscribeChatEvent = onChatEvent((chatEvent) => {
       streamStatus.value = 'connected'
-      const event = chatEvent as unknown as SSEEvent
+      const event = chatEvent as unknown as StreamEvent
       if (event.type === 'done') {
         doneEventReceived = true
         doneResolve?.()

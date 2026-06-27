@@ -80,9 +80,9 @@
 | Agent | 职责 | System Prompt 来源 |
 |-------|------|-------------------|
 | **Router** | 分析用户意图，路由到正确的 Agent | 固定 prompt |
-| **Editor** | 生成/编辑表单 Schema | `@schema-form/ai-shared/promptBuilder` |
-| **Flow** | 生成/编辑流程 | `@schema-form/ai-shared/promptBuilder` |
-| **Page** | 生成页面布局 | `@schema-form/ai-shared/promptBuilder` |
+| **Editor** | 生成/编辑表单 Schema | `@schema-platform/ai-shared/promptBuilder` |
+| **Flow** | 生成/编辑流程 | `@schema-platform/ai-shared/promptBuilder` |
+| **Page** | 生成页面布局 | `@schema-platform/ai-shared/promptBuilder` |
 | **General** | 通用问答，不涉及具体业务 | 固定 prompt |
 
 ### 2.2 v1 Graph 结构

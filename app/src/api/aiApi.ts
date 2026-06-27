@@ -1,14 +1,14 @@
 /**
  * AI API 客户端
  *
- * - SSE 流式对话（fetch + ReadableStream）
+ * - 流式对话（fetch + ReadableStream）
  * - 对话管理 CRUD
  * - 发布接口
  */
 
 import type {
   ChatRequest,
-  SSEEvent,
+  StreamEvent,
   PublishRequest,
   PublishResponse,
   Conversation,
@@ -77,24 +77,24 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body.data
 }
 
-// ---- SSE 对话流 ----
+// ---- 流式对话 ----
 
 /**
- * 发送对话消息，返回可订阅的 SSE 事件流。
+ * 发送对话消息，返回可订阅的流式事件。
  *
  * 使用 fetch + ReadableStream 实现，支持流式文本和结构化事件。
  * 支持通过 AbortSignal 取消请求。
  *
- * SSE 解析要点：
+ * 流式解析要点：
  * - 行分隔符为 `\n`，事件分隔符为 `\n\n`
  * - `data:` 和 `data: ` 均为合法格式（空格可选）
  * - 以 `:` 开头的行为注释（如心跳），跳过
  * - 流结束时必须刷新 TextDecoder 和 buffer，否则末尾事件丢失
  */
-export function chat(request: ChatRequest, signal?: AbortSignal): ReadableStream<SSEEvent> {
+export function chat(request: ChatRequest, signal?: AbortSignal): ReadableStream<StreamEvent> {
   const body = JSON.stringify(request)
 
-  const stream = new ReadableStream<SSEEvent>({
+  const stream = new ReadableStream<StreamEvent>({
     async start(controller) {
       const response = await fetch(`${BASE_URL}/ai/chat`, {
         method: 'POST',
@@ -118,14 +118,14 @@ export function chat(request: ChatRequest, signal?: AbortSignal): ReadableStream
       let buffer = ''
       let streamClosed = false
 
-      /** Extract data value from an SSE line. Returns null if not a data line. */
+      /** Extract data value from a stream line. Returns null if not a data line. */
       function extractData(line: string): string | null {
         if (line.startsWith('data: ')) return line.slice(6)
         if (line.startsWith('data:')) return line.slice(5)
         return null
       }
 
-      /** Parse SSE data value: enqueue as event or close on [DONE]. */
+      /** Parse stream data value: enqueue as event or close on [DONE]. */
       function handleData(data: string): void {
         if (data === '[DONE]') {
           controller.close()
@@ -133,7 +133,7 @@ export function chat(request: ChatRequest, signal?: AbortSignal): ReadableStream
           return
         }
         try {
-          const event = JSON.parse(data) as SSEEvent
+          const event = JSON.parse(data) as StreamEvent
           controller.enqueue(event)
         } catch {
           // Skip unparseable JSON
@@ -176,7 +176,7 @@ export function chat(request: ChatRequest, signal?: AbortSignal): ReadableStream
             buffer += decoder.decode()
 
             // Process all remaining lines. The trailing line (no \n) is also
-            // a complete SSE line — the stream has ended so there is nothing
+            // a complete stream line — the stream has ended so there is nothing
             // more to wait for.
             for (const line of buffer.split('\n')) {
               const trimmed = line.trim()
@@ -233,16 +233,16 @@ export async function publish(payload: PublishRequest): Promise<PublishResponse>
 // ---- HITL Interrupt Resume ----
 
 /**
- * 恢复被 interrupt 挂起的对话。返回 SSE 流。
+ * 恢复被 interrupt 挂起的对话。返回流式响应。
  */
 export function resumeInterrupt(
   threadId: string,
   confirmed: boolean,
   signal?: AbortSignal,
-): ReadableStream<SSEEvent> {
+): ReadableStream<StreamEvent> {
   const body = JSON.stringify({ threadId, confirmed })
 
-  const stream = new ReadableStream<SSEEvent>({
+  const stream = new ReadableStream<StreamEvent>({
     async start(controller) {
       const response = await fetch(`${BASE_URL}/ai/chat/resume`, {
         method: 'POST',
@@ -279,7 +279,7 @@ export function resumeInterrupt(
           return
         }
         try {
-          const event = JSON.parse(data) as SSEEvent
+          const event = JSON.parse(data) as StreamEvent
           controller.enqueue(event)
         } catch {
           // Skip unparseable JSON

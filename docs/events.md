@@ -764,7 +764,7 @@ export type SSEEvent =
 ### 12.2 使用方式
 
 ```typescript
-import type { SSEEvent } from '@schema-form/ai-shared'
+import type { SSEEvent } from '@schema-platform/ai-shared'
 
 // 类型安全的事件处理
 function handleEvent(event: SSEEvent) {

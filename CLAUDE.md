@@ -7,7 +7,7 @@ AI 助手模块，包含三个子包：app（前端）、sdk（Agent SDK）、sh
 ### 子包结构
 - `app/` — `@schema-form/ai-app` — AI 对话界面，通过 iframe 嵌入 editor/flow
 - `sdk/` — `@schema-form/ai-sdk` — Agent SDK
-- `shared/` — `@schema-form/ai-shared` — AI 元数据、promptBuilder、widgetCatalogue
+- `shared/` — `@schema-platform/ai-shared` — AI 元数据、promptBuilder、widgetCatalogue
 
 ### 技术栈
 - app：Vue 3 + TypeScript + CSS Module

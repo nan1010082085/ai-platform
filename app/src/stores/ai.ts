@@ -22,7 +22,7 @@ import type {
   FlowGraph,
   TaskChainStep,
   MentionReference,
-  SSEEvent,
+  StreamEvent,
 } from '@/types'
 import type {
   SearchResult,
@@ -62,7 +62,7 @@ export const useAiStore = defineStore('ai', () => {
 
   // ---- 流式事件处理 ----
 
-  function handleStreamEvent(event: SSEEvent, assistantIndex: number): void {
+  function handleStreamEvent(event: StreamEvent, assistantIndex: number): void {
     const msg = conversationStore.messages[assistantIndex]
     if (!msg) {
       console.warn('[ai] handleStreamEvent: msg not found at index', assistantIndex)
@@ -804,6 +804,8 @@ export const useAiStore = defineStore('ai', () => {
     schemaUpdateDescription: computed(() => schemaStore.schemaUpdateDescription),
     versionHistory: computed(() => schemaStore.versionHistory),
     currentVersionIndex: computed(() => schemaStore.currentVersionIndex),
+    streamStatus: computed(() => streamStore.streamStatus),
+    /** @deprecated 使用 streamStatus 替代 */
     sseStatus: computed(() => streamStore.streamStatus),
     retryCount: computed(() => streamStore.retryCount),
     llmProviders: computed(() => llmStore.llmProviders),

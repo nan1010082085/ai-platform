@@ -22,7 +22,7 @@ import SchemaDiffPanel from '@/components/SchemaDiffPanel.vue'
 import type { PreviewSchemaData, PreviewFlowData, PreviewTab } from '@/components/AiPreviewPanel.vue'
 
 const store = useAiStore()
-const { messages, loading, currentSchema, currentFlow, activeAgent, conversations, currentConversationId, taskChain, taskChainIndex, currentDiff, schemaUpdateDescription, sseStatus, retryCount, MAX_AUTO_RETRIES, chatSettings, ragSearchResults, ragSearching, ragContext } =
+const { messages, loading, currentSchema, currentFlow, activeAgent, conversations, currentConversationId, taskChain, taskChainIndex, currentDiff, schemaUpdateDescription, streamStatus, retryCount, MAX_AUTO_RETRIES, chatSettings, ragSearchResults, ragSearching, ragContext } =
   storeToRefs(store)
 
 // ---- 防止发布按钮重复调用 ----
@@ -334,7 +334,7 @@ onMounted(() => {
         :loading="loading"
         :task-chain="taskChain"
         :task-chain-index="taskChainIndex"
-        :sse-status="sseStatus"
+        :stream-status="streamStatus"
         :retry-count="retryCount"
         :max-retries="MAX_AUTO_RETRIES"
         :rag-search-results="ragSearchResults"

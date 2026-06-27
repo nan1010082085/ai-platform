@@ -1,2 +1,5 @@
-minimumReleaseAgeExclude:
-  - '@schema-platform/flow-shared@1.0.0'
+minimumReleaseAge: 0
+onlyBuiltDependencies:
+  - esbuild
+  - vue-demi
+  - '@parcel/watcher'

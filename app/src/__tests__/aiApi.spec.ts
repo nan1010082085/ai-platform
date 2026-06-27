@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { chat, getConversations, deleteConversation, publish, searchConversations, AiApiError } from '@/api/aiApi'
-import type { SSEEvent } from '@/types'
+import type { StreamEvent } from '@/types'
 
 // Mock fetch globally
 const mockFetch = vi.fn()
@@ -23,7 +23,7 @@ describe('AiApiError', () => {
 })
 
 describe('chat', () => {
-  function mockSSEResponse(events: string[]) {
+  function mockStreamResponse(events: string[]) {
     const encoder = new TextEncoder()
     let index = 0
     const stream = new ReadableStream({
@@ -44,8 +44,8 @@ describe('chat', () => {
     })
   }
 
-  it('parses SSE events from stream', async () => {
-    mockSSEResponse([
+  it('parses stream events', async () => {
+    mockStreamResponse([
       'data: {"type":"text","content":"Hello"}\n\n',
       'data: {"type":"schema","payload":[{"id":"1","type":"input"}],"description":"done"}\n\n',
       'data: {"type":"done","conversationId":"conv-1"}\n\n',
@@ -71,7 +71,7 @@ describe('chat', () => {
   })
 
   it('handles [DONE] marker', async () => {
-    mockSSEResponse([
+    mockStreamResponse([
       'data: {"type":"text","content":"hi"}\n\n',
       'data: [DONE]\n\n',
     ])
@@ -90,7 +90,7 @@ describe('chat', () => {
   })
 
   it('skips malformed JSON lines', async () => {
-    mockSSEResponse([
+    mockStreamResponse([
       'data: not-json\n\n',
       'data: {"type":"text","content":"ok"}\n\n',
     ])
@@ -122,7 +122,7 @@ describe('chat', () => {
   })
 
   it('sends correct request body', async () => {
-    mockSSEResponse([])
+    mockStreamResponse([])
 
     const stream = chat({
       conversationId: 'conv-1',
@@ -146,10 +146,10 @@ describe('chat', () => {
     )
   })
 
-  // ---- SSE 解析丢帧修复验证 ----
+  // ---- 流式解析丢帧修复验证 ----
 
   /** Helper: send raw string chunks (each becomes one TCP chunk) */
-  function mockSSERawChunks(chunks: string[]) {
+  function mockStreamRawChunks(chunks: string[]) {
     const encoder = new TextEncoder()
     let index = 0
     const stream = new ReadableStream({
@@ -171,9 +171,9 @@ describe('chat', () => {
   }
 
   /** Helper: collect all events from a ReadableStream */
-  async function collectEvents(stream: ReadableStream<SSEEvent>): Promise<SSEEvent[]> {
+  async function collectEvents(stream: ReadableStream<StreamEvent>): Promise<StreamEvent[]> {
     const reader = stream.getReader()
-    const events: SSEEvent[] = []
+    const events: StreamEvent[] = []
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
@@ -184,7 +184,7 @@ describe('chat', () => {
 
   it('flushes buffer when last event has no trailing newline', async () => {
     // Last event has only one \n instead of \n\n — must not be lost
-    mockSSERawChunks([
+    mockStreamRawChunks([
       'data: {"type":"text","content":"Hello"}\n\n',
       'data: {"type":"text","content":"World"}\n',
     ])
@@ -199,7 +199,7 @@ describe('chat', () => {
 
   it('flushes buffer when last event has no newline at all', async () => {
     // Last event has zero newlines — the most extreme case
-    mockSSERawChunks([
+    mockStreamRawChunks([
       'data: {"type":"text","content":"First"}\n\n',
       'data: {"type":"done","conversationId":"c1"}',
     ])
@@ -213,7 +213,7 @@ describe('chat', () => {
   })
 
   it('handles multiple events in a single chunk', async () => {
-    mockSSERawChunks([
+    mockStreamRawChunks([
       'data: {"type":"text","content":"A"}\n\ndata: {"type":"text","content":"B"}\n\ndata: {"type":"text","content":"C"}\n\n',
     ])
 
@@ -228,7 +228,7 @@ describe('chat', () => {
 
   it('handles chunk boundary splitting a JSON value', async () => {
     // The JSON payload "Hello" is split across two chunks: "Hel" and "lo"
-    mockSSERawChunks([
+    mockStreamRawChunks([
       'data: {"type":"text","content":"Hel',
       'lo"}\n\n',
     ])
@@ -241,7 +241,7 @@ describe('chat', () => {
   })
 
   it('skips comment lines (heartbeat)', async () => {
-    mockSSERawChunks([
+    mockStreamRawChunks([
       ':heartbeat\n\n',
       'data: {"type":"text","content":"alive"}\n\n',
       ':heartbeat\n\n',
@@ -256,8 +256,8 @@ describe('chat', () => {
     expect(events[1]).toEqual({ type: 'done', conversationId: 'c1' })
   })
 
-  it('handles data: without space (SSE spec compliance)', async () => {
-    mockSSERawChunks([
+  it('handles data: without space (stream spec compliance)', async () => {
+    mockStreamRawChunks([
       'data:{"type":"text","content":"no-space"}\n\n',
     ])
 
@@ -269,7 +269,7 @@ describe('chat', () => {
   })
 
   it('handles [DONE] in buffer flush (no trailing newline)', async () => {
-    mockSSERawChunks([
+    mockStreamRawChunks([
       'data: {"type":"text","content":"final"}\n\n',
       'data: [DONE]',
     ])
@@ -289,7 +289,7 @@ describe('chat', () => {
       chunks.push(fullEvent.slice(i, i + 3))
     }
 
-    mockSSERawChunks(chunks)
+    mockStreamRawChunks(chunks)
 
     const stream = chat({ message: 'test', context: { source: 'standalone' } })
     const events = await collectEvents(stream)
@@ -300,7 +300,7 @@ describe('chat', () => {
 
   it('handles data line split at "data: " prefix boundary', async () => {
     // Chunk boundary falls right after "data: " — the value arrives in the next chunk
-    mockSSERawChunks([
+    mockStreamRawChunks([
       'data: ',
       '{"type":"text","content":"split-prefix"}\n\n',
     ])
@@ -313,7 +313,7 @@ describe('chat', () => {
   })
 
   it('handles interleaved heartbeat comments and data events', async () => {
-    mockSSERawChunks([
+    mockStreamRawChunks([
       ':heartbeat\n\n',
       ':ping\n\n',
       'data: {"type":"text","content":"A"}\n\n',
@@ -332,7 +332,7 @@ describe('chat', () => {
   })
 
   it('handles empty data lines (no content between events)', async () => {
-    mockSSERawChunks([
+    mockStreamRawChunks([
       'data: {"type":"text","content":"first"}\n\n',
       '\n\n',
       'data: {"type":"text","content":"second"}\n\n',
@@ -440,9 +440,9 @@ describe('chat', () => {
     // The second event is corrupted (incomplete bytes + replacement char) and correctly skipped
   })
 
-  it('flushes last SSE event without [DONE] marker', async () => {
+  it('flushes last stream event without [DONE] marker', async () => {
     // Server closes the stream without sending [DONE] — last event must not be lost
-    mockSSERawChunks([
+    mockStreamRawChunks([
       'data: {"type":"text","content":"first"}\n\n',
       'data: {"type":"text","content":"last"}\n\n',
     ])

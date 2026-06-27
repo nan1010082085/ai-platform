@@ -20,7 +20,7 @@ schema-form-ai 是 Schema Platform 的 AI 助手模块，负责：
 schema-form-ai/
 ├── app/        # 前端应用 (@schema-form/ai-app)
 ├── sdk/        # Agent SDK (@schema-form/ai-sdk)
-└── shared/     # 共享逻辑 (@schema-form/ai-shared)
+└── shared/     # 共享逻辑 (@schema-platform/ai-shared)
 ```
 
 ## 第二步：熟悉核心代码

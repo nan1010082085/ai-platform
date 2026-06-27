@@ -1,8 +1,12 @@
 {
-  "name": "@schema-form/ai-shared",
+  "name": "@schema-platform/ai-shared",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "type": "module",
+  "repository": "github:schema-platform/schema-form-ai",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc"

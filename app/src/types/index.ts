@@ -215,7 +215,7 @@ export type StreamEventType =
 /** @deprecated 使用 StreamEventType 替代 */
 export type SSEEventType = StreamEventType
 
-export interface SSEEvent {
+export interface StreamEvent {
   type: StreamEventType
   content?: string
   payload?: Widget[] | FlowGraph
@@ -280,6 +280,9 @@ export interface SSEEvent {
     retryReason?: string
   }
 }
+
+/** @deprecated 使用 StreamEvent 替代 */
+export type SSEEvent = StreamEvent
 
 // ---- 任务链 ----
 
