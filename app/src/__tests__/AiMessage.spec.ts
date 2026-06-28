@@ -181,8 +181,8 @@ describe('AiMessage', () => {
         },
       })
 
-      // Initially collapsed — thinking content not visible
-      expect(wrapper.text()).not.toContain('Let me think...')
+      // Initially collapsed — summary shown in subtitle
+      expect(wrapper.text()).toContain('Let me think...')
 
       // Click header to expand
       await wrapper.find('[class*="header"]').trigger('click')
@@ -192,7 +192,7 @@ describe('AiMessage', () => {
       // Click again to collapse
       await wrapper.find('[class*="header"]').trigger('click')
       await nextTick()
-      expect(wrapper.text()).not.toContain('Let me think...')
+      expect(wrapper.text()).toContain('Let me think...')  // Summary still shown
     })
   })
 

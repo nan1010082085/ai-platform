@@ -61,8 +61,8 @@ describe('AiStepCard', () => {
         },
       })
 
-      // Default collapsed
-      expect(wrapper.text()).not.toContain('Let me analyze...')
+      // Default collapsed — summary shown in subtitle
+      expect(wrapper.text()).toContain('Let me analyze...')
 
       // Expand
       await wrapper.find('[class*="header"]').trigger('click')
@@ -116,7 +116,8 @@ describe('AiStepCard', () => {
           content: 'Details...',
         },
       })
-      expect(wrapper.text()).not.toContain('Details...')
+      // Collapsed — summary shown in subtitle
+      expect(wrapper.text()).toContain('Details...')
     })
 
     it('tool_call is collapsed by default', () => {
@@ -158,8 +159,8 @@ describe('AiStepCard', () => {
         },
       })
 
-      // Collapsed
-      expect(wrapper.text()).not.toContain('Details here')
+      // Collapsed — summary shown
+      expect(wrapper.text()).toContain('Details here')
 
       // Expand
       await wrapper.find('[class*="header"]').trigger('click')
@@ -169,7 +170,7 @@ describe('AiStepCard', () => {
       // Collapse again
       await wrapper.find('[class*="header"]').trigger('click')
       await nextTick()
-      expect(wrapper.text()).not.toContain('Details here')
+      expect(wrapper.text()).toContain('Details here')  // Summary still shown
     })
   })
 

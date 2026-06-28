@@ -111,6 +111,13 @@ const hasHeader = computed(() =>
   props.type === 'thinking' || props.type === 'tool_call' || props.type === 'tool_error',
 )
 
+/** 思考内容摘要（折叠时显示） */
+const thinkingSummary = computed(() => {
+  if (props.type !== 'thinking' || !props.content) return ''
+  const text = props.content.replace(/<[^>]*>/g, '').trim()
+  return text.length > 100 ? text.slice(0, 100) + '...' : text
+})
+
 const isRunning = computed(() => props.status === 'running')
 const isError = computed(() => props.status === 'error' || props.type === 'tool_error')
 const isDone = computed(() => props.status === 'done' && !isError.value)
@@ -231,7 +238,7 @@ const highlightedJson = computed(() => {
             {{ toolName }}
           </div>
           <div v-else-if="type === 'thinking'" :class="$style.subtitle">
-            {{ isRunning ? '分析需求中...' : '已完成思考' }}
+            {{ isRunning ? '分析需求中...' : collapsed ? thinkingSummary : '已完成思考' }}
           </div>
         </div>
       </div>

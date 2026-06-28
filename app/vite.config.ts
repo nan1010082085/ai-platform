@@ -8,7 +8,7 @@ const isProd = process.env.NODE_ENV === 'production'
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
-  base: isProd ? '/schema-platform/child/ai/' : '/',
+  base: isProd ? '/schema-platform/ai/' : '/',
   plugins: [
     vue(),
     qiankun('ai', { useDevMode: true }),
@@ -22,6 +22,7 @@ export default defineConfig({
     alias: { '@': resolve(rootDir, 'src') },
   },
   build: {
+    cssCodeSplit: false,
     rollupOptions: {
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
