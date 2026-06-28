@@ -46,7 +46,7 @@ const emit = defineEmits<{
           <!-- Task icon -->
           <AppIcon v-else-if="node.type === 'task'" name="document" :class="$style.nodeIcon" :size="16" />
           <!-- End icon -->
-          <AppIcon v-else-if="node.type === 'end'" name="circle-close" :class="$style.nodeIcon" :size="16" />
+          <AppIcon v-else-if="node.type === 'end'" name="circle-close-filled" :class="$style.nodeIcon" :size="16" />
           <span>{{ node.label }}</span>
         </div>
       </template>

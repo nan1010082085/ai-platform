@@ -40,6 +40,7 @@
   flex: 1;
   min-width: 0;
   max-width: 85%;
+  position: relative;
 }
 
 .msgUser .content {
@@ -324,14 +325,17 @@
 .actionMenu {
   display: flex;
   gap: 2px;
-  margin-top: 8px;
   padding: 4px;
   background: var(--bg-color-white, #FFFFFF);
   border: 1px solid var(--border-color-light, #EBEDF3);
   border-radius: 8px;
   box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08));
   width: fit-content;
-  animation: fadeIn 0.15s ease;
+  position: absolute;
+  bottom: -36px;
+  left: 0;
+  z-index: 10;
+  animation: fadeIn 0.2s ease;
 }
 
 @keyframes fadeIn {

@@ -80,6 +80,9 @@ const emit = defineEmits<{
 // ---- Action menu state ----
 
 const isHovered = ref(false)
+const showActions = ref(false)
+let hoverTimer: ReturnType<typeof setTimeout> | null = null
+
 const currentFeedback = ref<'positive' | 'negative' | null>(props.feedback ?? null)
 
 watch(() => props.feedback, (newVal) => {
@@ -105,7 +108,22 @@ function handleFeedback(type: 'positive' | 'negative'): void {
   } else {
     currentFeedback.value = type
   }
-  emit('feedback', type)
+}
+
+function handleMouseEnter(): void {
+  isHovered.value = true
+  hoverTimer = setTimeout(() => {
+    showActions.value = true
+  }, 300)
+}
+
+function handleMouseLeave(): void {
+  isHovered.value = false
+  showActions.value = false
+  if (hoverTimer) {
+    clearTimeout(hoverTimer)
+    hoverTimer = null
+  }
 }
 
 // ---- F2: rAF-batched content for streaming ----
@@ -406,8 +424,8 @@ const steps = computed<StepData[]>(() => {
 <template>
   <div
     :class="[$style.msg, role === 'user' ? $style.msgUser : $style.msgAssistant]"
-    @mouseenter="isHovered = true"
-    @mouseleave="isHovered = false"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
   >
     <!-- Avatar -->
     <div :class="[$style.avatar, role === 'user' ? $style.avatarUser : $style.avatarAssistant]">
@@ -540,8 +558,8 @@ const steps = computed<StepData[]>(() => {
         </div>
       </template>
 
-      <!-- Action menu (hover to show) -->
-      <div v-if="role === 'assistant' && !loading && isHovered" :class="$style.actionMenu">
+      <!-- Action menu (hover 300ms to show) -->
+      <div v-if="role === 'assistant' && !loading && showActions" :class="$style.actionMenu">
         <el-tooltip content="复制" placement="top" :show-after="300">
           <button :class="$style.actionBtn" @click="handleCopy">
             <AppIcon name="copy-document" :size="14" />

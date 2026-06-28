@@ -252,7 +252,7 @@ onMounted(() => {
         </div>
         <div :class="$style.statusCard">
           <div :class="[$style.statusIcon, $style[`statusIcon${healthStatus.charAt(0).toUpperCase() + healthStatus.slice(1)}`]]">
-            <AppIcon name="chart-bar" :size="20" />
+            <AppIcon name="pie-chart" :size="20" />
           </div>
           <div :class="$style.statusInfo">
             <div :class="$style.statusValue">{{ healthPercent }}%</div>

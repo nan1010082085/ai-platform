@@ -14,9 +14,9 @@ const route = useRoute()
 const router = useRouter()
 
 const navItems = [
-  { path: '/', label: 'AI 对话', icon: 'chat' },
-  { path: '/rag', label: 'RAG 知识库', icon: 'database' },
-  { path: '/monitor', label: '性能监控', icon: 'chart' },
+  { path: '/', label: 'AI 对话', icon: 'chat-dot-round' },
+  { path: '/rag', label: 'RAG 知识库', icon: 'notebook' },
+  { path: '/monitor', label: '性能监控', icon: 'data-line' },
 ]
 
 const activeNav = computed(() => {
@@ -51,7 +51,7 @@ const activeNav = computed(() => {
           to="/sidebar"
           :class="[$style.navItem, $style.footerItem]"
         >
-          <AppIcon name="sidebar" :size="18" />
+          <AppIcon name="list" :size="18" />
           <span>侧边栏模式</span>
         </router-link>
       </div>

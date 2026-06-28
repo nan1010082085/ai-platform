@@ -7,7 +7,7 @@
     <title>智能对话</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body, html, #app { height: 100%; }
+      body, html, #ai-app { height: 100%; }
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
       #loading {
         position: fixed; inset: 0;
@@ -29,22 +29,22 @@
   </head>
   <body>
     <div id="loading"><div class="spinner"></div></div>
-    <div id="app"></div>
+    <div id="ai-app"></div>
     <script type="module" src="/src/main.ts"></script>
     <script>
-      // 独立模式：监听 #app 有子节点后关闭 loading
+      // 独立模式：监听 #ai-app 有子节点后关闭 loading
       // qiankun 模式由 mount() 中移除 #loading
       const _loadingEl = document.getElementById('loading');
       if (_loadingEl) {
         const observer = new MutationObserver(() => {
-          const app = document.getElementById('app');
+          const app = document.getElementById('ai-app');
           if (app && app.children.length > 0) {
             _loadingEl.classList.add('hidden');
             setTimeout(() => _loadingEl.remove(), 300);
             observer.disconnect();
           }
         });
-        observer.observe(document.getElementById('app'), { childList: true });
+        observer.observe(document.getElementById('ai-app'), { childList: true });
       }
     </script>
   </body>

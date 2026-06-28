@@ -96,7 +96,7 @@ function selectOption(questionId: string, option: string) {
     <!-- 分析结果概览 -->
     <div :class="$style.summary">
       <div :class="$style.summaryHeader">
-        <AppIcon name="analysis" :size="16" />
+        <AppIcon name="data-board" :size="16" />
         <span :class="$style.summaryTitle">需求分析结果</span>
       </div>
 
@@ -175,7 +175,7 @@ function selectOption(questionId: string, option: string) {
     <!-- 确认问题 -->
     <div v-if="analysis.confirmQuestions.length > 0" :class="$style.questionsSection">
       <div :class="$style.questionsTitle">
-        <AppIcon name="question" :size="14" />
+        <AppIcon name="question-filled" :size="14" />
         <span>请确认以下信息</span>
       </div>
 

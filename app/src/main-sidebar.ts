@@ -19,7 +19,7 @@ import AiSidebarView from './views/AiSidebarView.vue'
 const app = createApp(AiSidebarView)
 app.use(createPinia())
 setupElementPlus(app)
-app.mount('#app')
+app.mount('#ai-app')
 
 // 通知宿主：AI sidebar 已就绪，可以接收 postMessage
 window.parent.postMessage({ type: 'ai:ready' }, '*')

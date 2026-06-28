@@ -74,7 +74,7 @@ const icon = computed(() => {
     case 'flow':
       return 'connection'
     default:
-      return 'code'
+      return 'files'
   }
 })
 
