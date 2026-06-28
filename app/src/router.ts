@@ -1,29 +1,26 @@
 import { createRouter, createWebHistory, createMemoryHistory } from 'vue-router'
 import { useQiankun } from '@schema-platform/platform-shared/qiankun'
 import { APP_CONFIGS } from '@schema-platform/platform-shared/qiankun/config'
-import { SSOClient } from '@schema-platform/platform-shared/utils/sso'
 
 // SSO 客户端配置
-const SSO_CLIENT_ID = 'ai'
 const TOKEN_KEY = 'sfp_access_token'
 
 // 开发环境使用 /，生产环境使用配置的 basePath
 const isDev = import.meta.env.DEV
 const APP_BASE = isDev ? '/' : APP_CONFIGS.ai.basePath
 
-function getSSOClient(): SSOClient {
-  const origin = window.location.origin
-  return new SSOClient({
-    clientId: SSO_CLIENT_ID,
-    redirectUri: `${origin}${APP_BASE}auth/callback`,
-    ssoBaseUrl: origin,
-  })
-}
-
 // qiankun 模式下使用 memory history，避免子应用路由篡改宿主 URL
 const isQiankun = () => !!window.__POWERED_BY_QIANKUN__
 
 const routes = [
+  // ---- Login ----
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@schema-platform/platform-shared/components/auth/LoginView.vue'),
+    props: { title: 'AI 助手', subtitle: '智能 Schema/Flow 生成' },
+    meta: { public: true },
+  },
   // ---- SSO Callback ----
   {
     path: '/auth/callback',
@@ -63,8 +60,8 @@ export function createAiRouter(initialPath?: string) {
 
   // 路由守卫：独立访问时检查登录状态
   router.beforeEach((to) => {
-    // callback 页面不需要检查
-    if (to.name === 'auth-callback') {
+    // 公开页面不需要检查
+    if (to.meta.public) {
       return true
     }
 
@@ -74,8 +71,7 @@ export function createAiRouter(initialPath?: string) {
       const state = getGlobalState()
       const token = (state.token as string) || localStorage.getItem(TOKEN_KEY)
       if (!token) {
-        getSSOClient().login(window.location.href)
-        return false
+        return { name: 'login', query: { redirect: to.fullPath } }
       }
     }
   })

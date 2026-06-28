@@ -62,7 +62,7 @@ async function handleExport(command: string, id: string): Promise<void> {
             {{ conv.activeAgent === 'editor' ? 'Editor' : 'Flow' }}
           </el-tag>
           <span :class="$style.itemTime">{{ formatTime(conv.updatedAt) }}</span>
-          <el-dropdown trigger="click" @command="(cmd) => handleExport(cmd, conv.id)" @click.stop>
+          <el-dropdown trigger="click" @command="(cmd: string) => handleExport(cmd, conv.id)" @click.stop>
             <el-tooltip content="导出对话" placement="top">
               <el-button :icon="Download" size="small" link @click.stop />
             </el-tooltip>

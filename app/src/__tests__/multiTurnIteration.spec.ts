@@ -4,9 +4,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAiStore } from '@/stores/ai'
-import { useConversationStore } from '@/stores/conversation'
-import { useSchemaStore } from '@/stores/schema'
-import { useStreamStore } from '@/stores/stream'
 
 // Mock the API module (REST endpoints only — chat is now via WebSocket)
 vi.mock('@/api/aiApi', () => ({
@@ -15,8 +12,6 @@ vi.mock('@/api/aiApi', () => ({
   publish: vi.fn(),
   getConversationDetail: vi.fn(),
 }))
-
-import { getConversations } from '@/api/aiApi'
 
 // ---- WebSocket mock ----
 // 模拟服务端 chat:event 推送

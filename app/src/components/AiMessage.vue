@@ -8,6 +8,8 @@ import SchemaPreviewCard from './SchemaPreviewCard.vue'
 import FlowCard from './FlowCard.vue'
 import FlowPreviewCard from './FlowPreviewCard.vue'
 import RequirementConfirmCard from './RequirementConfirmCard.vue'
+import JsonCard from './JsonCard.vue'
+import JsonDetailDialog from './JsonDetailDialog.vue'
 import type { SchemaField } from './SchemaCard.vue'
 import type { FlowNode } from './FlowCard.vue'
 import type { StepData, Widget, FlowGraph } from '@/types'
@@ -118,12 +120,35 @@ watch(() => props.content, (newContent) => {
   renderedContentRef.value = latestContent
 }, { immediate: true })
 
-// ---- Code block collapse state ----
+// ---- JSON detail dialog state ----
 
-const codeCollapsed = ref<Record<number, boolean>>({})
+const jsonDialogVisible = ref(false)
+const jsonDialogTitle = ref('')
+const jsonDialogContent = ref('')
 
-function toggleCodeCollapse(idx: number) {
-  codeCollapsed.value[idx] = !codeCollapsed.value[idx]
+function openJsonDialog(title: string, content: string): void {
+  jsonDialogTitle.value = title
+  jsonDialogContent.value = content
+  jsonDialogVisible.value = true
+}
+
+// 获取 JSON 卡片类型
+function getJsonCardType(content: string): 'json' | 'schema' | 'flow' {
+  try {
+    const parsed = JSON.parse(content)
+    if (Array.isArray(parsed)) {
+      // 检查是否是 Schema（包含 type 字段的数组）
+      if (parsed.length > 0 && parsed[0].type) {
+        return 'schema'
+      }
+    }
+    if (parsed.nodes && Array.isArray(parsed.nodes)) {
+      return 'flow'
+    }
+  } catch {
+    // ignore
+  }
+  return 'json'
 }
 
 // ---- Tool name display map ----
@@ -182,19 +207,6 @@ function renderMarkdown(content: string): string {
     '</table></div>',
   )
   return DOMPurify.sanitize(wrappedHtml, { ADD_ATTR: ['class'] })
-}
-
-function formatJson(content: string): string {
-  try {
-    const parsed = JSON.parse(content)
-    return JSON.stringify(parsed, null, 2)
-  } catch {
-    return content
-  }
-}
-
-function copyCode(content: string) {
-  navigator.clipboard.writeText(formatJson(content))
 }
 
 // ---- Split text and code blocks for better rendering ----
@@ -425,19 +437,14 @@ const steps = computed<StepData[]>(() => {
             <!-- Text reply: 直接渲染 Markdown，不包裹卡片 -->
             <div v-if="step.type === 'text' && step.content" :class="$style.markdownContent" v-html="renderMarkdown(step.content)" />
 
-            <!-- Code/JSON: 用代码块展示，可折叠 -->
-            <div v-else-if="step.type === 'code' && step.content" :class="$style.codeBlock">
-              <div :class="$style.codeBlockHeader" @click="toggleCodeCollapse(idx)">
-                <div :class="$style.codeBlockLeft">
-                  <span :class="[$style.codeBlockArrow, { [$style.codeBlockArrowExpanded]: !codeCollapsed[idx] }]">▸</span>
-                  <span :class="$style.codeBlockTitle">{{ step.title }}</span>
-                </div>
-                <el-button :class="$style.codeCopyBtn" text size="small" @click.stop="copyCode(step.content)">复制</el-button>
-              </div>
-              <div v-if="!codeCollapsed[idx]" :class="$style.codeBlockBody">
-                <pre :class="$style.codeContent"><code>{{ formatJson(step.content) }}</code></pre>
-              </div>
-            </div>
+            <!-- Code/JSON: 用卡片展示，点击查看详情 -->
+            <JsonCard
+              v-else-if="step.type === 'code' && step.content"
+              :title="step.title"
+              :content="step.content"
+              :type="getJsonCardType(step.content)"
+              @click="openJsonDialog(step.title, step.content)"
+            />
 
             <!-- Requirement Confirm: 需求确认卡片 -->
             <RequirementConfirmCard
@@ -563,6 +570,13 @@ const steps = computed<StepData[]>(() => {
         </el-tooltip>
       </div>
     </div>
+
+    <!-- JSON 详情弹框 -->
+    <JsonDetailDialog
+      v-model:visible="jsonDialogVisible"
+      :title="jsonDialogTitle"
+      :content="jsonDialogContent"
+    />
   </div>
 </template>
 

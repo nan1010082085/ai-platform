@@ -21,7 +21,7 @@
 .topbarLeft {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 
 .homeBtn {
@@ -49,15 +49,6 @@
   width: 1px;
   height: 20px;
   background: var(--ai-border-light, #EBEDF3);
-  flex-shrink: 0;
-  margin: 0 2px;
-}
-
-.appName {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ai-text-hint, #999999);
-  white-space: nowrap;
   flex-shrink: 0;
 }
 
@@ -118,63 +109,10 @@
   color: var(--ai-text-secondary, #666666);
 }
 
-/* ---- Main body ---- */
-.body {
+/* ---- Chat container ---- */
+.chatContainer {
   flex: 1;
-  display: flex;
   overflow: hidden;
-  position: relative;
-}
-
-/* ---- Right preview panel (collapsible) ---- */
-.rightPanel {
-  width: 380px;
-  min-width: 0;
-  border-left: 1px solid var(--ai-border-light, #EBEDF3);
-  overflow-y: auto;
-  transition: width 0.25s ease, min-width 0.25s ease;
-  display: flex;
-  flex-direction: column;
-  background: var(--ai-bg-white, #FFFFFF);
-}
-
-.rightPanel.collapsed {
-  width: 0;
-  min-width: 0;
-  border-left: none;
-  overflow: hidden;
-}
-
-/* Panel toggle button */
-.panelToggle {
-  position: fixed;
-  right: 380px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  width: 18px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--ai-bg-gray, #F5F7FA);
-  border: 1px solid var(--ai-border-light, #EBEDF3);
-  border-right: none;
-  border-radius: 6px 0 0 6px;
-  cursor: pointer;
-  color: var(--ai-text-hint, #999999);
-  transition: right 0.25s ease, background 0.15s, color 0.15s, box-shadow 0.15s;
-  font-size: 10px;
-}
-
-.panelToggle:hover {
-  background: var(--ai-color-primary-bg, rgba(0, 212, 255, 0.1));
-  color: var(--ai-color-primary, #00d4ff);
-  box-shadow: 0 0 10px rgba(0, 212, 255, 0.15);
-}
-
-.panelToggleCollapsed {
-  right: 0;
 }
 
 /* ---- JSON Drawer ---- */

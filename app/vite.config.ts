@@ -42,6 +42,11 @@ export default defineConfig({
     qiankun('ai', { useDevMode: true }),
     fixQiankunLifecyclePlugin(),
   ],
+  css: {
+    preprocessorOptions: {
+      scss: { api: 'modern-compiler' },
+    },
+  },
   resolve: {
     alias: { '@': resolve(rootDir, 'src') },
   },

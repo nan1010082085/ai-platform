@@ -4,6 +4,7 @@
  * 测试环境中 Element Plus 组件未自动注册，
  * 需要在此手动注册常用组件或 mock。
  */
+import type { Directive } from 'vue'
 import { config } from '@vue/test-utils'
 import { ElButton, ElInput, ElDialog, ElForm, ElFormItem, ElSelect, ElOption, ElSwitch, ElCheckbox, ElRadioGroup, ElRadioButton, ElTag, ElIcon, ElEmpty, ElTooltip, ElPopover, ElLoading, ElCheckboxGroup, ElDatePicker } from 'element-plus'
 
@@ -101,5 +102,5 @@ config.global.components = {
 // 全局注册 Element Plus 指令
 config.global.directives = {
   ...config.global.directives,
-  loading: ElLoading,
+  loading: ElLoading as unknown as Directive,
 }
