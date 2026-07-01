@@ -8,19 +8,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { HomeFilled } from '@element-plus/icons-vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import { useShellEmbed } from '@/composables/useShellEmbed'
 
 const route = useRoute()
 const router = useRouter()
+const { isShellEmbedded, goToShellHome } = useShellEmbed()
 
 const navItems = [
   { path: '/', label: 'AI 对话', icon: 'chat-dot-round' },
+  { path: '/workflows', label: 'Agent 编排', icon: 'connection' },
   { path: '/rag', label: 'RAG 知识库', icon: 'notebook' },
   { path: '/monitor', label: '性能监控', icon: 'data-line' },
 ]
 
 const activeNav = computed(() => {
   if (route.path === '/') return '/'
+  if (route.path.startsWith('/workflows') || route.path.startsWith('/executions')) return '/workflows'
   return route.path
 })
 </script>
@@ -29,6 +34,14 @@ const activeNav = computed(() => {
   <div :class="$style.layout">
     <!-- 侧边栏 -->
     <aside :class="$style.sidebar">
+      <div v-if="isShellEmbedded" :class="$style.embedBar">
+        <el-tooltip content="返回主应用首页" placement="right">
+          <button :class="$style.homeBtn" title="返回主应用" @click="goToShellHome">
+            <el-icon :size="16"><HomeFilled /></el-icon>
+          </button>
+        </el-tooltip>
+      </div>
+
       <div :class="$style.logo" @click="router.push('/')">
         <div :class="$style.logoIcon">AI</div>
         <span :class="$style.logoText">智能助手</span>
@@ -78,6 +91,31 @@ const activeNav = computed(() => {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+}
+
+.embedBar {
+  padding: 12px 12px 0;
+  flex-shrink: 0;
+}
+
+.homeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--el-text-color-secondary, #909399);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.homeBtn:hover {
+  background: var(--el-fill-color-light, #f5f7fa);
+  color: var(--el-color-primary, #409eff);
 }
 
 .logo {

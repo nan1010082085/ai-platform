@@ -1,6 +1,6 @@
 {
   "name": "@schema-platform/ai-shared",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "type": "module",
   "repository": "github:schema-platform/schema-form-ai",
@@ -17,7 +17,9 @@
     "./promptBuilder": "./dist/promptBuilder.js",
     "./widgetCatalogue": "./widgetCatalogue.json",
     "./flowNodeCatalogue": "./dist/flowNodeCatalogue.js",
-    "./systemKnowledge": "./dist/systemKnowledge.js"
+    "./systemKnowledge": "./dist/systemKnowledge.js",
+    "./agentWorkflow": "./dist/agentWorkflow.js",
+    "./toolNames": "./dist/toolNames.js"
   },
   "dependencies": {
     "@schema-platform/flow-shared": "^1.0.0"

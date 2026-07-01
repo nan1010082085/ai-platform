@@ -6,10 +6,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { ChatSettings } from '@/types'
+import { DEFAULT_CHAT_MODEL, type ChatModel } from '@/constants/chatModels'
 
 const CHAT_SETTINGS_KEY = 'ai-chat-settings'
 
 const DEFAULT_CHAT_SETTINGS: ChatSettings = {
+  model: DEFAULT_CHAT_MODEL,
   preferences: {
     replyLanguage: 'zh-CN',
     replyStyle: 'detailed',
@@ -26,6 +28,7 @@ function loadChatSettings(): ChatSettings {
     if (stored) {
       const parsed = JSON.parse(stored) as ChatSettings
       return {
+        model: isChatModel(parsed.model) ? parsed.model : DEFAULT_CHAT_MODEL,
         preferences: { ...DEFAULT_CHAT_SETTINGS.preferences, ...parsed.preferences },
         historySummary: { ...DEFAULT_CHAT_SETTINGS.historySummary, ...parsed.historySummary },
       }
@@ -41,11 +44,18 @@ export const useChatSettingsStore = defineStore('chatSettings', () => {
   const chatSettings = ref<ChatSettings>(loadChatSettings())
 
   // ---- Actions ----
+  function updateModel(model: ChatModel): void {
+    chatSettings.value = { ...chatSettings.value, model }
+    localStorage.setItem(CHAT_SETTINGS_KEY, JSON.stringify(chatSettings.value))
+  }
+
   function updateChatSettings(settings: {
+    model?: ChatModel
     preferences?: Partial<ChatSettings['preferences']>
     historySummary?: Partial<ChatSettings['historySummary']>
   }): void {
     chatSettings.value = {
+      model: settings.model ?? chatSettings.value.model,
       preferences: { ...chatSettings.value.preferences, ...settings.preferences },
       historySummary: { ...chatSettings.value.historySummary, ...settings.historySummary },
     }
@@ -63,6 +73,11 @@ export const useChatSettingsStore = defineStore('chatSettings', () => {
     chatSettings,
     // actions
     updateChatSettings,
+    updateModel,
     getHistorySummary,
   }
 })
+
+function isChatModel(value: unknown): value is ChatModel {
+  return value === 'deepseek-v4-flash' || value === 'deepseek-v4-pro'
+}

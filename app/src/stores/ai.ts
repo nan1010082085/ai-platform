@@ -35,6 +35,7 @@ import {
   mentionSearch,
   submitMessageFeedback,
 } from '@/api/aiApi'
+import { message } from '@schema-platform/platform-shared/utils/message'
 
 import { useConversationStore } from './conversation'
 import { useStreamStore } from './stream'
@@ -69,12 +70,9 @@ export const useAiStore = defineStore('ai', () => {
       return
     }
 
-    console.log('[ai] handleStreamEvent', event.type, event.content?.substring(0, 20))
-
     // 强制触发响应式更新的辅助函数
     function updateMessage(updates: Partial<AIMessage>): void {
       Object.assign(msg, updates)
-      console.log('[ai] updateMessage', updates, 'messages length:', conversationStore.messages.length)
     }
 
     switch (event.type) {
@@ -251,12 +249,39 @@ export const useAiStore = defineStore('ai', () => {
         break
 
       case 'interrupt': {
+        if (event.threadId) {
+          conversationStore.currentConversationId = event.threadId
+        }
         hitlStore.setInterrupt({
           threadId: event.threadId ?? '',
           type: event.interruptType ?? 'unknown',
           message: event.message ?? '需要您的确认',
           data: event.data,
         })
+
+        if (event.interruptType === 'requirement_confirm') {
+          const analysis = (event.data as Record<string, unknown> | undefined)?.analysis
+          if (analysis) {
+            const newToolCalls = [...(msg.toolCalls ?? [])]
+            if (!newToolCalls.some((tc) => tc.name === 'requirement_confirm')) {
+              newToolCalls.push({
+                name: 'requirement_confirm',
+                arguments: {},
+                result: {
+                  analysis,
+                  waitingConfirmation: true,
+                },
+              })
+              updateMessage({ toolCalls: newToolCalls, status: 'received' })
+            } else {
+              updateMessage({ status: 'received' })
+            }
+          }
+          break
+        }
+
+        updateMessage({ status: 'received' })
+
         conversationStore.messages.push({
           role: 'assistant',
           type: 'interrupt',
@@ -290,24 +315,11 @@ export const useAiStore = defineStore('ai', () => {
       case 'requirement_analysis_complete': {
         const analysis = event.analysis
         if (analysis) {
-          // 如果需要确认，添加需求确认卡片
           if (event.needsConfirmation && analysis.confirmQuestions.length > 0) {
-            const newToolCalls = [...(msg.toolCalls ?? [])]
-            newToolCalls.push({
-              name: 'requirement_confirm',
-              arguments: {},
-              result: {
-                analysis: analysis,
-                waitingConfirmation: true,
-              },
-            })
-
             updateMessage({
-              thinking: (msg.thinking ?? '') + '\n\n📊 需求分析完成',
-              toolCalls: newToolCalls,
+              thinking: (msg.thinking ?? '') + '\n\n📊 需求分析完成，等待确认…',
             })
           } else {
-            // 不需要确认，直接显示分析结果
             const complexityLabel = analysis.complexity === 'complex' ? '复杂' :
               analysis.complexity === 'medium' ? '中等' : '简单'
 
@@ -616,94 +628,72 @@ export const useAiStore = defineStore('ai', () => {
 
   // ---- 需求确认 ----
 
-  async function confirmRequirement(answers: Record<string, string>): Promise<void> {
-    // 更新消息中的需求确认状态
-    const lastAssistantIdx = conversationStore.messages.findLastIndex(m => m.role === 'assistant')
+  function markRequirementConfirmResolved(
+    skipped: boolean,
+    answers?: Record<string, string>,
+  ): void {
+    const lastAssistantIdx = conversationStore.messages.findLastIndex((m) => m.role === 'assistant')
     if (lastAssistantIdx < 0) return
 
     const msg = conversationStore.messages[lastAssistantIdx]
     if (!msg.toolCalls) return
 
-    const confirmIndex = msg.toolCalls.findIndex(tc => tc.name === 'requirement_confirm')
+    const confirmIndex = msg.toolCalls.findIndex((tc) => tc.name === 'requirement_confirm')
     if (confirmIndex < 0) return
 
-    // 更新 toolCalls 中的确认状态
     const newToolCalls = [...msg.toolCalls]
     newToolCalls[confirmIndex] = {
       ...newToolCalls[confirmIndex],
       result: {
-        ...newToolCalls[confirmIndex].result as Record<string, unknown>,
+        ...(newToolCalls[confirmIndex].result as Record<string, unknown>),
         waitingConfirmation: false,
-        userAnswers: answers,
+        ...(skipped ? { skipped: true } : { userAnswers: answers }),
       },
     }
     msg.toolCalls = newToolCalls
+  }
 
-    // 发送确认响应到服务器
-    // 通过 WebSocket 发送 requirement_confirm_response 事件
-    const { emitChatSend } = await import('@schema-platform/platform-shared/socket')
-    emitChatSend({
-      conversationId: conversationStore.currentConversationId ?? undefined,
-      message: JSON.stringify({ type: 'requirement_confirm_response', answers }),
-      context: {
-        ...context.value,
-        preferences: {
-          ...context.value.preferences,
-          replyLanguage: chatSettingsStore.chatSettings.preferences.replyLanguage,
-          replyStyle: chatSettingsStore.chatSettings.preferences.replyStyle,
-          codeComment: chatSettingsStore.chatSettings.preferences.codeComment,
-        },
-        historySummary: chatSettingsStore.chatSettings.historySummary.mode === 'manual'
-          ? chatSettingsStore.chatSettings.historySummary.manualSummary
-          : context.value.historySummary,
-        currentSchema: schemaStore.currentSchema ?? undefined,
-        currentFlow: schemaStore.currentFlow ?? undefined,
+  async function confirmRequirement(answers: Record<string, string>): Promise<void> {
+    const threadId = hitlStore.pendingInterrupt?.threadId
+      ?? conversationStore.currentConversationId
+    if (!threadId) {
+      message.error('会话尚未就绪，请稍候再试')
+      return
+    }
+
+    markRequirementConfirmResolved(false, answers)
+    hitlStore.clearInterrupt()
+
+    await streamStore.executeResume(threadId, { answers }, conversationStore.messages, {
+      onStreamEvent: handleStreamEvent,
+      onDone: (conversationId) => {
+        if (conversationId) conversationStore.loadConversations()
       },
+      getContext: () => ({
+        currentConversationId: conversationStore.currentConversationId,
+      }),
     })
   }
 
   async function skipRequirement(): Promise<void> {
-    // 跳过需求确认，直接执行
-    const lastAssistantIdx = conversationStore.messages.findLastIndex(m => m.role === 'assistant')
-    if (lastAssistantIdx < 0) return
-
-    const msg = conversationStore.messages[lastAssistantIdx]
-    if (!msg.toolCalls) return
-
-    const confirmIndex = msg.toolCalls.findIndex(tc => tc.name === 'requirement_confirm')
-    if (confirmIndex < 0) return
-
-    // 更新 toolCalls 中的确认状态
-    const newToolCalls = [...msg.toolCalls]
-    newToolCalls[confirmIndex] = {
-      ...newToolCalls[confirmIndex],
-      result: {
-        ...newToolCalls[confirmIndex].result as Record<string, unknown>,
-        waitingConfirmation: false,
-        skipped: true,
-      },
+    const threadId = hitlStore.pendingInterrupt?.threadId
+      ?? conversationStore.currentConversationId
+    if (!threadId) {
+      message.error('会话尚未就绪，请稍候再试')
+      return
     }
-    msg.toolCalls = newToolCalls
 
-    // 发送跳过确认到服务器
-    const { emitChatSend } = await import('@schema-platform/platform-shared/socket')
-    emitChatSend({
-      conversationId: conversationStore.currentConversationId ?? undefined,
-      message: JSON.stringify({ type: 'requirement_confirm_response', skipped: true }),
-      context: {
-        ...context.value,
-        preferences: {
-          ...context.value.preferences,
-          replyLanguage: chatSettingsStore.chatSettings.preferences.replyLanguage,
-          replyStyle: chatSettingsStore.chatSettings.preferences.replyStyle,
-          codeComment: chatSettingsStore.chatSettings.preferences.codeComment,
-        },
-        historySummary: chatSettingsStore.chatSettings.historySummary.mode === 'manual'
-          ? chatSettingsStore.chatSettings.historySummary.manualSummary
-          : context.value.historySummary,
-        currentSchema: schemaStore.currentSchema ?? undefined,
-        currentFlow: schemaStore.currentFlow ?? undefined,
+    markRequirementConfirmResolved(true)
+    hitlStore.clearInterrupt()
+
+    await streamStore.executeResume(threadId, { skipped: true }, conversationStore.messages, {
+      onStreamEvent: handleStreamEvent,
+      onDone: (conversationId) => {
+        if (conversationId) conversationStore.loadConversations()
       },
+      getContext: () => ({
+        currentConversationId: conversationStore.currentConversationId,
+      }),
     })
   }
 

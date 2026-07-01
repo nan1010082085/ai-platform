@@ -205,7 +205,7 @@ describe('AiMessage', () => {
           role: 'assistant',
           label: 'AI',
           toolCalls: [
-            { name: 'search_schemas', arguments: { query: 'test' } },
+            { name: 'schema__search', arguments: { query: 'test' } },
           ],
         },
       })
@@ -272,7 +272,7 @@ describe('AiMessage', () => {
           label: 'AI',
           toolCalls: [
             {
-              name: 'search_schemas',
+              name: 'schema__search',
               arguments: { query: 'user' },
               result: { count: 3 },
             },
@@ -298,8 +298,8 @@ describe('AiMessage', () => {
           role: 'assistant',
           label: 'AI',
           toolCalls: [
-            { name: 'search_schemas', arguments: { query: 'test' }, result: { count: 1 } },
-            { name: 'validate_schema', arguments: {}, error: 'Validation timeout' },
+            { name: 'schema__search', arguments: { query: 'test' }, result: { count: 1 } },
+            { name: 'schema__validate_widgets', arguments: {}, error: 'Validation timeout' },
           ],
         },
       })

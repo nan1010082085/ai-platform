@@ -12,8 +12,7 @@ import { bridge } from '@/utils/bridge'
 import type { AgentType, ChatSettings, MentionReference, RagSearchResult } from '@/types'
 import { storeToRefs } from 'pinia'
 import { message } from '@schema-platform/platform-shared/utils/message'
-import { HomeFilled, Plus, Clock } from '@element-plus/icons-vue'
-import { getAppUrl } from '@schema-platform/platform-shared/qiankun/config'
+import { Plus, Clock } from '@element-plus/icons-vue'
 import { connect as connectSocket, isConnected } from '@schema-platform/platform-shared/socket'
 import AiChatPanel from '@/components/AiChatPanel.vue'
 import AiChatSettings from '@/components/AiChatSettings.vue'
@@ -182,10 +181,6 @@ function handleRagRemove(id: string): void {
   store.removeRagContext(id)
 }
 
-function goToPortal(): void {
-  window.location.href = getAppUrl('shell', import.meta.env.DEV)
-}
-
 // ---- Message actions ----
 
 function handleCopyMessage(messageIndex: number): void {
@@ -233,12 +228,6 @@ onUnmounted(() => {
     <!-- 顶栏 -->
     <div :class="$style.topbar">
       <div :class="$style.topbarLeft">
-        <el-tooltip content="返回主应用首页" placement="bottom">
-          <button :class="$style.homeBtn" title="返回主应用" @click="goToPortal">
-            <el-icon :size="14"><HomeFilled /></el-icon>
-          </button>
-        </el-tooltip>
-        <div :class="$style.topbarDivider" />
         <div :class="$style.topbarLogo">
           <div :class="$style.topbarIcon">AI</div>
           <span :class="$style.topbarBrand">智能助手</span>
@@ -248,10 +237,6 @@ onUnmounted(() => {
         <div :class="[$style.wsStatus, wsConnected ? $style.wsConnected : $style.wsDisconnected]">
           <span :class="$style.wsDot" />
           <span>{{ wsConnected ? '已连接' : '未连接' }}</span>
-        </div>
-        <div :class="$style.modelBadge">
-          <span :class="$style.modelDot"></span>
-          <span :class="$style.modelName">DeepSeek</span>
         </div>
         <el-tooltip content="对话历史" placement="bottom">
           <el-button :class="$style.iconBtn" @click="handleOpenConversationDrawer">
@@ -294,6 +279,8 @@ onUnmounted(() => {
         @copy-message="handleCopyMessage"
         @regenerate-message="handleRegenerateMessage"
         @message-feedback="handleMessageFeedback"
+        @requirement-confirm="(answers) => store.confirmRequirement(answers)"
+        @requirement-skip="store.skipRequirement()"
       />
     </div>
 

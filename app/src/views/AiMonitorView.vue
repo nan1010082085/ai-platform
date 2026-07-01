@@ -2,15 +2,12 @@
 /**
  * Agent 性能监控面板
  *
- * 展示 AI Agent 的运行指标：
- * - 总览摘要（成功率、平均响应时间、Token 消耗）
- * - 按 Agent/操作分组的详细统计
- * - 最近调用记录
- * - 性能告警
+ * 布局参考 FlowMonitorDashboard：FilterTabs 时间筛选 + 统计卡片 + 双列面板 + 全宽表格
  */
 
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
+import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import {
   getMonitorSummary,
   getMonitorStats,
@@ -26,23 +23,39 @@ import type {
 import MonitorSummaryCard from '@/components/monitor/MonitorSummary.vue'
 import AgentDistribution from '@/components/monitor/AgentDistribution.vue'
 import AlertList from '@/components/monitor/AlertList.vue'
-
-// ---- State ----
+import {
+  formatMonitorTime,
+  formatMonitorDuration,
+  formatMonitorTokens,
+  normalizeDateValue,
+} from '@/utils/monitorFormat'
 
 const loading = ref(false)
 const summary = ref<MonitorSummary | null>(null)
 const stats = ref<AgentMetricStats[]>([])
 const recentMetrics = ref<AgentMetric[]>([])
 const alerts = ref<AgentAlert[]>([])
-const selectedHours = ref(24)
+const alertsTotal = ref(0)
+const alertsPage = ref(1)
+const alertsPageSize = 20
+
 const selectedAgent = ref<string>('')
 const selectedOperation = ref<string>('')
 
-// 自动刷新
+const timeRangeOptions = [
+  { label: '1 小时', value: '1' },
+  { label: '6 小时', value: '6' },
+  { label: '24 小时', value: '24' },
+  { label: '3 天', value: '72' },
+  { label: '7 天', value: '168' },
+]
+const timeRangeValue = ref('24')
+const selectedHours = computed(() => Number(timeRangeValue.value))
+
+watch(timeRangeValue, () => loadData())
+
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 const AUTO_REFRESH_INTERVAL = 30000
-
-// ---- Computed ----
 
 const agentNames = computed(() => {
   const names = new Set(stats.value.map((s) => s.agentName))
@@ -55,16 +68,19 @@ const operations = computed(() => {
 })
 
 const agentDistribution = computed(() => {
-  const agentStats = stats.value.reduce((acc, s) => {
-    if (!acc[s.agentName]) {
-      acc[s.agentName] = { totalCalls: 0, successRate: 0, avgDuration: 0, count: 0 }
-    }
-    acc[s.agentName].totalCalls += s.totalCalls
-    acc[s.agentName].successRate += s.successRate
-    acc[s.agentName].avgDuration += s.avgDuration
-    acc[s.agentName].count++
-    return acc
-  }, {} as Record<string, { totalCalls: number; successRate: number; avgDuration: number; count: number }>)
+  const agentStats = stats.value.reduce(
+    (acc, s) => {
+      if (!acc[s.agentName]) {
+        acc[s.agentName] = { totalCalls: 0, successRate: 0, avgDuration: 0, count: 0 }
+      }
+      acc[s.agentName].totalCalls += s.totalCalls
+      acc[s.agentName].successRate += s.successRate
+      acc[s.agentName].avgDuration += s.avgDuration
+      acc[s.agentName].count++
+      return acc
+    },
+    {} as Record<string, { totalCalls: number; successRate: number; avgDuration: number; count: number }>,
+  )
 
   const total = Object.values(agentStats).reduce((sum, s) => sum + s.totalCalls, 0)
 
@@ -93,27 +109,20 @@ const filteredRecent = computed(() => {
   })
 })
 
-// ---- Formatters ----
-
-function formatDuration(ms: number): string {
-  if (ms < 1000) return `${Math.round(ms)}ms`
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
-  return `${(ms / 60000).toFixed(1)}min`
+function normalizeAlert(alert: AgentAlert): AgentAlert {
+  return {
+    ...alert,
+    id: String(alert.id),
+    createdAt: normalizeDateValue(alert.createdAt),
+  }
 }
 
-function formatTokens(tokens: number): string {
-  if (tokens < 1000) return tokens.toString()
-  if (tokens < 1000000) return `${(tokens / 1000).toFixed(1)}K`
-  return `${(tokens / 1000000).toFixed(1)}M`
-}
-
-function formatTime(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
+function normalizeMetric(metric: AgentMetric): AgentMetric {
+  return {
+    ...metric,
+    id: String(metric.id),
+    createdAt: normalizeDateValue(metric.createdAt),
+  }
 }
 
 function getAgentLabel(agentName: string): string {
@@ -124,6 +133,7 @@ function getAgentLabel(agentName: string): string {
     general: '通用',
     summarizer: '总结',
     router: '路由',
+    page: '页面',
   }
   return labels[agentName] ?? agentName
 }
@@ -138,7 +148,12 @@ function getOperationLabel(operation: string): string {
   return labels[operation] ?? operation
 }
 
-// ---- Data Loading ----
+async function loadAlerts(page = alertsPage.value): Promise<void> {
+  const data = await getMonitorAlerts({ page, pageSize: alertsPageSize })
+  alerts.value = data.items.map(normalizeAlert)
+  alertsTotal.value = data.total
+  alertsPage.value = data.page
+}
 
 async function loadData(): Promise<void> {
   loading.value = true
@@ -147,13 +162,15 @@ async function loadData(): Promise<void> {
       getMonitorSummary(selectedHours.value),
       getMonitorStats(),
       getMonitorRecent({ limit: 100 }),
-      getMonitorAlerts({ limit: 20 }),
+      getMonitorAlerts({ page: 1, pageSize: alertsPageSize }),
     ])
 
     summary.value = summaryData
     stats.value = statsData
-    recentMetrics.value = recentData
-    alerts.value = alertsData
+    recentMetrics.value = recentData.items.map(normalizeMetric)
+    alerts.value = alertsData.items.map(normalizeAlert)
+    alertsTotal.value = alertsData.total
+    alertsPage.value = alertsData.page
   } catch (err) {
     message.error('加载监控数据失败')
     console.error('Failed to load monitor data:', err)
@@ -167,13 +184,16 @@ async function handleRefresh(): Promise<void> {
   message.success('数据已刷新')
 }
 
-function handleTimeRangeChange(val: string | number | boolean): void {
-  selectedHours.value = val as number
-  loadData()
-}
-
-function handleAlertPageChange(_page: number): void {
-  // Pagination is handled by the component
+async function handleAlertPageChange(page: number): Promise<void> {
+  loading.value = true
+  try {
+    await loadAlerts(page)
+  } catch (err) {
+    message.error('加载告警失败')
+    console.error('Failed to load alerts:', err)
+  } finally {
+    loading.value = false
+  }
 }
 
 function startAutoRefresh(): void {
@@ -188,8 +208,6 @@ function stopAutoRefresh(): void {
   }
 }
 
-// ---- Lifecycle ----
-
 onMounted(() => {
   loadData()
   startAutoRefresh()
@@ -201,16 +219,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div :class="$style.page">
-    <!-- 顶栏 -->
-    <div :class="$style.topbar">
-      <div :class="$style.topbarLeft">
-        <div :class="$style.topbarLogo">
-          <div :class="$style.topbarIcon">📊</div>
-          <span :class="$style.topbarBrand">Agent 性能监控</span>
+  <div :class="$style.dashboard" v-loading="loading">
+    <div :class="$style.header">
+      <h2 :class="$style.title">Agent 性能监控</h2>
+      <div :class="$style.headerActions">
+        <div :class="$style.timeRangeGroup">
+          <FilterTabs v-model="timeRangeValue" :options="timeRangeOptions" />
         </div>
-      </div>
-      <div :class="$style.topbarRight">
         <el-select
           v-model="selectedAgent"
           placeholder="所有 Agent"
@@ -239,239 +254,198 @@ onUnmounted(() => {
             :value="op"
           />
         </el-select>
-        <el-button
-          type="primary"
-          size="small"
-          :loading="loading"
-          @click="handleRefresh"
-        >
+        <el-button type="primary" size="small" :loading="loading" @click="handleRefresh">
           刷新
         </el-button>
       </div>
     </div>
 
-    <!-- 主体 -->
-    <div :class="$style.body">
-      <!-- 时间范围选择 -->
-      <div :class="$style.timeRange">
-        <span :class="$style.timeLabel">时间范围：</span>
-        <el-radio-group
-          v-model="selectedHours"
-          size="small"
-          @change="handleTimeRangeChange"
-        >
-          <el-radio-button :value="1">1 小时</el-radio-button>
-          <el-radio-button :value="6">6 小时</el-radio-button>
-          <el-radio-button :value="24">24 小时</el-radio-button>
-          <el-radio-button :value="72">3 天</el-radio-button>
-          <el-radio-button :value="168">7 天</el-radio-button>
-        </el-radio-group>
-      </div>
+    <MonitorSummaryCard :summary="summary" :class="$style.summaryRow" />
 
-      <!-- 总览卡片 -->
-      <MonitorSummaryCard :summary="summary" />
+    <div :class="$style.panelRow">
+      <AgentDistribution :distribution="agentDistribution" />
+      <AlertList
+        :alerts="alerts"
+        :total="alertsTotal"
+        :current-page="alertsPage"
+        :page-size="alertsPageSize"
+        @page-change="handleAlertPageChange"
+      />
+    </div>
 
-      <!-- Agent 分布 -->
-      <div :class="$style.section">
-        <AgentDistribution :distribution="agentDistribution" />
-      </div>
-
-      <!-- 详细统计表格 -->
-      <div :class="$style.section">
-        <h3 :class="$style.sectionTitle">Agent 统计</h3>
-        <el-table
-          :data="filteredStats"
-          :class="$style.table"
-          stripe
-          size="small"
-        >
-          <el-table-column label="Agent" width="100">
-            <template #default="{ row }">
-              <el-tag size="small" :type="row.agentName === 'editor' ? 'primary' : row.agentName === 'flow' ? 'success' : 'info'">
-                {{ getAgentLabel(row.agentName) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="80">
-            <template #default="{ row }">
-              {{ getOperationLabel(row.operation) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="调用次数" prop="totalCalls" width="100" sortable />
-          <el-table-column label="成功率" width="100" sortable>
-            <template #default="{ row }">
-              <span :class="row.successRate >= 95 ? 'text-success' : 'text-warning'">
-                {{ row.successRate }}%
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column label="平均耗时" width="120" sortable>
-            <template #default="{ row }">
-              {{ formatDuration(row.avgDuration) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="P95 耗时" width="120" sortable>
-            <template #default="{ row }">
-              {{ formatDuration(row.p95Duration) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="最大耗时" width="120" sortable>
-            <template #default="{ row }">
-              {{ formatDuration(row.maxDuration) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="Token 消耗" width="120" sortable>
-            <template #default="{ row }">
-              {{ formatTokens(row.totalTokens) }}
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-
-      <!-- 性能告警 -->
-      <div :class="$style.section">
-        <AlertList
-          :alerts="alerts"
-          :total="alerts.length"
-          :current-page="1"
-          :page-size="20"
-          @page-change="handleAlertPageChange"
-        />
-      </div>
-
-      <!-- 最近调用记录 -->
-      <div :class="$style.section">
-        <h3 :class="$style.sectionTitle">最近调用</h3>
-        <el-table
-          :data="filteredRecent"
-          :class="$style.table"
-          stripe
-          size="small"
-          max-height="400"
-        >
-          <el-table-column label="时间" width="100">
-            <template #default="{ row }">
-              {{ formatTime(row.createdAt) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="Agent" width="80">
-            <template #default="{ row }">
+    <div :class="$style.section">
+      <h3 :class="$style.sectionTitle">Agent 统计</h3>
+      <el-table :data="filteredStats" stripe size="small" :class="$style.table">
+        <el-table-column label="Agent" min-width="88">
+          <template #default="{ row }">
+            <el-tag
+              size="small"
+              :type="row.agentName === 'editor' ? 'primary' : row.agentName === 'flow' ? 'success' : 'info'"
+            >
               {{ getAgentLabel(row.agentName) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="80">
-            <template #default="{ row }">
-              {{ getOperationLabel(row.operation) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="耗时" width="100" sortable>
-            <template #default="{ row }">
-              {{ formatDuration(row.duration) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="状态" width="80">
-            <template #default="{ row }">
-              <el-tag :type="row.success ? 'success' : 'danger'" size="small">
-                {{ row.success ? '成功' : '失败' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="错误" min-width="200">
-            <template #default="{ row }">
-              <span v-if="row.error" class="text-danger">{{ row.error }}</span>
-              <span v-else class="text-secondary">-</span>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" min-width="72">
+          <template #default="{ row }">
+            {{ getOperationLabel(row.operation) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="调用次数" prop="totalCalls" min-width="88" sortable />
+        <el-table-column label="成功率" min-width="80" sortable>
+          <template #default="{ row }">
+            <span :class="row.successRate >= 95 ? 'text-success' : 'text-warning'">
+              {{ row.successRate }}%
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="平均耗时" min-width="88" sortable>
+          <template #default="{ row }">
+            {{ formatMonitorDuration(row.avgDuration) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="P95 耗时" min-width="88" sortable>
+          <template #default="{ row }">
+            {{ formatMonitorDuration(row.p95Duration) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="最大耗时" min-width="88" sortable>
+          <template #default="{ row }">
+            {{ formatMonitorDuration(row.maxDuration) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="Token 消耗" min-width="96" sortable>
+          <template #default="{ row }">
+            {{ formatMonitorTokens(row.totalTokens) }}
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+
+    <div :class="$style.section">
+      <h3 :class="$style.sectionTitle">最近调用</h3>
+      <el-table :data="filteredRecent" stripe size="small" :class="$style.table">
+        <el-table-column label="时间" min-width="140">
+          <template #default="{ row }">
+            {{ formatMonitorTime(row.createdAt) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="Agent" min-width="72">
+          <template #default="{ row }">
+            {{ getAgentLabel(row.agentName) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" min-width="72">
+          <template #default="{ row }">
+            {{ getOperationLabel(row.operation) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="耗时" min-width="80" sortable>
+          <template #default="{ row }">
+            {{ formatMonitorDuration(row.duration) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" min-width="72">
+          <template #default="{ row }">
+            <el-tag :type="row.success ? 'success' : 'danger'" size="small">
+              {{ row.success ? '成功' : '失败' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="错误" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span v-if="row.error" class="text-danger">{{ row.error }}</span>
+            <span v-else class="text-secondary">-</span>
+          </template>
+        </el-table-column>
+      </el-table>
     </div>
   </div>
 </template>
 
 <style module>
-.page {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+.dashboard {
+  padding: 24px;
+  min-height: 100%;
   background: var(--el-bg-color-page, #f5f7fa);
 }
 
-.topbar {
+.header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
-  background: var(--el-bg-color, #fff);
-  border-bottom: 1px solid var(--el-border-color-lighter, #e4e7ed);
-}
-
-.topbarLeft {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.topbarLogo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.topbarIcon {
-  font-size: 20px;
-}
-
-.topbarBrand {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--el-text-color-primary, #303133);
-}
-
-.topbarRight {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.filterSelect {
-  width: 140px;
-}
-
-.body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-.timeRange {
-  display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 20px;
 }
 
-.timeLabel {
-  font-size: 14px;
-  color: var(--el-text-color-secondary, #606266);
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--el-text-color-primary, #303133);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.timeRangeGroup {
+  display: flex;
+  align-items: center;
+}
+
+.filterSelect {
+  width: 132px;
+}
+
+.summaryRow {
+  margin-bottom: 16px;
+}
+
+.panelRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+  height: 300px;
+}
+
+.panelRow > * {
+  min-height: 0;
 }
 
 .section {
   background: var(--el-bg-color, #fff);
   border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
+  padding: 16px;
+  margin-bottom: 16px;
   border: 1px solid var(--el-border-color-lighter, #e4e7ed);
 }
 
 .sectionTitle {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary, #303133);
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
 }
 
 .table {
   width: 100%;
+}
+
+@media (max-width: 900px) {
+  .panelRow {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .panelRow > * {
+    height: 280px;
+  }
 }
 
 :global(.text-success) {

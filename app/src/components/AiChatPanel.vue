@@ -65,15 +65,25 @@ const emit = defineEmits<{
   'copy-message': [messageIndex: number]
   'regenerate-message': [messageIndex: number]
   'message-feedback': [messageIndex: number, type: 'positive' | 'negative']
+  'requirement-confirm': [answers: Record<string, string>]
+  'requirement-skip': []
 }>()
 
-const selectedAgent = ref<AgentType>('auto')
+const selectedAgent = ref<AgentType>(props.agent)
 const messagesRef = ref<HTMLElement>()
 const mentionInputRef = ref<InstanceType<typeof AiMentionInput>>()
 const ragVisible = ref(false)
 
 // 向后兼容：优先使用 streamStatus，fallback 到 sseStatus
 const currentStreamStatus = computed(() => props.streamStatus ?? props.sseStatus ?? 'idle')
+
+const selectedAgentLabel = computed(() => {
+  return props.agentOptions.find((opt) => opt.value === selectedAgent.value)?.label ?? 'AI'
+})
+
+watch(() => props.agent, (agent) => {
+  selectedAgent.value = agent
+})
 
 // ---- 多模态输入 ----
 const fileInputRef = ref<HTMLInputElement>()
@@ -270,8 +280,8 @@ function handleCardAction(
     <div :class="$style.header">
       <div :class="$style.headerLeft">
         <span :class="$style.title">{{ title }}</span>
-        <span :class="[$style.roleBadge, $style[agent]]">
-          {{ agent === 'auto' ? 'Auto' : agent === 'editor' ? 'Editor' : 'Flow' }}
+        <span :class="[$style.roleBadge, $style[selectedAgent]]">
+          {{ selectedAgentLabel }}
         </span>
         <!-- 流式连接状态指示器 -->
         <span
@@ -298,28 +308,20 @@ function handleCardAction(
       </div>
       <div :class="$style.headerActions">
         <el-tooltip content="对话设置" placement="bottom" :show-after="300">
-          <el-button
-            :class="$style.actionBtn"
-            link
-            @click="emit('open-settings')"
-          >
+          <button :class="$style.actionBtn" @click="emit('open-settings')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
-          </el-button>
+          </button>
         </el-tooltip>
         <el-tooltip content="清空对话" placement="bottom" :show-after="300">
-          <el-button
-            :class="$style.actionBtn"
-            link
-            @click="emit('clear-messages')"
-          >
+          <button :class="$style.actionBtn" @click="emit('clear-messages')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6" />
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
             </svg>
-          </el-button>
+          </button>
         </el-tooltip>
       </div>
     </div>
@@ -374,6 +376,8 @@ function handleCardAction(
         @copy="emit('copy-message', idx)"
         @regenerate="emit('regenerate-message', idx)"
         @feedback="(type) => emit('message-feedback', idx, type)"
+        @requirement-confirm="(answers) => emit('requirement-confirm', answers)"
+        @requirement-skip="emit('requirement-skip')"
       />
     </div>
 

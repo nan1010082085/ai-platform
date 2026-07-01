@@ -35,6 +35,11 @@ const ElTableStub = {
   props: { data: { default: () => [] }, emptyText: { default: '' } },
 }
 const ElTableColumnStub = { template: '<div><slot name="default" :row="{}" /></div>', props: ['prop', 'label', 'width', 'minWidth', 'fixed'] }
+const ElPaginationStub = {
+  template: '<div class="el-pagination-stub" />',
+  props: ['currentPage', 'pageSize', 'total', 'layout', 'small'],
+  emits: ['current-change'],
+}
 
 const globalStubs = {
   'el-button': ElButtonStub,
@@ -42,6 +47,7 @@ const globalStubs = {
   'el-tag': ElTagStub,
   'el-table': ElTableStub,
   'el-table-column': ElTableColumnStub,
+  'el-pagination': ElPaginationStub,
 }
 
 function createStatus(overrides: Record<string, unknown> = {}) {
@@ -274,5 +280,28 @@ describe('RagKnowledgeBase', () => {
 
     const input = wrapper.find('input')
     expect(input.attributes('placeholder')).toContain('用户注册表单')
+  })
+
+  it('shows pagination when there are unindexed schemas', async () => {
+    const unindexedSchemas = Array.from({ length: 5 }, (_, i) => ({
+      id: `schema-${i}`,
+      name: `Schema ${i}`,
+      type: 'form',
+    }))
+    mockGetRagStatus.mockResolvedValue(createStatus({ unindexed: 5, unindexedSchemas }))
+
+    const wrapper = mountComponent()
+    await flushPromises()
+
+    expect(wrapper.find('.el-pagination-stub').exists()).toBe(true)
+  })
+
+  it('hides pagination when all schemas are indexed', async () => {
+    mockGetRagStatus.mockResolvedValue(createStatus({ unindexed: 0, unindexedSchemas: [] }))
+
+    const wrapper = mountComponent()
+    await flushPromises()
+
+    expect(wrapper.find('.el-pagination-stub').exists()).toBe(false)
   })
 })

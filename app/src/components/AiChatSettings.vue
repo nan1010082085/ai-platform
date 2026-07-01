@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import type { ChatSettings } from '@/types'
 import { checkAIHealth, type AIHealthResponse } from '@/api/aiApi'
+import { CHAT_MODEL_OPTIONS } from '@/constants/chatModels'
 
 const props = defineProps<{
   visible: boolean
@@ -71,6 +72,24 @@ function handleSave(): void {
               <span class="provider-model">{{ p.model }}</span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 模型选择 -->
+    <div class="prop-section">
+      <div class="prop-section__title">模型</div>
+      <div class="prop-section__body">
+        <div class="form-item">
+          <label>对话模型</label>
+          <el-select v-model="localSettings.model" size="small" style="width: 100%">
+            <el-option
+              v-for="option in CHAT_MODEL_OPTIONS"
+              :key="option.value"
+              :label="`DeepSeek ${option.label}`"
+              :value="option.value"
+            />
+          </el-select>
         </div>
       </div>
     </div>

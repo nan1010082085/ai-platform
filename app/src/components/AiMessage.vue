@@ -172,35 +172,53 @@ function getJsonCardType(content: string): 'json' | 'schema' | 'flow' {
 // ---- Tool name display map ----
 
 const TOOL_NAME_MAP: Record<string, string> = {
-  // Schema 相关
+  // MCP Schema 相关（domain__ 前缀）
+  schema__search: '搜索表单',
+  schema__get_detail: '获取表单详情',
+  schema__search_published: '搜索已发布表单',
+  schema__fuzzy_search: '模糊搜索表单',
+  schema__validate: '校验 Schema 文档',
+  schema__validate_widgets: '校验组件 Schema',
+  schema__find_flow_references: '查找流程引用',
+  // MCP Flow 相关
+  flow__search: '搜索流程',
+  flow__get_detail: '获取流程详情',
+  flow__validate: '校验流程',
+  flow__search_users: '搜索用户',
+  flow__get_node_schema: '获取流程节点表单',
+  // MCP Widget 相关
+  widget__query: '查询组件',
+  widget__validate: '校验组件 Schema',
+  // MCP RAG
+  rag__search: '智能匹配',
+  // MCP Industry
+  industry__search_templates: '搜索行业模板',
+  industry__validate_form: '校验行业表单',
+  // LangGraph 专有（无前缀）
+  update_schema: '更新表单',
+  generate_schema: '生成表单',
+  save_and_bind_schema: '保存并绑定表单',
+  update_flow: '更新流程',
+  bind_schema_to_flow_node: '绑定表单到流程节点',
+  rag_index: 'RAG 索引',
+  request_collaboration: '请求协作',
+  // 向后兼容（旧工具名，MCP 迁移后可能仍出现在历史消息）
   search_schemas: '搜索表单',
   get_schema_detail: '获取表单详情',
   search_published_schemas: '搜索已发布表单',
   fuzzy_search_schemas: '模糊搜索表单',
   validate_schema: '校验 Schema',
-  update_schema: '更新表单',
-  generate_schema: '生成表单',
-  save_and_bind_schema: '保存并绑定表单',
   validate_industry_form: '校验行业表单',
   validate_widget_schema: '校验组件 Schema',
-  // Flow 相关
   search_flows: '搜索流程',
   get_flow_detail: '获取流程详情',
-  update_flow: '更新流程',
   get_flow_node_schema: '获取流程节点表单',
-  bind_schema_to_flow_node: '绑定表单到流程节点',
   find_flow_references: '查找流程引用',
-  // Widget 相关
   get_widget_catalogue: '查询组件目录',
   query_widgets: '查询组件',
-  // 用户/搜索
   search_users: '搜索用户',
   search_industry_templates: '搜索行业模板',
-  // RAG
   rag_search: '智能匹配',
-  rag_index: 'RAG 索引',
-  // 协作
-  request_collaboration: '请求协作',
 }
 
 function formatToolName(name: string): string {
@@ -322,8 +340,14 @@ const steps = computed<StepData[]>(() => {
   const result: StepData[] = []
   const now = new Date()
 
-  // Step: thinking
-  if (props.thinking) {
+  const pendingRequirementConfirm = props.toolCalls?.some((tc) => {
+    if (tc.name !== 'requirement_confirm' || !tc.result) return false
+    const resultData = tc.result as Record<string, unknown>
+    return resultData.waitingConfirmation !== false
+  })
+
+  // Step: thinking（有需求确认卡片时不展示冗长思考过程）
+  if (props.thinking && !pendingRequirementConfirm) {
     result.push({
       type: 'thinking',
       title: '思考过程',
@@ -351,6 +375,7 @@ const steps = computed<StepData[]>(() => {
             title: '需求分析',
             status: 'done',
             requirementAnalysis: resultData.analysis as import('@/types').RequirementAnalysis,
+            waitingConfirmation: resultData.waitingConfirmation !== false,
             timestamp: now,
             agent: props.agent,
           })
@@ -468,7 +493,7 @@ const steps = computed<StepData[]>(() => {
             <RequirementConfirmCard
               v-else-if="step.type === 'requirement_confirm' && step.requirementAnalysis"
               :analysis="step.requirementAnalysis"
-              :waiting-confirmation="step.requirementAnalysis.confirmQuestions.length > 0"
+              :waiting-confirmation="step.waitingConfirmation ?? true"
               @confirm="(answers) => emit('requirement-confirm', answers)"
               @skip="emit('requirement-skip')"
             />

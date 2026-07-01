@@ -186,17 +186,17 @@ function selectOption(questionId: string, option: string) {
             <span v-if="q.required" :class="$style.required">*</span>
           </div>
 
-          <!-- 选项 -->
+          <!-- 选项（有序列表） -->
           <div v-if="q.options && q.options.length > 0" :class="$style.optionsList">
-            <el-button
-              v-for="opt in q.options"
+            <div
+              v-for="(opt, idx) in q.options"
               :key="opt"
-              :type="answers[q.id] === opt ? 'primary' : 'default'"
-              size="small"
+              :class="[$style.optionItem, { [$style.optionSelected]: answers[q.id] === opt }]"
               @click="selectOption(q.id, opt)"
             >
-              {{ opt }}
-            </el-button>
+              <span :class="$style.optionIndex">{{ idx + 1 }}</span>
+              <span :class="$style.optionText">{{ opt }}</span>
+            </div>
           </div>
 
           <!-- 自由输入 -->
@@ -212,7 +212,7 @@ function selectOption(questionId: string, option: string) {
 
     <!-- 操作按钮 -->
     <div v-if="waitingConfirmation" :class="$style.actions">
-      <el-button @click="handleSkip" :disabled="!canConfirm">
+      <el-button @click="handleSkip">
         跳过，直接执行
       </el-button>
       <el-button type="primary" @click="handleConfirm" :disabled="!canConfirm">
@@ -426,8 +426,53 @@ function selectOption(questionId: string, option: string) {
 
 .optionsList {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
+}
+
+.optionItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ai-border-light, #EBEDF3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.optionItem:hover {
+  border-color: var(--ai-color-primary, #0060A2);
+  background: var(--ai-color-primary-bg, #EEF5FF);
+}
+
+.optionSelected {
+  border-color: var(--ai-color-primary, #0060A2);
+  background: var(--ai-color-primary-bg, #EEF5FF);
+}
+
+.optionIndex {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ai-bg-gray, #F5F7FA);
+  color: var(--ai-text-secondary, #666666);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.optionSelected .optionIndex {
+  background: var(--ai-color-primary, #0060A2);
+  color: white;
+}
+
+.optionText {
+  font-size: 13px;
+  color: var(--ai-text-primary, #333333);
 }
 
 /* Actions */

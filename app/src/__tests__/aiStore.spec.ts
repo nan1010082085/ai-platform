@@ -425,6 +425,7 @@ describe('useAiStore', () => {
     it('initializes with default settings', () => {
       const store = useAiStore()
       expect(store.chatSettings).toEqual({
+        model: 'deepseek-v4-flash',
         preferences: {
           replyLanguage: 'zh-CN',
           replyStyle: 'detailed',
@@ -474,6 +475,7 @@ describe('useAiStore', () => {
               replyLanguage: 'en-US',
               replyStyle: 'concise',
               codeComment: 'no',
+              llmModel: 'deepseek-v4-flash',
             }),
           }),
         }),
@@ -646,9 +648,9 @@ describe('useAiStore', () => {
     it('creates new entry when tool_error matches name but existing entry already has result (no runId)', async () => {
       const store = useAiStore()
       mockChatStream([
-        { type: 'tool_call_start', tools: [{ id: '1', name: 'search_schemas', arguments: {} }] },
-        { type: 'tool_call_end', tools: [{ id: '1', name: 'search_schemas', result: { data: [] } }] },
-        { type: 'tool_error', content: '后续操作失败', toolName: 'search_schemas' },
+        { type: 'tool_call_start', tools: [{ id: '1', name: 'schema__search', arguments: {} }] },
+        { type: 'tool_call_end', tools: [{ id: '1', name: 'schema__search', result: { data: [] } }] },
+        { type: 'tool_error', content: '后续操作失败', toolName: 'schema__search' },
         { type: 'done', conversationId: 'conv-1' },
       ])
 
@@ -802,6 +804,96 @@ describe('useAiStore', () => {
       expect(emitChatSend).toHaveBeenLastCalledWith(
         expect.objectContaining({ message: '生成注册表单' }),
       )
+    })
+  })
+
+  describe('requirement confirm (HITL)', () => {
+    it('completes sendMessage on interrupt and resumes via confirmRequirement', async () => {
+      const store = useAiStore()
+      const analysis = {
+        intent: 'create',
+        type: 'form',
+        complexity: 'medium',
+        completeness: { score: 60, missing: ['字段类型'], assumptions: [] },
+        confirmQuestions: [
+          { id: 'q1', question: '需要哪些字段？', options: ['基础', '完整'], required: true },
+        ],
+        suggestedChain: [{ agent: 'editor', description: '生成表单' }],
+      }
+
+      mockChatStream([
+        { type: 'requirement_analysis_complete', analysis, needsConfirmation: true },
+        {
+          type: 'interrupt',
+          threadId: 'conv-hitl-1',
+          interruptType: 'requirement_confirm',
+          message: '请确认以下需求信息',
+          data: { analysis },
+        },
+        { type: 'done', conversationId: 'conv-hitl-1', interrupted: true },
+      ])
+
+      await store.sendMessage('做一个用户表单')
+
+      expect(store.loading).toBe(false)
+      expect(store.currentConversationId).toBe('conv-hitl-1')
+      expect(store.pendingInterrupt?.threadId).toBe('conv-hitl-1')
+
+      const assistant = store.messages[1]
+      expect(assistant.status).toBe('received')
+      expect(assistant.toolCalls?.some((tc) => tc.name === 'requirement_confirm')).toBe(true)
+
+      const { emitChatResume } = await import('@schema-platform/platform-shared/socket')
+      vi.mocked(emitChatResume).mockImplementation(() => {
+        queueMicrotask(() => {
+          pushChatEvent({ type: 'task_plan_start' })
+          pushChatEvent({ type: 'text_delta', content: '开始生成' })
+          pushChatEvent({ type: 'done', conversationId: 'conv-hitl-1' })
+        })
+      })
+
+      await store.confirmRequirement({ q1: '完整' })
+
+      expect(emitChatResume).toHaveBeenCalledWith('conv-hitl-1', { answers: { q1: '完整' } })
+      expect(store.loading).toBe(false)
+      expect(store.pendingInterrupt).toBeNull()
+    })
+
+    it('skipRequirement resumes with skipped flag', async () => {
+      const store = useAiStore()
+      const analysis = {
+        intent: 'create',
+        type: 'flow',
+        complexity: 'complex',
+        completeness: { score: 50, missing: [], assumptions: [] },
+        confirmQuestions: [],
+        suggestedChain: [],
+      }
+
+      mockChatStream([
+        {
+          type: 'interrupt',
+          threadId: 'conv-skip-1',
+          interruptType: 'requirement_confirm',
+          data: { analysis },
+        },
+        { type: 'done', conversationId: 'conv-skip-1', interrupted: true },
+      ])
+
+      await store.sendMessage('设计审批流程')
+      expect(store.loading).toBe(false)
+
+      const { emitChatResume } = await import('@schema-platform/platform-shared/socket')
+      vi.mocked(emitChatResume).mockImplementation(() => {
+        queueMicrotask(() => {
+          pushChatEvent({ type: 'done', conversationId: 'conv-skip-1' })
+        })
+      })
+
+      await store.skipRequirement()
+
+      expect(emitChatResume).toHaveBeenCalledWith('conv-skip-1', { skipped: true })
+      expect(store.loading).toBe(false)
     })
   })
 })

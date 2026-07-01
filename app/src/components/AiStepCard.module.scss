@@ -376,6 +376,25 @@
   font-style: italic;
 }
 
+.ragQuery {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-color-primary, #303133);
+}
+
+.ragEmpty {
+  font-size: 13px;
+  color: var(--text-color-secondary, #909399);
+}
+
+.ragScore {
+  color: var(--text-color-muted, #909399);
+  font-size: 12px;
+}
+
 .rawDetails {
   margin-top: 8px;
 }

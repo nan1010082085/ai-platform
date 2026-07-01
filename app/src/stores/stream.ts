@@ -127,9 +127,13 @@ export const useStreamStore = defineStore('stream', () => {
         }
 
         const event = chatEvent as unknown as StreamEvent
-        console.log('[stream] received event', event.type, event.content?.substring(0, 20))
 
         if (event.type === 'done') {
+          doneEventReceived = true
+          doneResolve?.()
+        }
+        // interrupt 表示当前轮次暂停等待 HITL，应结束等待以便用户确认后走 executeResume
+        if (event.type === 'interrupt') {
           doneEventReceived = true
           doneResolve?.()
         }
@@ -150,6 +154,7 @@ export const useStreamStore = defineStore('stream', () => {
             replyLanguage: ctx.chatSettings.preferences.replyLanguage,
             replyStyle: ctx.chatSettings.preferences.replyStyle,
             codeComment: ctx.chatSettings.preferences.codeComment,
+            llmModel: ctx.chatSettings.model,
           },
           historySummary: ctx.chatSettings.historySummary.mode === 'manual'
             ? ctx.chatSettings.historySummary.manualSummary
@@ -192,7 +197,7 @@ export const useStreamStore = defineStore('stream', () => {
    */
   async function executeResume(
     threadId: string,
-    confirmed: boolean,
+    resumeValue: boolean | Record<string, unknown>,
     messages: AIMessage[],
     handlers: {
       onStreamEvent: (event: StreamEvent, assistantIndex: number) => void
@@ -235,11 +240,15 @@ export const useStreamStore = defineStore('stream', () => {
         doneEventReceived = true
         doneResolve?.()
       }
+      if (event.type === 'interrupt') {
+        doneEventReceived = true
+        doneResolve?.()
+      }
       handlers.onStreamEvent(event, assistantIndex)
     })
 
     // 通过 WebSocket 恢复
-    emitChatResume(threadId, confirmed)
+    emitChatResume(threadId, resumeValue)
 
     // 等待 done 事件
     await donePromise

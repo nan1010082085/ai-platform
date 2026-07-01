@@ -350,10 +350,6 @@ function handleHostData(data: Record<string, unknown>) {
           <span :class="$style.wsDot" />
           <span>{{ wsConnected ? '已连接' : '未连接' }}</span>
         </div>
-        <div :class="$style.modelBadge">
-          <span :class="$style.modelDot"></span>
-          <span>DeepSeek</span>
-        </div>
       </div>
     </div>
 

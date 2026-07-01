@@ -21,6 +21,16 @@ import {
   API_CONFIG_FIELDS,
   OUTPUT_TAGS,
 } from './systemKnowledge.js'
+import {
+  EDITOR_MCP_TOOLS_PROMPT,
+  FLOW_MCP_TOOLS_PROMPT,
+  PAGE_MCP_TOOLS_PROMPT,
+  SCHEMA_SEARCH,
+  FLOW_SEARCH,
+  FLOW_SEARCH_USERS,
+  FLOW_VALIDATE,
+  GENERATE_SCHEMA,
+} from './toolNames.js'
 
 // ────────────────────────────────────────────
 // 类型
@@ -465,19 +475,13 @@ ${apiConfig}
 
 ### 可用工具
 
-**表单相关工具**：
-- search_schemas: 搜索表单 Schema
-- get_schema_detail: 获取表单详情
-- search_published_schemas: 搜索已发布表单
-- get_widget_catalogue: 查询组件目录
-- search_widgets_by_keyword: 关键词匹配搜索表单
-- validate_schema: 校验 Schema
+${EDITOR_MCP_TOOLS_PROMPT}
 
-**流程相关工具**（你也可以调用）：
-- search_flows: 搜索流程
-- get_flow_detail: 获取流程详情
-- search_users: 搜索用户
-- validate_flow: 校验流程
+**流程相关工具（MCP，你也可以调用）**：
+- flow__search: 搜索流程
+- flow__get_detail: 获取流程详情
+- flow__search_users: 搜索用户
+- flow__validate: 校验流程
 
 **重要**：当用户需求涉及流程时，你可以调用流程相关工具来获取信息。
 
@@ -498,20 +502,20 @@ export function buildFlowSystemPrompt(metadata: Metadata): string {
 
 ## ⚠️⚠️⚠️ 工具使用规则（违反将导致任务失败）⚠️⚠️⚠️
 
-**🚫 绝对禁止**：生成新流程时调用 search_flows、search_users、search_schemas 或任何搜索工具！
+**🚫 绝对禁止**：生成新流程时调用 ${FLOW_SEARCH}、${FLOW_SEARCH_USERS}、${SCHEMA_SEARCH} 或任何搜索工具！
 用户描述了流程结构（如"开始->提交->审批->结束"），你必须直接输出 FlowGraph JSON，不要先搜索。
 
 **✅ 生成新流程**：直接在 <schema> 标签中输出完整的 FlowGraph JSON。不需要搜索，不需要调研，直接生成。
 
 **✅ 修改已有流程**：使用 update_flow 工具提交修改。
 
-**✅ 校验流程**：使用 validate_flow 工具校验。
+**✅ 校验流程**：使用 ${FLOW_VALIDATE} 工具校验。
 
-**✅ 为流程节点创建表单**：使用 generate_schema 工具生成表单，然后使用 save_and_bind_schema 工具绑定到节点。
+**✅ 为流程节点创建表单**：使用 ${GENERATE_SCHEMA} 工具生成表单，然后使用 save_and_bind_schema 工具绑定到节点。
 
-**✅ 搜索已有资源**：仅在用户明确要求"查看已有流程"或"参考现有流程"时才使用 search_flows / search_users。
+**✅ 搜索已有资源**：仅在用户明确要求"查看已有流程"或"参考现有流程"时才使用 ${FLOW_SEARCH} / ${FLOW_SEARCH_USERS}。
 
-**🚫 绝对禁止**：在生成新流程时调用 generate_schema —— 那是表单工具，不是流程工具。
+**🚫 绝对禁止**：在生成新流程时调用 ${GENERATE_SCHEMA} —— 那是表单工具，不是流程工具。
 
 ## 协作能力
 
@@ -749,29 +753,14 @@ interface FlowGraph {
 
 ### 可用工具
 
-**流程相关工具**：
-- search_flows: 搜索流程
-- get_flow_detail: 获取流程详情
-- search_users: 搜索用户
-- validate_flow: 校验流程
+${FLOW_MCP_TOOLS_PROMPT}
 
-**表单相关工具**（你也可以调用）：
-- search_schemas: 搜索表单 Schema
-- get_schema_detail: 获取表单详情
-- search_published_schemas: 搜索已发布表单
-- get_widget_catalogue: 查询组件目录
-- search_widgets_by_keyword: 关键词匹配搜索表单
-- validate_schema: 校验 Schema
-- generate_schema: 生成表单
+### ${GENERATE_SCHEMA} 工具使用场景
 
-**重要**：当用户需求涉及表单时，你可以调用表单相关工具来获取信息。
+当流程中的 userTask 需要绑定表单，但系统中没有合适的已有表单时，你**必须**使用 \`${GENERATE_SCHEMA}\` 工具来生成新表单：
 
-### generate_schema 工具使用场景
-
-当流程中的 userTask 需要绑定表单，但系统中没有合适的已有表单时，你**必须**使用 \`generate_schema\` 工具来生成新表单：
-
-1. 先用 \`search_schemas\` 搜索是否有可复用的表单
-2. 如果没有合适的，用 \`generate_schema\` 生成新表单
+1. 先用 \`${SCHEMA_SEARCH}\` 搜索是否有可复用的表单
+2. 如果没有合适的，用 \`${GENERATE_SCHEMA}\` 生成新表单
 3. 将返回的 \`schemaId\` 设置到 userTask 的 \`formSchemaId\` 字段
 4. userTask 的 \`formMode\` 设为 \`'edit'\`（填写模式）
 5. 对应的审批节点 \`formMode\` 设为 \`'view'\`（只读模式）
@@ -1301,20 +1290,7 @@ ${apiConfig}
 
 ### 可用工具
 
-**表单相关工具**：
-- search_schemas: 搜索表单 Schema
-- get_schema_detail: 获取表单详情
-- search_published_schemas: 搜索已发布表单
-- get_widget_catalogue: 查询组件目录
-- search_widgets_by_keyword: 关键词匹配搜索表单
-- validate_schema: 校验 Schema
-- update_schema: 更新 Schema
-
-**流程相关工具**（你也可以调用）：
-- search_flows: 搜索流程
-- get_flow_detail: 获取流程详情
-- search_users: 搜索用户
-- validate_flow: 校验流程
+${PAGE_MCP_TOOLS_PROMPT}
 
 **重要**：当用户需求涉及流程时，你可以调用流程相关工具来获取信息。
 

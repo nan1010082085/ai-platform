@@ -63,7 +63,6 @@ export type {
   AnomalyDetection,
 } from './runtimeAgent.js'
 
-// 系统知识（事件、联动、变量、数据源）
 export {
   EVENT_ACTION_TYPES,
   EVENT_ACTION_DESCRIPTIONS,
@@ -76,3 +75,46 @@ export {
   API_CONFIG_FIELDS,
   OUTPUT_TAGS,
 } from './systemKnowledge.js'
+
+export type {
+  AgentNodeType,
+  AgentWorkflowStatus,
+  AgentExecutionStatus,
+  AgentNodeRecordStatus,
+  AgentWorkflowNodeData,
+  AgentWorkflowNode,
+  AgentWorkflowEdge,
+  AgentWorkflowGraph,
+  AgentWorkflowSummary,
+  AgentWorkflowDetail,
+  AgentWorkflowVersionEntry,
+  AgentWorkflowVersionDetail,
+  AgentNodeRecord,
+  AgentWorkflowExecution,
+  AgentWorkflowValidationIssue,
+} from './agentWorkflow.js'
+
+export {
+  createDefaultAgentWorkflowGraph,
+  validateAgentWorkflowGraph,
+} from './agentWorkflow.js'
+
+export {
+  normalizeToolName,
+  getToolDisplayLabel,
+  LEGACY_TOOL_ALIASES,
+  TOOL_DISPLAY_LABELS,
+  EDITOR_MCP_TOOLS_PROMPT,
+  FLOW_MCP_TOOLS_PROMPT,
+  PAGE_MCP_TOOLS_PROMPT,
+  REQUIREMENT_ANALYZER_TOOLS_PROMPT,
+  SCHEMA_SEARCH,
+  SCHEMA_GET_DETAIL,
+  SCHEMA_VALIDATE_WIDGETS,
+  FLOW_SEARCH,
+  FLOW_VALIDATE,
+  RAG_SEARCH,
+  UPDATE_SCHEMA,
+  UPDATE_FLOW,
+  GENERATE_SCHEMA,
+} from './toolNames.js'

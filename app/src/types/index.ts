@@ -4,6 +4,8 @@
  * 对齐后端 AIConversationState 和 API 响应结构。
  */
 
+import type { ChatModel } from '@/constants/chatModels'
+
 // ---- Widget（简化引用，完整类型在 editor 包） ----
 
 /** Widget 位置信息 */
@@ -138,7 +140,10 @@ export type ReplyStyle = 'concise' | 'detailed'
 export type CodeCommentMode = 'yes' | 'no'
 export type HistorySummaryMode = 'auto' | 'manual'
 
+export type { ChatModel }
+
 export interface ChatSettings {
+  model: ChatModel
   preferences: {
     replyLanguage: ReplyLanguage
     replyStyle: ReplyStyle
@@ -413,6 +418,8 @@ export interface StepData {
   agent?: 'editor' | 'flow' | 'page' | 'auto' | 'general'
   /** 需求分析结果（requirement_confirm 类型） */
   requirementAnalysis?: RequirementAnalysis
+  /** 是否等待用户确认（requirement_confirm 类型） */
+  waitingConfirmation?: boolean
 }
 
 // ---- Requirement Analysis ----

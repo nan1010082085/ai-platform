@@ -47,6 +47,7 @@ const ElInputNumberStub = {
 }
 
 const defaultSettings: ChatSettings = {
+  model: 'deepseek-v4-flash',
   preferences: {
     replyLanguage: 'zh-CN',
     replyStyle: 'detailed',

@@ -459,14 +459,38 @@ export async function getMonitorStats(): Promise<AgentMetricStats[]> {
   return request<AgentMetricStats[]>('/ai/monitor/stats')
 }
 
-export async function getMonitorRecent(params?: { limit?: number }): Promise<AgentMetric[]> {
-  const query = params?.limit ? `?limit=${params.limit}` : ''
-  return request<AgentMetric[]>(`/ai/monitor/recent${query}`)
+export interface MonitorPaginatedResult<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
 }
 
-export async function getMonitorAlerts(params?: { limit?: number }): Promise<AgentAlert[]> {
-  const query = params?.limit ? `?limit=${params.limit}` : ''
-  return request<AgentAlert[]>(`/ai/monitor/alerts${query}`)
+export async function getMonitorRecent(params?: {
+  limit?: number
+  page?: number
+  pageSize?: number
+}): Promise<MonitorPaginatedResult<AgentMetric>> {
+  const search = new URLSearchParams()
+  if (params?.page) search.set('page', String(params.page))
+  if (params?.pageSize) search.set('pageSize', String(params.pageSize))
+  else if (params?.limit) search.set('limit', String(params.limit))
+  const query = search.toString()
+  return request<MonitorPaginatedResult<AgentMetric>>(`/ai/monitor/recent${query ? `?${query}` : ''}`)
+}
+
+export async function getMonitorAlerts(params?: {
+  limit?: number
+  page?: number
+  pageSize?: number
+}): Promise<MonitorPaginatedResult<AgentAlert>> {
+  const search = new URLSearchParams()
+  if (params?.page) search.set('page', String(params.page))
+  if (params?.pageSize) search.set('pageSize', String(params.pageSize))
+  else if (params?.limit) search.set('limit', String(params.limit))
+  const query = search.toString()
+  return request<MonitorPaginatedResult<AgentAlert>>(`/ai/monitor/alerts${query ? `?${query}` : ''}`)
 }
 
 // ---- 搜索对话 ----

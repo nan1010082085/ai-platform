@@ -24,20 +24,23 @@
           <el-icon v-else :size="16"><InfoFilled /></el-icon>
         </div>
         <div :class="$style.content">
-          <div :class="$style.message">
+          <div :class="$style.messageHead">
             <span :class="$style.agent">{{ alert.agentName }}</span>
             <span :class="$style.operation">{{ alert.operation }}</span>
-            <span v-if="alert.alertType === 'failure'" :class="$style.detail">
-              失败: {{ alert.error ?? '未知错误' }}
-            </span>
-            <span v-else-if="alert.alertType === 'slow'" :class="$style.detail">
-              耗时 {{ formatDuration(alert.duration) }} 超过阈值
-            </span>
-            <span v-else :class="$style.detail">
-              Token 用量 {{ alert.tokenUsage?.total ?? 0 }} 超过阈值
-            </span>
           </div>
-          <div :class="$style.time">{{ formatTime(alert.createdAt) }}</div>
+          <div :class="$style.detail">
+            <template v-if="alert.alertType === 'failure'">
+              失败：{{ alert.error ?? '未知错误' }}
+            </template>
+            <template v-else-if="alert.alertType === 'slow'">
+              耗时 {{ formatMonitorDuration(alert.duration) }}，超过慢调用阈值
+            </template>
+            <template v-else-if="alert.alertType === 'high_token'">
+              Token 用量 {{ alert.tokenUsage?.total ?? 0 }}，超过用量阈值
+            </template>
+            <template v-else>性能异常</template>
+          </div>
+          <div :class="$style.time">{{ formatMonitorTime(alert.createdAt) }}</div>
         </div>
       </div>
     </div>
@@ -58,6 +61,7 @@
 <script setup lang="ts">
 import { CircleCheck, CircleClose, Warning, InfoFilled } from '@element-plus/icons-vue'
 import type { AgentAlert } from '@/types'
+import { formatMonitorTime, formatMonitorDuration } from '@/utils/monitorFormat'
 
 defineProps<{
   alerts: AgentAlert[]
@@ -74,15 +78,6 @@ function handlePageChange(page: number): void {
   emit('pageChange', page)
 }
 
-function formatTime(iso: string): string {
-  const date = new Date(iso)
-  return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-}
-
-function formatDuration(ms: number): string {
-  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`
-  return `${Math.round(ms)}ms`
-}
 </script>
 
 <style module>
@@ -91,6 +86,10 @@ function formatDuration(ms: number): string {
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .header {
@@ -98,6 +97,7 @@ function formatDuration(ms: number): string {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .title {
@@ -118,8 +118,8 @@ function formatDuration(ms: number): string {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 24px;
+  gap: 6px;
+  padding: 12px;
   color: var(--el-text-color-secondary);
 }
 
@@ -127,14 +127,18 @@ function formatDuration(ms: number): string {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .item {
   display: flex;
   gap: 12px;
-  padding: 12px;
+  padding: 10px 12px;
   border-radius: 6px;
   border-left: 3px solid;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .failure {
@@ -175,25 +179,29 @@ function formatDuration(ms: number): string {
   min-width: 0;
 }
 
-.message {
-  font-size: 13px;
-  color: var(--el-text-color-primary);
+.messageHead {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
 }
 
 .agent {
+  font-size: 13px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .operation {
+  font-size: 12px;
   color: var(--el-text-color-secondary);
 }
 
 .detail {
+  font-size: 13px;
   color: var(--el-text-color-regular);
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .time {
@@ -206,5 +214,6 @@ function formatDuration(ms: number): string {
   display: flex;
   justify-content: flex-end;
   margin-top: 12px;
+  flex-shrink: 0;
 }
 </style>

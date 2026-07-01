@@ -2,15 +2,13 @@
 /**
  * RAG 知识库管理页面
  *
- * 简洁设计：
- * - 顶部状态概览
- * - 搜索测试区域
- * - 索引管理列表
+ * 布局对齐 Agent 性能监控：dashboard 顶栏 + 摘要卡片 + 双列面板 + 全宽表格
  */
 
 import { ref, onMounted, computed } from 'vue'
 import { message, confirmDanger } from '@schema-platform/platform-shared/utils/message'
 import { useDataLoading } from '@schema-platform/platform-shared/utils/useDataLoading'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import {
   getRagStatus,
   reindexAllRag,
@@ -18,39 +16,61 @@ import {
   deleteRagEmbedding,
   searchRag,
 } from '@/api/aiApi'
-import type {
-  RagStatusData,
-  RagReindexResult,
-} from '@/api/aiApi'
+import type { RagStatusData, RagReindexResult } from '@/api/aiApi'
 import type { RagSearchResult } from '@/types'
-import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import RagSummary from '@/components/rag/RagSummary.vue'
+import RagSearchPanel from '@/components/rag/RagSearchPanel.vue'
+import RagIndexOverview from '@/components/rag/RagIndexOverview.vue'
 
-// ---- State ----
+const INDEX_PAGE_SIZE = 20
 
 const { loading, withLoading: withStatusLoading } = useDataLoading({ timeout: 15000 })
 const { loading: reindexing, withLoading: withReindexLoading } = useDataLoading({ timeout: 30000 })
+
 const status = ref<RagStatusData | null>(null)
 const lastReindexResult = ref<RagReindexResult | null>(null)
-
-// ---- Bulk operations ----
 
 const bulkMode = ref(false)
 const selectedIds = ref<Set<string>>(new Set())
 const bulkProcessing = ref(false)
 
-function toggleBulkMode() {
+const searchQuery = ref('')
+const searchLoading = ref(false)
+const searchResults = ref<RagSearchResult[]>([])
+const searchPerformed = ref(false)
+
+const indexPage = ref(1)
+
+const healthPercent = computed(() => {
+  if (!status.value || status.value.totalSchemas === 0) return 0
+  return Math.round((status.value.indexed / status.value.totalSchemas) * 100)
+})
+
+const unindexedSchemas = computed(() => status.value?.unindexedSchemas ?? [])
+
+const paginatedUnindexed = computed(() => {
+  const start = (indexPage.value - 1) * INDEX_PAGE_SIZE
+  return unindexedSchemas.value.slice(start, start + INDEX_PAGE_SIZE)
+})
+
+function handleIndexPageChange(page: number): void {
+  indexPage.value = page
+  selectedIds.value.clear()
+}
+
+function toggleBulkMode(): void {
   bulkMode.value = !bulkMode.value
   selectedIds.value.clear()
 }
 
-function toggleSelect(id: string) {
+function toggleSelect(id: string): void {
   const next = new Set(selectedIds.value)
   if (next.has(id)) next.delete(id)
   else next.add(id)
   selectedIds.value = next
 }
 
-async function handleBulkReindex() {
+async function handleBulkReindex(): Promise<void> {
   if (selectedIds.value.size === 0) return
   bulkProcessing.value = true
   let success = 0
@@ -71,11 +91,13 @@ async function handleBulkReindex() {
   await loadStatus()
 }
 
-async function handleBulkDeleteEmbedding() {
+async function handleBulkDeleteEmbedding(): Promise<void> {
   if (selectedIds.value.size === 0) return
   try {
     await confirmDanger('批量删除', `确认删除选中的 ${selectedIds.value.size} 个索引？`)
-  } catch { return }
+  } catch {
+    return
+  }
 
   bulkProcessing.value = true
   let success = 0
@@ -96,35 +118,15 @@ async function handleBulkDeleteEmbedding() {
   await loadStatus()
 }
 
-// ---- Search test ----
-
-const searchQuery = ref('')
-const searchLoading = ref(false)
-const searchResults = ref<RagSearchResult[]>([])
-const searchPerformed = ref(false)
-
-// ---- Computed ----
-
-const healthPercent = computed(() => {
-  if (!status.value || status.value.totalSchemas === 0) return 0
-  return Math.round((status.value.indexed / status.value.totalSchemas) * 100)
-})
-
-const healthStatus = computed<'success' | 'warning' | 'danger'>(() => {
-  if (healthPercent.value >= 90) return 'success'
-  if (healthPercent.value >= 50) return 'warning'
-  return 'danger'
-})
-
-// ---- Data Loading ----
-
 async function loadStatus(): Promise<void> {
   await withStatusLoading(async () => {
     status.value = await getRagStatus()
+    const maxPage = Math.max(1, Math.ceil((status.value?.unindexedSchemas.length ?? 0) / INDEX_PAGE_SIZE))
+    if (indexPage.value > maxPage) {
+      indexPage.value = maxPage
+    }
   })
 }
-
-// ---- Reindex ----
 
 async function handleReindexAll(): Promise<void> {
   await withReindexLoading(async () => {
@@ -144,8 +146,6 @@ async function handleReindexSingle(schemaId: string): Promise<void> {
   }
 }
 
-// ---- Search test ----
-
 async function handleSearch(): Promise<void> {
   const query = searchQuery.value.trim()
   if (!query) return
@@ -163,14 +163,6 @@ async function handleSearch(): Promise<void> {
   }
 }
 
-function getScoreClass(score: number): string {
-  if (score >= 70) return 'scoreHigh'
-  if (score >= 40) return 'scoreMedium'
-  return 'scoreLow'
-}
-
-// ---- Formatters ----
-
 function getSchemaTypeLabel(type: string): string {
   const labels: Record<string, string> = {
     form: '表单',
@@ -179,246 +171,227 @@ function getSchemaTypeLabel(type: string): string {
   return labels[type] ?? type
 }
 
-// ---- Lifecycle ----
-
 onMounted(() => {
   loadStatus()
 })
 </script>
 
 <template>
-  <div :class="$style.page">
-    <!-- Topbar -->
-    <div :class="$style.topbar">
-      <div :class="$style.topbarLeft">
-        <div :class="$style.topbarLogo">
-          <div :class="$style.topbarIcon">
-            <AppIcon name="notebook" :size="18" />
-          </div>
-          <span :class="$style.topbarBrand">RAG 知识库</span>
-        </div>
-      </div>
-      <div :class="$style.topbarRight">
-        <el-button
-          type="primary"
-          size="small"
-          :loading="reindexing"
-          @click="handleReindexAll"
-        >
+  <div :class="$style.dashboard" v-loading="loading">
+    <div :class="$style.header">
+      <h2 :class="$style.title">RAG 知识库</h2>
+      <div :class="$style.headerActions">
+        <el-button type="primary" size="small" :loading="reindexing" @click="handleReindexAll">
           <AppIcon name="refresh" :size="14" />
           {{ reindexing ? '索引中...' : '重建索引' }}
         </el-button>
-        <el-button
-          size="small"
-          :loading="loading"
-          @click="loadStatus"
-        >
+        <el-button size="small" :loading="loading" @click="loadStatus">
           <AppIcon name="refresh" :size="14" />
           刷新
         </el-button>
       </div>
     </div>
 
-    <!-- Body -->
-    <div :class="$style.body">
-      <!-- 状态概览 -->
-      <div :class="$style.statusOverview">
-        <div :class="$style.statusCard">
-          <div :class="$style.statusIcon">
-            <AppIcon name="document" :size="20" />
-          </div>
-          <div :class="$style.statusInfo">
-            <div :class="$style.statusValue">{{ status?.totalSchemas ?? 0 }}</div>
-            <div :class="$style.statusLabel">Schema 总数</div>
-          </div>
-        </div>
-        <div :class="$style.statusCard">
-          <div :class="[$style.statusIcon, $style.statusIconSuccess]">
-            <AppIcon name="check" :size="20" />
-          </div>
-          <div :class="$style.statusInfo">
-            <div :class="$style.statusValue">{{ status?.indexed ?? 0 }}</div>
-            <div :class="$style.statusLabel">已索引</div>
-          </div>
-        </div>
-        <div :class="$style.statusCard">
-          <div :class="[$style.statusIcon, $style.statusIconWarning]">
-            <AppIcon name="warning" :size="20" />
-          </div>
-          <div :class="$style.statusInfo">
-            <div :class="$style.statusValue">{{ status?.unindexed ?? 0 }}</div>
-            <div :class="$style.statusLabel">待索引</div>
-          </div>
-        </div>
-        <div :class="$style.statusCard">
-          <div :class="[$style.statusIcon, $style[`statusIcon${healthStatus.charAt(0).toUpperCase() + healthStatus.slice(1)}`]]">
-            <AppIcon name="pie-chart" :size="20" />
-          </div>
-          <div :class="$style.statusInfo">
-            <div :class="$style.statusValue">{{ healthPercent }}%</div>
-            <div :class="$style.statusLabel">覆盖率</div>
-          </div>
-        </div>
-      </div>
+    <RagSummary
+      :status="status"
+      :health-percent="healthPercent"
+      :class="$style.summaryRow"
+    />
 
-      <!-- 搜索测试 -->
-      <div :class="$style.searchSection">
-        <div :class="$style.searchHeader">
-          <h3 :class="$style.sectionTitle">语义搜索测试</h3>
-          <p :class="$style.sectionDesc">输入自然语言描述，测试 RAG 语义搜索效果</p>
-        </div>
-        <div :class="$style.searchBox">
-          <el-input
-            v-model="searchQuery"
-            :class="$style.searchInput"
-            placeholder="例如：用户注册表单、请假审批流程..."
-            clearable
-            @keyup.enter="handleSearch"
-          >
-            <template #prefix>
-              <AppIcon name="search" :size="16" />
-            </template>
-          </el-input>
-          <el-button
-            type="primary"
-            :loading="searchLoading"
-            @click="handleSearch"
-          >
-            搜索
+    <div :class="$style.panelRow">
+      <RagSearchPanel
+        v-model:query="searchQuery"
+        :loading="searchLoading"
+        :performed="searchPerformed"
+        :results="searchResults"
+        @search="handleSearch"
+        @reindex="handleReindexSingle"
+      />
+      <RagIndexOverview
+        :status="status"
+        :last-reindex-result="lastReindexResult"
+      />
+    </div>
+
+    <div :class="$style.section">
+      <div :class="$style.sectionHeader">
+        <h3 :class="$style.sectionTitle">
+          索引管理
+          <span v-if="status" :class="$style.sectionCount">（待索引 {{ status.unindexed }}）</span>
+        </h3>
+        <div :class="$style.sectionActions">
+          <el-button size="small" :type="bulkMode ? 'danger' : 'default'" @click="toggleBulkMode">
+            {{ bulkMode ? '取消' : '批量操作' }}
           </el-button>
-        </div>
-
-        <!-- 搜索结果 -->
-        <div v-if="searchPerformed" :class="$style.searchResults">
-          <div v-if="searchResults.length === 0 && !searchLoading" :class="$style.emptyState">
-            <AppIcon name="search" :size="32" />
-            <p>未找到匹配的 Schema</p>
-          </div>
-          <div v-else :class="$style.resultList">
-            <div
-              v-for="item in searchResults"
-              :key="item.id"
-              :class="$style.resultItem"
-            >
-              <div :class="[$style.resultScore, $style[getScoreClass(item.score)]]">
-                {{ item.score }}
-              </div>
-              <div :class="$style.resultContent">
-                <div :class="$style.resultName">{{ item.name }}</div>
-                <div v-if="item.description" :class="$style.resultDesc">
-                  {{ item.description }}
-                </div>
-                <div :class="$style.resultMeta">
-                  <el-tag size="small" :type="item.type === 'form' ? 'primary' : 'success'">
-                    {{ getSchemaTypeLabel(item.type) }}
-                  </el-tag>
-                  <span :class="$style.resultWidgets">
-                    {{ item.widgetTypes.slice(0, 3).join(', ') }}
-                    {{ item.widgetTypes.length > 3 ? `+${item.widgetTypes.length - 3}` : '' }}
-                  </span>
-                </div>
-              </div>
-              <el-button
-                type="primary"
-                link
-                size="small"
-                @click="handleReindexSingle(item.id)"
-              >
-                重建索引
-              </el-button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 索引管理 -->
-      <div :class="$style.manageSection">
-        <div :class="$style.manageHeader">
-          <h3 :class="$style.sectionTitle">索引管理</h3>
-          <div :class="$style.manageActions">
+          <template v-if="bulkMode">
             <el-button
               size="small"
-              :type="bulkMode ? 'danger' : 'default'"
-              @click="toggleBulkMode"
+              type="primary"
+              :disabled="selectedIds.size === 0"
+              :loading="bulkProcessing"
+              @click="handleBulkReindex"
             >
-              {{ bulkMode ? '取消' : '批量操作' }}
+              批量索引 ({{ selectedIds.size }})
             </el-button>
-            <template v-if="bulkMode">
-              <el-button
-                size="small"
-                type="primary"
-                :disabled="selectedIds.size === 0"
-                :loading="bulkProcessing"
-                @click="handleBulkReindex"
-              >
-                批量索引 ({{ selectedIds.size }})
-              </el-button>
-              <el-button
-                size="small"
-                type="danger"
-                :disabled="selectedIds.size === 0"
-                :loading="bulkProcessing"
-                @click="handleBulkDeleteEmbedding"
-              >
-                批量删除 ({{ selectedIds.size }})
-              </el-button>
-            </template>
-          </div>
+            <el-button
+              size="small"
+              type="danger"
+              :disabled="selectedIds.size === 0"
+              :loading="bulkProcessing"
+              @click="handleBulkDeleteEmbedding"
+            >
+              批量删除 ({{ selectedIds.size }})
+            </el-button>
+          </template>
         </div>
+      </div>
 
-        <!-- 上次索引结果 -->
-        <div v-if="lastReindexResult" :class="$style.reindexResult">
-          <AppIcon name="info-filled" :size="16" />
-          <span>
-            上次批量索引：总计 {{ lastReindexResult.total }}，
-            新建 {{ lastReindexResult.created }}，
-            更新 {{ lastReindexResult.updated }}，
-            跳过 {{ lastReindexResult.skipped }}，
-            失败 {{ lastReindexResult.errors }}
-          </span>
-        </div>
+      <el-table
+        :data="paginatedUnindexed"
+        :class="$style.table"
+        stripe
+        size="small"
+        empty-text="所有 Schema 均已索引 ✓"
+      >
+        <el-table-column v-if="bulkMode" label="" width="48">
+          <template #default="{ row }">
+            <el-checkbox
+              :model-value="selectedIds.has(row.id)"
+              @change="toggleSelect(row.id)"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column prop="name" label="名称" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="type" label="类型" min-width="100">
+          <template #default="{ row }">
+            <el-tag size="small" :type="row.type === 'form' ? 'primary' : 'success'">
+              {{ getSchemaTypeLabel(row.type) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" min-width="120">
+          <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="handleReindexSingle(row.id)">
+              <AppIcon name="refresh" :size="12" />
+              建立索引
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
 
-        <!-- Schema 列表 -->
-        <el-table
-          :data="status?.unindexedSchemas ?? []"
-          :class="$style.table"
-          stripe
-          size="small"
-          empty-text="所有 Schema 均已索引 ✓"
-        >
-          <el-table-column v-if="bulkMode" label="" width="48">
-            <template #default="{ row }">
-              <el-checkbox
-                :model-value="selectedIds.has(row.id)"
-                @change="toggleSelect(row.id)"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column prop="name" label="名称" min-width="200" />
-          <el-table-column prop="type" label="类型" width="120">
-            <template #default="{ row }">
-              <el-tag size="small" :type="row.type === 'form' ? 'primary' : 'success'">
-                {{ getSchemaTypeLabel(row.type) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="120" fixed="right">
-            <template #default="{ row }">
-              <el-button
-                type="primary"
-                link
-                size="small"
-                @click="handleReindexSingle(row.id)"
-              >
-                <AppIcon name="refresh" :size="12" />
-                建立索引
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+      <div v-if="unindexedSchemas.length > 0" :class="$style.pagination">
+        <el-pagination
+          v-model:current-page="indexPage"
+          :page-size="INDEX_PAGE_SIZE"
+          :total="unindexedSchemas.length"
+          layout="total, prev, pager, next"
+          small
+          background
+          @current-change="handleIndexPageChange"
+        />
       </div>
     </div>
   </div>
 </template>
 
-<style module src="./RagKnowledgeBase.module.scss" />
+<style module>
+.dashboard {
+  padding: 24px;
+  min-height: 100%;
+  background: var(--el-bg-color-page, #f5f7fa);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--el-text-color-primary, #303133);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.summaryRow {
+  margin-bottom: 16px;
+}
+
+.panelRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+  height: 360px;
+}
+
+.panelRow > * {
+  min-height: 0;
+}
+
+.section {
+  background: var(--el-bg-color, #fff);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--el-border-color-lighter, #e4e7ed);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary, #303133);
+  margin: 0;
+}
+
+.sectionCount {
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--el-text-color-secondary, #909399);
+}
+
+.sectionActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.table {
+  width: 100%;
+}
+
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+  .panelRow {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .panelRow > * {
+    height: 320px;
+  }
+}
+</style>

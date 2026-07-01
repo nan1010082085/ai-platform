@@ -8,6 +8,7 @@
 import { computed } from 'vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 
 export interface JsonDetailDialogProps {
   /** 是否显示 */
@@ -70,7 +71,7 @@ function handleClose(): void {
 </script>
 
 <template>
-  <el-dialog
+  <AppDialog
     :model-value="visible"
     :title="title"
     width="700px"
@@ -89,7 +90,7 @@ function handleClose(): void {
     <template #footer>
       <el-button @click="handleClose">关闭</el-button>
     </template>
-  </el-dialog>
+  </AppDialog>
 </template>
 
 <style module>

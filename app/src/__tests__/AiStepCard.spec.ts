@@ -126,7 +126,7 @@ describe('AiStepCard', () => {
           index: 1,
           type: 'tool_call',
           title: 'Search',
-          toolName: 'search_schemas',
+          toolName: 'schema__search',
           toolDisplayName: 'Search',
         },
       })
@@ -181,16 +181,14 @@ describe('AiStepCard', () => {
           index: 1,
           type: 'tool_call',
           title: 'Search Schemas',
-          toolName: 'search_schemas',
-          toolDisplayName: 'Search Schemas',
+          toolName: 'schema__search',
           status: 'done',
         },
       })
 
-      // toolName shown in subtitle
       const subtitle = wrapper.find('[class*="subtitle"]')
       expect(subtitle.exists()).toBe(true)
-      expect(subtitle.text()).toBe('search_schemas')
+      expect(subtitle.text()).toBe('搜索表单')
     })
 
     it('shows error card for tool_error type (expanded by default)', () => {
@@ -217,7 +215,7 @@ describe('AiStepCard', () => {
           index: 1,
           type: 'tool_call',
           title: 'Search',
-          toolName: 'search_schemas',
+          toolName: 'schema__search',
           toolArguments: { query: 'user' },
           toolResult: { count: 3 },
           status: 'done',
@@ -238,7 +236,7 @@ describe('AiStepCard', () => {
           index: 1,
           type: 'tool_call',
           title: 'Search',
-          toolName: 'search_schemas',
+          toolName: 'schema__search',
           toolResult: { summary: 'Found 3 schemas', count: 3 },
           status: 'done',
         },
@@ -348,7 +346,7 @@ describe('AiStepCard', () => {
           index: 1,
           type: 'tool_error',
           title: 'Failed',
-          toolName: 'validate_schema',
+          toolName: 'schema__validate_widgets',
           error: 'validation failed: missing required field',
           status: 'error',
         },
@@ -413,7 +411,7 @@ describe('AiStepCard', () => {
           index: 1,
           type: 'tool_call',
           title: 'Search',
-          toolName: 'search_schemas',
+          toolName: 'schema__search',
           status: 'done',
         },
       })

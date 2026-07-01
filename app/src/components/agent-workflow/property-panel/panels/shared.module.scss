@@ -1,0 +1,28 @@
+.hint {
+  margin: 4px 0 8px;
+  font-size: 11px;
+  color: var(--text-color-secondary);
+  line-height: 1.5;
+}
+
+.readonlyBlock {
+  padding: 8px;
+  border-radius: var(--border-radius-small, 4px);
+  background: var(--bg-color);
+  border: 1px solid var(--border-color-lighter);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-color-regular);
+  word-break: break-word;
+  white-space: pre-wrap;
+  max-height: 120px;
+  overflow: auto;
+}
+
+.varList {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11px;
+  color: var(--text-color-secondary);
+  line-height: 1.6;
+}

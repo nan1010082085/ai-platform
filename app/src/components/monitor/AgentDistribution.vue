@@ -1,7 +1,12 @@
 <template>
   <div :class="$style.container">
     <h3 :class="$style.title">Agent 分布</h3>
-    <div :class="$style.bars">
+
+    <div v-if="distribution.length === 0" :class="$style.empty">
+      暂无调用数据
+    </div>
+
+    <div v-else :class="$style.bars">
       <div
         v-for="item in distribution"
         :key="item.agent"
@@ -69,6 +74,10 @@ function formatDuration(ms: number): string {
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .title {
@@ -76,12 +85,24 @@ function formatDuration(ms: number): string {
   font-weight: 600;
   color: var(--el-text-color-primary);
   margin: 0 0 16px 0;
+  flex-shrink: 0;
 }
 
 .bars {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 
 .bar {

@@ -1,0 +1,123 @@
+.palette {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 14px 12px;
+  background: var(--bg-color);
+  box-sizing: border-box;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text-color-primary);
+}
+
+.section {
+  margin-bottom: 18px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.sectionTitle {
+  font-size: 12px;
+  color: var(--text-color-placeholder);
+  margin-bottom: 8px;
+  padding-left: 2px;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 10px 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--bg-color-secondary);
+  cursor: grab;
+  user-select: none;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--item-accent, var(--color-primary));
+    opacity: 0.55;
+    transition: opacity 0.2s ease;
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--item-accent, var(--color-primary)) 6%, var(--bg-color-secondary));
+    border-color: color-mix(in srgb, var(--item-accent, var(--color-primary)) 22%, var(--border-color-lighter));
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--item-accent, var(--color-primary)) 10%, transparent);
+
+    &::before {
+      opacity: 1;
+    }
+
+    .iconWrap {
+      transform: scale(1.04);
+    }
+  }
+
+  &:active {
+    cursor: grabbing;
+    transform: scale(0.985);
+  }
+}
+
+.iconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  color: var(--item-accent, var(--color-primary));
+  background: color-mix(in srgb, var(--item-accent, var(--color-primary)) 12%, transparent);
+  transition: transform 0.2s ease;
+}
+
+.itemText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.itemLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-color-primary);
+  line-height: 1.3;
+}
+
+.itemDesc {
+  font-size: 11px;
+  color: var(--text-color-placeholder);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

@@ -72,6 +72,7 @@
   cursor: pointer;
   color: var(--ai-text-hint, #999999);
   transition: all 0.15s;
+  padding: 0;
 }
 
 .actionBtn:hover {

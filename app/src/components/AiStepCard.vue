@@ -4,6 +4,7 @@ import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import type { StepType, StepStatus } from '@/types'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import { getToolDisplayLabel } from '@schema-platform/ai-shared/toolNames'
 
 export interface AiStepCardProps {
   /** 步骤序号（从 1 开始） */
@@ -56,10 +57,17 @@ defineEmits<{
 }>()
 
 const SEARCH_TOOL_NAMES = new Set([
+  // MCP 工具名
+  'schema__search', 'schema__search_published', 'schema__fuzzy_search',
+  'flow__search', 'flow__search_users',
+  'widget__query', 'industry__search_templates',
+  // 向后兼容（旧工具名）
   'search_schemas', 'search_published_schemas', 'fuzzy_search_schemas',
   'search_flows', 'search_users', 'get_widget_catalogue',
   'query_widgets', 'search_industry_templates',
 ])
+
+const RAG_TOOL_NAMES = new Set(['rag__search', 'rag_index', 'rag_search'])
 
 /** 错误类型到用户友好描述的映射 */
 const ERROR_DESCRIPTION_MAP: Record<string, string> = {
@@ -182,6 +190,52 @@ const compactResult = computed(() => {
   return { total, names, summary: r.summary as string | undefined }
 })
 
+function extractToolQuery(args?: Record<string, unknown>): string {
+  if (!args) return ''
+  if (typeof args.query === 'string') return args.query
+  if (typeof args.input === 'string') {
+    try {
+      const parsed = JSON.parse(args.input) as { query?: string }
+      return parsed.query ?? ''
+    } catch {
+      return ''
+    }
+  }
+  return ''
+}
+
+const ragDisplay = computed(() => {
+  if (!RAG_TOOL_NAMES.has(props.toolName ?? '')) return null
+  const r = parsedToolResult.value
+  const query = extractToolQuery(props.toolArguments)
+
+  if (!r) {
+    return { query, error: null as string | null, empty: true, items: [] as Array<{ name: string; score?: number; type?: string }>, summary: null as string | null }
+  }
+
+  if (r.success === false || r.error) {
+    return {
+      query,
+      error: String(r.error ?? '搜索失败'),
+      empty: true,
+      items: [] as Array<{ name: string; score?: number; type?: string }>,
+      summary: null as string | null,
+    }
+  }
+
+  const data = r.data as { schemas?: Array<{ name: string; score?: number; type?: string }>; total?: number } | undefined
+  const items = data?.schemas ?? []
+  const summary = typeof r.summary === 'string' ? r.summary : null
+
+  if (items.length === 0) {
+    return { query, error: null, empty: true, items, summary }
+  }
+
+  return { query, error: null, empty: false, items, summary }
+})
+
+const showRawToolJson = computed(() => !ragDisplay.value)
+
 const statusLabel = computed(() => {
   if (isRunning.value) return '调用中...'
   if (isDone.value) return '完成'
@@ -255,7 +309,7 @@ const highlightedJson = computed(() => {
             </span>
           </div>
           <div v-if="toolName && (type === 'tool_call' || type === 'tool_error')" :class="$style.subtitle">
-            {{ toolName }}
+            {{ toolDisplayName || getToolDisplayLabel(toolName) }}
           </div>
           <div v-else-if="type === 'thinking'" :class="$style.subtitle">
             {{ isRunning ? '分析需求中...' : collapsed ? thinkingSummary : '已完成思考' }}
@@ -328,7 +382,30 @@ const highlightedJson = computed(() => {
 
         <!-- Tool details (success) -->
         <template v-else>
-          <div v-if="hasToolDetails" :class="$style.toolSection">
+          <!-- RAG 工具：友好展示 -->
+          <div v-if="ragDisplay" :class="$style.toolSection">
+            <div v-if="ragDisplay.query" :class="$style.ragQuery">
+              <span :class="$style.toolSectionLabel">查询</span>
+              <span>{{ ragDisplay.query }}</span>
+            </div>
+            <div :class="$style.toolSectionLabel">结果</div>
+            <div v-if="ragDisplay.error" :class="$style.ragEmpty">{{ ragDisplay.error }}</div>
+            <div v-else-if="ragDisplay.empty" :class="$style.ragEmpty">没有匹配结果</div>
+            <template v-else>
+              <div v-if="ragDisplay.summary" :class="$style.toolSummary">{{ ragDisplay.summary }}</div>
+              <ul :class="$style.compactList">
+                <li v-for="(item, i) in ragDisplay.items.slice(0, 5)" :key="i">
+                  {{ item.name }}
+                  <span v-if="item.score != null" :class="$style.ragScore">（{{ item.score }}%）</span>
+                </li>
+                <li v-if="ragDisplay.items.length > 5" :class="$style.moreItem">
+                  ...共 {{ ragDisplay.items.length }} 条
+                </li>
+              </ul>
+            </template>
+          </div>
+
+          <div v-else-if="hasToolDetails && showRawToolJson" :class="$style.toolSection">
             <div :class="$style.toolSectionLabel">参数</div>
             <div :class="$style.toolJson">
               <pre>{{ JSON.stringify(toolArguments, null, 2) }}</pre>
@@ -350,7 +427,7 @@ const highlightedJson = computed(() => {
             </details>
           </div>
           <!-- 非搜索工具：保持原样 -->
-          <template v-else>
+          <template v-else-if="showRawToolJson">
             <div v-if="hasToolResult" :class="$style.toolSection">
               <div :class="$style.toolSectionLabel">结果</div>
               <div v-if="toolResultSummary" :class="$style.toolSummary">{{ toolResultSummary }}</div>
