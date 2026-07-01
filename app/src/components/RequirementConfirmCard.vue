@@ -5,7 +5,7 @@
  */
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 interface ConfirmQuestion {
@@ -32,26 +32,27 @@ interface RequirementConfirmCardProps {
       description: string
     }>
   }
+  /** 已收集的部分答案（渐进式） */
+  partialAnswers?: Record<string, string>
+  /** 当前待回答的问题 id */
+  nextQuestionId?: string | null
   /** 是否正在等待用户确认 */
   waitingConfirmation?: boolean
 }
 
 const props = withDefaults(defineProps<RequirementConfirmCardProps>(), {
   waitingConfirmation: true,
+  partialAnswers: () => ({}),
+  nextQuestionId: null,
 })
 
 const emit = defineEmits<{
-  confirm: [answers: Record<string, string>]
+  /** 单条答案（选项或输入框提交） */
+  answer: [questionId: string, value: string]
   skip: []
 }>()
 
-// 用户答案
-const answers = ref<Record<string, string>>({})
-
-// 初始化答案
-for (const q of props.analysis.confirmQuestions) {
-  answers.value[q.id] = ''
-}
+const mergedAnswers = computed(() => ({ ...props.partialAnswers }))
 
 // 复杂度标签
 const complexityLabel = computed(() => {
@@ -72,22 +73,27 @@ const completenessColor = computed(() => {
 })
 
 // 是否所有必填问题都已回答
-const canConfirm = computed(() => {
-  return props.analysis.confirmQuestions
-    .filter(q => q.required)
-    .every(q => answers.value[q.id]?.trim())
-})
-
-function handleConfirm() {
-  emit('confirm', { ...answers.value })
-}
+const allRequiredAnswered = computed(() =>
+  props.analysis.confirmQuestions
+    .filter((q) => q.required)
+    .every((q) => mergedAnswers.value[q.id]?.trim()),
+)
 
 function handleSkip() {
   emit('skip')
 }
 
 function selectOption(questionId: string, option: string) {
-  answers.value[questionId] = option
+  if (!props.waitingConfirmation) return
+  emit('answer', questionId, option)
+}
+
+function isAnswered(questionId: string): boolean {
+  return Boolean(mergedAnswers.value[questionId]?.trim())
+}
+
+function isCurrentQuestion(questionId: string): boolean {
+  return props.waitingConfirmation && props.nextQuestionId === questionId
 }
 </script>
 
@@ -177,47 +183,60 @@ function selectOption(questionId: string, option: string) {
       <div :class="$style.questionsTitle">
         <AppIcon name="question-filled" :size="14" />
         <span>请确认以下信息</span>
+        <span v-if="waitingConfirmation && !allRequiredAnswered" :class="$style.progressHint">
+          在下方输入框逐条回复，答完必填项后自动继续
+        </span>
+        <span v-else-if="waitingConfirmation && allRequiredAnswered" :class="$style.progressHint">
+          必填项已完成，发送任意内容或直接点选以继续
+        </span>
       </div>
 
       <div :class="$style.questionsList">
-        <div v-for="q in analysis.confirmQuestions" :key="q.id" :class="$style.questionItem">
+        <div
+          v-for="q in analysis.confirmQuestions"
+          :key="q.id"
+          :class="[
+            $style.questionItem,
+            isCurrentQuestion(q.id) && $style.questionItemActive,
+            isAnswered(q.id) && $style.questionItemDone,
+          ]"
+        >
           <div :class="$style.questionText">
+            <AppIcon v-if="isAnswered(q.id)" name="circle-check" :size="14" :class="$style.answeredIcon" />
             {{ q.question }}
             <span v-if="q.required" :class="$style.required">*</span>
           </div>
 
+          <div v-if="isAnswered(q.id)" :class="$style.answeredValue">
+            {{ mergedAnswers[q.id] }}
+          </div>
+
           <!-- 选项（有序列表） -->
-          <div v-if="q.options && q.options.length > 0" :class="$style.optionsList">
+          <div v-else-if="q.options && q.options.length > 0" :class="$style.optionsList">
             <div
               v-for="(opt, idx) in q.options"
               :key="opt"
-              :class="[$style.optionItem, { [$style.optionSelected]: answers[q.id] === opt }]"
-              @click="selectOption(q.id, opt)"
+              :class="[$style.optionItem, { [$style.optionDisabled]: !waitingConfirmation }]"
+              @click="waitingConfirmation && selectOption(q.id, opt)"
             >
               <span :class="$style.optionIndex">{{ idx + 1 }}</span>
               <span :class="$style.optionText">{{ opt }}</span>
             </div>
           </div>
 
-          <!-- 自由输入 -->
-          <el-input
-            v-else
-            v-model="answers[q.id]"
-            :placeholder="q.question"
-            size="small"
-          />
+          <!-- 自由输入类问题：引导使用底部输入框 -->
+          <div v-else-if="isCurrentQuestion(q.id)" :class="$style.inputHint">
+            请在下方输入框回复
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 操作按钮 -->
+    <!-- 跳过 -->
     <div v-if="waitingConfirmation" :class="$style.actions">
-      <el-button @click="handleSkip">
+      <button type="button" :class="$style.skipLink" @click="handleSkip">
         跳过，直接执行
-      </el-button>
-      <el-button type="primary" @click="handleConfirm" :disabled="!canConfirm">
-        确认，开始执行
-      </el-button>
+      </button>
     </div>
   </div>
 </template>
@@ -395,11 +414,51 @@ function selectOption(questionId: string, option: string) {
 .questionsTitle {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   font-size: 12px;
   font-weight: 600;
   color: var(--ai-text-primary, #333333);
   margin-bottom: 12px;
+}
+
+.progressHint {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ai-text-hint, #999999);
+}
+
+.questionItemActive {
+  border: 1px solid var(--ai-color-primary, #0060A2);
+  border-radius: 8px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--ai-color-primary, #0060A2) 6%, transparent);
+}
+
+.questionItemDone {
+  opacity: 0.85;
+}
+
+.answeredIcon {
+  color: var(--ai-color-success, #67C23A);
+  margin-right: 4px;
+}
+
+.answeredValue {
+  font-size: 13px;
+  color: var(--ai-color-primary, #0060A2);
+  padding-left: 18px;
+}
+
+.inputHint {
+  font-size: 12px;
+  color: var(--ai-text-hint, #999999);
+  padding-left: 2px;
+}
+
+.optionDisabled {
+  pointer-events: none;
+  opacity: 0.5;
 }
 
 .questionsList {
@@ -479,9 +538,21 @@ function selectOption(questionId: string, option: string) {
 .actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 16px;
+  padding: 12px 16px;
   border-top: 1px solid var(--ai-border-light, #EBEDF3);
   background: var(--ai-bg-gray-light, #FAFAFA);
+}
+
+.skipLink {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  color: var(--ai-text-hint, #999999);
+  cursor: pointer;
+}
+
+.skipLink:hover {
+  color: var(--ai-color-primary, #0060A2);
 }
 </style>

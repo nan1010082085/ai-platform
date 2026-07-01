@@ -37,12 +37,27 @@
         </button>
       </el-tooltip>
       <div :class="styles.divider" />
+      <el-popover placement="bottom" :width="240" trigger="click">
+        <div :class="styles.edgeStylePopover">
+          <div :class="styles.edgeStyleTitle">连线样式</div>
+          <FilterTabs
+            :model-value="edgeLineStyle ?? 'smoothstep'"
+            :options="edgeLineStyleOptions"
+            @update:model-value="$emit('update:edgeLineStyle', $event as EdgeLineStyle)"
+          />
+        </div>
+        <template #reference>
+          <button :class="styles.iconBtn" title="连线样式">
+            <AppIcon name="connection" :size="14" />
+          </button>
+        </template>
+      </el-popover>
       <el-tooltip :content="deleteTooltip" placement="bottom">
         <button
-          :class="[styles.iconBtn, { [styles.iconBtnDanger]: canDeleteNode }]"
+          :class="[styles.iconBtn, { [styles.iconBtnDanger]: canDeleteSelection }]"
           :title="deleteTitle"
-          :disabled="!canDeleteNode"
-          @click="$emit('delete-node')"
+          :disabled="!canDeleteSelection"
+          @click="$emit('delete-selection')"
         >
           <AppIcon name="delete" :size="14" />
         </button>
@@ -60,7 +75,7 @@
             <span :class="styles.shortcutKeys"><kbd>Ctrl</kbd> + <kbd>S</kbd></span>
           </div>
           <div :class="styles.shortcutRow">
-            <span :class="styles.shortcutLabel">删除节点</span>
+            <span :class="styles.shortcutLabel">删除节点/连线</span>
             <span :class="styles.shortcutKeys"><kbd>Delete</kbd></span>
           </div>
         </div>
@@ -119,6 +134,8 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowDown } from '@element-plus/icons-vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
+import { EDGE_LINE_STYLE_OPTIONS, type EdgeLineStyle } from '@/types/edgeLineStyle'
 import styles from './AgentWorkflowToolbar.module.scss'
 
 const props = defineProps<{
@@ -132,9 +149,14 @@ const props = defineProps<{
   showRightPanel?: boolean
   /** 当前选中节点 ID（用于启用删除按钮） */
   selectedNodeId?: string | null
+  /** 当前选中连线 ID（用于启用删除按钮） */
+  selectedEdgeId?: string | null
   /** 是否处于执行中（禁用节点删除） */
   hasRunningExecution?: boolean
+  edgeLineStyle?: EdgeLineStyle
 }>()
+
+const edgeLineStyleOptions = EDGE_LINE_STYLE_OPTIONS
 
 const emit = defineEmits<{
   save: []
@@ -145,20 +167,25 @@ const emit = defineEmits<{
   'version-history': []
   'toggle-left-panel': []
   'toggle-right-panel': []
-  'delete-node': []
+  'delete-selection': []
+  'update:edgeLineStyle': [style: EdgeLineStyle]
   'update:title': [title: string]
 }>()
 
 const router = useRouter()
 
-const canDeleteNode = computed(
-  () => !!props.selectedNodeId && !props.executing && !props.hasRunningExecution,
+const canDeleteSelection = computed(
+  () =>
+    (!!props.selectedNodeId || !!props.selectedEdgeId)
+    && !props.executing
+    && !props.hasRunningExecution,
 )
 
 const deleteTitle = computed(() => {
-  if (props.hasRunningExecution || props.executing) return '执行中，不允许删除节点'
-  if (!props.selectedNodeId) return '请先选中要删除的节点'
-  return '删除选中节点 (Delete)'
+  if (props.hasRunningExecution || props.executing) return '执行中，不允许删除'
+  if (props.selectedEdgeId) return '删除选中连线 (Delete)'
+  if (props.selectedNodeId) return '删除选中节点 (Delete)'
+  return '请先选中要删除的节点或连线'
 })
 
 const deleteTooltip = computed(() => deleteTitle.value)

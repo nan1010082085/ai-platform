@@ -1,0 +1,26 @@
+.edge-active .vue-flow__edge-path {
+  stroke: var(--color-primary) !important;
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 0 4px rgba(var(--color-primary-rgb), 0.5));
+}
+
+.edge-completed .vue-flow__edge-path {
+  stroke: var(--color-success) !important;
+  stroke-width: 2 !important;
+  stroke-dasharray: none !important;
+  animation: none !important;
+}
+
+.edge-pending .vue-flow__edge-path {
+  stroke: var(--text-color-placeholder, #a8abb2) !important;
+  stroke-width: 1.5 !important;
+  stroke-dasharray: 6 4 !important;
+  animation: none !important;
+  opacity: 0.85;
+}
+
+.edge-failed .vue-flow__edge-path {
+  stroke: var(--color-danger, #f56c6c) !important;
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 0 4px rgba(245, 108, 108, 0.5));
+}

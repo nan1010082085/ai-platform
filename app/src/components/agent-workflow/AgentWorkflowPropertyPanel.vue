@@ -73,6 +73,11 @@ function copyEdgeId() {
 function selectEdge(edgeId: string) {
   store.selectEdge(edgeId)
 }
+
+function deleteSelectedEdge() {
+  if (!store.selectedEdgeId) return
+  store.removeEdge(store.selectedEdgeId)
+}
 </script>
 
 <template>
@@ -158,7 +163,9 @@ function selectEdge(edgeId: string) {
             @click="selectEdge(edge.id)"
           >
             <span :class="styles.edgeLabel">
-              {{ (edge.data as Record<string, unknown>)?.branch || '默认' }}
+              {{ (edge.data as Record<string, unknown>)?.label
+                || (edge.data as Record<string, unknown>)?.branch
+                || '默认' }}
             </span>
             <span :class="styles.edgeTarget">→ {{ edge.target }}</span>
           </div>
@@ -175,7 +182,15 @@ function selectEdge(edgeId: string) {
       </div>
 
       <el-scrollbar :class="styles.scroll">
-        <SectionToggle title="连线属性" :count="2">
+        <SectionToggle title="连线属性" :count="3">
+          <FieldRow label="连线标签">
+            <el-input
+              :model-value="String((selectedEdge.data as Record<string, unknown>)?.label ?? selectedEdge.label ?? '')"
+              size="small"
+              placeholder="可选标签"
+              @update:model-value="patchEdge('label', $event || undefined)"
+            />
+          </FieldRow>
           <FieldRow label="分支标记">
             <el-select
               :model-value="String((selectedEdge.data as Record<string, unknown>)?.branch ?? '')"
@@ -192,6 +207,11 @@ function selectEdge(edgeId: string) {
             <el-input :model-value="selectedEdge.id" disabled size="small" />
           </FieldRow>
         </SectionToggle>
+        <div :class="styles.deleteRow">
+          <el-button type="danger" plain size="small" @click="deleteSelectedEdge">
+            删除连线
+          </el-button>
+        </div>
       </el-scrollbar>
     </template>
 

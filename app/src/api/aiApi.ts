@@ -344,16 +344,22 @@ export function resumeInterrupt(
 // ---- 文件上传 ----
 
 export interface UploadResult {
+  id: string
   filename: string
   mimetype: string
   size: number
   text: string
+  textLength?: number
+  chunkCount?: number
+  excerpt?: string
+  hasOriginalFile?: boolean
+  extractionMethod?: 'ocr' | 'pdf' | 'docx' | 'txt' | 'empty'
 }
 
 export async function uploadFile(file: File): Promise<UploadResult> {
   const form = new FormData()
   form.append('file', file)
-  const response = await fetch(`${BASE_URL}/ai/upload`, {
+  const response = await fetch(`${BASE_URL}/ai/documents/upload`, {
     method: 'POST',
     headers: buildHeaders(),
     body: form,
@@ -368,6 +374,79 @@ export async function uploadFile(file: File): Promise<UploadResult> {
     throw new AiApiError(body.error?.message ?? 'Upload failed', response.status)
   }
   return body.data
+}
+
+export interface DocumentPreviewResult {
+  id: string
+  filename: string
+  mimetype: string
+  size: number
+  text: string
+  excerpt: string
+  chunks: Array<{ page: number; text: string; startOffset: number }>
+  summary?: StructuredSummary
+  hasOriginalFile?: boolean
+  extractionMethod?: 'ocr' | 'pdf' | 'docx' | 'txt' | 'empty'
+}
+
+export interface StructuredSummary {
+  title: string
+  summary: string
+  keyPoints: string[]
+  sections: Array<{ heading: string; content: string }>
+  entities?: string[]
+  generatedAt: string
+}
+
+export interface DocumentSummarizeResult {
+  documentId: string
+  filename: string
+  summary: StructuredSummary
+}
+
+export async function getDocumentPreview(documentId: string): Promise<DocumentPreviewResult> {
+  return request<DocumentPreviewResult>(`/ai/documents/${encodeURIComponent(documentId)}/preview`)
+}
+
+export async function summarizeDocument(
+  documentId: string,
+  force = false,
+): Promise<DocumentSummarizeResult> {
+  return request<DocumentSummarizeResult>(`/ai/documents/${encodeURIComponent(documentId)}/summarize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ force }),
+  })
+}
+
+export function getDocumentFileUrl(documentId: string): string {
+  return `${BASE_URL}/ai/documents/${encodeURIComponent(documentId)}/file`
+}
+
+export async function downloadDocumentFile(documentId: string, filename: string): Promise<void> {
+  const response = await fetch(getDocumentFileUrl(documentId), {
+    headers: buildHeaders(),
+  })
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    const msg = body?.error?.message ?? `${response.status} ${response.statusText}`
+    throw new AiApiError(msg, response.status)
+  }
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+export async function reparseDocument(documentId: string): Promise<UploadResult> {
+  return request<UploadResult>(`/ai/documents/${encodeURIComponent(documentId)}/reparse`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  })
 }
 
 // ---- 图片分析 ----

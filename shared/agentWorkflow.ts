@@ -2,12 +2,31 @@
  * Agent 工作流编排 — 领域类型（n8n 风格 DAG）
  */
 
+export type ToolNodeType =
+  | 'tool-mcp-schema'
+  | 'tool-mcp-flow'
+  | 'tool-mcp-widget'
+  | 'tool-mcp-rag'
+  | 'tool-mcp-industry'
+  | 'tool-langgraph'
+  | 'tool-http'
+
+export type ExpertNodeType =
+  | 'agent-intent'
+  | 'agent-editor'
+  | 'agent-flow'
+  | 'agent-page'
+  | 'agent-general'
+
 export type AgentNodeType =
   | 'manual-trigger'
   | 'webhook-trigger'
+  | 'document-parse'
   | 'llm'
   | 'agent'
+  | ExpertNodeType
   | 'tool'
+  | ToolNodeType
   | 'if'
   | 'hitl'
   | 'end'
@@ -41,6 +60,14 @@ export interface AgentWorkflowNodeData {
   /** agent */
   agentType?: 'auto' | 'editor' | 'flow' | 'page' | 'general'
   /** tool */
+  toolCategory?:
+    | 'mcp-schema'
+    | 'mcp-flow'
+    | 'mcp-widget'
+    | 'mcp-rag'
+    | 'mcp-industry'
+    | 'langgraph'
+    | 'workflow'
   toolName?: string
   toolArgs?: Record<string, unknown>
   /** if */
@@ -52,6 +79,12 @@ export interface AgentWorkflowNodeData {
   /** webhook-trigger */
   webhookPath?: string
   webhookMethod?: 'GET' | 'POST'
+  /** 发布时生成，用于 HMAC 验签 */
+  webhookSecret?: string
+  /** document-parse */
+  documentSource?: 'documentId' | 'inputField'
+  documentId?: string
+  inputField?: string
   notes?: string
 }
 
@@ -180,6 +213,57 @@ export function createDefaultAgentWorkflowGraph(): AgentWorkflowGraph {
   }
 }
 
+/** 文档解析 + 摘要工作流模板（Webhook → 解析 → LLM 摘要 → 结束） */
+export function createDocumentSummaryWorkflowGraph(): AgentWorkflowGraph {
+  return {
+    entryNodeId: 'webhook-1',
+    nodes: [
+      {
+        id: 'webhook-1',
+        type: 'webhook-trigger',
+        position: { x: 80, y: 200 },
+        data: {
+          label: 'Webhook 触发',
+          webhookPath: '/document-summary',
+          webhookMethod: 'POST',
+        },
+      },
+      {
+        id: 'parse-1',
+        type: 'document-parse',
+        position: { x: 320, y: 200 },
+        data: {
+          label: '文档解析',
+          documentSource: 'inputField',
+          inputField: 'documentId',
+        },
+      },
+      {
+        id: 'llm-1',
+        type: 'llm',
+        position: { x: 560, y: 200 },
+        data: {
+          label: '生成摘要',
+          model: 'default',
+          systemPrompt: '你是文档摘要助手，请根据解析后的文档内容生成简洁的中文摘要。',
+          prompt: '请为以下文档生成结构化摘要：\n\n文件名：{{$node.parse-1.filename}}\n\n正文：\n{{$node.parse-1.text}}',
+        },
+      },
+      {
+        id: 'end-1',
+        type: 'end',
+        position: { x: 800, y: 200 },
+        data: { label: '结束' },
+      },
+    ],
+    edges: [
+      { id: 'e1', source: 'webhook-1', target: 'parse-1' },
+      { id: 'e2', source: 'parse-1', target: 'llm-1' },
+      { id: 'e3', source: 'llm-1', target: 'end-1' },
+    ],
+  }
+}
+
 export function validateAgentWorkflowGraph(graph: AgentWorkflowGraph): AgentWorkflowValidationIssue[] {
   const issues: AgentWorkflowValidationIssue[] = []
   if (!graph.nodes.length) {
@@ -213,8 +297,11 @@ export function validateAgentWorkflowGraph(graph: AgentWorkflowGraph): AgentWork
     if (node.type === 'llm' && !node.data.prompt?.trim()) {
       issues.push({ level: 'warning', nodeId: node.id, message: 'LLM 节点未配置 Prompt' })
     }
-    if (node.type === 'tool' && !node.data.toolName?.trim()) {
-      issues.push({ level: 'warning', nodeId: node.id, message: '工具节点未选择工具' })
+    if (
+      (node.type === 'tool' || node.type.startsWith('tool-'))
+      && !node.data.toolName?.trim()
+    ) {
+      issues.push({ level: 'warning', nodeId: node.id, message: '工具节点未选择具体工具' })
     }
   }
   return issues

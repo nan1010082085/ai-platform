@@ -2,6 +2,7 @@
 import SectionToggle from '../SectionToggle.vue'
 import FieldRow from '../FieldRow.vue'
 import VariableReferencePanel from './VariableReferencePanel.vue'
+import { CHAT_MODEL_OPTIONS, DEFAULT_CHAT_MODEL } from '@/constants/chatModels'
 import type { AgentNodePanelEmits, AgentNodePanelProps } from '../types'
 
 const props = defineProps<AgentNodePanelProps>()
@@ -19,11 +20,13 @@ function update(key: string, value: unknown) {
         :model-value="String(props.node.data?.model ?? 'default')"
         @update:model-value="update('model', $event)"
       >
-        <el-option label="默认模型 (deepseek-v4-flash)" value="default" />
-        <el-option label="DeepSeek V4 Flash" value="deepseek-v4-flash" />
-        <el-option label="DeepSeek V4 Pro" value="deepseek-v4-pro" />
-        <el-option label="OpenAI GPT-4o" value="gpt-4o" />
-        <el-option label="OpenAI GPT-4o mini" value="gpt-4o-mini" />
+        <el-option :label="`默认模型 (${DEFAULT_CHAT_MODEL})`" value="default" />
+        <el-option
+          v-for="item in CHAT_MODEL_OPTIONS"
+          :key="item.value"
+          :label="`DeepSeek ${item.label}`"
+          :value="item.value"
+        />
       </el-select>
     </FieldRow>
     <FieldRow label="输入" textarea hint="User Prompt，支持变量模板">

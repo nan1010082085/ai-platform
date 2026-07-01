@@ -7,6 +7,8 @@ import styles from './AgentWorkflowPalette.module.scss'
 const categories = [
   { key: 'trigger', label: '触发器' },
   { key: 'ai', label: 'AI' },
+  { key: 'experts', label: '专家 Agent' },
+  { key: 'tools', label: 'MCP 工具' },
   { key: 'logic', label: '逻辑' },
   { key: 'action', label: '动作' },
 ] as const

@@ -392,3 +392,16 @@
   color: var(--color-primary-hover, #4581E9);
   background: var(--color-primary-lighter, #EEF5FF);
 }
+
+.attachmentCards,
+.summaryCards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 6px;
+  max-width: 320px;
+}
+
+.msgUser .attachmentCards {
+  margin-left: auto;
+}

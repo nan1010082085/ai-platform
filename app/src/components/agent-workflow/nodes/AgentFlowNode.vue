@@ -44,10 +44,8 @@ const preview = computed(() =>
 const statusClass = computed(() => {
   if (!record.value) return ''
   const map: Record<string, string | undefined> = {
-    success: styles.statusSuccess,
     error: styles.statusError,
     waiting: styles.statusWaiting,
-    running: styles.statusRunning,
   }
   return map[record.value.status] ?? ''
 })
@@ -79,7 +77,6 @@ function toneClass(tone?: PreviewTone): string {
           <span :class="styles.type">{{ palette?.label ?? nodeType }}</span>
           <span v-if="statusLabel" :class="styles.statusBadge">{{ statusLabel }}</span>
         </div>
-        <span :class="styles.label">{{ nodeData.label ?? props.id }}</span>
       </div>
     </div>
 

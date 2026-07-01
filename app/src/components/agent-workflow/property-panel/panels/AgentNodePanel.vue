@@ -1,12 +1,41 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import SectionToggle from '../SectionToggle.vue'
 import FieldRow from '../FieldRow.vue'
 import VariableReferencePanel from './VariableReferencePanel.vue'
 import styles from './shared.module.scss'
+import {
+  EXPERT_AGENT_LABELS,
+  getExpertAgentTypeForNode,
+  getExpertNodeDescription,
+  getExpertNodeTypeLabel,
+  isIntentExpertNode,
+} from '@/constants/expertNodeTypes'
 import type { AgentNodePanelEmits, AgentNodePanelProps } from '../types'
+import type { AgentNodeType } from '@/types/agentWorkflow'
 
 const props = defineProps<AgentNodePanelProps>()
 const emit = defineEmits<AgentNodePanelEmits>()
+
+const nodeType = computed(() => (props.node.type ?? 'agent') as AgentNodeType)
+
+const isIntent = computed(() => isIntentExpertNode(nodeType.value))
+
+const expertLabel = computed(() => {
+  if (isIntent.value) return '意图识别（自动路由）'
+  const kind = getExpertAgentTypeForNode(nodeType.value, props.node.data)
+  if (kind && kind !== 'auto') return EXPERT_AGENT_LABELS[kind]
+  const legacy = props.node.data?.agentType
+  if (legacy && legacy !== 'auto') return EXPERT_AGENT_LABELS[legacy as keyof typeof EXPERT_AGENT_LABELS] ?? legacy
+  return getExpertNodeTypeLabel(nodeType.value) ?? '专家 Agent'
+})
+
+const expertHint = computed(() =>
+  getExpertNodeDescription(nodeType.value)
+  ?? (isIntent.value
+    ? '运行时分析上游输入，自动选择 Editor / Flow / Page / General 专家并执行'
+    : '专家类型由左侧拖拽节点决定，不可更改'),
+)
 
 function update(key: string, value: unknown) {
   emit('updateNodeData', key, value)
@@ -14,19 +43,10 @@ function update(key: string, value: unknown) {
 </script>
 
 <template>
-  <SectionToggle title="Agent 配置" :count="2">
-    <FieldRow label="专家类型" hint="选择平台内置 Agent，或自动识别">
-      <el-select
-        :model-value="String(props.node.data?.agentType ?? 'general')"
-        @update:model-value="update('agentType', $event)"
-      >
-        <el-option label="自动识别" value="auto" />
-        <el-option label="General 通用" value="general" />
-        <el-option label="Editor 表单专家" value="editor" />
-        <el-option label="Flow 流程专家" value="flow" />
-        <el-option label="Page 页面专家" value="page" />
-      </el-select>
-    </FieldRow>
+  <SectionToggle title="专家配置" :count="isIntent ? 1 : 2">
+    <div :class="styles.hint">
+      专家类型：{{ expertLabel }}（由节点类型决定）
+    </div>
     <FieldRow label="任务指令" textarea hint="可选，覆盖上游输出作为 Agent 输入">
       <el-input
         type="textarea"
@@ -36,23 +56,7 @@ function update(key: string, value: unknown) {
         @update:model-value="update('prompt', $event)"
       />
     </FieldRow>
-    <div :class="styles.hint">
-      <template v-if="(props.node.data?.agentType ?? 'general') === 'auto'">
-        自动识别：根据输入内容自动判断使用 Editor/Flow/Page 专家
-      </template>
-      <template v-else-if="(props.node.data?.agentType ?? 'general') === 'editor'">
-        Editor 专家：生成/校验/更新 Schema 表单，可调用搜索、校验、组件库等工具
-      </template>
-      <template v-else-if="(props.node.data?.agentType ?? 'general') === 'flow'">
-        Flow 专家：生成/校验/更新 BPMN 流程，可调用流程搜索、绑定 Schema 等工具
-      </template>
-      <template v-else-if="(props.node.data?.agentType ?? 'general') === 'page'">
-        Page 专家：页面级生成，复用 Editor 工具集
-      </template>
-      <template v-else>
-        General 通用：通用 LLM 推理，可调用 RAG 检索工具
-      </template>
-    </div>
+    <div :class="styles.hint">{{ expertHint }}</div>
   </SectionToggle>
   <VariableReferencePanel :node="props.node" />
 </template>

@@ -2,6 +2,7 @@ import 'element-plus/dist/index.css'
 import '@schema-platform/platform-shared/styles/theme.scss'
 import '@schema-platform/platform-shared/styles/css-variables.scss'
 import './styles/ai-theme-bridge.scss'
+import './styles/graphEdgeStates.scss'
 
 import { createApp, type App } from 'vue'
 import { createPinia } from 'pinia'

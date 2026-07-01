@@ -126,9 +126,14 @@ function onExecutions() {
   router.push({ name: 'agent-workflow-executions', params: { id: workflowId() } })
 }
 
-function onDeleteNode() {
-  if (!store.selectedNodeId) return
-  store.removeNode(store.selectedNodeId)
+function onDeleteSelection() {
+  if (store.selectedEdgeId) {
+    store.removeEdge(store.selectedEdgeId)
+    return
+  }
+  if (store.selectedNodeId) {
+    store.removeNode(store.selectedNodeId)
+  }
 }
 
 async function loadVersions() {
@@ -187,14 +192,17 @@ onUnmounted(() => {
       :show-left-panel="showLeft"
       :show-right-panel="showRight"
       :selected-node-id="store.selectedNodeId"
+      :selected-edge-id="store.selectedEdgeId"
       :has-running-execution="hasRunningExecution"
+      :edge-line-style="store.edgeLineStyle"
       @update:title="onTitleUpdate"
       @save="onSave"
       @publish="onPublish"
       @execute="onExecute"
       @validate="onValidate"
       @executions="onExecutions"
-      @delete-node="onDeleteNode"
+      @delete-selection="onDeleteSelection"
+      @update:edge-line-style="store.setEdgeLineStyle"
       @version-history="loadVersions"
       @toggle-left-panel="showLeft = !showLeft"
       @toggle-right-panel="showRight = !showRight"

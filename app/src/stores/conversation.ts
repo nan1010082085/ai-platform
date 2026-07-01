@@ -46,6 +46,8 @@ export const useConversationStore = defineStore('conversation', () => {
       toolCalls: (m as Record<string, unknown>).toolCalls as AIMessage['toolCalls'],
       schema: m.schema as Widget[] | undefined,
       flow: m.flow as FlowGraph | undefined,
+      attachments: (m as Record<string, unknown>).attachments as AIMessage['attachments'],
+      documentSummaries: (m as Record<string, unknown>).documentSummaries as AIMessage['documentSummaries'],
       timestamp: new Date(m.timestamp),
       feedback: (m as Record<string, unknown>).feedback as 'positive' | 'negative' | null | undefined,
     }))

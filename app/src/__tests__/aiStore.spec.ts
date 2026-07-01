@@ -808,7 +808,7 @@ describe('useAiStore', () => {
   })
 
   describe('requirement confirm (HITL)', () => {
-    it('completes sendMessage on interrupt and resumes via confirmRequirement', async () => {
+    it('option click auto-resumes without confirm button', async () => {
       const store = useAiStore()
       const analysis = {
         intent: 'create',
@@ -852,11 +852,53 @@ describe('useAiStore', () => {
         })
       })
 
-      await store.confirmRequirement({ q1: '完整' })
+      await store.answerRequirementOption('q1', '完整')
 
       expect(emitChatResume).toHaveBeenCalledWith('conv-hitl-1', { answers: { q1: '完整' } })
       expect(store.loading).toBe(false)
       expect(store.pendingInterrupt).toBeNull()
+    })
+
+    it('progressive: input answers accumulate and auto-resume when required complete', async () => {
+      const store = useAiStore()
+      const analysis = {
+        intent: 'create',
+        type: 'form',
+        complexity: 'medium',
+        completeness: { score: 60, missing: [], assumptions: [] },
+        confirmQuestions: [
+          { id: 'q1', question: '需要哪些字段？', required: true },
+          { id: 'q2', question: '布局？', options: ['单列', '双列'], required: true },
+        ],
+        suggestedChain: [],
+      }
+
+      mockChatStream([
+        {
+          type: 'interrupt',
+          threadId: 'conv-prog-1',
+          interruptType: 'requirement_confirm',
+          data: { analysis },
+        },
+        { type: 'done', conversationId: 'conv-prog-1', interrupted: true },
+      ])
+
+      await store.sendMessage('做一个表单')
+
+      const { emitChatResume } = await import('@schema-platform/platform-shared/socket')
+      vi.mocked(emitChatResume).mockImplementation(() => {
+        queueMicrotask(() => {
+          pushChatEvent({ type: 'done', conversationId: 'conv-prog-1' })
+        })
+      })
+
+      await store.sendMessage('姓名、手机')
+      expect(emitChatResume).not.toHaveBeenCalled()
+
+      await store.sendMessage('1')
+      expect(emitChatResume).toHaveBeenCalledWith('conv-prog-1', {
+        answers: { q1: '姓名、手机', q2: '单列' },
+      })
     })
 
     it('skipRequirement resumes with skipped flag', async () => {

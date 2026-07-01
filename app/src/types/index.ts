@@ -99,6 +99,10 @@ export interface AIMessage {
   feedback?: 'positive' | 'negative' | null
   /** 附加数据（如 interrupt 的确认信息） */
   data?: unknown
+  /** 用户消息附带的文档卡片元数据 */
+  attachments?: MessageDocumentAttachment[]
+  /** 助手消息中的文档结构化摘要 */
+  documentSummaries?: MessageDocumentSummary[]
 }
 
 /** 消息状态 */
@@ -216,6 +220,7 @@ export type StreamEventType =
   | 'thinker_complete'
   | 'quality_check_start'
   | 'quality_check_complete'
+  | 'document_summaries'
 
 /** @deprecated 使用 StreamEventType 替代 */
 export type SSEEventType = StreamEventType
@@ -284,6 +289,8 @@ export interface StreamEvent {
     needsRetry: boolean
     retryReason?: string
   }
+  /** 文档结构化摘要（Chat 附件） */
+  summaries?: MessageDocumentSummary[]
 }
 
 /** @deprecated 使用 StreamEvent 替代 */
@@ -418,6 +425,10 @@ export interface StepData {
   agent?: 'editor' | 'flow' | 'page' | 'auto' | 'general'
   /** 需求分析结果（requirement_confirm 类型） */
   requirementAnalysis?: RequirementAnalysis
+  /** 已收集的部分答案 */
+  requirementPartialAnswers?: Record<string, string>
+  /** 当前待回答问题 id */
+  requirementNextQuestionId?: string | null
   /** 是否等待用户确认（requirement_confirm 类型） */
   waitingConfirmation?: boolean
 }
@@ -492,11 +503,37 @@ export interface AIVersion {
 
 // ---- 附件 ----
 
+export interface MessageDocumentAttachment {
+  documentId: string
+  filename: string
+  mimetype: string
+  size: number
+  excerpt?: string
+}
+
+export interface MessageDocumentSummary {
+  documentId: string
+  filename: string
+  summary: StructuredSummary
+}
+
+export interface StructuredSummary {
+  title: string
+  summary: string
+  keyPoints: string[]
+  sections: Array<{ heading: string; content: string }>
+  entities?: string[]
+  generatedAt: string
+}
+
 export interface Attachment {
+  documentId?: string
   filename: string
   mimetype: string
   size: number
   text: string
+  excerpt?: string
+  previewText?: string
   status: 'uploading' | 'done' | 'error'
   error?: string
 }

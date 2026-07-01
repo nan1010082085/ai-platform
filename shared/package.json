@@ -1,6 +1,6 @@
 {
   "name": "@schema-platform/ai-shared",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": false,
   "type": "module",
   "repository": "github:schema-platform/schema-form-ai",
@@ -19,6 +19,7 @@
     "./flowNodeCatalogue": "./dist/flowNodeCatalogue.js",
     "./systemKnowledge": "./dist/systemKnowledge.js",
     "./agentWorkflow": "./dist/agentWorkflow.js",
+    "./document": "./dist/document.js",
     "./toolNames": "./dist/toolNames.js"
   },
   "dependencies": {

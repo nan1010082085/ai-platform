@@ -5,8 +5,10 @@ import AiMessage from './AiMessage.vue'
 import TaskChainBar from './TaskChainBar.vue'
 import AiRagSearch from './AiRagSearch.vue'
 import AiMentionInput from './AiMentionInput.vue'
+import DocumentPreviewPanel from './document/DocumentPreviewPanel.vue'
+import DocumentPreviewDrawer from './document/DocumentPreviewDrawer.vue'
 import { uploadFile } from '@/api/aiApi'
-import type { AIMessage, AgentType, Attachment, TaskChainStep, StreamConnectionStatus, MentionReference, RagSearchResult } from '@/types'
+import type { AIMessage, AgentType, Attachment, TaskChainStep, StreamConnectionStatus, MentionReference, RagSearchResult, MessageDocumentAttachment } from '@/types'
 import type { MessageEmbeddedCard } from './AiMessage.vue'
 
 export interface AiChatPanelProps {
@@ -32,6 +34,8 @@ export interface AiChatPanelProps {
   ragSearching?: boolean
   /** 已选中的 RAG context */
   ragContext?: RagSearchResult[]
+  /** 需求确认等待时的输入框占位提示 */
+  requirementInputPlaceholder?: string
 }
 
 const props = withDefaults(defineProps<AiChatPanelProps>(), {
@@ -47,10 +51,11 @@ const props = withDefaults(defineProps<AiChatPanelProps>(), {
   ragSearchResults: () => [],
   ragSearching: false,
   ragContext: () => [],
+  requirementInputPlaceholder: '',
 })
 
 const emit = defineEmits<{
-  send: [message: string, agent: AgentType, mentions?: MentionReference[]]
+  send: [message: string, agent: AgentType, mentions?: MentionReference[], attachments?: MessageDocumentAttachment[]]
   stop: []
   retry: []
   'clear-messages': []
@@ -66,6 +71,7 @@ const emit = defineEmits<{
   'regenerate-message': [messageIndex: number]
   'message-feedback': [messageIndex: number, type: 'positive' | 'negative']
   'requirement-confirm': [answers: Record<string, string>]
+  'requirement-answer': [questionId: string, value: string]
   'requirement-skip': []
 }>()
 
@@ -89,6 +95,8 @@ watch(() => props.agent, (agent) => {
 const fileInputRef = ref<HTMLInputElement>()
 const fileUploading = ref(false)
 const pendingAttachments = ref<Attachment[]>([])
+const previewDrawerVisible = ref(false)
+const previewDocumentId = ref<string | null>(null)
 
 const ALLOWED_FILE_TYPES = [
   'image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp',
@@ -135,7 +143,13 @@ async function processFile(file: File): Promise<void> {
   try {
     const result = await uploadFile(file)
     pendingAttachments.value[index] = {
-      ...result,
+      documentId: result.id,
+      filename: result.filename,
+      mimetype: result.mimetype,
+      size: result.size,
+      text: result.text,
+      previewText: result.text.slice(0, 800),
+      excerpt: result.text.slice(0, 120),
       status: 'done',
     }
     message.success(`"${file.name}" 上传成功`)
@@ -239,25 +253,31 @@ watch(
   scrollToBottom,
 )
 
+function openAttachmentPreview(att: Attachment): void {
+  if (!att.documentId) return
+  previewDocumentId.value = att.documentId
+  previewDrawerVisible.value = true
+}
+
+function openMessageDocumentPreview(documentId: string): void {
+  previewDocumentId.value = documentId
+  previewDrawerVisible.value = true
+}
+
 function handleMentionSend(text: string, mentions?: MentionReference[]): void {
-  // 允许只发送附件（无文本）
   if ((!text && pendingAttachments.value.length === 0) || props.disabled) return
 
-  // 构建包含附件上下文的消息
-  let messageContent = text
-  if (pendingAttachments.value.length > 0) {
-    const attachmentTexts = pendingAttachments.value
-      .filter((a) => a.text && a.status === 'done')
-      .map((a) => `[附件: ${a.filename}]\n${a.text}`)
-      .join('\n\n')
-    if (attachmentTexts) {
-      messageContent = text
-        ? `${attachmentTexts}\n\n${text}`
-        : attachmentTexts
-    }
-  }
+  const attachmentMeta = pendingAttachments.value
+    .filter((a) => a.status === 'done' && a.documentId)
+    .map((a) => ({
+      documentId: a.documentId!,
+      filename: a.filename,
+      mimetype: a.mimetype,
+      size: a.size,
+      excerpt: a.excerpt ?? a.text.slice(0, 120),
+    }))
 
-  emit('send', messageContent, selectedAgent.value, mentions)
+  emit('send', text, selectedAgent.value, mentions, attachmentMeta.length > 0 ? attachmentMeta : undefined)
   pendingAttachments.value = []
 }
 
@@ -369,6 +389,9 @@ function handleCardAction(
         :schema-widgets="msg.schema"
         :message-id="msg.id"
         :feedback="msg.feedback"
+        :attachments="msg.attachments"
+        :document-summaries="msg.documentSummaries"
+        @preview-document="openMessageDocumentPreview"
         @card-primary-action="(ci) => handleCardAction('primary', idx, ci)"
         @card-secondary-action="(ci) => handleCardAction('secondary', idx, ci)"
         @open-json-drawer="emit('open-json-drawer')"
@@ -377,6 +400,7 @@ function handleCardAction(
         @regenerate="emit('regenerate-message', idx)"
         @feedback="(type) => emit('message-feedback', idx, type)"
         @requirement-confirm="(answers) => emit('requirement-confirm', answers)"
+        @requirement-answer="(qid, val) => emit('requirement-answer', qid, val)"
         @requirement-skip="emit('requirement-skip')"
       />
     </div>
@@ -409,36 +433,20 @@ function handleCardAction(
       <div :class="[$style.inputBox, { [$style.inputDisabled]: disabled }]">
         <!-- 附件预览 -->
         <div v-if="pendingAttachments.length > 0" :class="$style.attachmentList">
-          <div
+          <DocumentPreviewPanel
             v-for="(att, idx) in pendingAttachments"
             :key="idx"
-            :class="[$style.attachmentItem, { [$style.attachmentError]: att.status === 'error' }]"
-          >
-            <span :class="$style.attachmentIcon">{{ getFileIcon(att.mimetype) }}</span>
-            <div :class="$style.attachmentInfo">
-              <span :class="$style.attachmentName">{{ att.filename }}</span>
-              <span :class="$style.attachmentSize">{{ formatFileSize(att.size) }}</span>
-            </div>
-            <span v-if="att.status === 'uploading'" :class="$style.attachmentLoading" />
-            <span v-else-if="att.status === 'error'" :class="$style.attachmentErrorText">
-              {{ att.error ?? '失败' }}
-            </span>
-            <el-button
-              :class="$style.attachmentRemove"
-              title="移除"
-              link
-              @click="removeAttachment(idx)"
-            >
-              &times;
-            </el-button>
-          </div>
+            :attachment="att"
+            @preview="openAttachmentPreview(att)"
+            @remove="removeAttachment(idx)"
+          />
         </div>
 
         <AiMentionInput
           ref="mentionInputRef"
           :disabled="disabled"
           :loading="loading"
-          :placeholder="messages.length === 0 ? '描述你想要生成的内容...' : '继续描述...'"
+          :placeholder="requirementInputPlaceholder || (messages.length === 0 ? '描述你想要生成的内容...' : '继续描述...')"
           @send="handleMentionSend"
         />
         <div :class="$style.inputFooter">
@@ -468,19 +476,19 @@ function handleCardAction(
               <span :class="$style.ragCount">{{ ragContext.length }}</span>
             </span>
             <!-- RAG search toggle button -->
-            <el-tooltip content="引用 Schema（智能匹配）" placement="top">
-              <el-button
+            <el-tooltip content="引用 Schema（智能匹配）" placement="top" :show-after="300">
+              <button
+                type="button"
                 :class="[$style.ragBtn, { [$style.ragBtnActive]: ragVisible }]"
                 :disabled="disabled || loading"
-                link
                 @click="ragVisible = !ragVisible"
               >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-              </el-button>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+              </button>
             </el-tooltip>
             <!-- Hidden file input -->
             <input
@@ -491,17 +499,17 @@ function handleCardAction(
               @change="handleFileChange"
             />
             <!-- File upload button -->
-            <el-tooltip content="上传文件（图片/PDF/文档）" placement="top">
-              <el-button
+            <el-tooltip content="上传文件（图片/PDF/文档）" placement="top" :show-after="300">
+              <button
+                type="button"
                 :class="$style.fileBtn"
                 :disabled="disabled || loading || fileUploading"
-                link
                 @click="triggerFileUpload"
               >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
-              </svg>
-              </el-button>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+                </svg>
+              </button>
             </el-tooltip>
             <el-select
               v-model="selectedAgent"
@@ -516,21 +524,22 @@ function handleCardAction(
                 :value="opt.value"
               />
             </el-select>
-            <el-tooltip v-if="loading" content="停止生成" placement="top">
-              <el-button
-                :class="$style.stopBtn"
-                link
-                @click="emit('stop')"
-              >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="6" width="12" height="12" rx="2" />
-              </svg>
-              </el-button>
+            <el-tooltip v-if="loading" content="停止生成" placement="top" :show-after="300">
+              <button type="button" :class="$style.stopBtn" @click="emit('stop')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                </svg>
+              </button>
             </el-tooltip>
           </div>
         </div>
       </div>
     </div>
+
+    <DocumentPreviewDrawer
+      v-model:visible="previewDrawerVisible"
+      :document-id="previewDocumentId"
+    />
   </div>
 </template>
 

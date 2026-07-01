@@ -16,6 +16,7 @@ import type {
   Widget,
   FlowGraph,
   StreamEvent,
+  MessageDocumentAttachment,
 } from '@/types'
 import {
   emitChatSend,
@@ -28,7 +29,11 @@ export const useStreamStore = defineStore('stream', () => {
   // ---- State ----
   const streamStatus = ref<StreamConnectionStatus>('idle')
   const retryCount = ref(0)
-  const lastMessagePayload = ref<{ content: string; mentions?: MentionReference[] } | null>(null)
+  const lastMessagePayload = ref<{
+    content: string
+    mentions?: MentionReference[]
+    attachments?: MessageDocumentAttachment[]
+  } | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -92,6 +97,7 @@ export const useStreamStore = defineStore('stream', () => {
         currentFlow: FlowGraph | null
         currentConversationId: string | null
       }
+      documentAttachments?: MessageDocumentAttachment[]
     },
   ): Promise<void> {
     let attempts = 0
@@ -161,9 +167,10 @@ export const useStreamStore = defineStore('stream', () => {
             : ctx.context.historySummary,
           currentSchema: (ctx.currentSchema ?? undefined) as Record<string, unknown>[] | undefined,
           currentFlow: (ctx.currentFlow ?? undefined) as { nodes: Record<string, unknown>[]; edges: Record<string, unknown>[] } | undefined,
-        },
+          documentAttachments: handlers.documentAttachments,
+        } as Record<string, unknown>,
         mentions: mentions && mentions.length > 0 ? mentions : undefined,
-      })
+      } as Parameters<typeof emitChatSend>[0])
 
       // 等待 done 事件
       await donePromise

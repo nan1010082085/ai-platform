@@ -44,6 +44,14 @@ import { useLLMStore } from './llm'
 import { useRAGStore } from './rag'
 import { useChatSettingsStore } from './chatSettings'
 import { useHITLStore } from './hitl'
+import type { RequirementAnalysis } from '@/types'
+import {
+  buildRequirementContext,
+  isAllRequiredAnswered,
+  resolveAnswerForQuestion,
+  getInputPlaceholder,
+  type RequirementConfirmContext,
+} from '@/utils/requirementConfirmFlow'
 
 export const useAiStore = defineStore('ai', () => {
   // ---- 内部 store 引用 ----
@@ -99,6 +107,14 @@ export const useAiStore = defineStore('ai', () => {
           updateMessage({ content: (msg.content ?? '') + event.content })
         }
         break
+
+      case 'document_summaries': {
+        const summaries = (event as { summaries?: AIMessage['documentSummaries'] }).summaries
+        if (summaries?.length) {
+          updateMessage({ documentSummaries: summaries })
+        }
+        break
+      }
 
       case 'schema_start':
         // Schema 开始生成
@@ -270,6 +286,7 @@ export const useAiStore = defineStore('ai', () => {
                 result: {
                   analysis,
                   waitingConfirmation: true,
+                  partialAnswers: {},
                 },
               })
               updateMessage({ toolCalls: newToolCalls, status: 'received' })
@@ -443,9 +460,25 @@ export const useAiStore = defineStore('ai', () => {
     context.value.source = agent === 'auto' ? 'standalone' : (agent as 'editor' | 'flow')
   }
 
-  async function sendMessage(content: string, mentions?: MentionReference[]): Promise<void> {
+  async function sendMessage(
+    content: string,
+    mentions?: MentionReference[],
+    attachments?: import('@/types').MessageDocumentAttachment[],
+  ): Promise<void> {
+    // 需求确认等待中：输入框发送 = 渐进式作答，不开启新对话轮次
+    if (hitlStore.pendingInterrupt?.type === 'requirement_confirm') {
+      const trimmed = content.trim()
+      if (!trimmed) return
+      if (/^(跳过|skip)$/i.test(trimmed)) {
+        await skipRequirement()
+        return
+      }
+      await submitRequirementAnswer(trimmed)
+      return
+    }
+
     streamStore.cancelCurrent()
-    streamStore.lastMessagePayload = { content, mentions }
+    streamStore.lastMessagePayload = { content, mentions, attachments }
     streamStore.retryCount = 0
     streamStore.loading = true
     streamStore.error = null
@@ -458,6 +491,7 @@ export const useAiStore = defineStore('ai', () => {
     conversationStore.messages.push({
       role: 'user',
       content: enrichedContent,
+      attachments,
       timestamp: new Date(),
       status: 'sent',
     })
@@ -483,6 +517,7 @@ export const useAiStore = defineStore('ai', () => {
         currentFlow: schemaStore.currentFlow,
         currentConversationId: conversationStore.currentConversationId,
       }),
+      documentAttachments: attachments,
     })
   }
 
@@ -515,6 +550,7 @@ export const useAiStore = defineStore('ai', () => {
             currentFlow: schemaStore.currentFlow,
             currentConversationId: conversationStore.currentConversationId,
           }),
+          documentAttachments: streamStore.lastMessagePayload.attachments,
         },
       )
     }
@@ -628,29 +664,120 @@ export const useAiStore = defineStore('ai', () => {
 
   // ---- 需求确认 ----
 
+  function findRequirementConfirmToolCall(): {
+    msgIndex: number
+    toolIndex: number
+    result: Record<string, unknown>
+  } | null {
+    for (let i = conversationStore.messages.length - 1; i >= 0; i--) {
+      const msg = conversationStore.messages[i]
+      if (msg.role !== 'assistant' || !msg.toolCalls) continue
+      const toolIndex = msg.toolCalls.findIndex((tc) => tc.name === 'requirement_confirm')
+      if (toolIndex < 0) continue
+      const result = msg.toolCalls[toolIndex].result as Record<string, unknown> | undefined
+      if (!result?.analysis) continue
+      if (result.waitingConfirmation === false) continue
+      return { msgIndex: i, toolIndex, result }
+    }
+    return null
+  }
+
+  function getRequirementConfirmContext(): RequirementConfirmContext | null {
+    if (hitlStore.pendingInterrupt?.type !== 'requirement_confirm') return null
+    const found = findRequirementConfirmToolCall()
+    const analysis = (found?.result.analysis ?? (hitlStore.pendingInterrupt.data as Record<string, unknown> | undefined)?.analysis) as RequirementAnalysis | undefined
+    if (!analysis) return null
+    const partialAnswers = (found?.result.partialAnswers ?? {}) as Record<string, string>
+    return buildRequirementContext(analysis, partialAnswers)
+  }
+
+  function syncRequirementPartialAnswers(partialAnswers: Record<string, string>): void {
+    const found = findRequirementConfirmToolCall()
+    if (!found) return
+    const msg = conversationStore.messages[found.msgIndex]
+    if (!msg.toolCalls) return
+    const newToolCalls = [...msg.toolCalls]
+    newToolCalls[found.toolIndex] = {
+      ...newToolCalls[found.toolIndex],
+      result: {
+        ...found.result,
+        partialAnswers,
+        waitingConfirmation: true,
+      },
+    }
+    msg.toolCalls = newToolCalls
+  }
+
   function markRequirementConfirmResolved(
     skipped: boolean,
     answers?: Record<string, string>,
   ): void {
-    const lastAssistantIdx = conversationStore.messages.findLastIndex((m) => m.role === 'assistant')
-    if (lastAssistantIdx < 0) return
+    const found = findRequirementConfirmToolCall()
+    if (!found) return
 
-    const msg = conversationStore.messages[lastAssistantIdx]
+    const msg = conversationStore.messages[found.msgIndex]
     if (!msg.toolCalls) return
 
-    const confirmIndex = msg.toolCalls.findIndex((tc) => tc.name === 'requirement_confirm')
-    if (confirmIndex < 0) return
-
     const newToolCalls = [...msg.toolCalls]
-    newToolCalls[confirmIndex] = {
-      ...newToolCalls[confirmIndex],
+    newToolCalls[found.toolIndex] = {
+      ...newToolCalls[found.toolIndex],
       result: {
-        ...(newToolCalls[confirmIndex].result as Record<string, unknown>),
+        ...found.result,
         waitingConfirmation: false,
+        partialAnswers: answers ?? found.result.partialAnswers,
         ...(skipped ? { skipped: true } : { userAnswers: answers }),
       },
     }
     msg.toolCalls = newToolCalls
+  }
+
+  /** 渐进式提交单条答案：输入框发送或卡片点选 */
+  async function submitRequirementAnswer(
+    rawInput: string,
+    questionId?: string,
+  ): Promise<void> {
+    const ctx = getRequirementConfirmContext()
+    if (!ctx) {
+      message.error('当前没有待确认的需求')
+      return
+    }
+
+    const question = questionId
+      ? ctx.analysis.confirmQuestions.find((q) => q.id === questionId)
+      : ctx.nextQuestion
+
+    if (!question) {
+      if (ctx.allRequiredAnswered) {
+        await confirmRequirement(ctx.partialAnswers)
+        return
+      }
+      message.warning('请先回答上方待确认的问题')
+      return
+    }
+
+    const value = resolveAnswerForQuestion(question, rawInput)
+    if (!value) {
+      message.warning('请输入有效回答')
+      return
+    }
+
+    const mergedAnswers = { ...ctx.partialAnswers, [question.id]: value }
+    syncRequirementPartialAnswers(mergedAnswers)
+
+    conversationStore.messages.push({
+      role: 'user',
+      content: value,
+      timestamp: new Date(),
+      status: 'sent',
+    })
+
+    if (isAllRequiredAnswered(ctx.analysis, mergedAnswers)) {
+      await confirmRequirement(mergedAnswers)
+    }
+  }
+
+  async function answerRequirementOption(questionId: string, option: string): Promise<void> {
+    await submitRequirementAnswer(option, questionId)
   }
 
   async function confirmRequirement(answers: Record<string, string>): Promise<void> {
@@ -809,6 +936,13 @@ export const useAiStore = defineStore('ai', () => {
     ragSearching: computed(() => ragStore.ragSearching),
     ragContext: computed(() => ragStore.ragContext),
     pendingInterrupt: computed(() => hitlStore.pendingInterrupt),
+    requirementConfirmContext: computed(() => getRequirementConfirmContext()),
+    requirementInputPlaceholder: computed(() =>
+      getInputPlaceholder(getRequirementConfirmContext()),
+    ),
+    isAwaitingRequirementConfirm: computed(
+      () => hitlStore.pendingInterrupt?.type === 'requirement_confirm',
+    ),
 
     // getters
     currentConversation: computed(() => conversationStore.currentConversation),
@@ -853,5 +987,7 @@ export const useAiStore = defineStore('ai', () => {
     regenerateMessage,
     confirmRequirement,
     skipRequirement,
+    submitRequirementAnswer,
+    answerRequirementOption,
   }
 })

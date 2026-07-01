@@ -3,6 +3,12 @@ import { ref, shallowRef } from 'vue'
 import type { Node, Edge } from '@vue-flow/core'
 import type { AgentWorkflowGraph, AgentNodeType, AgentWorkflowNodeData, AgentNodeRecord } from '@/types/agentWorkflow'
 import { getPaletteItem } from '@/constants/agentNodes'
+import { resolveEdgeRuntimeState } from '@/utils/edgeRuntimeState'
+import {
+  type EdgeLineStyle,
+  EDGE_LINE_STYLE_STORAGE_KEY,
+  parseEdgeLineStyle,
+} from '@/types/edgeLineStyle'
 
 function graphToVueFlow(graph: AgentWorkflowGraph): { nodes: Node[]; edges: Edge[] } {
   return {
@@ -10,7 +16,7 @@ function graphToVueFlow(graph: AgentWorkflowGraph): { nodes: Node[]; edges: Edge
       id: n.id,
       type: n.type,
       position: n.position,
-      data: { ...n.data },
+      data: stripRuntimeFields((n.data ?? { label: n.id }) as Record<string, unknown>),
     })),
     edges: graph.edges.map((e) => ({
       id: e.id,
@@ -19,9 +25,31 @@ function graphToVueFlow(graph: AgentWorkflowGraph): { nodes: Node[]; edges: Edge
       target: e.target,
       sourceHandle: e.sourceHandle,
       targetHandle: e.targetHandle,
-      data: { ...e.data },
+      data: { animated: false, ...e.data },
     })),
   }
+}
+
+function clearNodeRuntimeVisual(node: Node): Node {
+  const baseData = stripRuntimeFields((node.data ?? { label: node.id }) as Record<string, unknown>)
+  const { class: _cls, ...rest } = node
+  return { ...rest, class: undefined, data: baseData }
+}
+
+function clearEdgeRuntimeVisual(edge: Edge): Edge {
+  const edgeData = (edge.data ?? {}) as Record<string, unknown>
+  const { runtimeState: _runtimeState, ...restData } = edgeData
+  const { class: _cls, ...rest } = edge
+  return {
+    ...rest,
+    class: undefined,
+    data: { ...restData, animated: false },
+  }
+}
+
+function clearExecutionRuntimeState() {
+  nodes.value = nodes.value.map(clearNodeRuntimeVisual)
+  edges.value = edges.value.map(clearEdgeRuntimeVisual)
 }
 
 function stripRuntimeFields(data: Record<string, unknown>): AgentWorkflowNodeData {
@@ -60,6 +88,14 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
   const selectedEdgeId = ref<string | null>(null)
   const dirty = ref(false)
   const saving = ref(false)
+  const edgeLineStyle = ref<EdgeLineStyle>(
+    parseEdgeLineStyle(localStorage.getItem(EDGE_LINE_STYLE_STORAGE_KEY)),
+  )
+
+  function setEdgeLineStyle(style: EdgeLineStyle) {
+    edgeLineStyle.value = style
+    localStorage.setItem(EDGE_LINE_STYLE_STORAGE_KEY, style)
+  }
 
   function loadGraph(graph: AgentWorkflowGraph) {
     entryNodeId.value = graph.entryNodeId
@@ -86,6 +122,7 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
   }
 
   function addNode(type: AgentNodeType, position: { x: number; y: number }) {
+    clearExecutionRuntimeState()
     const palette = getPaletteItem(type)
     const id = `${type}-${crypto.randomUUID().slice(0, 8)}`
     nodes.value = [
@@ -106,9 +143,31 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
     dirty.value = true
   }
 
+  function replaceNode(id: string, newType: AgentNodeType) {
+    const existing = nodes.value.find((n) => n.id === id)
+    if (!existing) return
+    const palette = getPaletteItem(newType)
+    if (!palette) return
+
+    nodes.value = nodes.value.map((n) =>
+      n.id === id
+        ? {
+            ...n,
+            type: newType,
+            class: undefined,
+            data: { label: palette.label, ...palette.defaultData },
+          }
+        : clearNodeRuntimeVisual(n),
+    )
+    edges.value = edges.value.map(clearEdgeRuntimeVisual)
+    dirty.value = true
+  }
+
   function removeNode(id: string) {
+    clearExecutionRuntimeState()
     nodes.value = nodes.value.filter((n) => n.id !== id)
     edges.value = edges.value.filter((e) => e.source !== id && e.target !== id)
+    if (selectedNodeId.value === id) selectedNodeId.value = null
     if (entryNodeId.value === id) {
       const trigger = nodes.value.find((n) => n.type === 'manual-trigger' || n.type === 'webhook-trigger')
       entryNodeId.value = trigger?.id ?? nodes.value[0]?.id ?? ''
@@ -123,13 +182,21 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
 
   function removeEdge(id: string) {
     edges.value = edges.value.filter((e) => e.id !== id)
+    if (selectedEdgeId.value === id) selectedEdgeId.value = null
     dirty.value = true
   }
 
   function updateNodeData(id: string, data: Record<string, unknown>) {
-    nodes.value = nodes.value.map((n) =>
-      n.id === id ? { ...n, data: { ...(n.data as object), ...data } } : n,
-    )
+    nodes.value = nodes.value.map((n) => {
+      if (n.id !== id) return n
+      const baseData = stripRuntimeFields((n.data ?? { label: n.id }) as Record<string, unknown>)
+      return {
+        ...n,
+        class: undefined,
+        data: { ...baseData, ...data },
+      }
+    })
+    edges.value = edges.value.map(clearEdgeRuntimeVisual)
     dirty.value = true
   }
 
@@ -156,13 +223,20 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
     records: AgentNodeRecord[] = [],
   ) {
     const activeSet = new Set(activeNodeIds)
-    const completedSet = new Set(completedNodeIds)
     const recordMap = new Map(records.map((r) => [r.nodeId, r]))
+
+    function resolveRecord(node: Node): AgentNodeRecord | undefined {
+      const record = recordMap.get(node.id)
+      if (!record) return undefined
+      // 节点类型已更换时，历史执行记录不再套用到当前节点
+      if (record.nodeType !== node.type) return undefined
+      return record
+    }
+
     nodes.value = nodes.value.map((n) => {
       let cls = ''
-      const record = recordMap.get(n.id)
-      if (activeSet.has(n.id)) cls = 'aw-node-running'
-      else if (completedSet.has(n.id)) cls = 'aw-node-success'
+      const record = resolveRecord(n)
+      if (activeSet.has(n.id) && record) cls = 'aw-node-running'
       else if (record?.status === 'error') cls = 'aw-node-error'
       else if (record?.status === 'waiting') cls = 'aw-node-waiting'
       const baseData = stripRuntimeFields((n.data ?? { label: n.id }) as Record<string, unknown>)
@@ -176,11 +250,20 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
       }
     })
     edges.value = edges.value.map((e) => {
-      const animated = activeSet.has(e.target) && completedSet.has(e.source)
+      const sourceNode = nodes.value.find((n) => n.id === e.source)
+      const targetNode = nodes.value.find((n) => n.id === e.target)
+      const sourceRecord = sourceNode ? resolveRecord(sourceNode) : undefined
+      const targetRecord = targetNode ? resolveRecord(targetNode) : undefined
+      const sourceState = sourceRecord?.status
+      const targetState = targetRecord?.status
+      const executionFailed = records.some((r) => r.status === 'error')
+      const { state, animated } = resolveEdgeRuntimeState(sourceState, targetState, {
+        contextFailed: executionFailed,
+      })
       return {
         ...e,
-        class: animated ? 'aw-edge-active' : completedSet.has(e.source) && completedSet.has(e.target) ? 'aw-edge-done' : '',
-        data: { ...(e.data as object), animated },
+        class: state,
+        data: { ...(e.data as object), animated, runtimeState: state },
       }
     })
   }
@@ -208,6 +291,7 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
     loadGraph,
     getGraph,
     addNode,
+    replaceNode,
     removeNode,
     addEdge,
     removeEdge,
@@ -219,5 +303,7 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
     reset,
     markDirty,
     ensureEntryNodeId,
+    edgeLineStyle,
+    setEdgeLineStyle,
   }
 })

@@ -6,7 +6,8 @@ import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import HitlConfirmQuestions from '@/components/agent-workflow/HitlConfirmQuestions.vue'
-import type { AgentHitlConfirmQuestion, AgentNodeRecord, AgentWorkflowExecution } from '@/types/agentWorkflow'
+import AgentNodeExecutionDetail from '@/components/agent-workflow/AgentNodeExecutionDetail.vue'
+import type { AgentHitlConfirmQuestion, AgentNodeRecord, AgentWorkflowExecution, AgentWorkflowGraph, AgentWorkflowNodeData } from '@/types/agentWorkflow'
 import { useAgentWorkflowDesignerStore } from '@/stores/agentWorkflowDesigner'
 import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas.vue'
 import * as api from '@/api/agentWorkflowApi'
@@ -19,6 +20,7 @@ const execution = ref<AgentWorkflowExecution | null>(null)
 const selectedRecord = ref<AgentNodeRecord | null>(null)
 const activeTab = ref<'records' | 'logs' | 'detail'>('records')
 const panelOpen = ref(true)
+const panelExpanded = ref(false)
 const hitlDialogVisible = ref(false)
 const hitlComment = ref('')
 const hitlAction = ref<'approve' | 'reject'>('approve')
@@ -72,7 +74,10 @@ async function load() {
     .map((r) => r.nodeId)
   store.applyExecutionHighlight(active, completed, data.nodeRecords)
 
-  if (!selectedRecord.value && data.nodeRecords.length) {
+  if (selectedRecord.value) {
+    const updated = data.nodeRecords.find((r) => r.nodeId === selectedRecord.value!.nodeId)
+    if (updated) selectedRecord.value = updated
+  } else if (data.nodeRecords.length) {
     selectedRecord.value = data.nodeRecords[data.nodeRecords.length - 1]
   }
 }
@@ -80,11 +85,19 @@ async function load() {
 function selectRecord(record: AgentNodeRecord) {
   selectedRecord.value = record
   activeTab.value = 'detail'
+  panelOpen.value = true
   const active = record.status === 'running' ? [record.nodeId] : []
   const completed = execution.value?.nodeRecords
     .filter((r) => r.status === 'success')
     .map((r) => r.nodeId) ?? []
   store.applyExecutionHighlight(active, completed, execution.value?.nodeRecords ?? [])
+}
+
+function onCanvasNodeClick(nodeId: string) {
+  const record = execution.value?.nodeRecords.find((r) => r.nodeId === nodeId)
+  if (record) {
+    selectRecord(record)
+  }
 }
 
 async function confirmHitl() {
@@ -149,11 +162,20 @@ function stopPoll() {
   }
 }
 
+async function loadExecutionGraph(exec: AgentWorkflowExecution) {
+  try {
+    const snap = await api.getWorkflowVersion(exec.workflowId, exec.version)
+    store.loadGraph(snap.graph as AgentWorkflowGraph)
+  } catch {
+    const wf = await api.getWorkflow(exec.workflowId)
+    store.loadGraph(wf.draftGraph)
+  }
+}
+
 onMounted(async () => {
   const exec = await api.getExecution(executionId())
   execution.value = exec
-  const wf = await api.getWorkflow(exec.workflowId)
-  store.loadGraph(wf.draftGraph)
+  await loadExecutionGraph(exec)
   await load()
   if (execution.value?.status === 'waiting') {
     openHitlDialog('approve')
@@ -170,6 +192,12 @@ const durationLabel = computed(() => {
   const ms = execution.value?.durationMs
   if (ms == null) return '-'
   return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`
+})
+
+const selectedNodeData = computed((): AgentWorkflowNodeData | null => {
+  if (!selectedRecord.value) return null
+  const node = store.nodes.find((n) => n.id === selectedRecord.value!.nodeId)
+  return (node?.data as AgentWorkflowNodeData | undefined) ?? null
 })
 
 // 当前等待中的 HITL 节点记录
@@ -273,17 +301,13 @@ const LOG_LEVEL_LABEL: Record<string, string> = {
   error: '错误',
 }
 
-function formatJson(value: unknown): string {
-  if (value == null) return '—'
-  try {
-    return JSON.stringify(value, null, 2)
-  } catch {
-    return String(value)
-  }
-}
-
 function togglePanel() {
   panelOpen.value = !panelOpen.value
+  if (!panelOpen.value) panelExpanded.value = false
+}
+
+function togglePanelExpand() {
+  panelExpanded.value = !panelExpanded.value
 }
 </script>
 
@@ -330,19 +354,30 @@ function togglePanel() {
 
     <!-- Canvas -->
     <div :class="styles.body">
-      <AgentWorkflowCanvas read-only />
+      <AgentWorkflowCanvas
+        read-only
+        :selected-node-id="selectedRecord?.nodeId ?? null"
+        @node-click="onCanvasNodeClick"
+      />
     </div>
 
-    <!-- Bottom slide-up panel (200px) -->
+    <!-- Bottom slide-up panel -->
     <transition name="slideUp">
-      <div v-show="panelOpen" :class="styles.bottomPanel">
+      <div
+        v-show="panelOpen"
+        :class="[styles.bottomPanel, panelExpanded && styles.bottomPanelExpanded]"
+      >
+        <button
+          :class="styles.panelExpandBtn"
+          :title="panelExpanded ? '收起面板' : '展开面板'"
+          @click="togglePanelExpand"
+        >
+          <AppIcon :name="panelExpanded ? 'arrow-down' : 'arrow-up'" :size="12" />
+        </button>
         <div :class="styles.panelHeader">
           <span :class="styles.panelTitle">
             {{ tabOptions.find((t) => t.value === activeTab)?.label }}
           </span>
-          <el-button size="small" text @click="togglePanel">
-            <AppIcon name="arrow-down" :size="14" />
-          </el-button>
         </div>
 
         <div :class="styles.panelContent">
@@ -385,23 +420,12 @@ function togglePanel() {
           <!-- 节点详情 -->
           <template v-else>
             <div v-if="!selectedRecord" :class="styles.empty">选择节点记录查看输入输出</div>
-            <template v-else>
-              <div :class="styles.detailMeta">
-                <span><strong>{{ selectedRecord.nodeName }}</strong> · {{ selectedRecord.nodeType }}</span>
-                <el-tag size="small" :type="(statusType[selectedRecord.status] as any) ?? 'info'">
-                  {{ STATUS_LABELS[selectedRecord.status] ?? selectedRecord.status }}
-                </el-tag>
-              </div>
-              <div v-if="selectedRecord.error" :class="styles.errorBox">{{ selectedRecord.error }}</div>
-              <div :class="styles.jsonSection">
-                <div :class="styles.jsonLabel">Input</div>
-                <pre :class="styles.jsonPre">{{ formatJson(selectedRecord.input) }}</pre>
-              </div>
-              <div :class="styles.jsonSection">
-                <div :class="styles.jsonLabel">Output</div>
-                <pre :class="styles.jsonPre">{{ formatJson(selectedRecord.output) }}</pre>
-              </div>
-            </template>
+            <AgentNodeExecutionDetail
+              v-else
+              :record="selectedRecord"
+              :node-data="selectedNodeData"
+              :expanded="panelExpanded"
+            />
           </template>
         </div>
       </div>

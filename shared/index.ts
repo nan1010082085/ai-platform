@@ -77,6 +77,9 @@ export {
 } from './systemKnowledge.js'
 
 export type {
+  ToolNodeType,
+  ExpertNodeType,
+  AgentHitlConfirmQuestion,
   AgentNodeType,
   AgentWorkflowStatus,
   AgentExecutionStatus,
@@ -96,8 +99,18 @@ export type {
 
 export {
   createDefaultAgentWorkflowGraph,
+  createDocumentSummaryWorkflowGraph,
   validateAgentWorkflowGraph,
 } from './agentWorkflow.js'
+
+export type {
+  DocumentChunk,
+  StructuredSummary,
+  DocumentRecord,
+  DocumentPreview,
+  MessageDocumentAttachment,
+  MessageDocumentSummary,
+} from './document.js'
 
 export {
   normalizeToolName,

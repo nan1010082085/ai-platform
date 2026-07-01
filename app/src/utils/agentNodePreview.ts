@@ -1,4 +1,12 @@
 import type { AgentNodeRecord, AgentNodeType, AgentWorkflowNodeData } from '@/types/agentWorkflow'
+import { getToolDisplayLabel } from '@schema-platform/ai-shared/toolNames'
+import { getToolNodeCategoryLabel } from '@/constants/toolNodeTypes'
+import {
+  EXPERT_AGENT_LABELS,
+  getExpertAgentTypeForNode,
+  getExpertNodeTypeLabel,
+  isIntentExpertNode,
+} from '@/constants/expertNodeTypes'
 
 export type PreviewTone = 'default' | 'muted' | 'primary' | 'success' | 'warning' | 'danger'
 
@@ -108,6 +116,25 @@ export function getAgentNodePreviewSections(
         },
       )
       break
+    case 'document-parse':
+      config.push(
+        { key: 'call', label: '调用', value: '文档解析', tone: 'primary' },
+        {
+          key: 'source',
+          label: '来源',
+          value: data.documentSource === 'documentId' ? '固定 ID' : `字段 ${data.inputField ?? 'documentId'}`,
+          tone: 'muted',
+        },
+      )
+      if (data.documentSource === 'documentId' && data.documentId?.trim()) {
+        config.push({
+          key: 'documentId',
+          label: '文档 ID',
+          value: formatPreviewValue(data.documentId),
+          tone: 'default',
+        })
+      }
+      break
     case 'llm':
       config.push(
         { key: 'model', label: '模型', value: data.model?.trim() || 'default', tone: 'primary' },
@@ -124,20 +151,75 @@ export function getAgentNodePreviewSections(
       config.push({ key: 'call', label: '调用', value: 'LLM 推理', tone: 'primary' })
       break
     case 'agent':
-      config.push({
-        key: 'call',
-        label: '调用',
-        value: AGENT_TYPE_LABELS[data.agentType ?? 'general'] ?? data.agentType ?? 'general',
-        tone: 'primary',
-      })
+    case 'agent-intent':
+    case 'agent-editor':
+    case 'agent-flow':
+    case 'agent-page':
+    case 'agent-general': {
+      if (isIntentExpertNode(nodeType)) {
+        config.push({
+          key: 'call',
+          label: '调用',
+          value: '意图识别 → 自动路由',
+          tone: 'primary',
+        })
+      } else {
+        const kind = getExpertAgentTypeForNode(nodeType, data)
+        config.push({
+          key: 'call',
+          label: '调用',
+          value: kind && kind !== 'auto'
+            ? EXPERT_AGENT_LABELS[kind]
+            : AGENT_TYPE_LABELS[data.agentType ?? 'general'] ?? 'general',
+          tone: 'primary',
+        })
+      }
+      const expertLabel = getExpertNodeTypeLabel(nodeType)
+      if (expertLabel) {
+        config.push({ key: 'expert', label: '节点', value: expertLabel, tone: 'muted' })
+      }
+      if (data.prompt?.trim()) {
+        config.push({
+          key: 'prompt',
+          label: '指令',
+          value: formatPreviewValue(data.prompt),
+          tone: 'default',
+        })
+      }
       break
+    }
     case 'tool':
+    case 'tool-mcp-schema':
+    case 'tool-mcp-flow':
+    case 'tool-mcp-widget':
+    case 'tool-mcp-rag':
+    case 'tool-mcp-industry':
+    case 'tool-langgraph':
+    case 'tool-http': {
+      const categoryLabel = getToolNodeCategoryLabel(nodeType, data)
+      if (categoryLabel) {
+        config.push({
+          key: 'category',
+          label: '类型',
+          value: categoryLabel,
+          tone: 'muted',
+        })
+      }
+      const toolName = data.toolName?.trim()
       config.push({
         key: 'call',
         label: '调用',
-        value: data.toolName?.trim() || '未配置工具',
-        tone: data.toolName?.trim() ? 'primary' : 'warning',
+        value: toolName ? getToolDisplayLabel(toolName) : '未配置工具',
+        tone: toolName ? 'primary' : 'warning',
       })
+      if (toolName) {
+        config.push({
+          key: 'tool',
+          label: '工具名',
+          value: toolName,
+          tone: 'default',
+        })
+      }
       if (data.toolArgs && Object.keys(data.toolArgs).length > 0) {
         config.push({
           key: 'args',
@@ -147,6 +229,7 @@ export function getAgentNodePreviewSections(
         })
       }
       break
+    }
     case 'if':
       config.push({
         key: 'call',

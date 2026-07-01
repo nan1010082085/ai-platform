@@ -8,11 +8,14 @@ import SchemaPreviewCard from './SchemaPreviewCard.vue'
 import FlowCard from './FlowCard.vue'
 import FlowPreviewCard from './FlowPreviewCard.vue'
 import RequirementConfirmCard from './RequirementConfirmCard.vue'
+import { getNextQuestion } from '@/utils/requirementConfirmFlow'
 import JsonCard from './JsonCard.vue'
 import JsonDetailDialog from './JsonDetailDialog.vue'
 import type { SchemaField } from './SchemaCard.vue'
 import type { FlowNode } from './FlowCard.vue'
-import type { StepData, Widget, FlowGraph } from '@/types'
+import type { StepData, Widget, FlowGraph, MessageDocumentAttachment, MessageDocumentSummary } from '@/types'
+import DocumentAttachmentCard from './document/DocumentAttachmentCard.vue'
+import DocumentSummaryCard from './document/DocumentSummaryCard.vue'
 
 export type MessageRole = 'user' | 'assistant'
 
@@ -61,6 +64,8 @@ export interface AiMessageProps {
   messageId?: string
   /** 当前反馈状态 */
   feedback?: 'positive' | 'negative' | null
+  attachments?: MessageDocumentAttachment[]
+  documentSummaries?: MessageDocumentSummary[]
 }
 
 const props = defineProps<AiMessageProps>()
@@ -71,7 +76,9 @@ const emit = defineEmits<{
   'open-json-drawer': []
   'retry-tool': [toolIndex: number]
   'requirement-confirm': [answers: Record<string, string>]
+  'requirement-answer': [questionId: string, value: string]
   'requirement-skip': []
+  'preview-document': [documentId: string]
   copy: []
   regenerate: []
   feedback: [type: 'positive' | 'negative']
@@ -370,11 +377,16 @@ const steps = computed<StepData[]>(() => {
       if (tc.name === 'requirement_confirm' && tc.result) {
         const resultData = tc.result as Record<string, unknown>
         if (resultData.analysis) {
+          const analysis = resultData.analysis as import('@/types').RequirementAnalysis
+          const partialAnswers = (resultData.partialAnswers ?? {}) as Record<string, string>
+          const nextQuestion = getNextQuestion(analysis, partialAnswers)
           result.push({
             type: 'requirement_confirm',
             title: '需求分析',
             status: 'done',
-            requirementAnalysis: resultData.analysis as import('@/types').RequirementAnalysis,
+            requirementAnalysis: analysis,
+            requirementPartialAnswers: partialAnswers,
+            requirementNextQuestionId: nextQuestion?.id ?? null,
             waitingConfirmation: resultData.waitingConfirmation !== false,
             timestamp: now,
             agent: props.agent,
@@ -464,11 +476,26 @@ const steps = computed<StepData[]>(() => {
     <div :class="$style.content">
       <!-- User message: bubble style -->
       <template v-if="role === 'user'">
+        <div v-if="attachments?.length" :class="$style.attachmentCards">
+          <DocumentAttachmentCard
+            v-for="att in attachments"
+            :key="att.documentId"
+            :attachment="att"
+            @preview="emit('preview-document', $event)"
+          />
+        </div>
         <div v-if="content" :class="$style.userBubble">{{ content }}</div>
       </template>
 
       <!-- Assistant message: step cards -->
       <template v-else>
+        <div v-if="documentSummaries?.length" :class="$style.summaryCards">
+          <DocumentSummaryCard
+            v-for="item in documentSummaries"
+            :key="item.documentId"
+            :item="item"
+          />
+        </div>
         <!-- Loading placeholder when no steps yet -->
         <div v-if="loading && steps.length === 0" :class="$style.loadingPlaceholder">
           <AiLoadingDots />
@@ -493,8 +520,10 @@ const steps = computed<StepData[]>(() => {
             <RequirementConfirmCard
               v-else-if="step.type === 'requirement_confirm' && step.requirementAnalysis"
               :analysis="step.requirementAnalysis"
+              :partial-answers="step.requirementPartialAnswers ?? {}"
+              :next-question-id="step.requirementNextQuestionId"
               :waiting-confirmation="step.waitingConfirmation ?? true"
-              @confirm="(answers) => emit('requirement-confirm', answers)"
+              @answer="(qid, val) => emit('requirement-answer', qid, val)"
               @skip="emit('requirement-skip')"
             />
 

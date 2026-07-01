@@ -4,14 +4,33 @@ import SectionToggle from '../SectionToggle.vue'
 import FieldRow from '../FieldRow.vue'
 import VariableReferencePanel from './VariableReferencePanel.vue'
 import styles from './shared.module.scss'
-import { BUILT_IN_TOOLS, getBuiltInTool } from '@/constants/agentTools'
+import {
+  getBuiltInTool,
+  getToolsByCategory,
+} from '@/constants/agentTools'
+import { getToolCategoryForNode, getToolNodeCategoryLabel } from '@/constants/toolNodeTypes'
 import type { AgentNodePanelEmits, AgentNodePanelProps } from '../types'
+import type { AgentNodeType } from '@/types/agentWorkflow'
 
 const props = defineProps<AgentNodePanelProps>()
 const emit = defineEmits<AgentNodePanelEmits>()
 
 const jsonText = ref('')
 const jsonError = ref('')
+
+const nodeType = computed(() => (props.node.type ?? 'tool') as AgentNodeType)
+
+const lockedCategory = computed(() =>
+  getToolCategoryForNode(nodeType.value, props.node.data),
+)
+
+const categoryLabel = computed(() =>
+  getToolNodeCategoryLabel(nodeType.value, props.node.data),
+)
+
+const toolsInCategory = computed(() =>
+  lockedCategory.value ? getToolsByCategory(lockedCategory.value) : [],
+)
 
 const selectedTool = computed(() =>
   getBuiltInTool(String(props.node.data?.toolName ?? '')),
@@ -64,15 +83,22 @@ function onJsonBlur() {
 
 <template>
   <SectionToggle title="工具配置" :count="2">
-    <FieldRow label="工具" hint="选择内置工具">
+    <div v-if="categoryLabel" :class="styles.hint">
+      节点类型：{{ categoryLabel }}（由左侧拖拽节点决定，不可更改）
+    </div>
+    <FieldRow
+      label="具体工具"
+      :hint="lockedCategory ? `${toolsInCategory.length} 个可用` : '未知工具类'"
+    >
       <el-select
         :model-value="String(props.node.data?.toolName ?? '')"
-        placeholder="请选择工具"
+        placeholder="请选择具体工具"
         filterable
+        :disabled="!lockedCategory"
         @update:model-value="onToolChange"
       >
         <el-option
-          v-for="tool in BUILT_IN_TOOLS"
+          v-for="tool in toolsInCategory"
           :key="tool.name"
           :label="`${tool.label} (${tool.name})`"
           :value="tool.name"
@@ -86,6 +112,7 @@ function onJsonBlur() {
         type="textarea"
         :rows="5"
         :placeholder="selectedTool?.argsHint || defaultArgsHint"
+        :disabled="!selectedTool"
         @blur="onJsonBlur"
       />
     </FieldRow>

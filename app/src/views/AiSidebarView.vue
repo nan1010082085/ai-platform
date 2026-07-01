@@ -385,6 +385,7 @@ function handleHostData(data: Record<string, unknown>) {
         @card-secondary-action="handleCardAction('secondary')"
         @retry-tool="(tci) => store.retryToolCall(idx, tci)"
         @requirement-confirm="(answers) => store.confirmRequirement(answers)"
+        @requirement-answer="(qid, val) => store.answerRequirementOption(qid, val)"
         @requirement-skip="store.skipRequirement()"
       />
     </div>
@@ -395,7 +396,7 @@ function handleHostData(data: Record<string, unknown>) {
         <textarea
           v-model="inputText"
           :class="$style.inputField"
-          :placeholder="store.messages.length === 0 ? '描述你想要生成的内容...' : '继续描述...'"
+          :placeholder="store.requirementInputPlaceholder || (store.messages.length === 0 ? '描述你想要生成的内容...' : '继续描述...')"
           :disabled="store.loading"
           rows="1"
           @keydown="handleKeydown"

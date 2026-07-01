@@ -19,7 +19,7 @@ import AiChatSettings from '@/components/AiChatSettings.vue'
 import ConversationDrawer from '@/components/ConversationDrawer.vue'
 
 const store = useAiStore()
-const { messages, loading, currentSchema, currentFlow, activeAgent, conversations, currentConversationId, taskChain, taskChainIndex, streamStatus, retryCount, MAX_AUTO_RETRIES, chatSettings, ragSearchResults, ragSearching, ragContext } =
+const { messages, loading, currentSchema, currentFlow, activeAgent, conversations, currentConversationId, taskChain, taskChainIndex, streamStatus, retryCount, MAX_AUTO_RETRIES, chatSettings, ragSearchResults, ragSearching, ragContext, requirementInputPlaceholder } =
   storeToRefs(store)
 
 // ---- WebSocket 连接状态 ----
@@ -83,11 +83,16 @@ const newConversationLabel = computed(() => {
 
 // ---- Event handlers ----
 
-async function handleSend(msg: string, agent: AgentType, mentions?: MentionReference[]): Promise<void> {
+async function handleSend(
+  msg: string,
+  agent: AgentType,
+  mentions?: MentionReference[],
+  attachments?: import('@/types').MessageDocumentAttachment[],
+): Promise<void> {
   if (agent !== activeAgent.value) {
     store.switchAgent(agent)
   }
-  await store.sendMessage(msg, mentions)
+  await store.sendMessage(msg, mentions, attachments)
 }
 
 function handleStop(): void {
@@ -265,6 +270,7 @@ onUnmounted(() => {
         :rag-search-results="ragSearchResults"
         :rag-searching="ragSearching"
         :rag-context="ragContext"
+        :requirement-input-placeholder="requirementInputPlaceholder"
         @send="handleSend"
         @stop="handleStop"
         @retry="handleRetry"
@@ -280,6 +286,7 @@ onUnmounted(() => {
         @regenerate-message="handleRegenerateMessage"
         @message-feedback="handleMessageFeedback"
         @requirement-confirm="(answers) => store.confirmRequirement(answers)"
+        @requirement-answer="(qid, val) => store.answerRequirementOption(qid, val)"
         @requirement-skip="store.skipRequirement()"
       />
     </div>
