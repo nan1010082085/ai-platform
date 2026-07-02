@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useQiankun } from '@schema-platform/platform-shared/qiankun'
+import { useAuthStore } from '@schema-platform/platform-shared/utils/stores/authStore'
 
 const TOKEN_KEY = 'sfp_access_token'
 
@@ -76,8 +77,17 @@ function inferRouteBase(): string {
   return ''
 }
 
+function resolveRouteBase(routeBase?: string): string {
+  if (routeBase) return routeBase
+  const inferred = inferRouteBase()
+  if (inferred) return inferred
+  const viteBase = import.meta.env.BASE_URL
+  if (viteBase && viteBase !== '/') return viteBase
+  return import.meta.env.VITE_ROUTE_BASE || '/'
+}
+
 export function createAiRouter(routeBase?: string) {
-  const base = routeBase || inferRouteBase() || import.meta.env.VITE_ROUTE_BASE || '/'
+  const base = resolveRouteBase(routeBase)
   const router = createRouter({
     history: createWebHistory(base),
     routes,
@@ -85,6 +95,15 @@ export function createAiRouter(routeBase?: string) {
 
   router.beforeEach((to) => {
     if (to.meta.public) {
+      if (to.name === 'login' && !isQiankun()) {
+        const authStore = useAuthStore()
+        if (authStore.accessToken && authStore.user) {
+          return { path: (to.query.redirect as string) || '/' }
+        }
+        if (authStore.accessToken && !authStore.user) {
+          authStore.reset()
+        }
+      }
       return true
     }
 
