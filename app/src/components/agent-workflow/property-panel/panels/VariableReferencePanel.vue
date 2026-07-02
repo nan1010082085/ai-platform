@@ -18,6 +18,8 @@ function update(key: string, value: unknown) {
       <li><code>{{ '$input.field' }}</code> — 工作流输入</li>
       <li><code>{{ '$json' }}</code> — 上一节点输出</li>
       <li><code>{{ '$node.node-id' }}</code> — 指定节点输出</li>
+      <li><code>{{ '$node.node-id.field' }}</code> — 节点输出字段</li>
+      <li><code>{{ '$conversation' }}</code> — 多轮对话历史</li>
     </ul>
   </SectionToggle>
 </template>

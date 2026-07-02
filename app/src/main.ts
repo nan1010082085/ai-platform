@@ -8,7 +8,7 @@ import { createApp, type App } from 'vue'
 import { createPinia } from 'pinia'
 import { renderWithQiankun, qiankunWindow } from 'vite-plugin-qiankun/dist/helper'
 import { setupElementPlus } from '@schema-platform/platform-shared/config/element'
-import { initQiankunProps } from '@schema-platform/platform-shared/qiankun'
+import { initQiankunProps, initQiankunShellProps } from '@schema-platform/platform-shared/qiankun'
 import { aiLog } from '@schema-platform/platform-shared/utils/logger'
 import AppRoot from './App.vue'
 import { createAiRouter } from './router'
@@ -52,6 +52,7 @@ renderWithQiankun({
     if (typeof props.onGlobalStateChange === 'function' && typeof props.setGlobalState === 'function') {
       initQiankunProps(props as Parameters<typeof initQiankunProps>[0])
     }
+    initQiankunShellProps(props)
 
     const getToken = props.getToken as (() => string) | undefined
     const token = getToken ? getToken() : (props.token as string)

@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import AiChatPanel from '@/components/AiChatPanel.vue'
 
 // Stub child components
@@ -42,9 +43,15 @@ describe('AiChatPanel', () => {
     TaskChainBar: TaskChainBarStub,
     AiRagSearch: AiRagSearchStub,
     AiMentionInput: AiMentionInputStub,
+    AppIcon: { template: '<span />', props: ['name', 'size'] },
+    AgentWorkflowPicker: { template: '<div />', props: ['modelValue', 'showLabel'] },
+    ElPopover: { template: '<div><slot /><slot name="reference" /></div>', props: ['visible', 'width'] },
+    ElTooltip: { template: '<div><slot /></div>', props: ['content'] },
   }
 
   beforeEach(() => {
+    setActivePinia(createPinia())
+    localStorage.clear()
     vi.clearAllMocks()
   })
 

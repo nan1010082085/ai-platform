@@ -135,11 +135,57 @@ export function getAgentNodePreviewSections(
         })
       }
       break
+    case 'vision-analyze':
+      config.push(
+        { key: 'call', label: '调用', value: '图片视觉分析', tone: 'primary' },
+        {
+          key: 'source',
+          label: '来源',
+          value: data.documentSource === 'documentId' ? '固定 ID' : `字段 ${data.inputField ?? 'documentId'}`,
+          tone: 'muted',
+        },
+      )
+      if (data.visionPrompt?.trim()) {
+        config.push({
+          key: 'visionPrompt',
+          label: 'Prompt',
+          value: formatPreviewValue(data.visionPrompt),
+          tone: 'default',
+        })
+      }
+      break
+    case 'conversation-memory':
+      config.push(
+        { key: 'call', label: '调用', value: '对话记忆', tone: 'primary' },
+        {
+          key: 'mode',
+          label: '模式',
+          value: data.memoryMode === 'reset' ? '清空' : data.memoryMode === 'read' ? '读取' : '追加',
+          tone: 'muted',
+        },
+      )
+      if (data.memoryMode === 'append') {
+        config.push({
+          key: 'role',
+          label: '角色',
+          value: data.memoryRole === 'assistant' ? '助手' : '用户',
+          tone: 'muted',
+        })
+      }
+      break
     case 'llm':
       config.push(
         { key: 'model', label: '模型', value: data.model?.trim() || 'default', tone: 'primary' },
         { key: 'prompt', label: 'Prompt', value: formatPreviewValue(data.prompt?.trim() || '{{$json}}'), tone: 'default' },
       )
+      if (data.useConversationHistory) {
+        config.push({
+          key: 'memory',
+          label: '记忆',
+          value: `启用 · ${data.maxHistoryTurns ?? 20} 轮`,
+          tone: 'primary',
+        })
+      }
       if (data.systemPrompt?.trim()) {
         config.push({
           key: 'system',

@@ -14,7 +14,7 @@ import { useShellEmbed } from '@/composables/useShellEmbed'
 
 const route = useRoute()
 const router = useRouter()
-const { isShellEmbedded, goToShellHome } = useShellEmbed()
+const { isShellEmbedded, shouldHideSubAppMenu, goToShellHome } = useShellEmbed()
 
 const navItems = [
   { path: '/', label: 'AI 对话', icon: 'chat-dot-round' },
@@ -31,9 +31,9 @@ const activeNav = computed(() => {
 </script>
 
 <template>
-  <div :class="$style.layout">
-    <!-- 侧边栏 -->
-    <aside :class="$style.sidebar">
+  <div :class="[$style.layout, shouldHideSubAppMenu && $style.layoutEmbedded]">
+    <!-- 侧边栏：/app 容器内由 shell 提供菜单，此处隐藏 -->
+    <aside v-if="!shouldHideSubAppMenu" :class="$style.sidebar">
       <div v-if="isShellEmbedded" :class="$style.embedBar">
         <el-tooltip content="返回主应用首页" placement="right">
           <button :class="$style.homeBtn" title="返回主应用" @click="goToShellHome">
@@ -82,6 +82,12 @@ const activeNav = computed(() => {
   display: flex;
   height: 100vh;
   background: var(--ai-bg-gray, #F5F7FA);
+}
+
+.layoutEmbedded {
+  .main {
+    width: 100%;
+  }
 }
 
 .sidebar {

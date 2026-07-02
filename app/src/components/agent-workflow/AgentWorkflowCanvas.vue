@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, provide, toRef } from 'vue'
+import { ref, onMounted, onUnmounted, watch, provide, toRef, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { VueFlow, useVueFlow, MarkerType } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -15,11 +15,21 @@ import { AGENT_PALETTE_ITEMS } from '@/constants/agentNodes'
 import styles from './AgentWorkflowCanvas.module.scss'
 import { EDGE_LINE_STYLE_KEY } from '@/types/edgeLineStyle'
 
-const props = defineProps<{
-  readOnly?: boolean
-  disableDelete?: boolean
-  selectedNodeId?: string | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    readOnly?: boolean
+    disableDelete?: boolean
+    selectedNodeId?: string | null
+    /** 独立 VueFlow 实例 ID，避免预览与设计器共享视口 */
+    canvasId?: string
+    /** 只读模式下加载后自动 fitView */
+    fitViewOnLoad?: boolean
+  }>(),
+  {
+    canvasId: 'agent-workflow-canvas',
+    fitViewOnLoad: true,
+  },
+)
 
 const emit = defineEmits<{
   nodeClick: [nodeId: string]
@@ -36,9 +46,21 @@ const defaultEdgeOptions = {
   data: { animated: false },
 }
 
-const { onConnect, onNodeClick, onEdgeClick, onPaneClick, onNodesChange, onEdgesChange, screenToFlowCoordinate, addSelectedNodes, removeSelectedNodes, addSelectedEdges, removeSelectedEdges, getNodes, getEdges } = useVueFlow({
-  id: 'agent-workflow-canvas',
+const { onConnect, onNodeClick, onEdgeClick, onPaneClick, onNodesChange, onEdgesChange, screenToFlowCoordinate, addSelectedNodes, removeSelectedNodes, addSelectedEdges, removeSelectedEdges, getNodes, getEdges, fitView } = useVueFlow({
+  id: props.canvasId,
 })
+
+let fitViewTimer: ReturnType<typeof setTimeout> | null = null
+
+function scheduleFitView() {
+  if (!props.readOnly || !props.fitViewOnLoad) return
+  if (fitViewTimer) clearTimeout(fitViewTimer)
+  fitViewTimer = setTimeout(() => {
+    nextTick(() => {
+      fitView({ padding: 0.12, duration: 200 })
+    })
+  }, 80)
+}
 
 function syncNodeSelection(nodeId: string | null) {
   const selected = getNodes.value.filter((n) => n.selected)
@@ -117,6 +139,20 @@ watch(
   },
 )
 
+watch(
+  () => [store.nodes.length, store.edges.length, props.readOnly, props.fitViewOnLoad] as const,
+  () => scheduleFitView(),
+)
+
+onMounted(() => {
+  if (!props.readOnly) window.addEventListener('keydown', onKeyDown)
+  scheduleFitView()
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeyDown)
+  if (fitViewTimer) clearTimeout(fitViewTimer)
+})
+
 onConnect((params) => {
   if (props.readOnly) return
   store.addEdge({
@@ -172,11 +208,6 @@ function onKeyDown(e: KeyboardEvent) {
     }
   }
 }
-
-onMounted(() => {
-  if (!props.readOnly) window.addEventListener('keydown', onKeyDown)
-})
-onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
 </script>
 
 <template>
@@ -187,7 +218,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
     @dragover="onDragOver"
   >
     <VueFlow
-      id="agent-workflow-canvas"
+      :id="canvasId"
       v-model:nodes="store.nodes"
       v-model:edges="store.edges"
       :class="styles.flow"

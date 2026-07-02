@@ -14,5 +14,6 @@
     "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": false
   },
-  "include": ["./**/*.ts"]
+  "include": ["./**/*.ts"],
+  "exclude": ["./**/__tests__/**", "./dist/**"]
 }

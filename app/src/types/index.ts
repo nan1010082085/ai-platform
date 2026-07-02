@@ -148,6 +148,8 @@ export type { ChatModel }
 
 export interface ChatSettings {
   model: ChatModel
+  /** 已发布的 Agent 工作流 ID；null 表示默认 LangGraph 对话 */
+  agentWorkflowId: string | null
   preferences: {
     replyLanguage: ReplyLanguage
     replyStyle: ReplyStyle

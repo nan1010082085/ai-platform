@@ -21,9 +21,21 @@ import AiMessage from '@/components/AiMessage.vue'
 import type { Widget, FlowGraph } from '@/types'
 import type { MessageEmbeddedCard } from '@/components/AiMessage.vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
+import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
 import { Clock } from '@element-plus/icons-vue'
 
 const store = useAiStore()
+const { loadPublishedWorkflows, getWorkflowName } = usePublishedAgentWorkflows()
+
+const workflowPickerVisible = ref(false)
+
+const selectedWorkflowId = computed({
+  get: () => store.chatSettings.agentWorkflowId,
+  set: (value: string | null) => store.updateAgentWorkflowId(value),
+})
+
+const selectedWorkflowName = computed(() => getWorkflowName(selectedWorkflowId.value))
 
 // ---- WebSocket 状态 ----
 const wsConnected = ref(isConnected())
@@ -124,6 +136,7 @@ function getDisplayCards(msg: typeof store.messages[0]): MessageEmbeddedCard[] |
 
 function getLabel(msg: typeof store.messages[0]): string {
   if (msg.role === 'user') return 'You'
+  if (selectedWorkflowName.value) return selectedWorkflowName.value
   const source = store.context.source
   if (source === 'editor') return 'Editor'
   if (source === 'flow') return 'Flow'
@@ -220,6 +233,10 @@ async function handleApply() {
 }
 
 onMounted(() => {
+  if (selectedWorkflowId.value) {
+    loadPublishedWorkflows().catch(() => {})
+  }
+
   // 连接 Socket
   connectSocket()
   startStatusCheck()
@@ -343,6 +360,29 @@ function handleHostData(data: Record<string, unknown>) {
         >
           <AppIcon name="plus" :size="14" />
         </el-button>
+        <el-popover
+          v-model:visible="workflowPickerVisible"
+          placement="bottom-start"
+          :width="280"
+          trigger="click"
+          :show-arrow="false"
+          :offset="4"
+        >
+          <template #reference>
+            <el-button
+              :class="[$style.historyBtn, { [$style.workflowBtnActive]: !!selectedWorkflowId }]"
+              title="Agent 编排"
+              link
+            >
+              <AppIcon name="set-up" :size="14" />
+            </el-button>
+          </template>
+          <AgentWorkflowPicker
+            v-model="selectedWorkflowId"
+            :show-label="false"
+            @update:model-value="workflowPickerVisible = false"
+          />
+        </el-popover>
       </div>
       <div :class="$style.headerRight">
         <!-- WebSocket 状态 -->
@@ -354,9 +394,15 @@ function handleHostData(data: Record<string, unknown>) {
     </div>
 
     <!-- Context bar -->
-    <div v-if="contextTag" :class="$style.contextBar">
-      <span>{{ contextLabel }}:</span>
-      <span :class="$style.contextTag">{{ contextTag }}</span>
+    <div v-if="contextTag || selectedWorkflowName" :class="$style.contextBar">
+      <template v-if="selectedWorkflowName">
+        <span>编排:</span>
+        <span :class="$style.contextTag">{{ selectedWorkflowName }}</span>
+      </template>
+      <template v-else-if="contextTag">
+        <span>{{ contextLabel }}:</span>
+        <span :class="$style.contextTag">{{ contextTag }}</span>
+      </template>
     </div>
 
     <!-- Messages -->

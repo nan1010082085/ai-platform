@@ -5,7 +5,14 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
-import type { AgentWorkflowSummary } from '@/types/agentWorkflow'
+import type {
+  AgentWorkflowSummary,
+  AgentWorkflowTemplateId,
+  AgentWorkflowTemplateMeta,
+} from '@/types/agentWorkflow'
+import { AGENT_WORKFLOW_TEMPLATES } from '@/types/agentWorkflow'
+import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
+import AgentWorkflowTemplatePreviewDialog from '@/components/agent-workflow/AgentWorkflowTemplatePreviewDialog.vue'
 import * as api from '@/api/agentWorkflowApi'
 import styles from './AgentWorkflowListView.module.scss'
 
@@ -13,15 +20,46 @@ const router = useRouter()
 const loading = ref(false)
 const workflows = ref<AgentWorkflowSummary[]>([])
 const searchInput = ref('')
-const activeTab = ref('all')
+const activeTab = ref<ListTab>('all')
 const sortBy = ref<'updated' | 'name'>('updated')
 const publishingId = ref<string | null>(null)
+const createDialogVisible = ref(false)
+const createName = ref('')
+const selectedTemplateId = ref<AgentWorkflowTemplateId>('blank')
+const creating = ref(false)
+const previewVisible = ref(false)
+const previewTemplate = ref<AgentWorkflowTemplateMeta | null>(null)
+
+const workflowTemplates = AGENT_WORKFLOW_TEMPLATES
+
+const TEMPLATE_DEFAULT_NAMES: Record<AgentWorkflowTemplateId, string> = {
+  blank: '我的工作流',
+  'document-summary': '文档摘要编排',
+  'doc-image-recognition': '文档图片识别',
+  'intelligent-assistant': '智能助手问答',
+}
+
+type ListTab = 'all' | 'draft' | 'published' | 'templates'
 
 const filterTabs = [
   { label: '全部', value: 'all' },
   { label: '草稿', value: 'draft' },
   { label: '已发布', value: 'published' },
+  { label: '模板', value: 'templates' },
 ]
+
+const TEMPLATE_ICONS: Record<AgentWorkflowTemplateId, string> = {
+  blank: 'set-up',
+  'document-summary': 'document',
+  'doc-image-recognition': 'picture',
+  'intelligent-assistant': 'chat-dot-round',
+}
+
+const TEMPLATE_CATEGORY_LABELS: Record<AgentWorkflowTemplateMeta['category'], string> = {
+  general: '通用',
+  document: '文档',
+  assistant: '助手',
+}
 
 const sortOptions = [
   { label: '最近更新', value: 'updated' },
@@ -45,9 +83,29 @@ function matchesSearch(w: AgentWorkflowSummary): boolean {
   return w.name.toLowerCase().includes(q)
 }
 
+const isTemplatesTab = computed(() => activeTab.value === 'templates')
+
+const systemTemplates = computed(() =>
+  workflowTemplates.filter((tpl) => tpl.id !== 'blank'),
+)
+
+function matchesTemplateSearch(tpl: AgentWorkflowTemplateMeta): boolean {
+  const q = searchInput.value.trim().toLowerCase()
+  if (!q) return true
+  return (
+    tpl.name.toLowerCase().includes(q) ||
+    tpl.description.toLowerCase().includes(q) ||
+    TEMPLATE_CATEGORY_LABELS[tpl.category].includes(q)
+  )
+}
+
+const filteredTemplates = computed(() =>
+  systemTemplates.value.filter(matchesTemplateSearch),
+)
+
 const filteredWorkflows = computed(() => {
   let list = workflows.value
-  if (activeTab.value !== 'all') {
+  if (activeTab.value !== 'all' && activeTab.value !== 'templates') {
     list = list.filter((w) => w.status === activeTab.value)
   }
   list = list.filter(matchesSearch)
@@ -61,22 +119,64 @@ const filteredWorkflows = computed(() => {
   return list
 })
 
-const isEmpty = computed(() => !loading.value && workflows.value.length === 0)
-const isNoResults = computed(
-  () => !loading.value && workflows.value.length > 0 && filteredWorkflows.value.length === 0,
+const isEmpty = computed(
+  () => !loading.value && !isTemplatesTab.value && workflows.value.length === 0,
 )
+const isNoResults = computed(() => {
+  if (loading.value) return false
+  if (isTemplatesTab.value) return filteredTemplates.value.length === 0
+  return workflows.value.length > 0 && filteredWorkflows.value.length === 0
+})
 
 async function onCreate() {
+  selectedTemplateId.value = 'blank'
+  createName.value = TEMPLATE_DEFAULT_NAMES.blank
+  createDialogVisible.value = true
+}
+
+function onTemplateSelect(id: AgentWorkflowTemplateId) {
+  selectedTemplateId.value = id
+  createName.value = TEMPLATE_DEFAULT_NAMES[id]
+}
+
+function onUseTemplate(id: AgentWorkflowTemplateId) {
+  onTemplateSelect(id)
+  createDialogVisible.value = true
+}
+
+function onPreviewTemplate(tpl: AgentWorkflowTemplateMeta) {
+  previewTemplate.value = tpl
+  previewVisible.value = true
+}
+
+function onPreviewUse(id: AgentWorkflowTemplateId) {
+  onUseTemplate(id)
+}
+
+function onBrowseTemplates() {
+  activeTab.value = 'templates'
+}
+
+async function confirmCreate() {
+  const name = createName.value.trim()
+  if (!name) {
+    message.warning('请输入工作流名称')
+    return
+  }
+  creating.value = true
   try {
-    const { value } = await ElMessageBox.prompt('工作流名称', '新建 Agent 工作流', {
-      confirmButtonText: '创建',
-      cancelButtonText: '取消',
-      inputValue: '我的工作流',
-    })
-    const wf = await api.createWorkflow(value.trim())
+    const tpl = workflowTemplates.find((t) => t.id === selectedTemplateId.value)
+    const wf = await api.createWorkflow(
+      name,
+      tpl?.description ?? '',
+      selectedTemplateId.value,
+    )
+    createDialogVisible.value = false
     router.push({ name: 'agent-workflow-designer', params: { id: wf.id } })
-  } catch {
-    // cancelled
+  } catch (e) {
+    message.error(e instanceof Error ? e.message : '创建失败')
+  } finally {
+    creating.value = false
   }
 }
 
@@ -159,7 +259,10 @@ onMounted(load)
             >
               <template #prefix><AppIcon name="search" :size="14" /></template>
             </el-input>
-            <el-dropdown @command="(cmd: string) => (sortBy = cmd as 'updated' | 'name')">
+            <el-dropdown
+              v-if="!isTemplatesTab"
+              @command="(cmd: string) => (sortBy = cmd as 'updated' | 'name')"
+            >
               <el-button size="small">
                 <AppIcon name="sort" class="el-icon--left" :size="14" />
                 {{ sortOptions.find((s) => s.value === sortBy)?.label }}
@@ -181,7 +284,7 @@ onMounted(load)
       </div>
 
       <!-- Loading skeleton -->
-      <div v-if="loading && workflows.length === 0" :class="styles.content">
+      <div v-if="loading && workflows.length === 0 && !isTemplatesTab" :class="styles.content">
         <div :class="styles.skeleton">
           <div v-for="i in 6" :key="i" :class="styles.skeletonCard">
             <div :class="styles.skeletonPreview" />
@@ -199,9 +302,56 @@ onMounted(load)
         <h2 :class="styles.emptyTitle">还没有 Agent 工作流</h2>
         <p :class="styles.emptyDesc">创建您的第一个工作流来开始编排 AI 节点</p>
         <div :class="styles.emptyActions">
-          <el-button type="primary" size="large" @click="onCreate">
-            <AppIcon name="plus" class="el-icon--left" :size="14" />创建工作流
+          <el-button type="primary" size="large" @click="onBrowseTemplates">
+            <AppIcon name="magic-stick" class="el-icon--left" :size="14" />浏览模板
           </el-button>
+          <el-button size="large" @click="onCreate">
+            <AppIcon name="plus" class="el-icon--left" :size="14" />空白工作流
+          </el-button>
+        </div>
+      </div>
+
+      <!-- Template library -->
+      <div v-else-if="isTemplatesTab" :class="styles.content">
+        <p :class="styles.templatesIntro">
+          系统内置编排模板，选择后可一键创建到您的工作流列表，再编辑、发布与执行。
+        </p>
+        <div v-if="filteredTemplates.length === 0" :class="styles.noResults">
+          <p>未找到匹配的模板</p>
+          <el-button @click="searchInput = ''">清除搜索</el-button>
+        </div>
+        <div v-else :class="styles.templateCards">
+          <div
+            v-for="(tpl, idx) in filteredTemplates"
+            :key="tpl.id"
+            :class="styles.templateListCard"
+            :style="{ animationDelay: `${idx * 0.04}s` }"
+          >
+            <div :class="styles.templateListPreview">
+              <AppIcon :name="TEMPLATE_ICONS[tpl.id]" :size="36" />
+            </div>
+            <div :class="styles.templateListBody">
+              <div :class="styles.templateListHead">
+                <h3 :class="styles.templateListName">{{ tpl.name }}</h3>
+                <el-tag size="small" type="info">
+                  {{ TEMPLATE_CATEGORY_LABELS[tpl.category] }}
+                </el-tag>
+              </div>
+              <p :class="styles.templateListDesc">{{ tpl.description }}</p>
+            </div>
+            <div :class="styles.templateListActions">
+              <el-tooltip content="预览" placement="top" :show-after="300">
+                <el-button size="small" text @click="onPreviewTemplate(tpl)">
+                  <AppIcon name="view" />
+                </el-button>
+              </el-tooltip>
+              <el-tooltip content="使用此模板" placement="top" :show-after="300">
+                <el-button size="small" text type="primary" @click="onUseTemplate(tpl.id)">
+                  <AppIcon name="plus" />
+                </el-button>
+              </el-tooltip>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -282,5 +432,45 @@ onMounted(load)
         </div>
       </div>
     </div>
+
+    <AppDialog
+      v-model="createDialogVisible"
+      title="新建 Agent 工作流"
+      width="640px"
+      :show-fullscreen-btn="false"
+    >
+      <div :class="styles.createForm">
+        <label :class="styles.createLabel">名称</label>
+        <el-input v-model="createName" placeholder="工作流名称" maxlength="64" />
+      </div>
+      <div :class="styles.createForm">
+        <label :class="styles.createLabel">选择模板</label>
+        <div :class="styles.templateGrid">
+          <button
+            v-for="tpl in workflowTemplates"
+            :key="tpl.id"
+            type="button"
+            :class="[
+              styles.templateCard,
+              selectedTemplateId === tpl.id && styles.templateCardActive,
+            ]"
+            @click="onTemplateSelect(tpl.id)"
+          >
+            <span :class="styles.templateName">{{ tpl.name }}</span>
+            <span :class="styles.templateDesc">{{ tpl.description }}</span>
+          </button>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="createDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="creating" @click="confirmCreate">创建</el-button>
+      </template>
+    </AppDialog>
+
+    <AgentWorkflowTemplatePreviewDialog
+      v-model="previewVisible"
+      :template="previewTemplate"
+      @use="onPreviewUse"
+    />
   </div>
 </template>

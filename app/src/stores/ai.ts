@@ -36,6 +36,8 @@ import {
   submitMessageFeedback,
 } from '@/api/aiApi'
 import { message } from '@schema-platform/platform-shared/utils/message'
+import { isWorkflowHitlApprovalMessage } from '@/utils/workflowChatResponse'
+import { runWorkflowChatTurn } from '@/composables/useWorkflowChatExecution'
 
 import { useConversationStore } from './conversation'
 import { useStreamStore } from './stream'
@@ -65,6 +67,9 @@ export const useAiStore = defineStore('ai', () => {
 
   // ---- 本地状态 ----
   const activeAgent = ref<AgentType>('auto')
+  const lastWorkflowExecutionId = ref<string | null>(null)
+  const pendingWorkflowExecutionId = ref<string | null>(null)
+  let workflowPollAborted = false
   const context = ref<ChatContext>({ source: 'standalone' })
   const taskChain = ref<TaskChainStep[]>([])
   const taskChainIndex = ref(0)
@@ -460,11 +465,88 @@ export const useAiStore = defineStore('ai', () => {
     context.value.source = agent === 'auto' ? 'standalone' : (agent as 'editor' | 'flow')
   }
 
+  function resetWorkflowExecutionState(): void {
+    lastWorkflowExecutionId.value = null
+    pendingWorkflowExecutionId.value = null
+    workflowPollAborted = false
+  }
+
+  async function sendWorkflowMessage(
+    content: string,
+    attachments?: import('@/types').MessageDocumentAttachment[],
+  ): Promise<void> {
+    const workflowId = chatSettingsStore.chatSettings.agentWorkflowId
+    if (!workflowId) return
+
+    workflowPollAborted = false
+    streamStore.loading = true
+    streamStore.error = null
+
+    const ragPrefix = ragStore.getRagContextContent()
+    const enrichedContent = ragPrefix + content
+
+    conversationStore.messages.push({
+      role: 'user',
+      content: enrichedContent,
+      attachments,
+      timestamp: new Date(),
+      status: 'sent',
+    })
+
+    const assistantIndex = conversationStore.messages.length
+    conversationStore.messages.push({
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      status: 'streaming',
+    })
+
+    try {
+      const hitlDecision = pendingWorkflowExecutionId.value
+        ? isWorkflowHitlApprovalMessage(content)
+        : null
+
+      const result = await runWorkflowChatTurn({
+        workflowId,
+        message: enrichedContent,
+        attachments,
+        lastExecutionId: pendingWorkflowExecutionId.value ? null : lastWorkflowExecutionId.value,
+        pendingExecutionId: pendingWorkflowExecutionId.value,
+        hitlApproved: hitlDecision === null ? true : hitlDecision,
+        isAborted: () => workflowPollAborted,
+      })
+
+      if (workflowPollAborted) {
+        conversationStore.messages[assistantIndex].content = '已停止生成'
+        conversationStore.messages[assistantIndex].status = 'received'
+        return
+      }
+
+      lastWorkflowExecutionId.value = result.lastExecutionId
+      pendingWorkflowExecutionId.value = result.pendingExecutionId
+      conversationStore.messages[assistantIndex].content = result.responseText
+      conversationStore.messages[assistantIndex].status = 'received'
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '工作流执行失败'
+      streamStore.error = errorMessage
+      conversationStore.messages[assistantIndex].content = errorMessage
+      conversationStore.messages[assistantIndex].status = 'error'
+      message.error(errorMessage)
+    } finally {
+      streamStore.loading = false
+    }
+  }
+
   async function sendMessage(
     content: string,
     mentions?: MentionReference[],
     attachments?: import('@/types').MessageDocumentAttachment[],
   ): Promise<void> {
+    if (chatSettingsStore.chatSettings.agentWorkflowId) {
+      await sendWorkflowMessage(content, attachments)
+      return
+    }
+
     // 需求确认等待中：输入框发送 = 渐进式作答，不开启新对话轮次
     if (hitlStore.pendingInterrupt?.type === 'requirement_confirm') {
       const trimmed = content.trim()
@@ -638,6 +720,7 @@ export const useAiStore = defineStore('ai', () => {
     conversationStore.clearConversation()
     schemaStore.clearSchemaState()
     hitlStore.clearInterrupt()
+    resetWorkflowExecutionState()
     streamStore.streamStatus = 'idle'
     streamStore.retryCount = 0
     streamStore.lastMessagePayload = null
@@ -932,6 +1015,8 @@ export const useAiStore = defineStore('ai', () => {
     llmUsage: computed(() => llmStore.llmUsage),
     llmLoading: computed(() => llmStore.llmLoading),
     chatSettings: computed(() => chatSettingsStore.chatSettings),
+    selectedAgentWorkflowId: computed(() => chatSettingsStore.chatSettings.agentWorkflowId),
+    pendingWorkflowExecutionId: computed(() => pendingWorkflowExecutionId.value),
     ragSearchResults: computed(() => ragStore.ragSearchResults),
     ragSearching: computed(() => ragStore.ragSearching),
     ragContext: computed(() => ragStore.ragContext),
@@ -954,7 +1039,10 @@ export const useAiStore = defineStore('ai', () => {
     sendMessage,
     retryLastMessage,
     retryToolCall,
-    stopGeneration: () => streamStore.stopGeneration(),
+    stopGeneration: () => {
+      workflowPollAborted = true
+      streamStore.stopGeneration()
+    },
     switchAgent,
     clearConversation,
     loadConversations,
@@ -973,7 +1061,22 @@ export const useAiStore = defineStore('ai', () => {
     loadLLMUsage: () => llmStore.loadLLMUsage(),
     switchProvider: (provider: string) => llmStore.switchProvider(provider),
     switchStrategy: (strategy: string | null) => llmStore.switchStrategy(strategy),
-    updateChatSettings: (settings: Parameters<typeof chatSettingsStore.updateChatSettings>[0]) => chatSettingsStore.updateChatSettings(settings),
+    updateChatSettings: (settings: Parameters<typeof chatSettingsStore.updateChatSettings>[0]) => {
+      const prevWorkflowId = chatSettingsStore.chatSettings.agentWorkflowId
+      chatSettingsStore.updateChatSettings(settings)
+      if (
+        settings.agentWorkflowId !== undefined
+        && settings.agentWorkflowId !== prevWorkflowId
+      ) {
+        resetWorkflowExecutionState()
+      }
+    },
+    updateAgentWorkflowId: (workflowId: string | null) => {
+      if (workflowId !== chatSettingsStore.chatSettings.agentWorkflowId) {
+        chatSettingsStore.updateAgentWorkflowId(workflowId)
+        resetWorkflowExecutionState()
+      }
+    },
     loadChatSettings: () => chatSettingsStore.chatSettings,
     searchRagAction: (query: string, limit?: number) => ragStore.searchRagAction(query, limit),
     addRagContext: (item: any) => ragStore.addRagContext(item),

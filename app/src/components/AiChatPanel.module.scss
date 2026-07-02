@@ -55,6 +55,11 @@
   color: var(--ai-color-primary, #00d4ff);
 }
 
+.roleBadge.workflow {
+  background: rgba(103, 58, 183, 0.12);
+  color: #673ab7;
+}
+
 .headerActions {
   display: flex;
   gap: 4px;
@@ -84,6 +89,16 @@
 .actionBtn:hover {
   background: var(--ai-bg-hover, #F5F7FA);
   color: var(--ai-color-primary, #00d4ff);
+}
+
+.actionBtnActive {
+  background: rgba(103, 58, 183, 0.12);
+  color: #673ab7;
+}
+
+.actionBtnActive:hover {
+  background: rgba(103, 58, 183, 0.18);
+  color: #673ab7;
 }
 
 /* ---- Messages ---- */

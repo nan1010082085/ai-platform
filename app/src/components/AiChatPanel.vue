@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, computed } from 'vue'
+import { ref, nextTick, watch, computed, onMounted } from 'vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AiMessage from './AiMessage.vue'
 import TaskChainBar from './TaskChainBar.vue'
 import AiRagSearch from './AiRagSearch.vue'
 import AiMentionInput from './AiMentionInput.vue'
 import DocumentPreviewPanel from './document/DocumentPreviewPanel.vue'
 import DocumentPreviewDrawer from './document/DocumentPreviewDrawer.vue'
+import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
+import { useAiStore } from '@/stores/ai'
+import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
 import { uploadFile } from '@/api/aiApi'
 import type { AIMessage, AgentType, Attachment, TaskChainStep, StreamConnectionStatus, MentionReference, RagSearchResult, MessageDocumentAttachment } from '@/types'
 import type { MessageEmbeddedCard } from './AiMessage.vue'
@@ -79,11 +83,28 @@ const selectedAgent = ref<AgentType>(props.agent)
 const messagesRef = ref<HTMLElement>()
 const mentionInputRef = ref<InstanceType<typeof AiMentionInput>>()
 const ragVisible = ref(false)
+const workflowPickerVisible = ref(false)
+const store = useAiStore()
+const { loadPublishedWorkflows, getWorkflowName } = usePublishedAgentWorkflows()
+
+const selectedWorkflowId = computed({
+  get: () => store.chatSettings.agentWorkflowId,
+  set: (value: string | null) => store.updateAgentWorkflowId(value),
+})
+
+const selectedWorkflowName = computed(() => getWorkflowName(selectedWorkflowId.value))
+
+onMounted(() => {
+  if (selectedWorkflowId.value) {
+    loadPublishedWorkflows().catch(() => {})
+  }
+})
 
 // 向后兼容：优先使用 streamStatus，fallback 到 sseStatus
 const currentStreamStatus = computed(() => props.streamStatus ?? props.sseStatus ?? 'idle')
 
 const selectedAgentLabel = computed(() => {
+  if (selectedWorkflowName.value) return selectedWorkflowName.value
   return props.agentOptions.find((opt) => opt.value === selectedAgent.value)?.label ?? 'AI'
 })
 
@@ -300,7 +321,7 @@ function handleCardAction(
     <div :class="$style.header">
       <div :class="$style.headerLeft">
         <span :class="$style.title">{{ title }}</span>
-        <span :class="[$style.roleBadge, $style[selectedAgent]]">
+        <span :class="[$style.roleBadge, selectedWorkflowId ? $style.workflow : $style[selectedAgent]]">
           {{ selectedAgentLabel }}
         </span>
         <!-- 流式连接状态指示器 -->
@@ -327,6 +348,30 @@ function handleCardAction(
         </span>
       </div>
       <div :class="$style.headerActions">
+        <el-popover
+          v-model:visible="workflowPickerVisible"
+          placement="bottom-end"
+          :width="280"
+          trigger="click"
+          :show-arrow="false"
+          :offset="4"
+        >
+          <template #reference>
+            <el-tooltip content="Agent 编排" placement="bottom" :show-after="300">
+              <button
+                type="button"
+                :class="[$style.actionBtn, { [$style.actionBtnActive]: !!selectedWorkflowId }]"
+              >
+                <AppIcon name="set-up" :size="14" />
+              </button>
+            </el-tooltip>
+          </template>
+          <AgentWorkflowPicker
+            v-model="selectedWorkflowId"
+            :show-label="false"
+            @update:model-value="workflowPickerVisible = false"
+          />
+        </el-popover>
         <el-tooltip content="对话设置" placement="bottom" :show-after="300">
           <button :class="$style.actionBtn" @click="emit('open-settings')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -512,6 +557,7 @@ function handleCardAction(
               </button>
             </el-tooltip>
             <el-select
+              v-if="!selectedWorkflowId"
               v-model="selectedAgent"
               :class="$style.agentSelect"
               :disabled="disabled || loading"

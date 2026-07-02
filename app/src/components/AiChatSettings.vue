@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import type { ChatSettings } from '@/types'
 import { checkAIHealth, type AIHealthResponse } from '@/api/aiApi'
 import { CHAT_MODEL_OPTIONS } from '@/constants/chatModels'
+import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -91,6 +92,14 @@ function handleSave(): void {
             />
           </el-select>
         </div>
+      </div>
+    </div>
+
+    <!-- Agent 编排 -->
+    <div class="prop-section">
+      <div class="prop-section__title">Agent 编排</div>
+      <div class="prop-section__body">
+        <AgentWorkflowPicker v-model="localSettings.agentWorkflowId" :show-label="false" />
       </div>
     </div>
 

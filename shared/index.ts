@@ -81,6 +81,9 @@ export type {
   ExpertNodeType,
   AgentHitlConfirmQuestion,
   AgentNodeType,
+  AgentWorkflowTemplateId,
+  AgentWorkflowTemplateMeta,
+  AgentConversationTurn,
   AgentWorkflowStatus,
   AgentExecutionStatus,
   AgentNodeRecordStatus,
@@ -100,7 +103,12 @@ export type {
 export {
   createDefaultAgentWorkflowGraph,
   createDocumentSummaryWorkflowGraph,
+  createDocImageRecognitionWorkflowGraph,
+  createIntelligentAssistantWorkflowGraph,
+  createAgentWorkflowGraphByTemplate,
+  layoutAgentWorkflowGraph,
   validateAgentWorkflowGraph,
+  AGENT_WORKFLOW_TEMPLATES,
 } from './agentWorkflow.js'
 
 export type {

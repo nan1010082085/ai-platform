@@ -22,9 +22,18 @@ export type {
   AgentNodeRecord,
   AgentWorkflowExecution,
   AgentWorkflowValidationIssue,
+  AgentWorkflowTemplateId,
+  AgentWorkflowTemplateMeta,
+  AgentConversationTurn,
 } from '@schema-platform/ai-shared'
 
 export {
   createDefaultAgentWorkflowGraph,
+  createDocumentSummaryWorkflowGraph,
+  createDocImageRecognitionWorkflowGraph,
+  createIntelligentAssistantWorkflowGraph,
+  createAgentWorkflowGraphByTemplate,
+  layoutAgentWorkflowGraph,
   validateAgentWorkflowGraph,
+  AGENT_WORKFLOW_TEMPLATES,
 } from '@schema-platform/ai-shared'

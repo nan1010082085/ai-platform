@@ -274,3 +274,143 @@
     background-position: -200% 0;
   }
 }
+
+.createForm {
+  margin-bottom: 16px;
+}
+
+.createLabel {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  margin-bottom: 8px;
+}
+
+.templateGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.templateCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 8px;
+  background: var(--bg-color);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+
+.templateCard:hover {
+  border-color: var(--color-primary-light-5, #b3d8ff);
+}
+
+.templateCardActive {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.templateName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+}
+
+.templateDesc {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-color-secondary);
+}
+
+.templatesIntro {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  line-height: 1.5;
+}
+
+.templateCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.templateListCard {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 10px;
+  padding: 16px;
+  animation: cardFadeIn 0.35s ease backwards;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: var(--color-primary-lighter);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.templateListPreview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96px;
+  margin: -16px -16px 12px;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 8%, var(--bg-color-page)),
+    var(--bg-color-page)
+  );
+  color: var(--color-primary);
+  opacity: 0.75;
+}
+
+.templateListBody {
+  flex: 1;
+  margin-bottom: 12px;
+}
+
+.templateListHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.templateListName {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+}
+
+.templateListDesc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-color-secondary);
+}
+
+.templateListActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color-lighter);
+
+  :global(.el-button) {
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+}

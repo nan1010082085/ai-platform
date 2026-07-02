@@ -11,6 +11,8 @@ import ToolNodePanel from '@/components/agent-workflow/property-panel/panels/Too
 import IfNodePanel from '@/components/agent-workflow/property-panel/panels/IfNodePanel.vue'
 import HitlNodePanel from '@/components/agent-workflow/property-panel/panels/HitlNodePanel.vue'
 import DocumentParseNodePanel from '@/components/agent-workflow/property-panel/panels/DocumentParseNodePanel.vue'
+import VisionAnalyzeNodePanel from '@/components/agent-workflow/property-panel/panels/VisionAnalyzeNodePanel.vue'
+import ConversationMemoryNodePanel from '@/components/agent-workflow/property-panel/panels/ConversationMemoryNodePanel.vue'
 
 const toolPanel = markRaw(ToolNodePanel)
 const agentPanel = markRaw(AgentNodePanel)
@@ -19,6 +21,8 @@ const registry = new Map<AgentNodeType, Component>([
   ['manual-trigger', markRaw(TriggerNodePanel)],
   ['webhook-trigger', markRaw(WebhookTriggerNodePanel)],
   ['document-parse', markRaw(DocumentParseNodePanel)],
+  ['vision-analyze', markRaw(VisionAnalyzeNodePanel)],
+  ['conversation-memory', markRaw(ConversationMemoryNodePanel)],
   ['llm', markRaw(LlmNodePanel)],
   ['agent', agentPanel],
   ['tool', toolPanel],
@@ -39,6 +43,8 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   'manual-trigger': '手动触发',
   'webhook-trigger': 'Webhook 触发',
   'document-parse': '文档解析',
+  'vision-analyze': '图片视觉分析',
+  'conversation-memory': '对话记忆',
   llm: 'LLM',
   agent: '专家 Agent',
   tool: '工具',

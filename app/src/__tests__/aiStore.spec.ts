@@ -16,7 +16,15 @@ vi.mock('@/api/aiApi', () => ({
   getConversationDetail: vi.fn(),
 }))
 
+vi.mock('@/api/agentWorkflowApi', () => ({
+  executeWorkflow: vi.fn(),
+  continueExecution: vi.fn(),
+  resumeExecution: vi.fn(),
+  getExecution: vi.fn(),
+}))
+
 import { getConversations, deleteConversation, publish } from '@/api/aiApi'
+import { executeWorkflow, getExecution } from '@/api/agentWorkflowApi'
 
 // ---- WebSocket mock ----
 // 模拟服务端 chat:event 推送
@@ -57,6 +65,7 @@ function mockChatStream(events: Array<Record<string, unknown>>) {
 
 beforeEach(() => {
   setActivePinia(createPinia())
+  localStorage.clear()
   vi.clearAllMocks()
 })
 
@@ -426,6 +435,7 @@ describe('useAiStore', () => {
       const store = useAiStore()
       expect(store.chatSettings).toEqual({
         model: 'deepseek-v4-flash',
+        agentWorkflowId: null,
         preferences: {
           replyLanguage: 'zh-CN',
           replyStyle: 'detailed',
@@ -453,6 +463,48 @@ describe('useAiStore', () => {
       })
       expect(store.chatSettings.historySummary.mode).toBe('manual')
       expect(store.chatSettings.historySummary.manualSummary).toBe('test')
+    })
+
+    it('sendMessage executes selected agent workflow instead of chat stream', async () => {
+      const store = useAiStore()
+      store.updateChatSettings({ agentWorkflowId: 'wf-1' })
+
+      vi.mocked(executeWorkflow).mockResolvedValue({
+        id: 'exec-1',
+        workflowId: 'wf-1',
+        workflowName: 'Demo',
+        versionId: 'pub-1',
+        version: '20260101000000',
+        status: 'running',
+        trigger: 'manual',
+        startedAt: new Date().toISOString(),
+        nodeRecords: [],
+      })
+      vi.mocked(getExecution).mockResolvedValue({
+        id: 'exec-1',
+        workflowId: 'wf-1',
+        workflowName: 'Demo',
+        versionId: 'pub-1',
+        version: '20260101000000',
+        status: 'success',
+        trigger: 'manual',
+        startedAt: new Date().toISOString(),
+        nodeRecords: [{
+          nodeId: 'llm-1',
+          nodeType: 'llm',
+          nodeName: 'LLM',
+          status: 'success',
+          output: { text: 'workflow reply' },
+        }],
+        conversationHistory: [{ role: 'assistant', content: 'workflow reply' }],
+      })
+
+      await store.sendMessage('hello workflow')
+
+      expect(executeWorkflow).toHaveBeenCalledWith('wf-1', { message: 'hello workflow' })
+      expect(emitChatSend).not.toHaveBeenCalled()
+      expect(store.messages).toHaveLength(2)
+      expect(store.messages[1].content).toBe('workflow reply')
     })
 
     it('passes chatSettings preferences to chat API', async () => {

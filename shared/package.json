@@ -1,6 +1,6 @@
 {
   "name": "@schema-platform/ai-shared",
-  "version": "1.0.2",
+  "version": "1.0.5",
   "private": false,
   "type": "module",
   "repository": "github:schema-platform/schema-form-ai",

@@ -48,6 +48,7 @@ const ElInputNumberStub = {
 
 const defaultSettings: ChatSettings = {
   model: 'deepseek-v4-flash',
+  agentWorkflowId: null,
   preferences: {
     replyLanguage: 'zh-CN',
     replyStyle: 'detailed',
@@ -67,6 +68,7 @@ const stubs = {
   ElOption: ElOptionStub,
   ElSwitch: ElSwitchStub,
   ElInputNumber: ElInputNumberStub,
+  AgentWorkflowPicker: { template: '<div />', props: ['modelValue', 'showLabel'] },
 }
 
 function mountSettings(visible: boolean, settings: ChatSettings = defaultSettings) {
@@ -91,6 +93,7 @@ describe('AiChatSettings', () => {
     const { wrapper, text } = mountSettings(true)
     expect(text()).toContain('连接状态')
     expect(text()).toContain('用户偏好')
+    expect(text()).toContain('Agent 编排')
     expect(text()).toContain('对话历史摘要')
     wrapper.unmount()
   })

@@ -6,6 +6,18 @@ import { fileURLToPath } from 'node:url'
 
 const isProd = process.env.NODE_ENV === 'production'
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
+const sharedDir = fileURLToPath(new URL('../shared', import.meta.url))
+
+/** workspace ai-shared 子路径与 package.json exports 对齐 */
+const aiSharedAliases = [
+  { find: '@schema-platform/ai-shared/toolNames', replacement: resolve(sharedDir, 'dist/toolNames.js') },
+  { find: '@schema-platform/ai-shared/agentWorkflow', replacement: resolve(sharedDir, 'dist/agentWorkflow.js') },
+  { find: '@schema-platform/ai-shared/document', replacement: resolve(sharedDir, 'dist/document.js') },
+  { find: '@schema-platform/ai-shared/promptBuilder', replacement: resolve(sharedDir, 'dist/promptBuilder.js') },
+  { find: '@schema-platform/ai-shared/systemKnowledge', replacement: resolve(sharedDir, 'dist/systemKnowledge.js') },
+  { find: '@schema-platform/ai-shared/flowNodeCatalogue', replacement: resolve(sharedDir, 'dist/flowNodeCatalogue.js') },
+  { find: '@schema-platform/ai-shared', replacement: resolve(sharedDir, 'dist/index.js') },
+]
 
 export default defineConfig({
   base: isProd ? '/schema-platform/ai/' : '/',
@@ -19,7 +31,13 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: { '@': resolve(rootDir, 'src') },
+    alias: [
+      { find: '@', replacement: resolve(rootDir, 'src') },
+      ...aiSharedAliases,
+    ],
+  },
+  optimizeDeps: {
+    exclude: ['@schema-platform/ai-shared'],
   },
   build: {
     cssCodeSplit: false,

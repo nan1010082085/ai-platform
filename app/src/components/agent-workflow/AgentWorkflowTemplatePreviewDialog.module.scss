@@ -1,0 +1,68 @@
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 420px;
+}
+
+.intro {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-color-secondary);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 12px;
+  flex: 1;
+  min-height: 360px;
+}
+
+.canvasWrap {
+  min-height: 360px;
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-color-page);
+}
+
+.nodeList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 8px;
+  background: var(--bg-color);
+  overflow: auto;
+  max-height: 360px;
+}
+
+.nodeListTitle {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-color-secondary);
+}
+
+.nodeItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-color-page);
+}
+
+.nodeLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-color-primary);
+}
+
+.nodeType {
+  font-size: 11px;
+  color: var(--text-color-placeholder);
+}

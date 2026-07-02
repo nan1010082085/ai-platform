@@ -14,7 +14,7 @@ function update(key: string, value: unknown) {
 </script>
 
 <template>
-  <SectionToggle title="LLM 配置" :count="3">
+  <SectionToggle title="LLM 配置" :count="6">
     <FieldRow label="模型" hint="选择调用的大模型">
       <el-select
         :model-value="String(props.node.data?.model ?? 'default')"
@@ -45,6 +45,29 @@ function update(key: string, value: unknown) {
         :model-value="String(props.node.data?.systemPrompt ?? '')"
         placeholder="你是工作流中的 LLM 节点..."
         @update:model-value="update('systemPrompt', $event)"
+      />
+    </FieldRow>
+    <FieldRow label="对话记忆">
+      <el-switch
+        :model-value="props.node.data?.useConversationHistory === true"
+        @update:model-value="update('useConversationHistory', $event)"
+      />
+      <span style="margin-left: 8px; font-size: 12px; color: var(--text-color-secondary)">
+        注入历史到 LLM
+      </span>
+    </FieldRow>
+    <FieldRow v-if="props.node.data?.useConversationHistory" label="自动写入回复">
+      <el-switch
+        :model-value="props.node.data?.appendAssistantReply === true"
+        @update:model-value="update('appendAssistantReply', $event)"
+      />
+    </FieldRow>
+    <FieldRow v-if="props.node.data?.useConversationHistory" label="历史轮数">
+      <el-input-number
+        :model-value="Number(props.node.data?.maxHistoryTurns ?? 20)"
+        :min="1"
+        :max="100"
+        @update:model-value="update('maxHistoryTurns', $event)"
       />
     </FieldRow>
   </SectionToggle>

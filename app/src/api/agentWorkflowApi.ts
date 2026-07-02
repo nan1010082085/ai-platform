@@ -7,6 +7,7 @@ import type {
   AgentWorkflowExecution,
   AgentWorkflowGraph,
   AgentWorkflowSummary,
+  AgentWorkflowTemplateId,
   AgentWorkflowVersionDetail,
   AgentWorkflowVersionEntry,
 } from '@/types/agentWorkflow'
@@ -50,10 +51,14 @@ export function listWorkflows(): Promise<AgentWorkflowSummary[]> {
   return request('/ai/workflows')
 }
 
-export function createWorkflow(name: string, description = ''): Promise<AgentWorkflowSummary> {
+export function createWorkflow(
+  name: string,
+  description = '',
+  templateId?: AgentWorkflowTemplateId,
+): Promise<AgentWorkflowSummary> {
   return request('/ai/workflows', {
     method: 'POST',
-    body: JSON.stringify({ name, description }),
+    body: JSON.stringify({ name, description, templateId }),
   })
 }
 
@@ -115,6 +120,16 @@ export function listExecutions(opts?: {
 
 export function getExecution(id: string): Promise<AgentWorkflowExecution> {
   return request(`/ai/workflow-executions/${id}`)
+}
+
+export function continueExecution(
+  id: string,
+  input: Record<string, unknown> = {},
+): Promise<AgentWorkflowExecution> {
+  return request(`/ai/workflow-executions/${id}/continue`, {
+    method: 'POST',
+    body: JSON.stringify({ input }),
+  })
 }
 
 export function resumeExecution(

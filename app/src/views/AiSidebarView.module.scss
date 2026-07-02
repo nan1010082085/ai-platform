@@ -345,6 +345,10 @@
   color: var(--ai-color-primary, #0060A2);
 }
 
+.workflowBtnActive {
+  color: #673ab7;
+}
+
 /* History Popover */
 .historyPopover {
   max-height: 360px;
