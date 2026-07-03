@@ -1,8 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useQiankun } from '@schema-platform/platform-shared/qiankun'
 import { useAuthStore } from '@schema-platform/platform-shared/utils/stores/authStore'
-
-const TOKEN_KEY = 'sfp_access_token'
+import { guardAuthenticatedRoute } from '@schema-platform/platform-shared/utils/authSession'
 
 const isQiankun = () => !!window.__POWERED_BY_QIANKUN__
 
@@ -93,28 +91,18 @@ export function createAiRouter(routeBase?: string) {
     routes,
   })
 
-  router.beforeEach((to) => {
+  router.beforeEach(async (to) => {
     if (to.meta.public) {
       if (to.name === 'login' && !isQiankun()) {
         const authStore = useAuthStore()
         if (authStore.accessToken && authStore.user) {
           return { path: (to.query.redirect as string) || '/' }
         }
-        if (authStore.accessToken && !authStore.user) {
-          authStore.reset()
-        }
       }
       return true
     }
 
-    if (!isQiankun()) {
-      const { getGlobalState } = useQiankun()
-      const state = getGlobalState()
-      const token = (state.token as string) || localStorage.getItem(TOKEN_KEY)
-      if (!token) {
-        return { name: 'login', query: { redirect: to.fullPath } }
-      }
-    }
+    return guardAuthenticatedRoute(to)
   })
 
   return router

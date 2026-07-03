@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@schema-platform/flow-shared':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: file:../../flow-shared
+        version: file:../../flow-shared
     devDependencies:
       typescript:
         specifier: ~5.7.3
@@ -18,8 +18,8 @@ importers:
 
 packages:
 
-  '@schema-platform/flow-shared@1.0.0':
-    resolution: {integrity: sha512-D5/H1BhmLk6dWMMfd6vAfSgD/nQxPu218KCvlaxKouVml59wCl+DLSL4F+rGxmxjhSpwnycnv7fLpzN3qRxlvw==, tarball: https://npm.pkg.github.com/download/@schema-platform/flow-shared/1.0.0/90fd53ae603f5265902ef92301d125ca30927aeb}
+  '@schema-platform/flow-shared@file:../../flow-shared':
+    resolution: {directory: ../../flow-shared, type: directory}
 
   typescript@5.7.3:
     resolution: {integrity: sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw==}
@@ -28,6 +28,6 @@ packages:
 
 snapshots:
 
-  '@schema-platform/flow-shared@1.0.0': {}
+  '@schema-platform/flow-shared@file:../../flow-shared': {}
 
   typescript@5.7.3: {}

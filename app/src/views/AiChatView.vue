@@ -208,7 +208,7 @@ function handleMessageFeedback(messageIndex: number, type: 'positive' | 'negativ
 
 onMounted(() => {
   store.loadConversations()
-  connectSocket({ path: import.meta.env.PROD ? '/schema-platform/ws' : '/ws' })
+  connectSocket()
   startStatusCheck()
 
   bridge.on('ai:set-context', (payload) => {

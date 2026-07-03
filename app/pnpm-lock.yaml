@@ -21,8 +21,8 @@ importers:
         specifier: file:../shared
         version: file:../shared
       '@schema-platform/platform-shared':
-        specifier: file:../../schema-form-platform-shared
-        version: file:../../schema-form-platform-shared(element-plus@2.14.2(vue@3.5.39(typescript@5.7.3)))(typescript@5.7.3)(vue@3.5.39(typescript@5.7.3))
+        specifier: file:../../platform-shared
+        version: file:../../platform-shared(element-plus@2.14.2(vue@3.5.39(typescript@5.7.3)))(typescript@5.7.3)(vue@3.5.39(typescript@5.7.3))
       '@vue-flow/background':
         specifier: ^1.3.2
         version: 1.3.2(@vue-flow/core@1.48.2(vue@3.5.39(typescript@5.7.3)))(vue@3.5.39(typescript@5.7.3))
@@ -573,11 +573,11 @@ packages:
   '@schema-platform/ai-shared@file:../shared':
     resolution: {directory: ../shared, type: directory}
 
-  '@schema-platform/flow-shared@1.0.3':
-    resolution: {integrity: sha512-mPeTKelLoMXJDBA1HzpdpEe/FL0kdcoTWuz+fXxCjzqcaImylfHix6F0TPVxx/W7OpKq4EG1wHWljhIQyIgL0g==, tarball: https://npm.pkg.github.com/download/@schema-platform/flow-shared/1.0.3/b3a2b9ae12d7dee78fad1a7fe8d8d1d8cc768025}
+  '@schema-platform/flow-shared@file:../../schema-form-flow-shared':
+    resolution: {directory: ../../schema-form-flow-shared, type: directory}
 
-  '@schema-platform/platform-shared@file:../../schema-form-platform-shared':
-    resolution: {directory: ../../schema-form-platform-shared, type: directory}
+  '@schema-platform/platform-shared@file:../../platform-shared':
+    resolution: {directory: ../../platform-shared, type: directory}
     peerDependencies:
       element-plus: ^2.9.1
       vue: ^3.5.13
@@ -2086,11 +2086,11 @@ snapshots:
 
   '@schema-platform/ai-shared@file:../shared':
     dependencies:
-      '@schema-platform/flow-shared': 1.0.3
+      '@schema-platform/flow-shared': file:../../schema-form-flow-shared
 
-  '@schema-platform/flow-shared@1.0.3': {}
+  '@schema-platform/flow-shared@file:../../schema-form-flow-shared': {}
 
-  '@schema-platform/platform-shared@file:../../schema-form-platform-shared(element-plus@2.14.2(vue@3.5.39(typescript@5.7.3)))(typescript@5.7.3)(vue@3.5.39(typescript@5.7.3))':
+  '@schema-platform/platform-shared@file:../../platform-shared(element-plus@2.14.2(vue@3.5.39(typescript@5.7.3)))(typescript@5.7.3)(vue@3.5.39(typescript@5.7.3))':
     dependencies:
       '@element-plus/icons-vue': 2.3.2(vue@3.5.39(typescript@5.7.3))
       '@iconify-icons/ep': 1.2.12

@@ -14,6 +14,7 @@ import type {
   Conversation,
   RagSearchResponse,
 } from '@/types'
+import { redirectToLogin } from '@schema-platform/platform-shared/utils/authPaths'
 
 // ---- 错误类型 ----
 
@@ -29,13 +30,22 @@ export class AiApiError extends Error {
 
 // ---- 基础请求 ----
 
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) ?? '/schema-platform/api'
+import { redirectToLogin } from '@schema-platform/platform-shared/utils/authPaths'
 
 /** Token 提供者，由 main.ts 注入，避免 apiClient 直接耦合微前端框架 */
 let tokenProvider: (() => string | null) | null = null
+let onUnauthorized: (() => void) | null = null
 
 export function setTokenProvider(provider: () => string | null): void {
   tokenProvider = provider
+}
+
+export function setUnauthorizedHandler(handler: () => void): void {
+  onUnauthorized = handler
+}
+
+function resolveToken(): string | null {
+  return tokenProvider?.() || localStorage.getItem(ACCESS_TOKEN_KEY)
 }
 
 interface ApiResponse<T> {
@@ -47,7 +57,7 @@ interface ApiResponse<T> {
 /** 构建请求 headers，自动注入 Authorization */
 function buildHeaders(extra?: Record<string, string>): Record<string, string> {
   const headers: Record<string, string> = { ...extra }
-  const token = tokenProvider?.()
+  const token = resolveToken()
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
@@ -63,6 +73,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     // 401: 通知调用方认证失败
     if (response.status === 401) {
+      onUnauthorized?.()
+      redirectToLogin()
       throw new AiApiError('Authentication required', 401)
     }
     const body = await response.json().catch(() => null)

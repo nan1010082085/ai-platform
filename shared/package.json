@@ -1,12 +1,9 @@
 {
   "name": "@schema-platform/ai-shared",
   "version": "1.0.5",
-  "private": false,
+  "private": true,
   "type": "module",
   "repository": "github:schema-platform/schema-form-ai",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc"
@@ -23,7 +20,7 @@
     "./toolNames": "./dist/toolNames.js"
   },
   "dependencies": {
-    "@schema-platform/flow-shared": "^1.0.0"
+    "@schema-platform/flow-shared": "file:../../flow-shared"
   },
   "devDependencies": {
     "typescript": "~5.7.3"

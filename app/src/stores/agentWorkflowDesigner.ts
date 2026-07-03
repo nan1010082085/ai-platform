@@ -47,11 +47,6 @@ function clearEdgeRuntimeVisual(edge: Edge): Edge {
   }
 }
 
-function clearExecutionRuntimeState() {
-  nodes.value = nodes.value.map(clearNodeRuntimeVisual)
-  edges.value = edges.value.map(clearEdgeRuntimeVisual)
-}
-
 function stripRuntimeFields(data: Record<string, unknown>): AgentWorkflowNodeData {
   const { runtimeRecord: _runtime, ...rest } = data
   return rest as AgentWorkflowNodeData
@@ -91,6 +86,11 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
   const edgeLineStyle = ref<EdgeLineStyle>(
     parseEdgeLineStyle(localStorage.getItem(EDGE_LINE_STYLE_STORAGE_KEY)),
   )
+
+  function clearExecutionRuntimeState() {
+    nodes.value = nodes.value.map(clearNodeRuntimeVisual)
+    edges.value = edges.value.map(clearEdgeRuntimeVisual)
+  }
 
   function setEdgeLineStyle(style: EdgeLineStyle) {
     edgeLineStyle.value = style

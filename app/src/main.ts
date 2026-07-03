@@ -12,27 +12,24 @@ import { initQiankunProps, initQiankunShellProps } from '@schema-platform/platfo
 import { aiLog } from '@schema-platform/platform-shared/utils/logger'
 import AppRoot from './App.vue'
 import { createAiRouter } from './router'
-import { setTokenProvider } from './api/aiApi'
-import { setAgentWorkflowTokenProvider } from './api/agentWorkflowApi'
+import { setupAppAuth, handleUnauthorized } from '@schema-platform/platform-shared/utils/authSession'
+import { setUnauthorizedHandler as setAiApiUnauthorized } from './api/aiApi'
+import { setAgentWorkflowUnauthorizedHandler } from './api/agentWorkflowApi'
 
 let app: App | null = null
 let router: ReturnType<typeof createAiRouter> | null = null
 
 let currentRouteBase: string | undefined
-let tokenProviderSet = false
 
 function render() {
-  if (!tokenProviderSet) {
-    const provider = () => localStorage.getItem('sfp_access_token') || ''
-    setTokenProvider(provider)
-    setAgentWorkflowTokenProvider(provider)
-    tokenProviderSet = true
-  }
-
   router = createAiRouter(currentRouteBase)
+  const pinia = createPinia()
   app = createApp(AppRoot)
-  app.use(createPinia())
+  app.use(pinia)
   app.use(router)
+  setupAppAuth()
+  setAiApiUnauthorized(() => handleUnauthorized())
+  setAgentWorkflowUnauthorizedHandler(() => handleUnauthorized())
   setupElementPlus(app)
 
   const mountEl = document.getElementById('ai-app')

@@ -10,27 +10,30 @@ import { onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Loading } from '@element-plus/icons-vue'
 import { SSOClient } from '@schema-platform/platform-shared/utils/sso'
+import {
+  persistSSOClientId,
+  startTokenRefreshSchedule,
+} from '@schema-platform/platform-shared/utils/authSession'
+import { useAuthStore } from '@schema-platform/platform-shared/utils/stores/authStore'
 
 const router = useRouter()
 const route = useRoute()
 
-const TOKEN_KEY = 'sfp_access_token'
-const REFRESH_TOKEN_KEY = 'sfp_refresh_token'
-
 onMounted(async () => {
   const origin = window.location.origin
+  const clientId = 'ai'
+  persistSSOClientId(clientId)
   const client = new SSOClient({
-    clientId: 'ai',
+    clientId,
     redirectUri: `${origin}/schema-platform/ai/auth/callback`,
     ssoBaseUrl: origin,
   })
 
   try {
     const tokens = await client.handleCallback()
-    localStorage.setItem(TOKEN_KEY, tokens.accessToken)
-    if (tokens.refreshToken) {
-      localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken)
-    }
+    const authStore = useAuthStore()
+    authStore.setTokens(tokens.accessToken, tokens.refreshToken)
+    startTokenRefreshSchedule(tokens.expiresIn)
 
     const redirect = route.query.redirect as string | undefined
     await router.replace(redirect || '/')

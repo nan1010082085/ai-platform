@@ -3,21 +3,10 @@ import vue from '@vitejs/plugin-vue'
 import qiankun from 'vite-plugin-qiankun'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createSharedSourceAliases, sharedOptimizeDepsExclude } from '../../scripts/vite-shared-source.mjs'
 
 const isProd = process.env.NODE_ENV === 'production'
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
-const sharedDir = fileURLToPath(new URL('../shared', import.meta.url))
-
-/** workspace ai-shared 子路径与 package.json exports 对齐 */
-const aiSharedAliases = [
-  { find: '@schema-platform/ai-shared/toolNames', replacement: resolve(sharedDir, 'dist/toolNames.js') },
-  { find: '@schema-platform/ai-shared/agentWorkflow', replacement: resolve(sharedDir, 'dist/agentWorkflow.js') },
-  { find: '@schema-platform/ai-shared/document', replacement: resolve(sharedDir, 'dist/document.js') },
-  { find: '@schema-platform/ai-shared/promptBuilder', replacement: resolve(sharedDir, 'dist/promptBuilder.js') },
-  { find: '@schema-platform/ai-shared/systemKnowledge', replacement: resolve(sharedDir, 'dist/systemKnowledge.js') },
-  { find: '@schema-platform/ai-shared/flowNodeCatalogue', replacement: resolve(sharedDir, 'dist/flowNodeCatalogue.js') },
-  { find: '@schema-platform/ai-shared', replacement: resolve(sharedDir, 'dist/index.js') },
-]
 
 export default defineConfig({
   base: isProd ? '/schema-platform/ai/' : '/',
@@ -33,11 +22,14 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '@', replacement: resolve(rootDir, 'src') },
-      ...aiSharedAliases,
+      ...createSharedSourceAliases(import.meta.url, {
+        platformShared: true,
+        aiShared: true,
+      }),
     ],
   },
   optimizeDeps: {
-    exclude: ['@schema-platform/ai-shared'],
+    exclude: sharedOptimizeDepsExclude({ platformShared: true, aiShared: true }),
   },
   build: {
     cssCodeSplit: false,
