@@ -19,7 +19,8 @@ function update(key: string, value: unknown) {
         :model-value="String(props.node.data?.documentSource ?? 'inputField')"
         @update:model-value="update('documentSource', $event)"
       >
-        <el-option label="从输入字段" value="inputField" />
+        <el-option label="从输入字段 (documentId)" value="inputField" />
+        <el-option label="从输入流 (file)" value="stream" />
         <el-option label="固定文档 ID" value="documentId" />
       </el-select>
     </FieldRow>
@@ -32,6 +33,17 @@ function update(key: string, value: unknown) {
         :model-value="String(props.node.data?.documentId ?? '')"
         placeholder="{{$input.documentId}}"
         @update:model-value="update('documentId', $event)"
+      />
+    </FieldRow>
+    <FieldRow
+      v-else-if="(props.node.data?.documentSource ?? 'inputField') === 'stream'"
+      label="文件字段"
+      hint="$input 中文件对象字段，含 filename / mimetype / content(base64)"
+    >
+      <el-input
+        :model-value="String(props.node.data?.streamField ?? 'file')"
+        placeholder="file"
+        @update:model-value="update('streamField', $event)"
       />
     </FieldRow>
     <FieldRow v-else label="输入字段" hint="从 $input / 上游输出读取 documentId">

@@ -14,11 +14,13 @@ import AgentWorkflowPalette from '@/components/agent-workflow/AgentWorkflowPalet
 import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas.vue'
 import AgentWorkflowPropertyPanel from '@/components/agent-workflow/AgentWorkflowPropertyPanel.vue'
 import * as api from '@/api/agentWorkflowApi'
+import { useAiStore } from '@/stores/ai'
 import styles from './AgentWorkflowDesignerView.module.scss'
 
 const route = useRoute()
 const router = useRouter()
 const store = useAgentWorkflowDesignerStore()
+const aiStore = useAiStore()
 const executing = ref(false)
 const publishing = ref(false)
 const showLeft = ref(true)
@@ -85,7 +87,8 @@ async function onPublish() {
     await ElMessageBox.confirm('发布后将生成新版本，用于生产执行。', '发布工作流')
     const res = await api.publishWorkflow(workflowId())
     publishedVersion.value = res.version
-    ElMessage.success(`已发布 v${res.version}`)
+    aiStore.updateAgentWorkflowId(workflowId())
+    ElMessage.success(`已发布 v${res.version}，已同步到对话中的 Agent 编排`)
     await loadVersions()
   } catch (e) {
     if (e !== 'cancel' && e !== 'close') {
@@ -124,6 +127,15 @@ function onValidate() {
 
 function onExecutions() {
   router.push({ name: 'agent-workflow-executions', params: { id: workflowId() } })
+}
+
+function onChatTest() {
+  if (!publishedVersion.value) {
+    message.warning('请先发布工作流，再在对话中测试')
+    return
+  }
+  aiStore.updateAgentWorkflowId(workflowId())
+  router.push({ name: 'chat', query: { workflowId: workflowId() } })
 }
 
 function onDeleteSelection() {
@@ -201,6 +213,7 @@ onUnmounted(() => {
       @execute="onExecute"
       @validate="onValidate"
       @executions="onExecutions"
+      @chat-test="onChatTest"
       @delete-selection="onDeleteSelection"
       @update:edge-line-style="store.setEdgeLineStyle"
       @version-history="loadVersions"

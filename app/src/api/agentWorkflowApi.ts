@@ -158,3 +158,13 @@ export function resumeExecution(
     body: JSON.stringify({ input }),
   })
 }
+
+export function cancelExecution(
+  id: string,
+  reason?: string,
+): Promise<AgentWorkflowExecution> {
+  return request(`/ai/workflow-executions/${id}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify(reason ? { reason } : {}),
+  })
+}

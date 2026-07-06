@@ -95,8 +95,12 @@ const selectedWorkflowId = computed({
 const selectedWorkflowName = computed(() => getWorkflowName(selectedWorkflowId.value))
 
 onMounted(() => {
-  if (selectedWorkflowId.value) {
-    loadPublishedWorkflows().catch(() => {})
+  loadPublishedWorkflows().catch(() => {})
+})
+
+watch(workflowPickerVisible, (visible) => {
+  if (visible) {
+    loadPublishedWorkflows(true).catch(() => {})
   }
 })
 
@@ -104,7 +108,9 @@ onMounted(() => {
 const currentStreamStatus = computed(() => props.streamStatus ?? props.sseStatus ?? 'idle')
 
 const selectedAgentLabel = computed(() => {
-  if (selectedWorkflowName.value) return selectedWorkflowName.value
+  if (selectedWorkflowId.value) {
+    return selectedWorkflowName.value ?? '已选编排'
+  }
   return props.agentOptions.find((opt) => opt.value === selectedAgent.value)?.label ?? 'AI'
 })
 

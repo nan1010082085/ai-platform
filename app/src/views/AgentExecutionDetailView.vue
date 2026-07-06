@@ -27,6 +27,7 @@ const hitlAction = ref<'approve' | 'reject'>('approve')
 const hitlSubmitting = ref(false)
 const hitlAnswers = ref<Record<string, string>>({})
 const hitlQuestionsRef = ref<InstanceType<typeof HitlConfirmQuestions> | null>(null)
+const cancelling = ref(false)
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const executionId = () => route.params.id as string
@@ -155,6 +156,21 @@ function startPoll() {
   }
 }
 
+async function stopExecution() {
+  if (!execution.value || execution.value.status !== 'running') return
+  cancelling.value = true
+  try {
+    execution.value = await api.cancelExecution(executionId())
+    ElMessage.success('已停止执行')
+    stopPoll()
+    await load()
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : '停止失败')
+  } finally {
+    cancelling.value = false
+  }
+}
+
 function stopPoll() {
   if (pollTimer) {
     clearInterval(pollTimer)
@@ -238,6 +254,9 @@ const canSubmitHitl = computed(() => {
 watch(
   () => execution.value?.status,
   (status) => {
+    if (status !== 'running') {
+      stopPoll()
+    }
     if (status === 'waiting' && !hitlDialogVisible.value) {
       openHitlDialog('approve')
     }
@@ -341,6 +360,16 @@ function togglePanelExpand() {
         >
           <AppIcon name="data-line" :size="14" />
         </button>
+        <el-button
+          v-if="execution.status === 'running'"
+          size="small"
+          type="danger"
+          plain
+          :loading="cancelling"
+          @click="stopExecution"
+        >
+          停止执行
+        </el-button>
         <template v-if="execution.status === 'waiting'">
           <el-button size="small" type="danger" plain @click="rejectHitl">
             拒绝

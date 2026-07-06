@@ -54,6 +54,7 @@ export async function runWorkflowChatTurn(params: {
   pendingExecutionId: string | null
   hitlApproved?: boolean
   isAborted?: () => boolean
+  onExecutionStarted?: (executionId: string) => void
 }): Promise<{
   execution: AgentWorkflowExecution
   responseText: string
@@ -73,6 +74,8 @@ export async function runWorkflowChatTurn(params: {
   } else {
     started = await executeWorkflow(params.workflowId, input)
   }
+
+  params.onExecutionStarted?.(started.id)
 
   const execution = await pollWorkflowExecution(
     started.id,

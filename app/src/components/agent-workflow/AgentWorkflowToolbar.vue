@@ -122,6 +122,14 @@
       <el-button type="primary" size="small" :loading="publishing" @click="$emit('publish')">
         {{ publishing ? '发布中...' : '发布' }}
       </el-button>
+      <el-button
+        v-if="publishedVersion"
+        size="small"
+        plain
+        @click="$emit('chat-test')"
+      >
+        Chat 测试
+      </el-button>
       <el-button size="small" type="primary" plain :loading="executing" @click="$emit('execute')">
         测试执行
       </el-button>
@@ -162,6 +170,7 @@ const emit = defineEmits<{
   save: []
   publish: []
   execute: []
+  'chat-test': []
   validate: []
   executions: []
   'version-history': []

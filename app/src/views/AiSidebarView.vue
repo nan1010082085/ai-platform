@@ -12,6 +12,7 @@
  */
 
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAiStore } from '@/stores/ai'
 import { bridge } from '@/utils/bridge'
 import { useQiankun } from '@schema-platform/platform-shared/qiankun'
@@ -26,6 +27,7 @@ import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkf
 import { Clock } from '@element-plus/icons-vue'
 
 const store = useAiStore()
+const route = useRoute()
 const { loadPublishedWorkflows, getWorkflowName } = usePublishedAgentWorkflows()
 
 const workflowPickerVisible = ref(false)
@@ -233,8 +235,11 @@ async function handleApply() {
 }
 
 onMounted(() => {
-  if (selectedWorkflowId.value) {
-    loadPublishedWorkflows().catch(() => {})
+  void loadPublishedWorkflows()
+
+  const workflowId = route.query.workflowId
+  if (typeof workflowId === 'string' && workflowId.trim()) {
+    store.updateAgentWorkflowId(workflowId.trim())
   }
 
   // 连接 Socket

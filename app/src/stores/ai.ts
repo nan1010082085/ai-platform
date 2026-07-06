@@ -38,6 +38,7 @@ import {
 import { message } from '@schema-platform/platform-shared/utils/message'
 import { isWorkflowHitlApprovalMessage } from '@/utils/workflowChatResponse'
 import { runWorkflowChatTurn } from '@/composables/useWorkflowChatExecution'
+import { cancelExecution } from '@/api/agentWorkflowApi'
 
 import { useConversationStore } from './conversation'
 import { useStreamStore } from './stream'
@@ -69,6 +70,7 @@ export const useAiStore = defineStore('ai', () => {
   const activeAgent = ref<AgentType>('auto')
   const lastWorkflowExecutionId = ref<string | null>(null)
   const pendingWorkflowExecutionId = ref<string | null>(null)
+  const activeWorkflowExecutionId = ref<string | null>(null)
   let workflowPollAborted = false
   const context = ref<ChatContext>({ source: 'standalone' })
   const taskChain = ref<TaskChainStep[]>([])
@@ -468,6 +470,7 @@ export const useAiStore = defineStore('ai', () => {
   function resetWorkflowExecutionState(): void {
     lastWorkflowExecutionId.value = null
     pendingWorkflowExecutionId.value = null
+    activeWorkflowExecutionId.value = null
     workflowPollAborted = false
   }
 
@@ -514,6 +517,9 @@ export const useAiStore = defineStore('ai', () => {
         pendingExecutionId: pendingWorkflowExecutionId.value,
         hitlApproved: hitlDecision === null ? true : hitlDecision,
         isAborted: () => workflowPollAborted,
+        onExecutionStarted: (id) => {
+          activeWorkflowExecutionId.value = id
+        },
       })
 
       if (workflowPollAborted) {
@@ -533,6 +539,7 @@ export const useAiStore = defineStore('ai', () => {
       conversationStore.messages[assistantIndex].status = 'error'
       message.error(errorMessage)
     } finally {
+      activeWorkflowExecutionId.value = null
       streamStore.loading = false
     }
   }
@@ -1042,6 +1049,10 @@ export const useAiStore = defineStore('ai', () => {
     stopGeneration: () => {
       workflowPollAborted = true
       streamStore.stopGeneration()
+      const execId = activeWorkflowExecutionId.value
+      if (execId) {
+        void cancelExecution(execId).catch(() => {})
+      }
     },
     switchAgent,
     clearConversation,

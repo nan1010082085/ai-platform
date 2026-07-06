@@ -7,6 +7,7 @@
  */
 
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAiStore } from '@/stores/ai'
 import { bridge } from '@/utils/bridge'
 import type { AgentType, ChatSettings, MentionReference, RagSearchResult } from '@/types'
@@ -17,8 +18,11 @@ import { connect as connectSocket, isConnected } from '@schema-platform/platform
 import AiChatPanel from '@/components/AiChatPanel.vue'
 import AiChatSettings from '@/components/AiChatSettings.vue'
 import ConversationDrawer from '@/components/ConversationDrawer.vue'
+import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
 
 const store = useAiStore()
+const route = useRoute()
+const { loadPublishedWorkflows } = usePublishedAgentWorkflows()
 const { messages, loading, currentSchema, currentFlow, activeAgent, conversations, currentConversationId, taskChain, taskChainIndex, streamStatus, retryCount, MAX_AUTO_RETRIES, chatSettings, ragSearchResults, ragSearching, ragContext, requirementInputPlaceholder } =
   storeToRefs(store)
 
@@ -210,6 +214,12 @@ onMounted(() => {
   store.loadConversations()
   connectSocket()
   startStatusCheck()
+  void loadPublishedWorkflows()
+
+  const workflowId = route.query.workflowId
+  if (typeof workflowId === 'string' && workflowId.trim()) {
+    store.updateAgentWorkflowId(workflowId.trim())
+  }
 
   bridge.on('ai:set-context', (payload) => {
     store.setContext(payload)

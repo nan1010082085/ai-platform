@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import type { AgentWorkflowExecution } from '@/types/agentWorkflow'
 import * as api from '@/api/agentWorkflowApi'
@@ -9,10 +10,12 @@ import styles from './AgentExecutionListView.module.scss'
 const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
+const cancellingId = ref<string | null>(null)
 const items = ref<AgentWorkflowExecution[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(20)
+let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const workflowId = computed(() => route.params.id as string)
 
@@ -32,8 +35,8 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: '已取消',
 }
 
-async function load() {
-  loading.value = true
+async function load(opts?: { silent?: boolean }) {
+  if (!opts?.silent) loading.value = true
   try {
     const res = await api.listExecutions({
       workflowId: workflowId.value,
@@ -42,11 +45,17 @@ async function load() {
     })
     items.value = res.items
     total.value = res.total
+    if (res.items.some((item) => item.status === 'running')) {
+      startPoll()
+    } else {
+      stopPoll()
+    }
   } catch {
     items.value = []
     total.value = 0
+    stopPoll()
   } finally {
-    loading.value = false
+    if (!opts?.silent) loading.value = false
   }
 }
 
@@ -81,7 +90,46 @@ function formatTime(iso: string): string {
   return d.toLocaleString('zh-CN', { hour12: false })
 }
 
-onMounted(load)
+const hasRunningExecution = computed(() =>
+  items.value.some((item) => item.status === 'running'),
+)
+
+function startPoll() {
+  stopPoll()
+  if (hasRunningExecution.value) {
+    pollTimer = setInterval(() => {
+      void load({ silent: true })
+    }, 2000)
+  }
+}
+
+function stopPoll() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+async function stopExecution(id: string) {
+  cancellingId.value = id
+  try {
+    await api.cancelExecution(id)
+    ElMessage.success('已停止执行')
+    await load()
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : '停止失败')
+  } finally {
+    cancellingId.value = null
+  }
+}
+
+onMounted(() => {
+  void load()
+})
+
+onUnmounted(() => {
+  stopPoll()
+})
 </script>
 
 <template>
@@ -144,8 +192,17 @@ onMounted(load)
           <el-table-column label="节点数" width="80" align="center">
             <template #default="{ row }">{{ row.nodeRecords?.length ?? 0 }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="100" fixed="right">
+          <el-table-column label="操作" width="140" fixed="right">
             <template #default="{ row }">
+              <el-button
+                v-if="row.status === 'running'"
+                link
+                type="danger"
+                :loading="cancellingId === row.id"
+                @click.stop="stopExecution(row.id)"
+              >
+                停止
+              </el-button>
               <el-button link type="primary" @click="router.push({ name: 'agent-execution-detail', params: { id: row.id } })">
                 详情
               </el-button>

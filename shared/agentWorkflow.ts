@@ -93,9 +93,11 @@ export interface AgentWorkflowNodeData {
   /** 发布时生成，用于 HMAC 验签 */
   webhookSecret?: string
   /** document-parse / vision-analyze */
-  documentSource?: 'documentId' | 'inputField'
+  documentSource?: 'documentId' | 'inputField' | 'stream'
   documentId?: string
   inputField?: string
+  /** stream 来源：从 $input 读取文件对象字段，默认 file */
+  streamField?: string
   /** vision-analyze */
   visionPrompt?: string
   /** conversation-memory */
