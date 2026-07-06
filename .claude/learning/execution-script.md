@@ -10,16 +10,16 @@
 
 ```bash
 # 1. 阅读 CLAUDE.md
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/CLAUDE.md
+cat /Users/yangdongnan/work/schema-platform/ai/CLAUDE.md
 
 # 2. 阅读 app README
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/README.md
+cat /Users/yangdongnan/work/schema-platform/ai/app/README.md
 
 # 3. 阅读 sdk README
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/README.md
+cat /Users/yangdongnan/work/schema-platform/ai/sdk/README.md
 
 # 4. 阅读 shared README (如果存在)
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/README.md 2>/dev/null || echo "No README"
+cat /Users/yangdongnan/work/schema-platform/ai/shared/README.md 2>/dev/null || echo "No README"
 ```
 
 **学习笔记：**
@@ -35,19 +35,19 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/README.md 2>/d
 
 ```bash
 # 1. 查看根目录结构
-ls -la /Users/yangdongnan/work/schema-platform/schema-form-ai/
+ls -la /Users/yangdongnan/work/schema-platform/ai/
 
 # 2. 查看 app 目录结构
-ls -la /Users/yangdongnan/work/schema-platform/schema-form-ai/app/
+ls -la /Users/yangdongnan/work/schema-platform/ai/app/
 
 # 3. 查看 sdk 目录结构
-ls -la /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/
+ls -la /Users/yangdongnan/work/schema-platform/ai/sdk/
 
 # 4. 查看 shared 目录结构
-ls -la /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/
+ls -la /Users/yangdongnan/work/schema-platform/ai/shared/
 
 # 5. 查看 docs 目录结构
-ls -la /Users/yangdongnan/work/schema-platform/schema-form-ai/docs/
+ls -la /Users/yangdongnan/work/schema-platform/ai/docs/
 ```
 
 **学习笔记：**
@@ -62,13 +62,13 @@ ls -la /Users/yangdongnan/work/schema-platform/schema-form-ai/docs/
 
 ```bash
 # 1. 查看 package.json 了解依赖
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/package.json
+cat /Users/yangdongnan/work/schema-platform/ai/app/package.json
 
 # 2. 查看 sdk package.json
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/package.json
+cat /Users/yangdongnan/work/schema-platform/ai/sdk/package.json
 
 # 3. 查看 shared package.json
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/package.json
+cat /Users/yangdongnan/work/schema-platform/ai/shared/package.json
 ```
 
 **学习笔记：**
@@ -86,13 +86,13 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/package.json
 
 ```bash
 # 1. 阅读主入口
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/main.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/main.ts
 
 # 2. 理解 qiankun 集成
-grep -n "qiankun" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/main.ts
+grep -n "qiankun" /Users/yangdongnan/work/schema-platform/ai/app/src/main.ts
 
 # 3. 理解独立模式
-grep -n "__POWERED_BY_QIANKUN__" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/main.ts
+grep -n "__POWERED_BY_QIANKUN__" /Users/yangdongnan/work/schema-platform/ai/app/src/main.ts
 ```
 
 **学习笔记：**
@@ -107,10 +107,10 @@ grep -n "__POWERED_BY_QIANKUN__" /Users/yangdongnan/work/schema-platform/schema-
 
 ```bash
 # 1. 阅读 Sidebar 入口
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/main-sidebar.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/main-sidebar.ts
 
 # 2. 理解 iframe 嵌入
-grep -n "postMessage" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/main-sidebar.ts
+grep -n "postMessage" /Users/yangdongnan/work/schema-platform/ai/app/src/main-sidebar.ts
 ```
 
 **学习笔记：**
@@ -125,13 +125,13 @@ grep -n "postMessage" /Users/yangdongnan/work/schema-platform/schema-form-ai/app
 
 ```bash
 # 1. 阅读路由配置
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/router.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/router.ts
 
 # 2. 理解路由守卫
-grep -n "beforeEach" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/router.ts
+grep -n "beforeEach" /Users/yangdongnan/work/schema-platform/ai/app/src/router.ts
 
 # 3. 理解 SSO 认证
-grep -n "SSO" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/router.ts
+grep -n "SSO" /Users/yangdongnan/work/schema-platform/ai/app/src/router.ts
 ```
 
 **学习笔记：**
@@ -146,7 +146,7 @@ grep -n "SSO" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/rou
 
 ```bash
 # 1. 阅读根组件
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/App.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/App.vue
 ```
 
 **学习笔记：**
@@ -163,10 +163,10 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/App.vue
 
 ```bash
 # 1. 阅读主 Store
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/ai.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/stores/ai.ts
 
 # 2. 理解 Store 组合
-grep -n "use.*Store" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/ai.ts
+grep -n "use.*Store" /Users/yangdongnan/work/schema-platform/ai/app/src/stores/ai.ts
 ```
 
 **学习笔记：**
@@ -181,7 +181,7 @@ grep -n "use.*Store" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/
 
 ```bash
 # 1. 阅读对话管理 Store
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/conversation.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/stores/conversation.ts
 ```
 
 **学习笔记：**
@@ -196,7 +196,7 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/conver
 
 ```bash
 # 1. 阅读流式连接 Store
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/stream.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/stores/stream.ts
 ```
 
 **学习笔记：**
@@ -211,7 +211,7 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/stream
 
 ```bash
 # 1. 阅读 Schema 状态 Store
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/schema.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/stores/schema.ts
 ```
 
 **学习笔记：**
@@ -226,16 +226,16 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/schema
 
 ```bash
 # 1. 阅读 LLM Store
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/llm.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/stores/llm.ts
 
 # 2. 阅读 RAG Store
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/rag.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/stores/rag.ts
 
 # 3. 阅读聊天设置 Store
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/chatSettings.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/stores/chatSettings.ts
 
 # 4. 阅读 HITL Store
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/hitl.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/stores/hitl.ts
 ```
 
 **学习笔记：**
@@ -253,16 +253,16 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/stores/hitl.t
 
 ```bash
 # 1. 阅读主对话页面
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/views/AiChatView.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/views/AiChatView.vue
 
 # 2. 阅读侧边栏模式
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/views/AiSidebarView.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/views/AiSidebarView.vue
 
 # 3. 阅读 RAG 知识库
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/views/RagKnowledgeBase.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/views/RagKnowledgeBase.vue
 
 # 4. 阅读监控页面
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/views/AiMonitorView.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/views/AiMonitorView.vue
 ```
 
 **学习笔记：**
@@ -278,16 +278,16 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/views/AiMonit
 
 ```bash
 # 1. 阅读聊天面板
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/AiChatPanel.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/components/AiChatPanel.vue
 
 # 2. 阅读消息组件
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/AiMessage.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/components/AiMessage.vue
 
 # 3. 阅读输入组件
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/AiChatInput.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/components/AiChatInput.vue
 
 # 4. 阅读任务链
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/AiTaskChain.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/components/AiTaskChain.vue
 ```
 
 **学习笔记：**
@@ -303,16 +303,16 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/Ai
 
 ```bash
 # 1. 阅读预览面板
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/AiPreviewPanel.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/components/AiPreviewPanel.vue
 
 # 2. 阅读 Schema 预览
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/AiSchemaPreview.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/components/AiSchemaPreview.vue
 
 # 3. 阅读 Flow 预览
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/AiFlowPreview.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/components/AiFlowPreview.vue
 
 # 4. 阅读 Diff 面板
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/SchemaDiffPanel.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/components/SchemaDiffPanel.vue
 ```
 
 **学习笔记：**
@@ -328,13 +328,13 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/Sc
 
 ```bash
 # 1. 阅读对话列表
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/AiConversationList.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/components/AiConversationList.vue
 
 # 2. 阅读聊天设置
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/AiChatSettings.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/components/AiChatSettings.vue
 
 # 3. 阅读模型切换
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/AiModelSwitch.vue
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/components/AiModelSwitch.vue
 ```
 
 **学习笔记：**
@@ -351,10 +351,10 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/components/Ai
 
 ```bash
 # 1. 阅读 Bridge 通信
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/utils/bridge.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/utils/bridge.ts
 
 # 2. 理解事件类型
-grep -n "interface.*Event" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/utils/bridge.ts
+grep -n "interface.*Event" /Users/yangdongnan/work/schema-platform/ai/app/src/utils/bridge.ts
 ```
 
 **学习笔记：**
@@ -369,10 +369,10 @@ grep -n "interface.*Event" /Users/yangdongnan/work/schema-platform/schema-form-a
 
 ```bash
 # 1. 查看 API 目录
-ls -la /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/api/
+ls -la /Users/yangdongnan/work/schema-platform/ai/app/src/api/
 
 # 2. 阅读 AI API
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/api/aiApi.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/api/aiApi.ts
 ```
 
 **学习笔记：**
@@ -388,10 +388,10 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/api/aiApi.ts
 
 ```bash
 # 1. 查找 WebSocket 相关代码
-grep -r "WebSocket\|ws://" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/ --include="*.ts" --include="*.vue"
+grep -r "WebSocket\|ws://" /Users/yangdongnan/work/schema-platform/ai/app/src/ --include="*.ts" --include="*.vue"
 
 # 2. 查看 socket 相关文件
-find /Users/yangdongnan/work/schema-platform/schema-form-ai/ -name "*socket*" -o -name "*ws*"
+find /Users/yangdongnan/work/schema-platform/ai/ -name "*socket*" -o -name "*ws*"
 ```
 
 **学习笔记：**
@@ -406,7 +406,7 @@ find /Users/yangdongnan/work/schema-platform/schema-form-ai/ -name "*socket*" -o
 
 ```bash
 # 1. 查找 SSE 相关代码
-grep -r "EventSource\|text/event-stream" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/ --include="*.ts" --include="*.vue"
+grep -r "EventSource\|text/event-stream" /Users/yangdongnan/work/schema-platform/ai/app/src/ --include="*.ts" --include="*.vue"
 ```
 
 **学习笔记：**
@@ -423,10 +423,10 @@ grep -r "EventSource\|text/event-stream" /Users/yangdongnan/work/schema-platform
 
 ```bash
 # 1. 阅读应用类型
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/types/index.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/types/index.ts
 
 # 2. 查找其他类型文件
-find /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/types/ -name "*.ts"
+find /Users/yangdongnan/work/schema-platform/ai/app/src/types/ -name "*.ts"
 ```
 
 **学习笔记：**
@@ -442,7 +442,7 @@ find /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/types/ -name
 
 ```bash
 # 1. 阅读 SDK 类型
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/src/types.ts
+cat /Users/yangdongnan/work/schema-platform/ai/sdk/src/types.ts
 ```
 
 **学习笔记：**
@@ -458,7 +458,7 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/src/types.ts
 
 ```bash
 # 1. 阅读 Shared 类型
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/types.ts
+cat /Users/yangdongnan/work/schema-platform/ai/shared/types.ts
 ```
 
 **学习笔记：**
@@ -475,7 +475,7 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/types.ts
 
 ```bash
 # 1. 阅读 Agent 基类
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/src/agent.ts
+cat /Users/yangdongnan/work/schema-platform/ai/sdk/src/agent.ts
 ```
 
 **学习笔记：**
@@ -491,7 +491,7 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/src/agent.ts
 
 ```bash
 # 1. 阅读工具系统
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/src/tool.ts
+cat /Users/yangdongnan/work/schema-platform/ai/sdk/src/tool.ts
 ```
 
 **学习笔记：**
@@ -506,7 +506,7 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/src/tool.ts
 
 ```bash
 # 1. 阅读 Prompt 构建器
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/src/promptBuilder.ts
+cat /Users/yangdongnan/work/schema-platform/ai/sdk/src/promptBuilder.ts
 ```
 
 **学习笔记：**
@@ -521,7 +521,7 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/src/promptBuilder
 
 ```bash
 # 1. 阅读 Schema Agent 示例
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/src/examples/schemaAgent.ts
+cat /Users/yangdongnan/work/schema-platform/ai/sdk/src/examples/schemaAgent.ts
 ```
 
 **学习笔记：**
@@ -538,7 +538,7 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/sdk/src/examples/sche
 
 ```bash
 # 1. 阅读 Shared Prompt 构建器
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/promptBuilder.ts
+cat /Users/yangdongnan/work/schema-platform/ai/shared/promptBuilder.ts
 ```
 
 **学习笔记：**
@@ -553,7 +553,7 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/promptBuilder.
 
 ```bash
 # 1. 阅读运行时 Agent
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/runtimeAgent.ts
+cat /Users/yangdongnan/work/schema-platform/ai/shared/runtimeAgent.ts
 ```
 
 **学习笔记：**
@@ -569,10 +569,10 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/runtimeAgent.t
 
 ```bash
 # 1. 阅读元数据
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/metadata.json | head -100
+cat /Users/yangdongnan/work/schema-platform/ai/shared/metadata.json | head -100
 
 # 2. 查看元数据结构
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/metadata.json | jq '.widgets[0]' 2>/dev/null || echo "jq not available"
+cat /Users/yangdongnan/work/schema-platform/ai/shared/metadata.json | jq '.widgets[0]' 2>/dev/null || echo "jq not available"
 ```
 
 **学习笔记：**
@@ -587,7 +587,7 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/metadata.json 
 
 ```bash
 # 1. 阅读事件定义
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/events.ts
+cat /Users/yangdongnan/work/schema-platform/ai/shared/events.ts
 ```
 
 **学习笔记：**
@@ -604,13 +604,13 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/shared/events.ts
 
 ```bash
 # 1. 阅读 Vite 配置
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/vite.config.ts
+cat /Users/yangdongnan/work/schema-platform/ai/app/vite.config.ts
 
 # 2. 理解双入口配置
-grep -n "input" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/vite.config.ts
+grep -n "input" /Users/yangdongnan/work/schema-platform/ai/app/vite.config.ts
 
 # 3. 理解代理配置
-grep -n "proxy" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/vite.config.ts
+grep -n "proxy" /Users/yangdongnan/work/schema-platform/ai/app/vite.config.ts
 ```
 
 **学习笔记：**
@@ -625,13 +625,13 @@ grep -n "proxy" /Users/yangdongnan/work/schema-platform/schema-form-ai/app/vite.
 
 ```bash
 # 1. 阅读 TS 配置
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/tsconfig.json
+cat /Users/yangdongnan/work/schema-platform/ai/app/tsconfig.json
 
 # 2. 阅读应用配置
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/tsconfig.app.json
+cat /Users/yangdongnan/work/schema-platform/ai/app/tsconfig.app.json
 
 # 3. 阅读 Node 配置
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/tsconfig.node.json
+cat /Users/yangdongnan/work/schema-platform/ai/app/tsconfig.node.json
 ```
 
 **学习笔记：**
@@ -646,13 +646,13 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/tsconfig.node.jso
 
 ```bash
 # 1. 阅读开发环境
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/.env.development
+cat /Users/yangdongnan/work/schema-platform/ai/app/.env.development
 
 # 2. 阅读生产环境
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/.env.production
+cat /Users/yangdongnan/work/schema-platform/ai/app/.env.production
 
 # 3. 阅读示例环境
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/.env.example
+cat /Users/yangdongnan/work/schema-platform/ai/app/.env.example
 ```
 
 **学习笔记：**
@@ -669,13 +669,13 @@ cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/.env.example
 
 ```bash
 # 1. 查看测试目录
-ls -la /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/__tests__/
+ls -la /Users/yangdongnan/work/schema-platform/ai/app/src/__tests__/
 
 # 2. 阅读测试用例
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/app/src/__tests__/*.test.ts | head -100
+cat /Users/yangdongnan/work/schema-platform/ai/app/src/__tests__/*.test.ts | head -100
 
 # 3. 运行测试
-cd /Users/yangdongnan/work/schema-platform/schema-form-ai/app && pnpm test --run 2>&1 | head -50
+cd /Users/yangdongnan/work/schema-platform/ai/app && pnpm test --run 2>&1 | head -50
 ```
 
 **学习笔记：**
@@ -690,10 +690,10 @@ cd /Users/yangdongnan/work/schema-platform/schema-form-ai/app && pnpm test --run
 
 ```bash
 # 1. 查看文档目录
-ls -la /Users/yangdongnan/work/schema-platform/schema-form-ai/docs/
+ls -la /Users/yangdongnan/work/schema-platform/ai/docs/
 
 # 2. 阅读设计文档
-cat /Users/yangdongnan/work/schema-platform/schema-form-ai/docs/*.md | head -200
+cat /Users/yangdongnan/work/schema-platform/ai/docs/*.md | head -200
 ```
 
 **学习笔记：**

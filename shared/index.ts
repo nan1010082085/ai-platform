@@ -1,5 +1,5 @@
 /**
- * @schema-form/shared-ai
+ * @ai-shared
  *
  * AI 智能体所需的元数据和 prompt 构建能力。
  * 从 editor widget configs 和 flow node definitions 构建时提取，

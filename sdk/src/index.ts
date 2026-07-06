@@ -1,5 +1,5 @@
 /**
- * @schema-form/ai-sdk
+ * @ai-sdk
  *
  * 独立可复用的 Agent SDK，与 LangGraph 解耦。
  *
@@ -11,7 +11,7 @@
  *
  * @example
  * ```ts
- * import { BaseAgent, buildTool, PromptBuilder } from '@schema-form/ai-sdk'
+ * import { BaseAgent, buildTool, PromptBuilder } from '@ai-sdk'
  *
  * // 1. 定义工具
  * const searchTool = buildTool()

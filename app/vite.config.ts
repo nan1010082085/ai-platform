@@ -27,6 +27,7 @@ export default defineConfig({
         aiShared: true,
       }),
     ],
+    dedupe: ['vue', 'vue-router', 'pinia', 'element-plus'],
   },
   optimizeDeps: {
     exclude: sharedOptimizeDepsExclude({ platformShared: true, aiShared: true }),

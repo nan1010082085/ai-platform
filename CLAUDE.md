@@ -1,17 +1,17 @@
-# schema-form-ai
+# ai
 
 AI 助手模块，包含三个子包：app（前端）、sdk（Agent SDK）、shared（共享类型）。
 
 ## 项目规则
 
 ### 子包结构
-- `app/` — `@schema-form/ai-app` — AI 对话界面，通过 iframe 嵌入 editor/flow
-- `sdk/` — `@schema-form/ai-sdk` — Agent SDK
+- `app/` — `@ai-app` — AI 对话界面，通过 iframe 嵌入 editor/flow
+- `sdk/` — `@ai-sdk` — Agent SDK
 - `shared/` — `@schema-platform/ai-shared` — AI 元数据、promptBuilder、widgetCatalogue
 
 ### 技术栈
 - app：Vue 3 + TypeScript + CSS Module
-- shared：TypeScript 纯逻辑（依赖 `@schema-form/flow-shared`）
+- shared：TypeScript 纯逻辑（依赖 `@schema-platform/flow-shared`）
 
 ### 架构规则
 - **AI 与设计器解耦**：AI 通过 iframe 嵌入，通过 postMessage 通信
@@ -37,7 +37,7 @@ AI 助手模块，包含三个子包：app（前端）、sdk（Agent SDK）、sh
 - **图标必须使用注册表**：使用 `AppIcon` 时 `name` 须在 `platform-shared/utils/iconRegistry.ts` 注册，禁止编造；缺图标则先扩展注册表
 
 ### 项目隔离规则
-- **前端禁止修改 server 代码**：禁止修改 `schema-form-server/` 的任何代码。接口对接时，前端必须按照服务端已有的接口规范适配，优先修复前端问题，不能为了方便而去改服务端接口。
+- **前端禁止修改 server 代码**：禁止修改 `server/` 的任何代码。接口对接时，前端必须按照服务端已有的接口规范适配，优先修复前端问题，不能为了方便而去改服务端接口。
 - **禁止跨项目修改**：本项目只能修改自己的代码，禁止修改其他项目。需要改其他项目时，明确告知用户。
 
 ## 迭代规则

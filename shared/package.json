@@ -3,7 +3,7 @@
   "version": "1.0.5",
   "private": true,
   "type": "module",
-  "repository": "github:schema-platform/schema-form-ai",
+  "repository": "github:schema-platform/ai",
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc"

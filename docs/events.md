@@ -2,6 +2,20 @@
 
 > AI 流式通信的事件类型和数据格式（基于 WebSocket / Socket.IO）
 
+**权威定义**：`ai/shared/events.ts`
+
+## 版本说明
+
+| 版本 | 事件 | 发射状态 |
+|------|------|----------|
+| v1 | 文本流、Schema/Flow、工具、任务链、HITL、done/error | ✅ 已实现 |
+| v2 需求分析 | `requirement_analysis_*`、`requirement_confirm_*` | ✅ 已实现 |
+| v2 任务规划 | `task_plan_*` | ✅ 已实现 |
+| v2 思考推理 | `thinker_*` | ⚠️ 类型已定义，图节点未实现，不发射 |
+| v2 质量检查 | `quality_check_*` | ⚠️ 类型已定义，图节点未实现，不发射 |
+
+> Agent Workflow 执行不走 WebSocket 事件流，而是通过 REST 轮询 `nodeRecords`。Chat 选择工作流后端时，最终输出由 `workflowChatResponse` 解析。
+
 ## 一、事件概述
 
 ### 1.1 事件流向
@@ -55,6 +69,19 @@ type AgentEventType =
   // 状态
   | 'done'
   | 'error'
+  // v2: 需求分析
+  | 'requirement_analysis_start'
+  | 'requirement_analysis_complete'
+  | 'requirement_confirm_request'
+  | 'requirement_confirm_response'
+  // v2: 任务规划
+  | 'task_plan_start'
+  | 'task_plan_complete'
+  // v2: 预留（未实现）
+  | 'thinker_start'
+  | 'thinker_complete'
+  | 'quality_check_start'
+  | 'quality_check_complete'
 ```
 
 ---

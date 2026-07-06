@@ -1,6 +1,8 @@
 # Agent 详细说明
 
-> AI 智能体的类型、职责、执行流程和配置
+> Chat LangGraph 专家 Agent 的类型、职责、执行流程和配置
+
+> **注意**：本文档描述的是 **Chat 对话引擎**（`server/src/ai/graph/graph.ts`）中的专家 Agent。可视化编排的 Agent Workflow 节点（`agent-editor`、`agent-flow` 等）见 [agent-workflow.md](./agent-workflow.md)。
 
 ## 一、Agent 类型
 
@@ -45,7 +47,7 @@
 
 **System Prompt 构建**：
 ```typescript
-// packages/ai/shared/promptBuilder.ts
+// ai/shared/promptBuilder.ts
 buildEditorSystemPrompt(metadata)
 // - 注入 Widget 元数据
 // - 注入工具使用说明

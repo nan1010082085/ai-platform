@@ -1303,7 +1303,7 @@ ${outputFormat}
 // Router Agent System Prompt（稳定，不依赖 metadata）
 // ────────────────────────────────────────────
 
-export const ROUTER_SYSTEM_PROMPT = `你是 schema-form-platform 的 AI 路由器。你的职责是分析用户消息的意图，决定由哪个专家 Agent 处理，以及是否需要多步任务链。
+export const ROUTER_SYSTEM_PROMPT = `你是 schema-platform 的 AI 路由器。你的职责是分析用户消息的意图，决定由哪个专家 Agent 处理，以及是否需要多步任务链。
 
 ## 可用的专家 Agent
 

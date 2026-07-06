@@ -16,6 +16,9 @@ import type {
 } from '@/types'
 import { redirectToLogin } from '@schema-platform/platform-shared/utils/authPaths'
 
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) ?? '/schema-platform/api'
+const ACCESS_TOKEN_KEY = 'sfp_access_token'
+
 // ---- 错误类型 ----
 
 export class AiApiError extends Error {
@@ -29,8 +32,6 @@ export class AiApiError extends Error {
 }
 
 // ---- 基础请求 ----
-
-import { redirectToLogin } from '@schema-platform/platform-shared/utils/authPaths'
 
 /** Token 提供者，由 main.ts 注入，避免 apiClient 直接耦合微前端框架 */
 let tokenProvider: (() => string | null) | null = null

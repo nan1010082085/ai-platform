@@ -1,5 +1,5 @@
 {
-  "name": "@schema-form/ai-sdk",
+  "name": "@ai-sdk",
   "version": "1.0.0",
   "private": true,
   "type": "module",

@@ -3,7 +3,7 @@
 ## 第一步：了解项目整体架构
 
 ### 1.1 项目定位
-schema-form-ai 是 Schema Platform 的 AI 助手模块，负责：
+ai 是 Schema Platform 的 AI 助手模块，负责：
 - 智能对话界面
 - 表单/流程生成
 - 与 editor/flow 协作
@@ -17,9 +17,9 @@ schema-form-ai 是 Schema Platform 的 AI 助手模块，负责：
 
 ### 1.3 子包结构
 ```
-schema-form-ai/
-├── app/        # 前端应用 (@schema-form/ai-app)
-├── sdk/        # Agent SDK (@schema-form/ai-sdk)
+ai/
+├── app/        # 前端应用 (@ai-app)
+├── sdk/        # Agent SDK (@ai-sdk)
 └── shared/     # 共享逻辑 (@schema-platform/ai-shared)
 ```
 
@@ -126,8 +126,8 @@ cd app && npx vue-tsc --noEmit
 - `openai` - OpenAI SDK
 
 ### 5.2 内部依赖
-- `@schema-form/platform-shared` - 平台公共组件
-- `@schema-form/flow-shared` - 流程共享逻辑
+- `@schema-platform/platform-shared` - 平台公共组件
+- `@schema-platform/flow-shared` - 流程共享逻辑
 
 ### 5.3 开发依赖
 - `typescript` - 类型系统

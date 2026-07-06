@@ -1,5 +1,5 @@
 /**
- * @schema-form/ai-sdk — 核心类型定义
+ * @ai-sdk — 核心类型定义
  *
  * Agent SDK 的类型系统，与 LangGraph 解耦，可独立使用。
  */

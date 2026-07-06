@@ -1,4 +1,4 @@
-# @schema-form/ai-sdk
+# @ai-sdk
 
 独立可复用的 Agent SDK，与 LangGraph 解耦，可独立使用。
 
@@ -16,7 +16,7 @@
 ## 安装
 
 ```bash
-pnpm add @schema-form/ai-sdk
+pnpm add @ai-sdk
 ```
 
 ## 快速开始
@@ -24,7 +24,7 @@ pnpm add @schema-form/ai-sdk
 ### 1. 创建自定义 Agent
 
 ```typescript
-import { BaseAgent, buildTool, PromptBuilder } from '@schema-form/ai-sdk'
+import { BaseAgent, buildTool, PromptBuilder } from '@ai-sdk'
 
 // 定义工具
 const searchTool = buildTool()
@@ -104,7 +104,7 @@ for await (const event of agent.executeStream('搜索订单', context)) {
 ### 3. 使用 SchemaAgent 示例
 
 ```typescript
-import { SchemaAgent } from '@schema-form/ai-sdk'
+import { SchemaAgent } from '@ai-sdk'
 
 const agent = new SchemaAgent({
   llm: {
@@ -125,8 +125,8 @@ console.log(result.content)
 ### 4. 使用 Expert Agent 框架
 
 ```typescript
-import { ExpertAgent, createExpertAgentConfig } from '@schema-form/ai-sdk'
-import type { IntentRecognitionResult, RAGContext, ConversationState } from '@schema-form/ai-sdk'
+import { ExpertAgent, createExpertAgentConfig } from '@ai-sdk'
+import type { IntentRecognitionResult, RAGContext, ConversationState } from '@ai-sdk'
 
 class MyExpertAgent extends ExpertAgent {
   constructor() {
@@ -176,7 +176,7 @@ console.log('响应:', result.content)
 ### 5. 测试和验证
 
 ```typescript
-import { AgentValidator, createSchemaAgentTestSuite, generateTestReport } from '@schema-form/ai-sdk'
+import { AgentValidator, createSchemaAgentTestSuite, generateTestReport } from '@ai-sdk'
 
 // 创建验证器
 const validator = new AgentValidator()
@@ -390,7 +390,7 @@ interface AgentResult {
 ## 测试
 
 ```bash
-pnpm --filter @schema-form/ai-sdk test
+pnpm --filter @ai-sdk test
 ```
 
 ## 与现有 AI 系统的关系

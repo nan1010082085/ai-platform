@@ -1,7 +1,7 @@
 /**
  * Agent 工作流工具节点 — 内置工具注册表
  *
- * 与 schema-form-server MCP 工具名对齐（domain__action）。
+ * 与 server MCP 工具名对齐（domain__action）。
  * 工作流执行器通过 registry 路由到同一套 MCP / LangGraph 工具实现。
  */
 

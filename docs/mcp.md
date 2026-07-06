@@ -25,7 +25,7 @@ MCP（Model Context Protocol）是一种协议，允许 AI Agent 通过标准化
 ┌─────────────────────────────────────────────────────────┐
 │                    MCP Server                            │
 ├─────────────────────────────────────────────────────────┤
-│  Schema Server  │  Flow Server  │  Widget Server        │
+│  Schema │ Flow │ Widget │ RAG │ Industry Server       │
 └─────────────────────────────────────────────────────────┘
          │
          ▼
@@ -63,18 +63,20 @@ MCP（Model Context Protocol）是一种协议，允许 AI Agent 通过标准化
 ### 2.1 Server 结构
 
 ```
-packages/server/src/ai/mcp/
+server/src/ai/mcp/
 ├── index.ts            # 导出所有 Server
 ├── schemaServer.ts     # Schema 相关工具
 ├── flowServer.ts       # Flow 相关工具
 ├── widgetServer.ts     # Widget 相关工具
-└── bridge.ts           # 桥接层
+├── ragServer.ts        # RAG 知识库检索
+├── industryServer.ts   # 行业模板
+└── bridge.ts           # InMemoryTransport 桥接层
 ```
 
 ### 2.2 创建 MCP Server
 
 ```typescript
-// packages/server/src/ai/mcp/schemaServer.ts
+// server/src/ai/mcp/schemaServer.ts
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { handleSchemaSearch, handleSchemaGetDetail } from '../tools/toolHandlers.js'
@@ -114,7 +116,9 @@ MCP 工具使用双下划线前缀实现命名空间隔离：
 |------|--------|------|
 | `schema__` | Schema Server | `schema__search`、`schema__get_detail` |
 | `flow__` | Flow Server | `flow__search`、`flow__get_detail` |
-| `widget__` | Widget Server | `widget__query`、`widget__get_catalogue` |
+| `widget__` | Widget Server | `widget__query`、`widget__validate` |
+| `rag__` | RAG Server | `rag__search` |
+| `industry__` | Industry Server | `industry__search_templates` |
 
 ### 2.4 参数验证
 
@@ -215,22 +219,38 @@ const validation = await mcpClient.callTool('flow__validate', {
 
 | 工具名 | 功能 |
 |--------|------|
-| `widget__get_catalogue` | 查询组件目录 |
-| `widget__query` | 查询组件 |
-| `widget__get_schema` | 获取组件 Schema 定义 |
+| `widget__query` | 查询组件目录与定义 |
+| `widget__validate` | 校验组件 Schema |
+
+### 3.4 RAG Server
+
+**工具列表**：
+
+| 工具名 | 功能 |
+|--------|------|
+| `rag__search` | 知识库语义检索 |
+
+### 3.5 Industry Server
+
+**工具列表**：
+
+| 工具名 | 功能 |
+|--------|------|
+| `industry__search_templates` | 搜索行业模板 |
+| `industry__validate_form` | 校验行业表单结构 |
 
 **示例**：
 
 ```typescript
-// 查询组件目录
-const catalogue = await mcpClient.callTool('widget__get_catalogue', {
-  category: 'form',
-})
-
 // 查询组件
 const widgets = await mcpClient.callTool('widget__query', {
   keyword: 'input',
-  type: 'form',
+})
+
+// RAG 检索
+const results = await mcpClient.callTool('rag__search', {
+  query: '如何创建审批流程',
+  limit: 5,
 })
 ```
 
@@ -275,7 +295,7 @@ const searchSchemasTool = tool(
     return JSON.stringify(result)
   },
   {
-    name: 'search_schemas',
+    name: 'schema__search',
     description: '搜索表单 Schema 列表',
     schema: z.object({
       keyword: z.string().optional(),

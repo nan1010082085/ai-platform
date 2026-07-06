@@ -1,4 +1,4 @@
-# @schema-form/ai-app
+# @ai-app
 
 AI 智能助手 -- 对话式 Schema 生成、流程编排、版本管理。
 
@@ -68,5 +68,5 @@ Schema Form Platform 的 AI 交互层，通过自然语言对话驱动表单 Sch
 ```bash
 pnpm dev:ai               # 启动开发服务器
 pnpm build:ai             # 构建
-pnpm --filter @schema-form/ai-app test   # 运行测试
+pnpm --filter @ai-app test   # 运行测试
 ```

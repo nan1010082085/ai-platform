@@ -2,6 +2,18 @@
 
 > AI 工具的定义、注册、执行和扩展
 
+**权威工具名**：`ai/shared/toolNames.ts`
+
+## 命名规范
+
+| 类别 | 格式 | 示例 |
+|------|------|------|
+| MCP 工具 | `{domain}__{action}` | `schema__search`、`flow__validate` |
+| LangGraph 专有 | 无前缀 | `update_schema`、`generate_schema` |
+| 工作流内置 | 无前缀 | `http_request`（仅 Workflow Executor） |
+
+旧工具名（如 `search_schemas`）通过 `LEGACY_TOOL_ALIASES` 映射到 MCP 名，历史消息和工作流配置向后兼容。
+
 ## 一、工具概述
 
 ### 1.1 什么是工具
@@ -19,11 +31,11 @@ Agent (LLM)
 ┌─────────────────────────────────────────────────┐
 │                    工具层                        │
 ├─────────────────────────────────────────────────┤
-│  search_schemas    │  get_schema_detail         │
-│  validate_schema   │  update_schema             │
-│  search_flows      │  get_flow_detail           │
-│  validate_flow     │  update_flow               │
-│  rag_search        │  rag_index                 │
+│  schema__search    │  schema__get_detail        │
+│  schema__validate  │  update_schema             │
+│  flow__search      │  flow__get_detail          │
+│  flow__validate    │  update_flow               │
+│  rag__search       │  rag_index                 │
 │  ...               │  ...                       │
 └─────────────────────────────────────────────────┘
     │
@@ -35,24 +47,30 @@ Agent (LLM)
 
 | 分类 | 工具 | 功能 |
 |------|------|------|
-| **Schema** | `search_schemas` | 搜索表单 Schema 列表 |
-| | `get_schema_detail` | 获取 Schema 完整信息 |
-| | `validate_schema` | 验证 Schema 结构 |
-| | `update_schema` | 更新 Schema |
-| | `search_published_schemas` | 搜索已发布版本 |
-| | `fuzzy_search_schemas` | 模糊搜索 |
-| **Flow** | `search_flows` | 搜索流程列表 |
-| | `get_flow_detail` | 获取流程详情 |
-| | `validate_flow` | 验证流程结构 |
-| | `update_flow` | 更新流程 |
+| **Schema (MCP)** | `schema__search` | 搜索表单 Schema 列表 |
+| | `schema__get_detail` | 获取 Schema 完整信息 |
+| | `schema__validate_widgets` | 验证 Schema 结构 |
+| | `schema__search_published` | 搜索已发布版本 |
+| | `schema__fuzzy_search` | 模糊搜索 |
+| | `schema__find_flow_references` | 查找流程引用 |
+| **Schema (LangGraph)** | `update_schema` | 更新 Schema |
+| | `generate_schema` | 生成 Schema |
+| **Flow (MCP)** | `flow__search` | 搜索流程列表 |
+| | `flow__get_detail` | 获取流程详情 |
+| | `flow__validate` | 验证流程结构 |
+| | `flow__search_users` | 搜索用户 |
+| | `flow__get_node_schema` | 获取节点 Schema |
+| **Flow (LangGraph)** | `update_flow` | 更新流程 |
 | | `save_and_bind_schema` | 保存并绑定 Schema |
 | | `bind_schema_to_flow_node` | 绑定到流程节点 |
-| | `get_flow_node_schema` | 获取节点 Schema |
-| **Widget** | `get_widget_catalogue` | 查询组件目录 |
-| | `query_widgets` | 查询组件 |
-| **RAG** | `rag_search` | 智能匹配 |
-| | `rag_index` | RAG 索引 |
-| **协作** | `request_collaboration` | 请求其他 Agent 协作 |
+| **Widget (MCP)** | `widget__query` | 查询组件目录 |
+| | `widget__validate` | 校验组件 |
+| **RAG** | `rag__search` | 知识库检索 (MCP) |
+| | `rag_index` | RAG 索引 (LangGraph) |
+| **Industry (MCP)** | `industry__search_templates` | 行业模板搜索 |
+| | `industry__validate_form` | 行业表单校验 |
+| **协作 (LangGraph)** | `request_collaboration` | 请求其他 Agent 协作 |
+| **工作流内置** | `http_request` | HTTP 请求（仅 Workflow Executor） |
 
 ---
 
