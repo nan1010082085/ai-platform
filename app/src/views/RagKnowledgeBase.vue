@@ -25,7 +25,7 @@ import RagIndexOverview from '@/components/rag/RagIndexOverview.vue'
 const INDEX_PAGE_SIZE = 20
 
 const { loading, withLoading: withStatusLoading } = useDataLoading({ timeout: 15000 })
-const { loading: reindexing, withLoading: withReindexLoading } = useDataLoading({ timeout: 30000 })
+const { loading: reindexing, withLoading: withReindexLoading } = useDataLoading({ timeout: 600_000 })
 
 const status = ref<RagStatusData | null>(null)
 const lastReindexResult = ref<RagReindexResult | null>(null)
