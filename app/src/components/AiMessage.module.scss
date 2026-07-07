@@ -396,10 +396,10 @@
 .attachmentCards,
 .summaryCards {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 6px;
-  max-width: 320px;
+  max-width: 100%;
 }
 
 .msgUser .attachmentCards {

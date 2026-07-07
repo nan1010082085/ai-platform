@@ -52,10 +52,15 @@ const globalStubs = {
 
 function createStatus(overrides: Record<string, unknown> = {}) {
   return {
+    embeddingConfigured: true,
+    autoIndexEnabled: true,
     totalSchemas: 10,
+    totalFlows: 3,
     totalEmbeddings: 7,
     indexed: 7,
     unindexed: 3,
+    indexedFlows: 2,
+    unindexedFlows: 1,
     stale: 1,
     unindexedSchemas: [] as Array<{ id: string; name: string; type: string }>,
     ...overrides,
@@ -86,7 +91,7 @@ describe('RagKnowledgeBase', () => {
     expect(wrapper.text()).toContain('7')
     expect(wrapper.text()).toContain('3')
     expect(wrapper.text()).toContain('1')
-    expect(wrapper.text()).toContain('70%')
+    expect(wrapper.text()).toContain('69%')
   })
 
   it('renders summary card labels', async () => {

@@ -36,7 +36,8 @@ import {
   submitMessageFeedback,
 } from '@/api/aiApi'
 import { message } from '@schema-platform/platform-shared/utils/message'
-import { isWorkflowHitlApprovalMessage } from '@/utils/workflowChatResponse'
+import { isWorkflowHitlApprovalMessage, extractWorkflowStreamingText } from '@/utils/workflowChatResponse'
+import { buildWorkflowMessageExecution } from '@/utils/workflowMessageExecution'
 import { runWorkflowChatTurn } from '@/composables/useWorkflowChatExecution'
 import { cancelExecution } from '@/api/agentWorkflowApi'
 
@@ -520,6 +521,15 @@ export const useAiStore = defineStore('ai', () => {
         onExecutionStarted: (id) => {
           activeWorkflowExecutionId.value = id
         },
+        onProgress: (execution) => {
+          if (workflowPollAborted) return
+          conversationStore.messages[assistantIndex].workflowExecution =
+            buildWorkflowMessageExecution(execution)
+          const partial = extractWorkflowStreamingText(execution)
+          if (partial != null) {
+            conversationStore.messages[assistantIndex].content = partial
+          }
+        },
       })
 
       if (workflowPollAborted) {
@@ -530,6 +540,8 @@ export const useAiStore = defineStore('ai', () => {
 
       lastWorkflowExecutionId.value = result.lastExecutionId
       pendingWorkflowExecutionId.value = result.pendingExecutionId
+      conversationStore.messages[assistantIndex].workflowExecution =
+        buildWorkflowMessageExecution(result.execution)
       conversationStore.messages[assistantIndex].content = result.responseText
       conversationStore.messages[assistantIndex].status = 'received'
     } catch (err) {

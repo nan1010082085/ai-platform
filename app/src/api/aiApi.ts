@@ -366,7 +366,7 @@ export interface UploadResult {
   chunkCount?: number
   excerpt?: string
   hasOriginalFile?: boolean
-  extractionMethod?: 'ocr' | 'pdf' | 'docx' | 'txt' | 'empty'
+  extractionMethod?: 'ocr' | 'pdf' | 'docx' | 'doc' | 'csv' | 'ofd' | 'txt' | 'empty'
 }
 
 export async function uploadFile(file: File): Promise<UploadResult> {
@@ -399,7 +399,7 @@ export interface DocumentPreviewResult {
   chunks: Array<{ page: number; text: string; startOffset: number }>
   summary?: StructuredSummary
   hasOriginalFile?: boolean
-  extractionMethod?: 'ocr' | 'pdf' | 'docx' | 'txt' | 'empty'
+  extractionMethod?: 'ocr' | 'pdf' | 'docx' | 'doc' | 'csv' | 'ofd' | 'txt' | 'empty'
 }
 
 export interface StructuredSummary {
@@ -660,10 +660,15 @@ export async function mentionSearch(
 // ---- RAG Knowledge Base Management ----
 
 export interface RagStatusData {
+  embeddingConfigured: boolean
+  autoIndexEnabled: boolean
   totalSchemas: number
+  totalFlows: number
   totalEmbeddings: number
   indexed: number
   unindexed: number
+  indexedFlows: number
+  unindexedFlows: number
   stale: number
   unindexedSchemas: Array<{ id: string; name: string; type: string }>
 }
@@ -674,6 +679,11 @@ export interface RagReindexResult {
   updated: number
   skipped: number
   errors: number
+  flowsTotal: number
+  flowsCreated: number
+  flowsUpdated: number
+  flowsSkipped: number
+  flowsErrors: number
 }
 
 export interface RagSingleReindexResult {

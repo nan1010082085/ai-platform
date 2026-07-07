@@ -37,7 +37,8 @@ const TOOL_PALETTE_ITEMS: AgentPaletteItem[] = TOOL_NODE_TYPES.map((type) => {
   }
 })
 
-const EXPERT_PALETTE_ITEMS: AgentPaletteItem[] = EXPERT_NODE_TYPES.map((type) => {
+// 遗留专家节点元数据（旧工作流兼容；Palette 已改从插件中心加载）
+const _LEGACY_EXPERT_PALETTE_ITEMS: AgentPaletteItem[] = EXPERT_NODE_TYPES.map((type) => {
   const meta = EXPERT_NODE_TYPE_META[type]
   return {
     type,
@@ -77,8 +78,8 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
     description: '解析已上传文档，输出全文与分块',
     defaultData: {
       label: '文档解析',
-      documentSource: 'inputField',
-      inputField: 'documentId',
+      documentSource: 'stream',
+      streamField: 'file',
     },
   },
   {
@@ -89,8 +90,8 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
     description: '对已上传图片做纯视觉语义描述（非 OCR）',
     defaultData: {
       label: '图片视觉分析',
-      documentSource: 'inputField',
-      inputField: 'documentId',
+      documentSource: 'stream',
+      streamField: 'file',
       visionPrompt: '',
     },
   },
@@ -116,7 +117,14 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
     description: '调用大模型处理文本',
     defaultData: { label: 'LLM', prompt: '{{$input.message}}', model: 'default' },
   },
-  ...EXPERT_PALETTE_ITEMS,
+  {
+    type: 'agent-intent',
+    label: EXPERT_NODE_TYPE_META['agent-intent'].label,
+    icon: EXPERT_NODE_TYPE_META['agent-intent'].icon,
+    category: 'experts',
+    description: EXPERT_NODE_TYPE_META['agent-intent'].description,
+    defaultData: { label: EXPERT_NODE_TYPE_META['agent-intent'].label },
+  },
   ...TOOL_PALETTE_ITEMS,
   {
     type: 'if',
@@ -175,6 +183,7 @@ export const AGENT_NODE_COLORS: Record<string, string> = {
   'conversation-memory': '#E6A23C',
   llm: '#00D4FF',
   agent: '#409EFF',
+  expert: '#9B59B6',
   tool: '#E6A23C',
   if: '#9B59B6',
   hitl: '#F56C6C',
@@ -203,7 +212,17 @@ export function getPaletteItem(type: AgentNodeType): AgentPaletteItem | undefine
       defaultData: { label: meta.label, toolCategory: meta.category },
     }
   }
-  if (isExpertNodeType(type) && type !== 'agent') {
+  if (type === 'expert') {
+    return {
+      type: 'expert',
+      label: '插件专家',
+      icon: 'cpu',
+      category: 'experts',
+      description: '从插件中心选择注册专家',
+      defaultData: { label: '插件专家' },
+    }
+  }
+  if (isExpertNodeType(type) && type !== 'agent' && type !== 'expert') {
     const meta = EXPERT_NODE_TYPE_META[type as ExpertNodeType]
     return {
       type,

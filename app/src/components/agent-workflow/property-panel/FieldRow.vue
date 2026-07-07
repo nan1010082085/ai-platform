@@ -1,19 +1,28 @@
 <script setup lang="ts">
-import HintText from './HintText.vue'
+import { computed } from 'vue'
+import TruncatedTooltipText from './TruncatedTooltipText.vue'
 import styles from './FieldRow.module.scss'
 
-defineProps<{
+const props = defineProps<{
   label: string
   textarea?: boolean
   hint?: string
 }>()
+
+const labelTooltip = computed(() => {
+  if (props.hint?.trim()) {
+    return `${props.label}\n${props.hint.trim()}`
+  }
+  return props.label
+})
 </script>
 
 <template>
   <div :class="[styles.fieldRow, textarea && styles.fieldRowTextarea]">
     <div :class="styles.label">
-      {{ label }}
-      <HintText v-if="hint">{{ hint }}</HintText>
+      <TruncatedTooltipText :content="labelTooltip" :class="styles.labelText">
+        {{ label }}
+      </TruncatedTooltipText>
     </div>
     <div :class="[styles.control, textarea && styles.controlTextarea]">
       <slot />

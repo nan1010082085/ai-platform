@@ -55,6 +55,11 @@ export function extractWorkflowChatResponse(exec: AgentWorkflowExecution): strin
   return '工作流执行完成'
 }
 
+export function extractWorkflowStreamingText(exec: AgentWorkflowExecution): string | null {
+  const text = exec.streamingOutput?.text?.trim()
+  return text || null
+}
+
 export function isWorkflowHitlApprovalMessage(content: string): boolean | null {
   const trimmed = content.trim()
   if (/^(确认|继续|approve|yes|ok)$/i.test(trimmed)) return true

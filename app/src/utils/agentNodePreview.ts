@@ -56,6 +56,16 @@ export function formatPreviewValue(value: unknown, max = 72): string {
   }
 }
 
+function documentSourcePreviewLabel(data: AgentWorkflowNodeData): string {
+  if (data.documentSource === 'documentId') return '平台固定 ID'
+  if (data.documentSource === 'inputField') return `平台字段 ${data.inputField ?? 'documentId'}`
+  if (data.documentSource === 'api') {
+    const url = data.fetchUrl?.trim()
+    return url ? `查询接口 ${truncateText(url, 48)}` : '查询接口（未配置）'
+  }
+  return `上传流 ${data.streamField ?? 'file'}`
+}
+
 export function hasMeaningfulPreviewValue(value: string): boolean {
   const normalized = value.trim()
   return normalized !== '' && normalized !== '—'
@@ -122,7 +132,7 @@ export function getAgentNodePreviewSections(
         {
           key: 'source',
           label: '来源',
-          value: data.documentSource === 'documentId' ? '固定 ID' : `字段 ${data.inputField ?? 'documentId'}`,
+          value: documentSourcePreviewLabel(data),
           tone: 'muted',
         },
       )
@@ -141,7 +151,7 @@ export function getAgentNodePreviewSections(
         {
           key: 'source',
           label: '来源',
-          value: data.documentSource === 'documentId' ? '固定 ID' : `字段 ${data.inputField ?? 'documentId'}`,
+          value: documentSourcePreviewLabel(data),
           tone: 'muted',
         },
       )

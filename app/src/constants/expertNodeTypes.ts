@@ -71,8 +71,8 @@ export const EXPERT_AGENT_LABELS: Record<ExpertAgentKind, string> = {
   general: 'General 通用',
 }
 
-export function isExpertNodeType(type: string): type is ExpertNodeType | 'agent' {
-  return type === 'agent' || (EXPERT_NODE_TYPES as readonly string[]).includes(type)
+export function isExpertNodeType(type: string): type is ExpertNodeType | 'agent' | 'expert' {
+  return type === 'agent' || type === 'expert' || (EXPERT_NODE_TYPES as readonly string[]).includes(type)
 }
 
 export function isIntentExpertNode(type: string): boolean {

@@ -5,6 +5,7 @@
  */
 
 import type { ChatModel } from '@/constants/chatModels'
+import type { AgentExecutionStatus, AgentNodeRecord } from '@/types/agentWorkflow'
 
 // ---- Widget（简化引用，完整类型在 editor 包） ----
 
@@ -103,6 +104,17 @@ export interface AIMessage {
   attachments?: MessageDocumentAttachment[]
   /** 助手消息中的文档结构化摘要 */
   documentSummaries?: MessageDocumentSummary[]
+  /** 工作流 Chat 模式下的执行进度（节点时间线） */
+  workflowExecution?: WorkflowMessageExecution
+}
+
+/** Chat 消息内嵌的工作流执行快照 */
+export interface WorkflowMessageExecution {
+  executionId: string
+  workflowName: string
+  status: AgentExecutionStatus
+  nodeRecords: AgentNodeRecord[]
+  streamingNodeId: string | null
 }
 
 /** 消息状态 */

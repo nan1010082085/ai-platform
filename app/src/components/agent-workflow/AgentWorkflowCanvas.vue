@@ -176,7 +176,12 @@ function onDrop(e: DragEvent) {
   if (props.readOnly || !e.dataTransfer) return
   const raw = e.dataTransfer.getData('application/agent-node')
   if (!raw) return
-  const { type } = JSON.parse(raw) as { type: AgentNodeType }
+  const { type, expertId, toolName, label } = JSON.parse(raw) as {
+    type: AgentNodeType
+    expertId?: string
+    toolName?: string
+    label?: string
+  }
   if (store.selectedNodeId) {
     store.replaceNode(store.selectedNodeId, type)
     return
@@ -185,7 +190,12 @@ function onDrop(e: DragEvent) {
     x: e.clientX - 80,
     y: e.clientY - 24,
   })
-  store.addNode(type, position)
+  const extra = expertId
+    ? { expertId, label }
+    : toolName
+      ? { toolName, label }
+      : undefined
+  store.addNode(type, position, extra)
 }
 
 function onKeyDown(e: KeyboardEvent) {

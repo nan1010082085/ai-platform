@@ -15,6 +15,11 @@ import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas
 import AgentWorkflowPropertyPanel from '@/components/agent-workflow/AgentWorkflowPropertyPanel.vue'
 import * as api from '@/api/agentWorkflowApi'
 import { useAiStore } from '@/stores/ai'
+import {
+  fileToWorkflowPayload,
+  pickWorkflowTestFile,
+  workflowGraphNeedsUploadStream,
+} from '@/utils/workflowFilePayload'
 import styles from './AgentWorkflowDesignerView.module.scss'
 
 const route = useRoute()
@@ -104,7 +109,20 @@ async function onExecute() {
   try {
     const saved = await onSave()
     if (!saved) return
-    const exec = await api.executeWorkflow(workflowId(), { message: '手动测试执行' })
+
+    const graph = store.getGraph()
+    const input: Record<string, unknown> = { message: '手动测试执行' }
+
+    if (workflowGraphNeedsUploadStream(graph)) {
+      const file = await pickWorkflowTestFile()
+      if (!file) {
+        message.warning('该工作流需要上传文件，已取消测试执行')
+        return
+      }
+      input.file = await fileToWorkflowPayload(file)
+    }
+
+    const exec = await api.executeWorkflow(workflowId(), input)
     router.push({ name: 'agent-execution-detail', params: { id: exec.id } })
   } catch (e) {
     message.error(e instanceof Error ? e.message : '执行失败')

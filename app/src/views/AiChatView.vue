@@ -44,6 +44,7 @@ const conversationDrawerVisible = ref(false)
 
 function handleOpenConversationDrawer(): void {
   conversationDrawerVisible.value = true
+  store.loadConversations().catch(() => {})
 }
 
 async function handleSelectConversation(id: string): Promise<void> {

@@ -17,6 +17,7 @@ export type ExpertNodeType =
   | 'agent-flow'
   | 'agent-page'
   | 'agent-general'
+  | 'expert'
 
 export type AgentNodeType =
   | 'manual-trigger'
@@ -70,6 +71,8 @@ export interface AgentWorkflowNodeData {
   appendAssistantReply?: boolean
   /** agent */
   agentType?: 'auto' | 'editor' | 'flow' | 'page' | 'general'
+  /** expert — 插件中心专家 id */
+  expertId?: string
   /** tool */
   toolCategory?:
     | 'mcp-schema'
@@ -93,11 +96,23 @@ export interface AgentWorkflowNodeData {
   /** 发布时生成，用于 HMAC 验签 */
   webhookSecret?: string
   /** document-parse / vision-analyze */
-  documentSource?: 'documentId' | 'inputField' | 'stream'
+  documentSource?: 'documentId' | 'inputField' | 'stream' | 'api'
   documentId?: string
   inputField?: string
-  /** stream 来源：从 $input 读取文件对象字段，默认 file */
+  /** stream 来源：从 $input 读取文件对象字段，默认 file；支持 base64 或 documentId 引用 */
   streamField?: string
+  /** api 来源：HTTP 查询接口 */
+  fetchUrl?: string
+  fetchMethod?: 'GET' | 'POST'
+  fetchHeaders?: Record<string, string>
+  fetchBody?: string
+  /** binary=响应体即文件；json-base64=JSON 字段 base64；json-url=JSON 字段为下载 URL */
+  fetchResponseMode?: 'binary' | 'json-base64' | 'json-url'
+  fetchContentPath?: string
+  fetchFilenamePath?: string
+  fetchMimetypePath?: string
+  fetchFilename?: string
+  fetchMimetype?: string
   /** vision-analyze */
   visionPrompt?: string
   /** conversation-memory */
@@ -182,6 +197,13 @@ export interface AgentNodeRecord {
   error?: string
 }
 
+export interface AgentWorkflowStreamingOutput {
+  nodeId: string
+  nodeType: string
+  text: string
+  updatedAt: string
+}
+
 export interface AgentWorkflowExecution {
   id: string
   workflowId: string
@@ -197,6 +219,7 @@ export interface AgentWorkflowExecution {
   conversationHistory?: AgentConversationTurn[]
   parentExecutionId?: string | null
   error?: string
+  streamingOutput?: AgentWorkflowStreamingOutput | null
 }
 
 export interface AgentWorkflowValidationIssue {
@@ -320,8 +343,8 @@ export function createDocumentSummaryWorkflowGraph(): AgentWorkflowGraph {
         position: { x: 320, y: 200 },
         data: {
           label: '文档解析',
-          documentSource: 'inputField',
-          inputField: 'documentId',
+          documentSource: 'stream',
+          streamField: 'file',
         },
       },
       {
@@ -350,7 +373,7 @@ export function createDocumentSummaryWorkflowGraph(): AgentWorkflowGraph {
   })
 }
 
-/** 文档 / 图片识别编排：上传 documentId → 解析 → 按 OCR/文档分支结构化提取 */
+/** 文档 / 图片识别编排：上传文件流 → 解析 → 按 OCR/文档分支结构化提取 */
 export function createDocImageRecognitionWorkflowGraph(): AgentWorkflowGraph {
   return layoutAgentWorkflowGraph({
     entryNodeId: 'trigger-1',
@@ -367,8 +390,8 @@ export function createDocImageRecognitionWorkflowGraph(): AgentWorkflowGraph {
         position: { x: 280, y: 220 },
         data: {
           label: '文档/图片解析',
-          documentSource: 'inputField',
-          inputField: 'documentId',
+          documentSource: 'stream',
+          streamField: 'file',
         },
       },
       {
@@ -386,8 +409,8 @@ export function createDocImageRecognitionWorkflowGraph(): AgentWorkflowGraph {
         position: { x: 680, y: 120 },
         data: {
           label: '图片视觉描述',
-          documentSource: 'inputField',
-          inputField: 'documentId',
+          documentSource: 'stream',
+          streamField: 'file',
           visionPrompt:
             '描述图片中的场景、UI/表单布局、图表与视觉结构。文字内容可简要概括，重点不是逐字 OCR。',
         },
@@ -600,6 +623,9 @@ export function validateAgentWorkflowGraph(graph: AgentWorkflowGraph): AgentWork
       && !node.data.toolName?.trim()
     ) {
       issues.push({ level: 'warning', nodeId: node.id, message: '工具节点未选择具体工具' })
+    }
+    if (node.type === 'expert' && !node.data.expertId?.trim()) {
+      issues.push({ level: 'warning', nodeId: node.id, message: '专家节点未选择插件专家' })
     }
   }
   return issues

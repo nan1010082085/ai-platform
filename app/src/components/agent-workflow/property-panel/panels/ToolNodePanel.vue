@@ -1,19 +1,22 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import SectionToggle from '../SectionToggle.vue'
 import FieldRow from '../FieldRow.vue'
 import VariableReferencePanel from './VariableReferencePanel.vue'
 import styles from './shared.module.scss'
-import {
-  getBuiltInTool,
-  getToolsByCategory,
-} from '@/constants/agentTools'
 import { getToolCategoryForNode, getToolNodeCategoryLabel } from '@/constants/toolNodeTypes'
+import { usePluginRegistry } from '@/composables/usePluginRegistry'
 import type { AgentNodePanelEmits, AgentNodePanelProps } from '../types'
 import type { AgentNodeType } from '@/types/agentWorkflow'
 
 const props = defineProps<AgentNodePanelProps>()
 const emit = defineEmits<AgentNodePanelEmits>()
+
+const { load, getToolsForPanel, resolveToolDef } = usePluginRegistry()
+
+onMounted(() => {
+  void load()
+})
 
 const jsonText = ref('')
 const jsonError = ref('')
@@ -28,12 +31,10 @@ const categoryLabel = computed(() =>
   getToolNodeCategoryLabel(nodeType.value, props.node.data),
 )
 
-const toolsInCategory = computed(() =>
-  lockedCategory.value ? getToolsByCategory(lockedCategory.value) : [],
-)
+const toolsInCategory = computed(() => getToolsForPanel(lockedCategory.value))
 
 const selectedTool = computed(() =>
-  getBuiltInTool(String(props.node.data?.toolName ?? '')),
+  resolveToolDef(String(props.node.data?.toolName ?? '')),
 )
 
 const defaultArgsHint = '{"query":"{{$input.message}}"}'
@@ -53,7 +54,7 @@ watch(
 
 function onToolChange(name: string) {
   update('toolName', name)
-  const tool = getBuiltInTool(name)
+  const tool = resolveToolDef(name)
   if (tool && (!jsonText.value || jsonText.value === '{}')) {
     jsonText.value = tool.argsHint
     try {
@@ -88,13 +89,12 @@ function onJsonBlur() {
     </div>
     <FieldRow
       label="具体工具"
-      :hint="lockedCategory ? `${toolsInCategory.length} 个可用` : '未知工具类'"
+      :hint="`${toolsInCategory.length} 个可用（插件中心）`"
     >
       <el-select
         :model-value="String(props.node.data?.toolName ?? '')"
         placeholder="请选择具体工具"
         filterable
-        :disabled="!lockedCategory"
         @update:model-value="onToolChange"
       >
         <el-option

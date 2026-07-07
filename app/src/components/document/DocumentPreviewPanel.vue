@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import type { Attachment } from '@/types'
 import styles from './DocumentPreviewPanel.module.scss'
 
-defineProps<{
+const props = defineProps<{
   attachment: Attachment
 }>()
 
@@ -11,25 +12,48 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+function iconName(mimetype: string): string {
+  return mimetype.startsWith('image/') ? 'picture' : 'document'
+}
+
+function onOpen(): void {
+  if (props.attachment.status === 'done' && props.attachment.documentId) {
+    emit('preview')
+  }
 }
 </script>
 
 <template>
-  <div :class="styles.panel">
-    <div :class="styles.header">
-      <span :class="styles.title">{{ attachment.filename }}</span>
-      <span :class="styles.meta">{{ formatSize(attachment.size) }}</span>
-    </div>
-    <div v-if="attachment.previewText || attachment.text" :class="styles.body">
-      {{ attachment.previewText || attachment.text.slice(0, 800) }}
-    </div>
-    <div :class="styles.footer">
-      <el-button size="small" text type="danger" @click="emit('remove')">移除</el-button>
-      <el-button size="small" type="primary" plain @click="emit('preview')">查看全文</el-button>
-    </div>
+  <div
+    :class="[
+      styles.chip,
+      attachment.status === 'error' && styles.error,
+      attachment.status === 'done' && attachment.documentId && styles.clickable,
+    ]"
+    :title="attachment.status === 'error' ? attachment.error : attachment.filename"
+  >
+    <span v-if="attachment.status === 'uploading'" :class="styles.spinner" />
+    <AppIcon
+      v-else
+      :name="iconName(attachment.mimetype)"
+      :size="14"
+      :class="styles.icon"
+    />
+    <button
+      type="button"
+      :class="styles.name"
+      :disabled="attachment.status !== 'done' || !attachment.documentId"
+      @click="onOpen"
+    >
+      {{ attachment.filename }}
+    </button>
+    <button
+      type="button"
+      :class="styles.remove"
+      aria-label="移除"
+      @click="emit('remove')"
+    >
+      <AppIcon name="close" :size="12" />
+    </button>
   </div>
 </template>

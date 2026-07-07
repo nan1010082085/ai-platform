@@ -16,6 +16,8 @@ import type { FlowNode } from './FlowCard.vue'
 import type { StepData, Widget, FlowGraph, MessageDocumentAttachment, MessageDocumentSummary } from '@/types'
 import DocumentAttachmentCard from './document/DocumentAttachmentCard.vue'
 import DocumentSummaryCard from './document/DocumentSummaryCard.vue'
+import WorkflowExecutionTimeline from './workflow/WorkflowExecutionTimeline.vue'
+import type { WorkflowMessageExecution } from '@/types'
 
 export type MessageRole = 'user' | 'assistant'
 
@@ -66,6 +68,7 @@ export interface AiMessageProps {
   feedback?: 'positive' | 'negative' | null
   attachments?: MessageDocumentAttachment[]
   documentSummaries?: MessageDocumentSummary[]
+  workflowExecution?: WorkflowMessageExecution
 }
 
 const props = defineProps<AiMessageProps>()
@@ -496,8 +499,17 @@ const steps = computed<StepData[]>(() => {
             :item="item"
           />
         </div>
+
+        <WorkflowExecutionTimeline
+          v-if="workflowExecution"
+          :execution="workflowExecution"
+        />
+
         <!-- Loading placeholder when no steps yet -->
-        <div v-if="loading && steps.length === 0" :class="$style.loadingPlaceholder">
+        <div
+          v-if="loading && steps.length === 0 && !workflowExecution?.nodeRecords?.length"
+          :class="$style.loadingPlaceholder"
+        >
           <AiLoadingDots />
         </div>
 

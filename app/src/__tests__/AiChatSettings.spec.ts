@@ -61,6 +61,7 @@ const defaultSettings: ChatSettings = {
 
 const stubs = {
   ElDrawer: ElDrawerStub,
+  ElScrollbar: { template: '<div><slot /></div>' },
   ElRadioButton: ElRadioButtonStub,
   ElRadioGroup: ElRadioGroupStub,
   ElInput: ElInputStub,

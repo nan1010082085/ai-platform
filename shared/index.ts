@@ -121,6 +121,12 @@ export type {
 } from './document.js'
 
 export {
+  DOCUMENT_UPLOAD_ACCEPT,
+  DOCUMENT_FORMAT_LABEL,
+  isAllowedDocumentUpload,
+} from './document.js'
+
+export {
   normalizeToolName,
   getToolDisplayLabel,
   LEGACY_TOOL_ALIASES,

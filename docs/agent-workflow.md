@@ -2,7 +2,9 @@
 
 > n8n 风格可视化 DAG 工作流：设计、发布、执行、监控
 
-**与 Chat LangGraph 的区别**：Chat 是对话式单次请求的多 Agent 协作；Workflow 是可复用的自动化编排，支持 Webhook、多轮对话、文档管道等场景。两者共享 MCP 工具注册表与 ai-shared 类型。
+**与 Chat LangGraph 的区别**：Chat 是对话式单次请求的多 Agent 协作；Workflow 是可复用的自动化编排，支持 Webhook、多轮对话、文档管道等场景。两者共享 MCP 工具注册表、**插件中心**（`server/config/ai-plugins*.json`）与 ai-shared 类型。详见 [plugin-registry.md](./plugin-registry.md)。
+
+**Chat 选工作流时**：助手消息展示节点时间线（`WorkflowExecutionTimeline`）+ LLM 流式正文（`streamingOutput` 轮询）。
 
 ---
 

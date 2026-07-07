@@ -8,6 +8,7 @@ import { getAgentNodePreviewSections } from '@/utils/agentNodePreview'
 import type { AgentNodeRecord, AgentWorkflowNodeData } from '@/types/agentWorkflow'
 import SectionToggle from './property-panel/SectionToggle.vue'
 import FieldRow from './property-panel/FieldRow.vue'
+import TruncatedTooltipText from './property-panel/TruncatedTooltipText.vue'
 import styles from './AgentWorkflowPropertyPanel.module.scss'
 
 const store = useAgentWorkflowDesignerStore()
@@ -91,7 +92,10 @@ function deleteSelectedEdge() {
 
     <template v-if="selectedNode">
       <div :class="styles.widgetNameRow">
-        <span :class="styles.widgetType">{{ nodeData.label || selectedNode.id }}</span>
+        <TruncatedTooltipText
+          :content="String(nodeData.label || selectedNode.id)"
+          :class="styles.widgetType"
+        />
         <el-tooltip content="复制节点 ID" placement="top" :show-after="500">
           <AppIcon name="document-copy" :class="styles.copyIdIcon" @click="copyNodeId" />
         </el-tooltip>
@@ -138,8 +142,15 @@ function deleteSelectedEdge() {
               :key="row.key"
               :class="styles.previewRow"
             >
-              <span :class="styles.previewLabel">{{ row.label }}</span>
-              <span :class="styles.previewValue">{{ row.value }}</span>
+              <TruncatedTooltipText :content="row.label" :class="styles.previewLabel" />
+              <el-tooltip
+                :content="row.value"
+                placement="top"
+                :show-after="200"
+                :popper-style="{ maxWidth: '360px', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }"
+              >
+                <span :class="styles.previewValue">{{ row.value }}</span>
+              </el-tooltip>
             </div>
           </template>
           <template v-if="previewSections.runtime.length">
@@ -149,8 +160,15 @@ function deleteSelectedEdge() {
               :key="row.key"
               :class="styles.previewRow"
             >
-              <span :class="styles.previewLabel">{{ row.label }}</span>
-              <span :class="styles.previewValue">{{ row.value }}</span>
+              <TruncatedTooltipText :content="row.label" :class="styles.previewLabel" />
+              <el-tooltip
+                :content="row.value"
+                placement="top"
+                :show-after="200"
+                :popper-style="{ maxWidth: '360px', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }"
+              >
+                <span :class="styles.previewValue">{{ row.value }}</span>
+              </el-tooltip>
             </div>
           </template>
         </SectionToggle>

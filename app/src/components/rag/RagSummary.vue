@@ -1,6 +1,10 @@
 <template>
   <div :class="$style.summary">
     <div :class="$style.card">
+      <div :class="$style.label">流程总数</div>
+      <div :class="$style.value">{{ status?.totalFlows ?? 0 }}</div>
+    </div>
+    <div :class="$style.card">
       <div :class="$style.label">Schema 总数</div>
       <div :class="$style.value">{{ status?.totalSchemas ?? 0 }}</div>
     </div>
@@ -55,7 +59,7 @@ const staleClass = computed(() => {
 <style module>
 .summary {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 16px;
 }
 

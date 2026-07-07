@@ -543,8 +543,8 @@
 /* Attachment list */
 .attachmentList {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-bottom: 6px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--ai-border-light, #EBEDF3);

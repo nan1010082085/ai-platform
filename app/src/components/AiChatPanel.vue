@@ -12,6 +12,11 @@ import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
 import { useAiStore } from '@/stores/ai'
 import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
 import { uploadFile } from '@/api/aiApi'
+import {
+  DOCUMENT_UPLOAD_ACCEPT,
+  DOCUMENT_FORMAT_LABEL,
+  isAllowedDocumentUpload,
+} from '@schema-platform/ai-shared'
 import type { AIMessage, AgentType, Attachment, TaskChainStep, StreamConnectionStatus, MentionReference, RagSearchResult, MessageDocumentAttachment } from '@/types'
 import type { MessageEmbeddedCard } from './AiMessage.vue'
 
@@ -120,18 +125,10 @@ watch(() => props.agent, (agent) => {
 
 // ---- 多模态输入 ----
 const fileInputRef = ref<HTMLInputElement>()
-const fileUploading = ref(false)
+const fileUploading = ref(0)
 const pendingAttachments = ref<Attachment[]>([])
 const previewDrawerVisible = ref(false)
 const previewDocumentId = ref<string | null>(null)
-
-const ALLOWED_FILE_TYPES = [
-  'image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain',
-]
 
 function triggerFileUpload(): void {
   fileInputRef.value?.click()
@@ -139,16 +136,18 @@ function triggerFileUpload(): void {
 
 function handleFileChange(event: Event): void {
   const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (file) {
-    processFile(file)
+  const files = input.files
+  if (files?.length) {
+    for (const file of Array.from(files)) {
+      void processFile(file)
+    }
   }
   input.value = ''
 }
 
 async function processFile(file: File): Promise<void> {
-  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-    message.error('支持的格式：PNG、JPG、GIF、WebP、PDF、DOC、DOCX、TXT')
+  if (!isAllowedDocumentUpload(file.name, file.type)) {
+    message.error(`支持的格式：${DOCUMENT_FORMAT_LABEL}`)
     return
   }
 
@@ -166,6 +165,7 @@ async function processFile(file: File): Promise<void> {
   }
   pendingAttachments.value.push(attachment)
   const index = pendingAttachments.value.length - 1
+  fileUploading.value += 1
 
   try {
     const result = await uploadFile(file)
@@ -175,7 +175,6 @@ async function processFile(file: File): Promise<void> {
       mimetype: result.mimetype,
       size: result.size,
       text: result.text,
-      previewText: result.text.slice(0, 800),
       excerpt: result.text.slice(0, 120),
       status: 'done',
     }
@@ -188,25 +187,13 @@ async function processFile(file: File): Promise<void> {
     }
     message.error(`上传失败: ${err instanceof Error ? err.message : '未知错误'}`)
   } finally {
+    fileUploading.value -= 1
     nextTick(() => mentionInputRef.value?.focus())
   }
 }
 
 function removeAttachment(index: number): void {
   pendingAttachments.value.splice(index, 1)
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-function getFileIcon(mimetype: string): string {
-  if (mimetype.startsWith('image/')) return '\u{1F5BC}'
-  if (mimetype === 'application/pdf') return '\u{1F4D5}'
-  if (mimetype.includes('word') || mimetype.includes('document')) return '\u{1F4D3}'
-  return '\u{1F4C4}'
 }
 
 /** F3: 空状态引导 prompt 列表 */
@@ -275,7 +262,7 @@ function scrollToBottom() {
 watch(
   () => {
     const last = props.messages[props.messages.length - 1]
-    return `${props.messages.length}:${last?.content?.length ?? 0}`
+    return `${props.messages.length}:${last?.content?.length ?? 0}:${last?.workflowExecution?.nodeRecords?.length ?? 0}`
   },
   scrollToBottom,
 )
@@ -435,13 +422,14 @@ function handleCardAction(
         :thinking="msg.thinking"
         :tip="msg.tip"
         :tool-calls="msg.toolCalls"
-        :loading="loading && msg.role === 'assistant' && !msg.content && idx === messages.length - 1"
+        :loading="loading && msg.role === 'assistant' && !msg.content && !msg.workflowExecution?.nodeRecords?.length && idx === messages.length - 1"
         :cards="getDisplayCards(msg)"
         :schema-widgets="msg.schema"
         :message-id="msg.id"
         :feedback="msg.feedback"
         :attachments="msg.attachments"
         :document-summaries="msg.documentSummaries"
+        :workflow-execution="msg.workflowExecution"
         @preview-document="openMessageDocumentPreview"
         @card-primary-action="(ci) => handleCardAction('primary', idx, ci)"
         @card-secondary-action="(ci) => handleCardAction('secondary', idx, ci)"
@@ -545,16 +533,17 @@ function handleCardAction(
             <input
               ref="fileInputRef"
               type="file"
-              :accept="ALLOWED_FILE_TYPES.join(',')"
+              multiple
+              :accept="DOCUMENT_UPLOAD_ACCEPT"
               :class="$style.hiddenInput"
               @change="handleFileChange"
             />
             <!-- File upload button -->
-            <el-tooltip content="上传文件（图片/PDF/文档）" placement="top" :show-after="300">
+            <el-tooltip :content="`上传文件（${DOCUMENT_FORMAT_LABEL}）`" placement="top" :show-after="300">
               <button
                 type="button"
                 :class="$style.fileBtn"
-                :disabled="disabled || loading || fileUploading"
+                :disabled="disabled || loading || fileUploading > 0"
                 @click="triggerFileUpload"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">

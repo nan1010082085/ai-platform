@@ -24,6 +24,15 @@ describe('agent workflow templates', () => {
     expect(validateAgentWorkflowGraph(graph).every((i) => i.level !== 'error')).toBe(true)
   })
 
+  it('doc-image graph uses upload stream by default', () => {
+    const graph = createDocImageRecognitionWorkflowGraph()
+    const parse = graph.nodes.find((n) => n.type === 'document-parse')
+    const vision = graph.nodes.find((n) => n.type === 'vision-analyze')
+    expect(parse?.data?.documentSource).toBe('stream')
+    expect(parse?.data?.streamField).toBe('file')
+    expect(vision?.data?.documentSource).toBe('stream')
+  })
+
   it('assistant graph uses conversation memory and LLM history', () => {
     const graph = createIntelligentAssistantWorkflowGraph()
     const memory = graph.nodes.find((n) => n.type === 'conversation-memory')

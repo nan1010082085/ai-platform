@@ -2,6 +2,36 @@
  * 文档领域类型 — Chat 与 Workflow 共用
  */
 
+export const DOCUMENT_UPLOAD_ACCEPT =
+  'image/*,.pdf,.doc,.docx,.txt,.csv,.ofd'
+
+export const DOCUMENT_FORMAT_LABEL =
+  'PNG、JPG、GIF、WebP、PDF、DOC、DOCX、TXT、CSV、OFD'
+
+const EXTENSION_MIME_MAP: Record<string, string> = {
+  '.pdf': 'application/pdf',
+  '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.txt': 'text/plain',
+  '.csv': 'text/csv',
+  '.ofd': 'application/ofd',
+}
+
+export function isAllowedDocumentUpload(filename: string, mimetype: string): boolean {
+  const ext = filename.includes('.') ? filename.slice(filename.lastIndexOf('.')).toLowerCase() : ''
+  const type = (mimetype || '').trim().toLowerCase()
+
+  if (type.startsWith('image/')) return true
+  if (['application/pdf', 'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain', 'text/csv', 'application/csv', 'application/ofd', 'application/x-ofd'].includes(type)) {
+    return true
+  }
+  if (type === 'application/vnd.ms-excel' && ext === '.csv') return true
+  if (type === 'application/octet-stream' && (ext === '.ofd' || ext === '.csv')) return true
+  return ext in EXTENSION_MIME_MAP
+}
+
 export interface DocumentChunk {
   page: number
   text: string

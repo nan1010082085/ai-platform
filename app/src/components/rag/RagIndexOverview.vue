@@ -17,19 +17,37 @@
     <div :class="$style.body">
       <div v-if="!status" :class="$style.hint">加载中...</div>
 
-      <div v-else-if="status.unindexed === 0 && status.stale === 0" :class="$style.okState">
+      <div v-else-if="status.unindexed === 0 && status.unindexedFlows === 0 && status.stale === 0" :class="$style.okState">
         <AppIcon name="check" :size="28" />
         <div :class="$style.okTitle">索引状态良好</div>
         <p :class="$style.okDesc">
-          全部 {{ status.totalSchemas }} 个 Schema 已建立向量索引，共 {{ status.totalEmbeddings }} 条向量条目。
+          Editor {{ status.totalSchemas }} 个 Schema、Flow {{ status.totalFlows }} 个流程均已建立向量索引，共 {{ status.totalEmbeddings }} 条向量条目。
         </p>
       </div>
 
       <div v-else :class="$style.tips">
+        <div v-if="!status.embeddingConfigured" :class="$style.tipItem">
+          <AppIcon name="warning" :size="16" />
+          <span>
+            未配置 Embedding API（需 <code>OPENAI_API_KEY</code> 或 <code>EMBEDDING_API_KEY</code>），向量索引无法自动生成；检索将使用关键词模糊匹配。
+          </span>
+        </div>
+        <div v-else-if="status.autoIndexEnabled" :class="$style.tipItem">
+          <AppIcon name="info-filled" :size="16" />
+          <span>
+            Editor / Flow 数据在保存与服务启动时会自动建立索引，通常无需逐条手动操作。
+          </span>
+        </div>
         <div v-if="status.unindexed > 0" :class="$style.tipItem">
           <AppIcon name="warning" :size="16" />
           <span>
-            有 <strong>{{ status.unindexed }}</strong> 个 Schema 尚未建立索引，请在下方「索引管理」列表中处理。
+            有 <strong>{{ status.unindexed }}</strong> 个 Schema 尚未建立索引，可点击下方列表补建，或执行「重建索引」。
+          </span>
+        </div>
+        <div v-if="status.unindexedFlows > 0" :class="$style.tipItem">
+          <AppIcon name="warning" :size="16" />
+          <span>
+            有 <strong>{{ status.unindexedFlows }}</strong> 个流程尚未建立索引，保存流程图或服务重启后将自动补建。
           </span>
         </div>
         <div v-if="status.stale > 0" :class="$style.tipItem">
@@ -44,7 +62,7 @@
       </div>
 
       <div v-if="!lastReindexResult" :class="$style.guide">
-        点击顶栏「重建索引」可批量为所有 Schema 生成向量嵌入。
+        点击顶栏「重建索引」可全量同步 Editor Schema 与 Flow 流程的向量嵌入。
       </div>
     </div>
   </div>

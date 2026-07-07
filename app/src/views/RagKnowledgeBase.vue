@@ -42,8 +42,11 @@ const searchPerformed = ref(false)
 const indexPage = ref(1)
 
 const healthPercent = computed(() => {
-  if (!status.value || status.value.totalSchemas === 0) return 0
-  return Math.round((status.value.indexed / status.value.totalSchemas) * 100)
+  if (!status.value) return 0
+  const total = (status.value.totalSchemas ?? 0) + (status.value.totalFlows ?? 0)
+  const indexed = (status.value.indexed ?? 0) + (status.value.indexedFlows ?? 0)
+  if (total === 0) return 0
+  return Math.round((indexed / total) * 100)
 })
 
 const unindexedSchemas = computed(() => status.value?.unindexedSchemas ?? [])

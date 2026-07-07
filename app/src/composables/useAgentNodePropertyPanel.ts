@@ -13,9 +13,12 @@ import HitlNodePanel from '@/components/agent-workflow/property-panel/panels/Hit
 import DocumentParseNodePanel from '@/components/agent-workflow/property-panel/panels/DocumentParseNodePanel.vue'
 import VisionAnalyzeNodePanel from '@/components/agent-workflow/property-panel/panels/VisionAnalyzeNodePanel.vue'
 import ConversationMemoryNodePanel from '@/components/agent-workflow/property-panel/panels/ConversationMemoryNodePanel.vue'
+import ExpertPluginNodePanel from '@/components/agent-workflow/property-panel/panels/ExpertPluginNodePanel.vue'
 
 const toolPanel = markRaw(ToolNodePanel)
 const agentPanel = markRaw(AgentNodePanel)
+
+const expertPluginPanel = markRaw(ExpertPluginNodePanel)
 
 const registry = new Map<AgentNodeType, Component>([
   ['manual-trigger', markRaw(TriggerNodePanel)],
@@ -29,6 +32,7 @@ const registry = new Map<AgentNodeType, Component>([
   ['if', markRaw(IfNodePanel)],
   ['hitl', markRaw(HitlNodePanel)],
   ['end', markRaw(DefaultNodePanel)],
+  ['expert', expertPluginPanel],
 ])
 
 for (const type of TOOL_NODE_TYPES) {
@@ -51,6 +55,7 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   if: '条件分支',
   hitl: '人工确认',
   end: '结束',
+  expert: '插件专家',
   ...Object.fromEntries(
     TOOL_NODE_TYPES.map((type) => [type, getToolNodeTypeLabel(type) ?? type]),
   ),

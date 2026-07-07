@@ -128,10 +128,10 @@
         plain
         @click="$emit('chat-test')"
       >
-        Chat 测试
+        Chat
       </el-button>
       <el-button size="small" type="primary" plain :loading="executing" @click="$emit('execute')">
-        测试执行
+        执行
       </el-button>
     </div>
   </div>

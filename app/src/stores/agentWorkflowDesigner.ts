@@ -121,7 +121,11 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
     dirty.value = true
   }
 
-  function addNode(type: AgentNodeType, position: { x: number; y: number }) {
+  function addNode(
+    type: AgentNodeType,
+    position: { x: number; y: number },
+    extraData?: Partial<import('@/types/agentWorkflow').AgentWorkflowNodeData>,
+  ) {
     clearExecutionRuntimeState()
     const palette = getPaletteItem(type)
     const id = `${type}-${crypto.randomUUID().slice(0, 8)}`
@@ -131,7 +135,7 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
         id,
         type,
         position,
-        data: { label: palette?.label ?? type, ...palette?.defaultData },
+        data: { label: extraData?.label ?? palette?.label ?? type, ...palette?.defaultData, ...extraData },
       },
     ]
     if (type === 'manual-trigger' && !nodes.value.some((n) => n.id === entryNodeId.value)) {

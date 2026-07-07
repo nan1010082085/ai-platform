@@ -4,6 +4,9 @@ import type { ChatSettings } from '@/types'
 import { checkAIHealth, type AIHealthResponse } from '@/api/aiApi'
 import { CHAT_MODEL_OPTIONS } from '@/constants/chatModels'
 import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
+import SectionToggle from '@/components/agent-workflow/property-panel/SectionToggle.vue'
+import FieldRow from '@/components/agent-workflow/property-panel/FieldRow.vue'
+import styles from './AiChatSettings.module.scss'
 
 const props = defineProps<{
   visible: boolean
@@ -52,38 +55,44 @@ function handleSave(): void {
     :model-value="visible"
     title="对话设置"
     :size="320"
+    :class="styles.drawer"
     @update:model-value="handleClose"
   >
-    <!-- 连接状态 -->
-    <div class="prop-section">
-      <div class="prop-section__title">连接状态</div>
-      <div class="prop-section__body">
-        <div v-if="healthLoading" class="status-row">
-          <span class="status-dot status-checking"></span>
+    <el-scrollbar :class="styles.scroll">
+      <SectionToggle title="连接状态">
+        <div v-if="healthLoading" :class="styles.statusRow">
+          <span :class="[styles.statusDot, styles.statusChecking]" />
           <span>检测中...</span>
         </div>
-        <div v-else-if="healthData">
-          <div class="status-row">
-            <span :class="['status-dot', healthData.status === 'ok' ? 'status-ok' : 'status-error']"></span>
+        <template v-else-if="healthData">
+          <div :class="styles.statusRow">
+            <span
+              :class="[
+                styles.statusDot,
+                healthData.status === 'ok' ? styles.statusOk : styles.statusError,
+              ]"
+            />
             <span>{{ healthData.status === 'ok' ? 'API Key 已配置' : '未配置 API Key' }}</span>
           </div>
-          <div v-if="healthData.providers.length > 0" class="provider-list">
-            <div v-for="p in healthData.providers" :key="p.name" class="provider-item">
-              <span>{{ p.name }} <span v-if="p.isDefault" class="badge">默认</span></span>
-              <span class="provider-model">{{ p.model }}</span>
+          <div v-if="healthData.providers.length > 0" :class="styles.providerList">
+            <div
+              v-for="provider in healthData.providers"
+              :key="provider.name"
+              :class="styles.providerItem"
+            >
+              <span>
+                {{ provider.name }}
+                <span v-if="provider.isDefault" :class="styles.badge">默认</span>
+              </span>
+              <span :class="styles.providerModel">{{ provider.model }}</span>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </template>
+      </SectionToggle>
 
-    <!-- 模型选择 -->
-    <div class="prop-section">
-      <div class="prop-section__title">模型</div>
-      <div class="prop-section__body">
-        <div class="form-item">
-          <label>对话模型</label>
-          <el-select v-model="localSettings.model" size="small" style="width: 100%">
+      <SectionToggle title="模型" :count="1">
+        <FieldRow label="对话模型" hint="选择 Chat 对话使用的大模型">
+          <el-select v-model="localSettings.model">
             <el-option
               v-for="option in CHAT_MODEL_OPTIONS"
               :key="option.value"
@@ -91,176 +100,72 @@ function handleSave(): void {
               :value="option.value"
             />
           </el-select>
-        </div>
-      </div>
-    </div>
+        </FieldRow>
+      </SectionToggle>
 
-    <!-- Agent 编排 -->
-    <div class="prop-section">
-      <div class="prop-section__title">Agent 编排</div>
-      <div class="prop-section__body">
-        <AgentWorkflowPicker v-model="localSettings.agentWorkflowId" :show-label="false" />
-      </div>
-    </div>
+      <SectionToggle title="Agent 编排" :count="1">
+        <FieldRow
+          label="工作流"
+          textarea
+          hint="选择已发布编排后，发送将触发该工作流而非默认对话"
+        >
+          <AgentWorkflowPicker
+            v-model="localSettings.agentWorkflowId"
+            :show-label="false"
+          />
+        </FieldRow>
+      </SectionToggle>
 
-    <!-- 用户偏好 -->
-    <div class="prop-section">
-      <div class="prop-section__title">用户偏好</div>
-      <div class="prop-section__body">
-        <div class="form-item">
-          <label>回复语言</label>
-          <el-radio-group v-model="localSettings.preferences.replyLanguage" size="small">
-            <el-radio-button value="zh-CN">中文</el-radio-button>
-            <el-radio-button value="en-US">English</el-radio-button>
-          </el-radio-group>
-        </div>
-        <div class="form-item">
-          <label>回复风格</label>
-          <el-radio-group v-model="localSettings.preferences.replyStyle" size="small">
-            <el-radio-button value="concise">简洁</el-radio-button>
-            <el-radio-button value="detailed">详细</el-radio-button>
-          </el-radio-group>
-        </div>
-        <div class="form-item">
-          <label>代码注释</label>
-          <el-radio-group v-model="localSettings.preferences.codeComment" size="small">
-            <el-radio-button value="yes">是</el-radio-button>
-            <el-radio-button value="no">否</el-radio-button>
-          </el-radio-group>
-        </div>
-      </div>
-    </div>
+      <SectionToggle title="用户偏好" :count="3">
+        <FieldRow label="回复语言">
+          <el-select v-model="localSettings.preferences.replyLanguage">
+            <el-option label="中文" value="zh-CN" />
+            <el-option label="English" value="en-US" />
+          </el-select>
+        </FieldRow>
+        <FieldRow label="回复风格">
+          <el-select v-model="localSettings.preferences.replyStyle">
+            <el-option label="简洁" value="concise" />
+            <el-option label="详细" value="detailed" />
+          </el-select>
+        </FieldRow>
+        <FieldRow label="代码注释">
+          <el-select v-model="localSettings.preferences.codeComment">
+            <el-option label="是" value="yes" />
+            <el-option label="否" value="no" />
+          </el-select>
+        </FieldRow>
+      </SectionToggle>
 
-    <!-- 对话历史摘要 -->
-    <div class="prop-section">
-      <div class="prop-section__title">对话历史摘要</div>
-      <div class="prop-section__body">
-        <div class="form-item">
-          <label>生成方式</label>
-          <el-radio-group v-model="localSettings.historySummary.mode" size="small">
-            <el-radio-button value="auto">自动</el-radio-button>
-            <el-radio-button value="manual">手动</el-radio-button>
-          </el-radio-group>
-        </div>
-        <div v-if="localSettings.historySummary.mode === 'manual'" class="form-item">
-          <label>手动摘要</label>
+      <SectionToggle title="对话历史摘要" :count="localSettings.historySummary.mode === 'manual' ? 2 : 1">
+        <FieldRow label="生成方式">
+          <el-select v-model="localSettings.historySummary.mode">
+            <el-option label="自动" value="auto" />
+            <el-option label="手动" value="manual" />
+          </el-select>
+        </FieldRow>
+        <FieldRow
+          v-if="localSettings.historySummary.mode === 'manual'"
+          label="手动摘要"
+          textarea
+          hint="注入到后续对话的上下文摘要"
+        >
           <el-input
             v-model="localSettings.historySummary.manualSummary"
             type="textarea"
             :rows="3"
-            size="small"
             resize="vertical"
             placeholder="输入对话历史摘要..."
           />
-        </div>
-      </div>
-    </div>
+        </FieldRow>
+      </SectionToggle>
+    </el-scrollbar>
 
     <template #footer>
-      <el-button size="small" @click="handleClose">取消</el-button>
-      <el-button type="primary" size="small" @click="handleSave">保存</el-button>
+      <div :class="styles.footer">
+        <el-button size="small" @click="handleClose">取消</el-button>
+        <el-button type="primary" size="small" @click="handleSave">保存</el-button>
+      </div>
     </template>
   </el-drawer>
 </template>
-
-<style scoped>
-:deep(.el-drawer__header) {
-  height: 50px;
-  padding: 0 16px;
-  margin-bottom: 0;
-}
-
-.prop-section {
-  margin-bottom: 2px;
-  border-radius: 6px;
-}
-
-.prop-section__title {
-  font-size: 11px;
-  font-weight: 600;
-  color: #606266;
-  padding: 0 12px;
-  height: 32px;
-  line-height: 32px;
-  background: #f5f7fa;
-  border-bottom: 1px solid #f0f2f5;
-}
-
-.prop-section__body {
-  padding: 8px 12px;
-}
-
-.form-item {
-  margin-bottom: 8px;
-}
-
-.form-item:last-child {
-  margin-bottom: 0;
-}
-
-.form-item label {
-  display: block;
-  font-size: 11px;
-  color: #909399;
-  margin-bottom: 4px;
-}
-
-.form-item :deep(.el-textarea__inner) {
-  min-height: 60px !important;
-  height: auto !important;
-}
-
-.status-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.status-ok {
-  background: #67c23a;
-}
-
-.status-error {
-  background: #f56c6c;
-}
-
-.status-checking {
-  background: #e6a23c;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.provider-list {
-  margin-top: 8px;
-}
-
-.provider-item {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  padding: 4px 0;
-}
-
-.provider-model {
-  color: #909399;
-}
-
-.badge {
-  font-size: 10px;
-  padding: 1px 4px;
-  background: #ecf5ff;
-  color: #409eff;
-  border-radius: 2px;
-}
-</style>

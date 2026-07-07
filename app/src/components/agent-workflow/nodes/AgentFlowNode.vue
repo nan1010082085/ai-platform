@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import TruncatedTooltipText from '@/components/agent-workflow/property-panel/TruncatedTooltipText.vue'
 import { AGENT_NODE_COLORS, getPaletteItem } from '@/constants/agentNodes'
 import type { AgentNodeRecord, AgentNodeType, AgentWorkflowNodeData } from '@/types/agentWorkflow'
 import {
@@ -87,10 +88,17 @@ function toneClass(tone?: PreviewTone): string {
         :key="row.key"
         :class="styles.row"
       >
-        <span :class="styles.rowLabel">{{ row.label }}</span>
-        <span :class="[styles.rowValue, toneClass(row.tone)]">
-          {{ row.value }}
-        </span>
+        <TruncatedTooltipText :content="row.label" :class="styles.rowLabel" />
+        <el-tooltip
+          :content="row.value"
+          placement="top"
+          :show-after="200"
+          :popper-style="{ maxWidth: '360px', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }"
+        >
+          <span :class="[styles.rowValue, toneClass(row.tone)]">
+            {{ row.value }}
+          </span>
+        </el-tooltip>
       </div>
     </div>
 
@@ -101,10 +109,17 @@ function toneClass(tone?: PreviewTone): string {
         :key="row.key"
         :class="styles.row"
       >
-        <span :class="styles.rowLabel">{{ row.label }}</span>
-        <span :class="[styles.rowValue, toneClass(row.tone)]">
-          {{ row.value }}
-        </span>
+        <TruncatedTooltipText :content="row.label" :class="styles.rowLabel" />
+        <el-tooltip
+          :content="row.value"
+          placement="top"
+          :show-after="200"
+          :popper-style="{ maxWidth: '360px', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }"
+        >
+          <span :class="[styles.rowValue, toneClass(row.tone)]">
+            {{ row.value }}
+          </span>
+        </el-tooltip>
       </div>
       <div v-if="record?.durationMs != null" :class="styles.meta">
         {{ record.durationMs < 1000 ? `${record.durationMs}ms` : `${(record.durationMs / 1000).toFixed(2)}s` }}

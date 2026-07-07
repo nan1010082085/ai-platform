@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { AgentWorkflowExecution } from '@/types/agentWorkflow'
-import { extractWorkflowChatResponse, isWorkflowHitlApprovalMessage } from '@/utils/workflowChatResponse'
+import { extractWorkflowChatResponse, extractWorkflowStreamingText, isWorkflowHitlApprovalMessage } from '@/utils/workflowChatResponse'
 
 function makeExecution(partial: Partial<AgentWorkflowExecution>): AgentWorkflowExecution {
   return {
@@ -45,5 +45,18 @@ describe('workflowChatResponse', () => {
     expect(isWorkflowHitlApprovalMessage('确认')).toBe(true)
     expect(isWorkflowHitlApprovalMessage('拒绝')).toBe(false)
     expect(isWorkflowHitlApprovalMessage('请继续处理')).toBe(null)
+  })
+
+  it('reads partial streaming output from execution', () => {
+    const text = extractWorkflowStreamingText(makeExecution({
+      status: 'running',
+      streamingOutput: {
+        nodeId: 'llm-1',
+        nodeType: 'llm',
+        text: 'partial',
+        updatedAt: new Date().toISOString(),
+      },
+    }))
+    expect(text).toBe('partial')
   })
 })

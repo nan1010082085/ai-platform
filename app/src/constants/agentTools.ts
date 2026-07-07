@@ -1,8 +1,9 @@
 /**
  * Agent 工作流工具节点 — 内置工具注册表
  *
- * 与 server MCP 工具名对齐（domain__action）。
- * 工作流执行器通过 registry 路由到同一套 MCP / LangGraph 工具实现。
+ * **权威工具清单在服务端插件中心**（`server/config/ai-plugins*.json`）。
+ * 本文件仅提供：参数 argsHint 示例、旧工作流图兼容、Registry 未加载时的回退。
+ * 设计器 Palette / ToolNodePanel 优先使用 `usePluginRegistry()`。
  */
 
 import {

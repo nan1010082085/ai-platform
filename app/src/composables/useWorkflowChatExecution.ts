@@ -5,7 +5,10 @@ import {
   resumeExecution,
 } from '@/api/agentWorkflowApi'
 import type { AgentWorkflowExecution } from '@/types/agentWorkflow'
+
+const WORKFLOW_POLL_INTERVAL_MS = 400
 import type { MessageDocumentAttachment } from '@/types'
+import { attachmentToWorkflowFileRef } from '@/utils/workflowFilePayload'
 import { extractWorkflowChatResponse } from '@/utils/workflowChatResponse'
 
 const TERMINAL_STATUSES = new Set(['success', 'error', 'waiting', 'cancelled'])
@@ -24,6 +27,8 @@ function buildWorkflowInput(
   if (attachments?.length) {
     input.documentAttachments = attachments
     input.documentIds = attachments.map((item) => item.documentId)
+    input.documentId = attachments[0].documentId
+    input.file = attachmentToWorkflowFileRef(attachments[0])
   }
   return input
 }
@@ -31,6 +36,7 @@ function buildWorkflowInput(
 export async function pollWorkflowExecution(
   executionId: string,
   isAborted: () => boolean,
+  onProgress?: (execution: AgentWorkflowExecution) => void,
 ): Promise<AgentWorkflowExecution> {
   while (true) {
     if (isAborted()) {
@@ -38,11 +44,12 @@ export async function pollWorkflowExecution(
     }
 
     const execution = await getExecution(executionId)
+    onProgress?.(execution)
     if (TERMINAL_STATUSES.has(execution.status)) {
       return execution
     }
 
-    await sleep(1500)
+    await sleep(WORKFLOW_POLL_INTERVAL_MS)
   }
 }
 
@@ -55,6 +62,7 @@ export async function runWorkflowChatTurn(params: {
   hitlApproved?: boolean
   isAborted?: () => boolean
   onExecutionStarted?: (executionId: string) => void
+  onProgress?: (execution: AgentWorkflowExecution) => void
 }): Promise<{
   execution: AgentWorkflowExecution
   responseText: string
@@ -80,6 +88,7 @@ export async function runWorkflowChatTurn(params: {
   const execution = await pollWorkflowExecution(
     started.id,
     params.isAborted ?? (() => false),
+    params.onProgress,
   )
 
   return {
