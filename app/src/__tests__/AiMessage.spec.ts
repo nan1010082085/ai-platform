@@ -220,7 +220,7 @@ describe('AiMessage', () => {
         ['update_schema', '更新表单'],
         ['update_flow', '更新流程'],
         ['bind_schema_to_flow_node', '绑定表单到流程节点'],
-        ['query_widgets', '查询组件'],
+        ['widget__query', '查询组件'],
         ['request_collaboration', '请求协作'],
         ['save_and_bind_schema', '保存并绑定表单'],
       ]

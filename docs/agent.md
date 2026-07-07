@@ -2,7 +2,7 @@
 
 > Chat LangGraph 专家 Agent 的类型、职责、执行流程和配置
 
-> **注意**：本文档描述的是 **Chat 对话引擎**（`server/src/ai/graph/graph.ts`）中的专家 Agent。可视化编排的 Agent Workflow 节点（`agent-editor`、`agent-flow` 等）见 [agent-workflow.md](./agent-workflow.md)。
+> **注意**：本文档描述 **Chat 对话引擎**（`server/src/ai/graph/graph.ts`）。专家统一经 **`pluginExpert`** + 插件 Registry 执行；工作流侧见 [agent-workflow.md](./agent-workflow.md) 的 `expert` / `agent-intent` 节点。
 
 ## 一、Agent 类型
 
@@ -214,71 +214,42 @@ const editorAgent = new EditorAgent({
 
 ## 四、LangGraph Agent（服务端）
 
-### 4.1 Graph 结构
+### 4.1 Graph 结构（基线 1.0）
 
 ```typescript
-// packages/server/src/ai/graph/graph.ts
+// server/src/ai/graph/graph.ts（示意）
 const graph = new StateGraph(AgentStateAnnotation)
   .addNode('router', routerNode)
-  .addNode('editor', editorNode)
-  .addNode('flow', flowNode)
-  .addNode('page', pageNode)
-  .addNode('general', generalNode)
-  .addNode('tools', toolNode)
-  .addEdge('__start__', 'router')
-  .addConditionalEdges('router', routeToAgent)
-  .addConditionalEdges('editor', shouldCallTools)
-  .addConditionalEdges('flow', shouldCallTools)
-  .addConditionalEdges('page', shouldCallTools)
-  .addEdge('tools', 'router')
-  .compile()
+  .addNode('taskChain', taskChainNode)
+  .addNode('pluginExpert', pluginExpertAgentNode)  // 唯一专家节点
+  .addNode('allTools', allToolNodeWithErrorHandling)
+  .addNode('afterTools', afterToolsNode)
+  .addNode('summarizer', summarizerNode)
+  // v2: requirementAnalyzer, requirementConfirm, taskPlanner
+  .addConditionalEdges('taskChain', routeAfterTaskChain)   // → pluginExpert | summarizer
+  .addConditionalEdges('pluginExpert', afterAgent)         // → allTools | taskChain | END
+  .compile({ checkpointer })
 ```
 
-### 4.2 Agent 节点实现
+### 4.2 专家执行（`pluginExpertAgent.ts`）
 
 ```typescript
-// packages/server/src/ai/graph/editorAgent.ts
-export async function editorNode(state: typeof AgentStateAnnotation.State) {
-  // 1. 获取系统提示词
-  const systemPrompt = await getEditorSystemPrompt()
-
-  // 2. 构建上下文消息
-  const contextMessage = buildContextMessage(state)
-
-  // 3. 调用 LLM
-  const response = await callLLMWithFallback({
-    messages: [
-      new SystemMessage(systemPrompt),
-      ...state.messages,
-      new HumanMessage(contextMessage),
-    ],
-    tools: editorTools,
-  })
-
-  // 4. 返回响应
-  return { messages: [response] }
-}
+// 1. resolveExpertForSession(state.session) → Registry 专家
+// 2. buildExpertSystemPrompt(expert) + getExpertTools(expert)
+// 3. buildExpertUserContent(state, expert)  // Schema/Flow/协作上下文
+// 4. LLM stream → 若有 tool_calls → allTools 循环
 ```
 
-### 4.3 条件边函数
+实现文件：`graph/pluginExpertAgent.ts`、`graph/resolveGraphExpert.ts`、`graph/expertUserContext.ts`。
 
-```typescript
-// 路由到 Agent
-function routeToAgent(state) {
-  const lastMessage = state.messages[state.messages.length - 1]
-  // 根据 Router 的输出决定路由
-  return state.session.currentAgent
-}
+### 4.3 条件边（要点）
 
-// 是否需要调用工具
-function shouldCallTools(state) {
-  const lastMessage = state.messages[state.messages.length - 1]
-  if (lastMessage.tool_calls && lastMessage.tool_calls.length > 0) {
-    return 'tools'
-  }
-  return '__end__'
-}
-```
+| 函数 | 行为 |
+|------|------|
+| `routeAfterRouter` | 有 task chain → `taskChain`；否则 → `pluginExpert` |
+| `routeAfterTaskChain` | `summarize` → `summarizer`；否则 → `pluginExpert` |
+| `afterAgent` | 有 `tool_calls` → `allTools`；任务链未完 → `taskChain`；否则 `END` / `summarizer` |
+| `afterToolsRoute` | 协作 / 任务链 → `taskChain`；否则 → `pluginExpert` |
 
 ---
 

@@ -407,7 +407,8 @@ export interface QualityCheckCompleteEvent extends AgentEvent {
 // 联合类型
 // ────────────────────────────────────────────
 
-export type SSEEvent =
+/** WebSocket `chat:event` 流式协议事件联合类型 */
+export type AgentStreamEvent =
   | TextDeltaEvent
   | ThinkingDeltaEvent
   | SchemaStartEvent
@@ -442,12 +443,4 @@ export type SSEEvent =
   | QualityCheckStartEvent
   | QualityCheckCompleteEvent
 
-// ────────────────────────────────────────────
-// 兼容旧类型（过渡期）
-// ────────────────────────────────────────────
-
-/** @deprecated 使用 AgentEventType 替代 */
-export type LegacySSEEventType = string
-
-/** @deprecated 使用 SSEEvent 替代 */
-export type LegacySSEEvent = Record<string, unknown>
+export type SSEEvent = AgentStreamEvent

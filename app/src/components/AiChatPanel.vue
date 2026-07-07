@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick, watch, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AiMessage from './AiMessage.vue'
@@ -11,6 +12,7 @@ import DocumentPreviewDrawer from './document/DocumentPreviewDrawer.vue'
 import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
 import { useAiStore } from '@/stores/ai'
 import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
+import { useShellEmbed } from '@/composables/useShellEmbed'
 import { uploadFile } from '@/api/aiApi'
 import {
   DOCUMENT_UPLOAD_ACCEPT,
@@ -31,8 +33,6 @@ export interface AiChatPanelProps {
   taskChainIndex?: number
   /** 流式连接状态 */
   streamStatus?: StreamConnectionStatus
-  /** @deprecated 使用 streamStatus 替代 */
-  sseStatus?: StreamConnectionStatus
   /** 当前自动重试次数 */
   retryCount?: number
   /** 最大自动重试次数 */
@@ -54,7 +54,6 @@ const props = withDefaults(defineProps<AiChatPanelProps>(), {
     { value: 'flow', label: 'Flow' },
   ],
   streamStatus: 'idle',
-  sseStatus: 'idle',
   retryCount: 0,
   maxRetries: 3,
   ragSearchResults: () => [],
@@ -90,6 +89,8 @@ const mentionInputRef = ref<InstanceType<typeof AiMentionInput>>()
 const ragVisible = ref(false)
 const workflowPickerVisible = ref(false)
 const store = useAiStore()
+const router = useRouter()
+const { shouldHideSubAppMenu } = useShellEmbed()
 const { loadPublishedWorkflows, getWorkflowName } = usePublishedAgentWorkflows()
 
 const selectedWorkflowId = computed({
@@ -98,6 +99,11 @@ const selectedWorkflowId = computed({
 })
 
 const selectedWorkflowName = computed(() => getWorkflowName(selectedWorkflowId.value))
+
+function openWorkflowList() {
+  workflowPickerVisible.value = false
+  void router.push({ name: 'agent-workflows' })
+}
 
 onMounted(() => {
   loadPublishedWorkflows().catch(() => {})
@@ -109,8 +115,7 @@ watch(workflowPickerVisible, (visible) => {
   }
 })
 
-// 向后兼容：优先使用 streamStatus，fallback 到 sseStatus
-const currentStreamStatus = computed(() => props.streamStatus ?? props.sseStatus ?? 'idle')
+const currentStreamStatus = computed(() => props.streamStatus ?? 'idle')
 
 const selectedAgentLabel = computed(() => {
   if (selectedWorkflowId.value) {
@@ -364,6 +369,12 @@ function handleCardAction(
             :show-label="false"
             @update:model-value="workflowPickerVisible = false"
           />
+          <div :class="$style.workflowPickerFooter">
+            <button type="button" :class="$style.workflowPickerLink" @click="openWorkflowList">
+              <AppIcon name="connection" :size="12" />
+              {{ shouldHideSubAppMenu ? '打开 Agent 编排' : '管理工作流' }}
+            </button>
+          </div>
         </el-popover>
         <el-tooltip content="对话设置" placement="bottom" :show-after="300">
           <button :class="$style.actionBtn" @click="emit('open-settings')">

@@ -10,7 +10,7 @@
 | [AI 对话](./chat.md) | Chat 页面、侧边栏模式、LangGraph / Workflow 双后端 |
 | [Agent 编排](./workflows.md) | 列表、设计器、执行监控、Webhook |
 | [RAG 知识库](./rag.md) | 索引管理、检索测试、Chat 内联 RAG |
-| [**运行时架构**](./runtime.md) | **服务端执行图、数据流、Checkpoint、轮询 vs 流式** |
+| [**运行时架构**](./runtime.md) | **服务端执行图、数据流、Checkpoint、WebSocket 进度** |
 
 ## 设计原则
 

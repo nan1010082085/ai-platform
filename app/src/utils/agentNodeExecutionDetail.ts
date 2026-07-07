@@ -62,12 +62,15 @@ function extractHighlights(record: AgentNodeRecord): DetailField[] {
     if (record.nodeType === 'llm' && output.text != null) {
       fields.push({ key: 'text', label: '模型回复', value: String(output.text), multiline: true })
     }
-    if (record.nodeType === 'agent') {
+    if (record.nodeType === 'expert' || record.nodeType === 'agent-intent') {
       if (output.agent != null) {
-        fields.push({ key: 'agent', label: '调度 Agent', value: String(output.agent), tone: 'primary' })
+        fields.push({ key: 'agent', label: '调度专家', value: String(output.agent), tone: 'primary' })
+      }
+      if (output.expertId != null) {
+        fields.push({ key: 'expertId', label: '专家 ID', value: String(output.expertId), mono: true })
       }
       if (output.text != null) {
-        fields.push({ key: 'agent-text', label: 'Agent 输出', value: String(output.text), multiline: true })
+        fields.push({ key: 'agent-text', label: '专家输出', value: String(output.text), multiline: true })
       }
     }
     if (record.nodeType === 'tool') {

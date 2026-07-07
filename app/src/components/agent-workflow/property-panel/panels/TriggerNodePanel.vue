@@ -18,7 +18,9 @@ const store = useAgentWorkflowDesignerStore()
         @update:model-value="(v: boolean) => { if (v) { store.entryNodeId = props.node.id; store.dirty = true } }"
       />
     </FieldRow>
-    <div :class="styles.hint">触发时将传入 <code>$input</code> 作为初始上下文</div>
+    <div :class="styles.hint">
+      手动触发是画布<strong>入口节点</strong>，不表示「只能人手点一次」；设计器测试、开放 API、AI 对话等通道均可从此入口执行。
+    </div>
   </SectionToggle>
   <VariableReferencePanel :node="props.node" />
 </template>

@@ -5,28 +5,33 @@ import type {
 
 export type { AgentExecutionStatus, AgentWorkflowExecution }
 
+export const WORKFLOW_KEY_HEADER = 'X-Workflow-Key'
+
 export interface WorkflowClientOptions {
-  /** API 根地址，如 https://api.example.com */
+  /** API 根地址，如 https://platform.example.com */
   baseUrl: string
-  /** sk_live_xxx 或 sk_test_xxx */
-  apiKey: string
+  /** 工作流调用密钥（发布时生成，请求头 X-Workflow-Key） */
+  workflowKey: string
+  /** 租户 ID，默认 000000 */
+  tenantId?: string
   fetch?: typeof fetch
 }
 
+export type WorkflowTrigger = 'manual' | 'webhook' | 'chat' | 'api'
+
 export interface ExecuteRequest {
   input?: Record<string, unknown>
-  async?: boolean
-  version?: string
-  idempotencyKey?: string
+  trigger?: WorkflowTrigger
   callbackUrl?: string
   callbackSecret?: string
 }
 
-export interface ExecuteAsyncResult {
+export interface InvokeExecutionResponse {
   executionId: string
-  status: AgentExecutionStatus
-  pollUrl: string
-  streamUrl: string
+  workflowId: string
+  workflowName: string
+  status: string
+  execution: AgentWorkflowExecution
 }
 
 export interface WorkflowStreamEvent {
@@ -39,8 +44,11 @@ export interface PollOptions {
   signal?: AbortSignal
 }
 
+export interface StreamOptions extends PollOptions {
+  intervalMs?: number
+}
+
 export interface WaitOptions extends PollOptions {
-  /** 终态：success | error | cancelled */
   until?: AgentExecutionStatus[]
 }
 
@@ -68,55 +76,30 @@ function joinUrl(baseUrl: string, path: string): string {
   return `${base}${path.startsWith('/') ? path : `/${path}`}`
 }
 
-async function* parseSseStream(
-  body: ReadableStream<Uint8Array>,
-): AsyncGenerator<{ event: string; data: string }> {
-  const reader = body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
-
-    let sep = buffer.indexOf('\n\n')
-    while (sep !== -1) {
-      const block = buffer.slice(0, sep)
-      buffer = buffer.slice(sep + 2)
-
-      let event = 'message'
-      const dataLines: string[] = []
-      for (const line of block.split('\n')) {
-        if (line.startsWith('event:')) event = line.slice(6).trim()
-        else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim())
-      }
-      if (dataLines.length) {
-        yield { event, data: dataLines.join('\n') }
-      }
-      sep = buffer.indexOf('\n\n')
-    }
-  }
-}
-
 export class WorkflowClient {
   private readonly baseUrl: string
-  private readonly apiKey: string
+  private readonly workflowKey: string
+  private readonly tenantId: string
   private readonly fetchFn: typeof fetch
 
   constructor(opts: WorkflowClientOptions) {
     this.baseUrl = trimBaseUrl(opts.baseUrl)
-    this.apiKey = opts.apiKey
+    this.workflowKey = opts.workflowKey.trim()
+    this.tenantId = (opts.tenantId ?? '000000').trim()
     this.fetchFn = opts.fetch ?? globalThis.fetch
     if (!this.fetchFn) {
       throw new Error('[WorkflowClient] fetch is not available in this environment')
     }
+    if (!this.workflowKey) {
+      throw new WorkflowClientError('workflowKey is required', 'missing_workflow_key', 401)
+    }
   }
 
-  private authHeaders(extra?: Record<string, string>): Record<string, string> {
+  private invokeHeaders(extra?: Record<string, string>): Record<string, string> {
     return {
-      Authorization: `Bearer ${this.apiKey}`,
       'Content-Type': 'application/json',
+      [WORKFLOW_KEY_HEADER]: this.workflowKey,
+      'X-Tenant-Id': this.tenantId,
       ...extra,
     }
   }
@@ -128,7 +111,7 @@ export class WorkflowClient {
   ): Promise<T> {
     const res = await this.fetchFn(joinUrl(this.baseUrl, path), {
       method,
-      headers: this.authHeaders(opts.headers),
+      headers: this.invokeHeaders(opts.headers),
       body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
     })
 
@@ -147,61 +130,47 @@ export class WorkflowClient {
     return json.data as T
   }
 
-  async executeById(workflowId: string, req: ExecuteRequest = {}): Promise<AgentWorkflowExecution | ExecuteAsyncResult> {
-    return this.execute(`/api/ai/open/workflows/${encodeURIComponent(workflowId)}/execute`, req)
-  }
-
-  async executeBySlug(slug: string, req: ExecuteRequest = {}): Promise<AgentWorkflowExecution | ExecuteAsyncResult> {
-    return this.execute(
-      `/api/ai/open/workflows/by-slug/${encodeURIComponent(slug.trim().toLowerCase())}/execute`,
-      req,
-    )
-  }
-
-  private async execute(
-    path: string,
-    req: ExecuteRequest,
-  ): Promise<AgentWorkflowExecution | ExecuteAsyncResult> {
-    const query = new URLSearchParams()
-    if (req.async) query.set('async', 'true')
-    if (req.version) query.set('version', req.version)
-    const qs = query.toString()
-    const url = qs ? `${path}?${qs}` : path
-
-    const headers: Record<string, string> = {}
-    if (req.idempotencyKey) headers['Idempotency-Key'] = req.idempotencyKey
-
-    const data = await this.request<AgentWorkflowExecution | ExecuteAsyncResult>('POST', url, {
-      headers,
-      body: {
-        input: req.input ?? {},
-        callbackUrl: req.callbackUrl,
-        callbackSecret: req.callbackSecret,
+  async executeBySlug(slug: string, req: ExecuteRequest = {}): Promise<AgentWorkflowExecution> {
+    const normalized = slug.trim().toLowerCase()
+    const data = await this.request<InvokeExecutionResponse>(
+      'POST',
+      `/api/ai/workflows/invoke/${encodeURIComponent(normalized)}`,
+      {
+        body: {
+          input: req.input ?? {},
+          trigger: req.trigger ?? 'api',
+          callbackUrl: req.callbackUrl,
+          callbackSecret: req.callbackSecret,
+        },
       },
-    })
+    )
+    return data.execution
+  }
 
-    if (req.async) {
-      const asyncData = data as ExecuteAsyncResult
-      return {
-        ...asyncData,
-        pollUrl: joinUrl(this.baseUrl, asyncData.pollUrl),
-        streamUrl: joinUrl(this.baseUrl, asyncData.streamUrl),
-      }
-    }
-    return data as AgentWorkflowExecution
+  async executeById(workflowId: string, req: ExecuteRequest = {}): Promise<AgentWorkflowExecution> {
+    const data = await this.request<InvokeExecutionResponse>(
+      'POST',
+      `/api/ai/workflows/invoke/${encodeURIComponent(workflowId)}`,
+      {
+        body: {
+          input: req.input ?? {},
+          trigger: req.trigger ?? 'api',
+          callbackUrl: req.callbackUrl,
+          callbackSecret: req.callbackSecret,
+        },
+      },
+    )
+    return data.execution
   }
 
   async getExecution(executionId: string): Promise<AgentWorkflowExecution> {
     return this.request<AgentWorkflowExecution>(
       'GET',
-      `/api/ai/open/workflow-executions/${encodeURIComponent(executionId)}`,
+      `/api/ai/workflows/invoke/executions/${encodeURIComponent(executionId)}`,
     )
   }
 
-  async poll(
-    executionId: string,
-    opts: PollOptions = {},
-  ): Promise<AgentWorkflowExecution> {
+  async poll(executionId: string, opts: PollOptions = {}): Promise<AgentWorkflowExecution> {
     const intervalMs = opts.intervalMs ?? 800
     while (true) {
       if (opts.signal?.aborted) {
@@ -229,50 +198,30 @@ export class WorkflowClient {
     }
   }
 
-  async *streamExecution(executionId: string, signal?: AbortSignal): AsyncGenerator<WorkflowStreamEvent> {
-    const res = await this.fetchFn(
-      joinUrl(this.baseUrl, `/api/ai/open/workflow-executions/${encodeURIComponent(executionId)}/stream`),
-      {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${this.apiKey}` },
-        signal,
-      },
-    )
+  async *streamExecution(executionId: string, opts: StreamOptions = {}): AsyncGenerator<WorkflowStreamEvent> {
+    const intervalMs = opts.intervalMs ?? 800
+    let lastPayload = ''
 
-    if (!res.ok || !res.body) {
-      throw new WorkflowClientError(
-        res.statusText || 'Stream failed',
-        'stream_failed',
-        res.status,
-      )
+    while (!opts.signal?.aborted) {
+      const execution = await this.getExecution(executionId)
+      const payload = JSON.stringify({
+        status: execution.status,
+        nodeRecords: execution.nodeRecords,
+        streamingOutput: execution.streamingOutput ?? null,
+        error: execution.error ?? null,
+      })
+
+      if (payload !== lastPayload) {
+        lastPayload = payload
+        yield { event: 'execution', data: execution }
+      }
+
+      if (TERMINAL.includes(execution.status)) {
+        yield { event: 'done', data: { executionId, status: execution.status } }
+        return
+      }
+
+      await new Promise((r) => setTimeout(r, intervalMs))
     }
-
-    for await (const chunk of parseSseStream(res.body)) {
-      let parsed: unknown = chunk.data
-      try {
-        parsed = JSON.parse(chunk.data)
-      } catch { /* keep raw string */ }
-
-      const event = chunk.event as WorkflowStreamEvent['event']
-      yield { event, data: parsed }
-
-      if (event === 'done' || event === 'error') break
-    }
-  }
-
-  async resume(executionId: string, input: Record<string, unknown> = {}): Promise<AgentWorkflowExecution> {
-    return this.request<AgentWorkflowExecution>(
-      'POST',
-      `/api/ai/open/workflow-executions/${encodeURIComponent(executionId)}/resume`,
-      { body: { input } },
-    )
-  }
-
-  async cancel(executionId: string, reason?: string): Promise<AgentWorkflowExecution> {
-    return this.request<AgentWorkflowExecution>(
-      'POST',
-      `/api/ai/open/workflow-executions/${encodeURIComponent(executionId)}/cancel`,
-      { body: reason ? { reason } : {} },
-    )
   }
 }

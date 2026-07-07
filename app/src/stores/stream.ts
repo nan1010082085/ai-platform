@@ -293,6 +293,3 @@ export const useStreamStore = defineStore('stream', () => {
     executeResume,
   }
 })
-
-/** @deprecated 使用 useStreamStore 替代 */
-export const useSSEStore = useStreamStore

@@ -18,6 +18,7 @@ export type {
   AgentEventType,
   AgentType,
   AgentEvent,
+  AgentStreamEvent,
   SSEEvent,
   TextDeltaEvent,
   ThinkingDeltaEvent,
@@ -77,7 +78,6 @@ export {
 } from './systemKnowledge.js'
 
 export type {
-  ToolNodeType,
   ExpertNodeType,
   AgentHitlConfirmQuestion,
   AgentNodeType,
@@ -93,6 +93,7 @@ export type {
   AgentWorkflowGraph,
   AgentWorkflowSummary,
   AgentWorkflowDetail,
+  AgentWorkflowPublishResult,
   AgentWorkflowVersionEntry,
   AgentWorkflowVersionDetail,
   AgentNodeRecord,
@@ -129,7 +130,6 @@ export {
 export {
   normalizeToolName,
   getToolDisplayLabel,
-  LEGACY_TOOL_ALIASES,
   TOOL_DISPLAY_LABELS,
   EDITOR_MCP_TOOLS_PROMPT,
   FLOW_MCP_TOOLS_PROMPT,

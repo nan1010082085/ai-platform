@@ -12,7 +12,7 @@
 | LangGraph 专有 | 无前缀 | `update_schema`、`generate_schema` |
 | 工作流内置 | 无前缀 | `http_request`（仅 Workflow Executor） |
 
-旧工具名（如 `search_schemas`）通过 `LEGACY_TOOL_ALIASES` 映射到 MCP 名，历史消息和工作流配置向后兼容。
+工具名使用 MCP 规范：`{domain}__{action}`（如 `schema__search`）。权威定义见 `ai/shared/toolNames.ts`。
 
 ## 一、工具概述
 

@@ -8,16 +8,16 @@ import { createApp, type App } from 'vue'
 import { createPinia } from 'pinia'
 import { renderWithQiankun, qiankunWindow } from 'vite-plugin-qiankun/dist/helper'
 import { setupElementPlus } from '@schema-platform/platform-shared/config/element'
-import { initQiankunProps, initQiankunShellProps } from '@schema-platform/platform-shared/qiankun'
+import { initQiankunProps, initQiankunShellProps, installSubAppRouteSync } from '@schema-platform/platform-shared/qiankun'
 import { aiLog } from '@schema-platform/platform-shared/utils/logger'
 import AppRoot from './App.vue'
 import { createAiRouter } from './router'
-import { setupAppAuth, handleUnauthorized } from '@schema-platform/platform-shared/utils/authSession'
-import { setUnauthorizedHandler as setAiApiUnauthorized } from './api/aiApi'
-import { setAgentWorkflowUnauthorizedHandler } from './api/agentWorkflowApi'
+import { initCapabilityPlatformAuth } from '@schema-platform/platform-shared/utils/authSession'
+import { registerAiApiTokenProvider } from './setupCapabilityAuth'
 
 let app: App | null = null
 let router: ReturnType<typeof createAiRouter> | null = null
+let disposeRouteSync: (() => void) | null = null
 
 let currentRouteBase: string | undefined
 
@@ -27,14 +27,16 @@ function render() {
   app = createApp(AppRoot)
   app.use(pinia)
   app.use(router)
-  setupAppAuth()
-  setAiApiUnauthorized(() => handleUnauthorized())
-  setAgentWorkflowUnauthorizedHandler(() => handleUnauthorized())
+  initCapabilityPlatformAuth({ registerTokenProvider: registerAiApiTokenProvider })
   setupElementPlus(app)
 
   const mountEl = document.getElementById('ai-app')
   if (!mountEl) throw new Error('[ai] #ai-app not found')
   app.mount(mountEl)
+
+  if (currentRouteBase && qiankunWindow.__POWERED_BY_QIANKUN__) {
+    disposeRouteSync = installSubAppRouteSync(router, () => currentRouteBase!)
+  }
 }
 
 renderWithQiankun({
@@ -71,6 +73,8 @@ renderWithQiankun({
   },
   unmount() {
     aiLog.lifecycle('unmount')
+    disposeRouteSync?.()
+    disposeRouteSync = null
     if (app) {
       app.unmount()
       app = null

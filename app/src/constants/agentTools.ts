@@ -1,9 +1,6 @@
 /**
- * Agent 工作流工具节点 — 内置工具注册表
- *
- * **权威工具清单在服务端插件中心**（`server/config/ai-plugins*.json`）。
- * 本文件仅提供：参数 argsHint 示例、旧工作流图兼容、Registry 未加载时的回退。
- * 设计器 Palette / ToolNodePanel 优先使用 `usePluginRegistry()`。
+ * Agent 工作流工具节点 — Registry 未加载时的 argsHint / category 回退。
+ * 中文 label 权威来源：`server/config/plugins/tools/*.json` + `getToolDisplayLabel`。
  */
 
 import {
@@ -33,7 +30,6 @@ import {
   RAG_INDEX,
   normalizeToolName,
   getToolDisplayLabel,
-  LEGACY_TOOL_ALIASES,
 } from '@schema-platform/ai-shared/toolNames'
 
 export type ToolCategory =
@@ -64,192 +60,51 @@ export const TOOL_CATEGORY_LABELS: Record<ToolCategory, string> = {
   workflow: '工作流专用',
 }
 
+function builtinTool(
+  name: string,
+  category: ToolCategory,
+  description: string,
+  argsHint: string,
+): BuiltInToolDef {
+  return {
+    name,
+    label: getToolDisplayLabel(name),
+    description,
+    argsHint,
+    category,
+  }
+}
+
 /**
- * 内置工具清单（MCP 权威名 + LangGraph 专有 + 工作流专用）。
+ * Registry 未加载时的回退清单（label 来自 ai-shared TOOL_DISPLAY_LABELS）。
  */
 export const BUILT_IN_TOOLS: BuiltInToolDef[] = [
   // ── MCP Schema ──
-  {
-    name: SCHEMA_SEARCH,
-    label: getToolDisplayLabel(SCHEMA_SEARCH),
-    description: '按关键词搜索平台 Schema 实例',
-    argsHint: '{"keyword":"表单","limit":5}',
-    category: 'mcp-schema',
-  },
-  {
-    name: SCHEMA_SEARCH_PUBLISHED,
-    label: getToolDisplayLabel(SCHEMA_SEARCH_PUBLISHED),
-    description: '搜索已发布的 Schema',
-    argsHint: '{"keyword":"表单","limit":5}',
-    category: 'mcp-schema',
-  },
-  {
-    name: SCHEMA_GET_DETAIL,
-    label: getToolDisplayLabel(SCHEMA_GET_DETAIL),
-    description: '获取指定 Schema 的详细内容',
-    argsHint: '{"schemaId":"<id>"}',
-    category: 'mcp-schema',
-  },
-  {
-    name: SCHEMA_FUZZY_SEARCH,
-    label: getToolDisplayLabel(SCHEMA_FUZZY_SEARCH),
-    description: '基于关键词模糊搜索已有 Schema（Jaccard 相似度）',
-    argsHint: '{"query":"请假申请","limit":5}',
-    category: 'mcp-schema',
-  },
-  {
-    name: SCHEMA_VALIDATE,
-    label: getToolDisplayLabel(SCHEMA_VALIDATE),
-    description: '验证 Schema 文档结构',
-    argsHint: '{"schema":{}}',
-    category: 'mcp-schema',
-  },
-  {
-    name: SCHEMA_VALIDATE_WIDGETS,
-    label: getToolDisplayLabel(SCHEMA_VALIDATE_WIDGETS),
-    description: '校验 Schema 组件配置是否合法',
-    argsHint: '{"widgets":[]}',
-    category: 'mcp-schema',
-  },
-  {
-    name: SCHEMA_FIND_FLOW_REFERENCES,
-    label: getToolDisplayLabel(SCHEMA_FIND_FLOW_REFERENCES),
-    description: '查找引用了指定 Schema 的所有流程节点',
-    argsHint: '{"schemaId":"<id>"}',
-    category: 'mcp-schema',
-  },
-  // ── MCP Flow ──
-  {
-    name: FLOW_SEARCH,
-    label: getToolDisplayLabel(FLOW_SEARCH),
-    description: '按关键词搜索 BPMN 流程',
-    argsHint: '{"keyword":"审批","limit":5}',
-    category: 'mcp-flow',
-  },
-  {
-    name: FLOW_GET_DETAIL,
-    label: getToolDisplayLabel(FLOW_GET_DETAIL),
-    description: '获取指定流程的详细内容',
-    argsHint: '{"flowId":"<id>"}',
-    category: 'mcp-flow',
-  },
-  {
-    name: FLOW_VALIDATE,
-    label: getToolDisplayLabel(FLOW_VALIDATE),
-    description: '校验流程定义是否合法',
-    argsHint: '{"flow":{"nodes":[],"edges":[]}}',
-    category: 'mcp-flow',
-  },
-  {
-    name: FLOW_SEARCH_USERS,
-    label: getToolDisplayLabel(FLOW_SEARCH_USERS),
-    description: '搜索用户列表，用于设置审批指派人',
-    argsHint: '{"keyword":"张三","limit":20}',
-    category: 'mcp-flow',
-  },
-  {
-    name: FLOW_GET_NODE_SCHEMA,
-    label: getToolDisplayLabel(FLOW_GET_NODE_SCHEMA),
-    description: '获取流程节点绑定的表单 Schema',
-    argsHint: '{"flowId":"<id>","nodeId":"<nodeId>"}',
-    category: 'mcp-flow',
-  },
-  // ── MCP Widget ──
-  {
-    name: WIDGET_QUERY,
-    label: getToolDisplayLabel(WIDGET_QUERY),
-    description: '查询可用组件库，可按分类筛选',
-    argsHint: '{"category":"form"}',
-    category: 'mcp-widget',
-  },
-  {
-    name: WIDGET_VALIDATE,
-    label: getToolDisplayLabel(WIDGET_VALIDATE),
-    description: '校验 Widget Schema JSON 结构',
-    argsHint: '{"widgets":[]}',
-    category: 'mcp-widget',
-  },
-  // ── MCP RAG ──
-  {
-    name: RAG_SEARCH,
-    label: getToolDisplayLabel(RAG_SEARCH),
-    description: '在知识库中语义检索相关 Schema',
-    argsHint: '{"query":"{{$input.message}}","limit":5}',
-    category: 'mcp-rag',
-  },
-  // ── MCP Industry ──
-  {
-    name: INDUSTRY_SEARCH_TEMPLATES,
-    label: getToolDisplayLabel(INDUSTRY_SEARCH_TEMPLATES),
-    description: '搜索行业专属模板（医疗/金融/教育）',
-    argsHint: '{"keyword":"病历","industry":"medical","type":"form"}',
-    category: 'mcp-industry',
-  },
-  {
-    name: INDUSTRY_VALIDATE_FORM,
-    label: getToolDisplayLabel(INDUSTRY_VALIDATE_FORM),
-    description: '根据行业规范校验表单 Schema',
-    argsHint: '{"widgets":[],"industry":"medical"}',
-    category: 'mcp-industry',
-  },
-  // ── LangGraph 专有（工作流中可调用，写入类工具需 Chat HITL 上下文） ──
-  {
-    name: UPDATE_SCHEMA,
-    label: getToolDisplayLabel(UPDATE_SCHEMA),
-    description: '提交 Schema 修改（Chat 场景需用户确认）',
-    argsHint: '{"widgets":[],"summary":"更新说明"}',
-    category: 'langgraph',
-  },
-  {
-    name: GENERATE_SCHEMA,
-    label: getToolDisplayLabel(GENERATE_SCHEMA),
-    description: '调用 LLM 生成新表单 Schema',
-    argsHint: '{"requirement":"创建一个请假申请表单"}',
-    category: 'langgraph',
-  },
-  {
-    name: UPDATE_FLOW,
-    label: getToolDisplayLabel(UPDATE_FLOW),
-    description: '提交流程修改（Chat 场景需用户确认）',
-    argsHint: '{"flow":{"nodes":[],"edges":[]},"summary":"更新说明"}',
-    category: 'langgraph',
-  },
-  {
-    name: SAVE_AND_BIND_SCHEMA,
-    label: getToolDisplayLabel(SAVE_AND_BIND_SCHEMA),
-    description: '保存表单并绑定到流程节点',
-    argsHint: '{"flowId":"<id>","nodeId":"<nodeId>","widgets":[]}',
-    category: 'langgraph',
-  },
-  {
-    name: BIND_SCHEMA_TO_FLOW_NODE,
-    label: getToolDisplayLabel(BIND_SCHEMA_TO_FLOW_NODE),
-    description: '将已有 Schema 绑定到流程节点',
-    argsHint: '{"flowId":"<id>","nodeId":"<nodeId>","schemaId":"<id>"}',
-    category: 'langgraph',
-  },
-  {
-    name: REQUEST_COLLABORATION,
-    label: getToolDisplayLabel(REQUEST_COLLABORATION),
-    description: '请求其他 Agent 专家协作（Chat 图路由）',
-    argsHint: '{"targetAgent":"editor","reason":"需要生成表单"}',
-    category: 'langgraph',
-  },
-  {
-    name: RAG_INDEX,
-    label: getToolDisplayLabel(RAG_INDEX),
-    description: '写入 RAG 向量索引（管理类操作）',
-    argsHint: '{"schemaId":"<id>"}',
-    category: 'langgraph',
-  },
-  // ── 工作流专用 ──
-  {
-    name: 'http_request',
-    label: 'HTTP 请求',
-    description: '发起自定义 HTTP 请求（工作流专用，非 MCP）',
-    argsHint: '{"method":"GET","url":"https://api.example.com","headers":{}}',
-    category: 'workflow',
-  },
+  builtinTool(SCHEMA_SEARCH, 'mcp-schema', '按关键词搜索平台 Schema 实例', '{"keyword":"表单","limit":5}'),
+  builtinTool(SCHEMA_SEARCH_PUBLISHED, 'mcp-schema', '搜索已发布的 Schema', '{"keyword":"表单","limit":5}'),
+  builtinTool(SCHEMA_GET_DETAIL, 'mcp-schema', '获取指定 Schema 的详细内容', '{"schemaId":"<id>"}'),
+  builtinTool(SCHEMA_FUZZY_SEARCH, 'mcp-schema', '基于关键词模糊搜索已有 Schema（Jaccard 相似度）', '{"query":"请假申请","limit":5}'),
+  builtinTool(SCHEMA_VALIDATE, 'mcp-schema', '验证 Schema 文档结构', '{"schema":{}}'),
+  builtinTool(SCHEMA_VALIDATE_WIDGETS, 'mcp-schema', '校验 Schema 组件配置是否合法', '{"widgets":[]}'),
+  builtinTool(SCHEMA_FIND_FLOW_REFERENCES, 'mcp-schema', '查找引用了指定 Schema 的所有流程节点', '{"schemaId":"<id>"}'),
+  builtinTool(FLOW_SEARCH, 'mcp-flow', '按关键词搜索 BPMN 流程', '{"keyword":"审批","limit":5}'),
+  builtinTool(FLOW_GET_DETAIL, 'mcp-flow', '获取指定流程的详细内容', '{"flowId":"<id>"}'),
+  builtinTool(FLOW_VALIDATE, 'mcp-flow', '校验流程定义是否合法', '{"flow":{"nodes":[],"edges":[]}}'),
+  builtinTool(FLOW_SEARCH_USERS, 'mcp-flow', '搜索用户列表，用于设置审批指派人', '{"keyword":"张三","limit":20}'),
+  builtinTool(FLOW_GET_NODE_SCHEMA, 'mcp-flow', '获取流程节点绑定的表单 Schema', '{"flowId":"<id>","nodeId":"<nodeId>"}'),
+  builtinTool(WIDGET_QUERY, 'mcp-widget', '查询可用组件库，可按分类筛选', '{"category":"form"}'),
+  builtinTool(WIDGET_VALIDATE, 'mcp-widget', '校验 Widget Schema JSON 结构', '{"widgets":[]}'),
+  builtinTool(RAG_SEARCH, 'mcp-rag', '在知识库中语义检索相关 Schema', '{"query":"{{$input.message}}","limit":5}'),
+  builtinTool(INDUSTRY_SEARCH_TEMPLATES, 'mcp-industry', '搜索行业专属模板（医疗/金融/教育）', '{"keyword":"病历","industry":"medical","type":"form"}'),
+  builtinTool(INDUSTRY_VALIDATE_FORM, 'mcp-industry', '根据行业规范校验表单 Schema', '{"widgets":[],"industry":"medical"}'),
+  builtinTool(UPDATE_SCHEMA, 'langgraph', '提交 Schema 修改（Chat 场景需用户确认）', '{"widgets":[],"summary":"更新说明"}'),
+  builtinTool(GENERATE_SCHEMA, 'langgraph', '调用 LLM 生成新表单 Schema', '{"requirement":"创建一个请假申请表单"}'),
+  builtinTool(UPDATE_FLOW, 'langgraph', '提交流程修改（Chat 场景需用户确认）', '{"flow":{"nodes":[],"edges":[]},"summary":"更新说明"}'),
+  builtinTool(SAVE_AND_BIND_SCHEMA, 'langgraph', '保存表单并绑定到流程节点', '{"flowId":"<id>","nodeId":"<nodeId>","widgets":[]}'),
+  builtinTool(BIND_SCHEMA_TO_FLOW_NODE, 'langgraph', '将已有 Schema 绑定到流程节点', '{"flowId":"<id>","nodeId":"<nodeId>","schemaId":"<id>"}'),
+  builtinTool(REQUEST_COLLABORATION, 'langgraph', '请求其他 Agent 专家协作（Chat 图路由）', '{"targetAgent":"editor","reason":"需要生成表单"}'),
+  builtinTool(RAG_INDEX, 'langgraph', '写入 RAG 向量索引（管理类操作）', '{"schemaId":"<id>"}'),
+  builtinTool('http_request', 'workflow', '发起自定义 HTTP 请求（工作流专用，非 MCP）', '{"method":"GET","url":"https://api.example.com","headers":{}}'),
 ]
 
 const TOOL_CATEGORY_ORDER: ToolCategory[] = [
@@ -285,6 +140,3 @@ export function getBuiltInTool(name: string): BuiltInToolDef | undefined {
 }
 
 export const BUILT_IN_TOOL_NAMES = BUILT_IN_TOOLS.map((t) => t.name)
-
-/** 旧工具名映射，供工作流迁移提示 */
-export { LEGACY_TOOL_ALIASES, normalizeToolName }

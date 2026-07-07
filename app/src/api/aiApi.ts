@@ -1,14 +1,14 @@
 /**
  * AI API 客户端
  *
- * - 流式对话（fetch + ReadableStream）
  * - 对话管理 CRUD
  * - 发布接口
+ * - 文件上传等 REST 能力
+ *
+ * Chat 流式对话走 WebSocket（stream store → chat:send / chat:event），不在此模块。
  */
 
 import type {
-  ChatRequest,
-  StreamEvent,
   PublishRequest,
   PublishResponse,
   Conversation,
@@ -90,133 +90,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body.data
 }
 
-// ---- 流式对话 ----
-
-/**
- * 发送对话消息，返回可订阅的流式事件。
- *
- * 使用 fetch + ReadableStream 实现，支持流式文本和结构化事件。
- * 支持通过 AbortSignal 取消请求。
- *
- * 流式解析要点：
- * - 行分隔符为 `\n`，事件分隔符为 `\n\n`
- * - `data:` 和 `data: ` 均为合法格式（空格可选）
- * - 以 `:` 开头的行为注释（如心跳），跳过
- * - 流结束时必须刷新 TextDecoder 和 buffer，否则末尾事件丢失
- */
-export function chat(request: ChatRequest, signal?: AbortSignal): ReadableStream<StreamEvent> {
-  const body = JSON.stringify(request)
-
-  const stream = new ReadableStream<StreamEvent>({
-    async start(controller) {
-      const response = await fetch(`${BASE_URL}/ai/chat`, {
-        method: 'POST',
-        headers: buildHeaders({ 'Content-Type': 'application/json' }),
-        body,
-        signal,
-      })
-
-      if (!response.ok) {
-        controller.error(new AiApiError(`Chat request failed: ${response.status}`, response.status))
-        return
-      }
-
-      const reader = response.body?.getReader()
-      if (!reader) {
-        controller.error(new AiApiError('Response body is null', 0))
-        return
-      }
-
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let streamClosed = false
-
-      /** Extract data value from a stream line. Returns null if not a data line. */
-      function extractData(line: string): string | null {
-        if (line.startsWith('data: ')) return line.slice(6)
-        if (line.startsWith('data:')) return line.slice(5)
-        return null
-      }
-
-      /** Parse stream data value: enqueue as event or close on [DONE]. */
-      function handleData(data: string): void {
-        if (data === '[DONE]') {
-          controller.close()
-          streamClosed = true
-          return
-        }
-        try {
-          const event = JSON.parse(data) as StreamEvent
-          controller.enqueue(event)
-        } catch {
-          // Skip unparseable JSON
-        }
-      }
-
-      /** Process all complete lines in buffer. Returns remaining incomplete line. */
-      function processBuffer(buf: string): string {
-        const lines = buf.split('\n')
-        const remainder = lines.pop() ?? ''
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed || trimmed.startsWith(':')) continue
-          const data = extractData(trimmed)
-          if (data === null) continue
-          handleData(data)
-          if (streamClosed) return ''
-        }
-        return remainder
-      }
-
-      try {
-        while (true) {
-          if (signal?.aborted) {
-            reader.cancel()
-            if (!streamClosed) controller.close()
-            return
-          }
-
-          const { done, value } = await reader.read()
-
-          if (value) {
-            buffer += decoder.decode(value, { stream: true })
-          }
-
-          if (done) {
-            // Flush TextDecoder internal buffer (partial multi-byte characters).
-            // Must happen BEFORE parsing — otherwise incomplete multi-byte
-            // sequences produce replacement chars that break JSON parsing.
-            buffer += decoder.decode()
-
-            // Process all remaining lines. The trailing line (no \n) is also
-            // a complete stream line — the stream has ended so there is nothing
-            // more to wait for.
-            for (const line of buffer.split('\n')) {
-              const trimmed = line.trim()
-              if (!trimmed || trimmed.startsWith(':')) continue
-              const data = extractData(trimmed)
-              if (data === null) continue
-              handleData(data)
-              if (streamClosed) return
-            }
-
-            if (!streamClosed) controller.close()
-            return
-          }
-
-          // Stream not done — process complete lines, keep remainder
-          buffer = processBuffer(buffer)
-          if (streamClosed) return
-        }
-      } catch (err) {
-        controller.error(err)
-      }
-    },
-  })
-
-  return stream
-}
-
 // ---- 对话管理 ----
 
 export async function getConversations(): Promise<Conversation[]> {
@@ -242,116 +115,6 @@ export async function publish(payload: PublishRequest): Promise<PublishResponse>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
-}
-
-// ---- HITL Interrupt Resume ----
-
-/**
- * 恢复被 interrupt 挂起的对话。返回流式响应。
- */
-export function resumeInterrupt(
-  threadId: string,
-  confirmed: boolean,
-  signal?: AbortSignal,
-): ReadableStream<StreamEvent> {
-  const body = JSON.stringify({ threadId, confirmed })
-
-  const stream = new ReadableStream<StreamEvent>({
-    async start(controller) {
-      const response = await fetch(`${BASE_URL}/ai/chat/resume`, {
-        method: 'POST',
-        headers: buildHeaders({ 'Content-Type': 'application/json' }),
-        body,
-        signal,
-      })
-
-      if (!response.ok) {
-        controller.error(new AiApiError(`Resume request failed: ${response.status}`, response.status))
-        return
-      }
-
-      const reader = response.body?.getReader()
-      if (!reader) {
-        controller.error(new AiApiError('Response body is null', 0))
-        return
-      }
-
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let streamClosed = false
-
-      function extractData(line: string): string | null {
-        if (line.startsWith('data: ')) return line.slice(6)
-        if (line.startsWith('data:')) return line.slice(5)
-        return null
-      }
-
-      function handleData(data: string): void {
-        if (data === '[DONE]') {
-          controller.close()
-          streamClosed = true
-          return
-        }
-        try {
-          const event = JSON.parse(data) as StreamEvent
-          controller.enqueue(event)
-        } catch {
-          // Skip unparseable JSON
-        }
-      }
-
-      function processBuffer(buf: string): string {
-        const lines = buf.split('\n')
-        const remainder = lines.pop() ?? ''
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed || trimmed.startsWith(':')) continue
-          const data = extractData(trimmed)
-          if (data === null) continue
-          handleData(data)
-          if (streamClosed) return ''
-        }
-        return remainder
-      }
-
-      try {
-        while (true) {
-          if (signal?.aborted) {
-            reader.cancel()
-            if (!streamClosed) controller.close()
-            return
-          }
-
-          const { done, value } = await reader.read()
-
-          if (value) {
-            buffer += decoder.decode(value, { stream: true })
-          }
-
-          if (done) {
-            buffer += decoder.decode()
-            for (const line of buffer.split('\n')) {
-              const trimmed = line.trim()
-              if (!trimmed || trimmed.startsWith(':')) continue
-              const data = extractData(trimmed)
-              if (data === null) continue
-              handleData(data)
-              if (streamClosed) return
-            }
-            if (!streamClosed) controller.close()
-            return
-          }
-
-          buffer = processBuffer(buffer)
-          if (streamClosed) return
-        }
-      } catch (err) {
-        controller.error(err)
-      }
-    },
-  })
-
-  return stream
 }
 
 // ---- 文件上传 ----

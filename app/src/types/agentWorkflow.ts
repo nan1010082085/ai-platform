@@ -4,7 +4,6 @@
  */
 
 export type {
-  ToolNodeType,
   ExpertNodeType,
   AgentHitlConfirmQuestion,
   AgentNodeType,
@@ -17,6 +16,7 @@ export type {
   AgentWorkflowGraph,
   AgentWorkflowSummary,
   AgentWorkflowDetail,
+  AgentWorkflowPublishResult,
   AgentWorkflowVersionEntry,
   AgentWorkflowVersionDetail,
   AgentNodeRecord,

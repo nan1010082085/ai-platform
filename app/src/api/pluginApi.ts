@@ -3,9 +3,9 @@
  */
 
 import type { AiApiError } from './aiApi'
+import { resolveAuthToken } from '@schema-platform/platform-shared/utils/authSession'
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) ?? '/schema-platform/api'
-const ACCESS_TOKEN_KEY = 'sfp_access_token'
 
 export interface PluginExpertSummary {
   id: string
@@ -31,6 +31,8 @@ export interface PluginSkillSummary {
 export interface PluginToolSummary {
   name: string
   kind: string
+  label?: string
+  category?: string
   description?: string
   source?: string
   argsHint?: string
@@ -51,7 +53,7 @@ export interface PluginRegistrySnapshot {
 }
 
 function resolveToken(): string | null {
-  return localStorage.getItem(ACCESS_TOKEN_KEY)
+  return resolveAuthToken()
 }
 
 export async function fetchPluginRegistry(): Promise<PluginRegistrySnapshot> {

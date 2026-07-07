@@ -2,9 +2,9 @@
 
 > n8n 风格可视化 DAG 工作流：设计、发布、执行、监控
 
-**与 Chat LangGraph 的区别**：Chat 是对话式单次请求的多 Agent 协作；Workflow 是可复用的自动化编排，支持 Webhook、多轮对话、文档管道等场景。两者共享 MCP 工具注册表、**插件中心**（`server/config/ai-plugins*.json`）与 ai-shared 类型。详见 [plugin-registry.md](./plugin-registry.md)。
+**与 Chat LangGraph 的区别**：Chat 是对话式单次请求的多 Agent 协作；Workflow 是可复用的自动化编排，支持 Webhook、多轮对话、文档管道等场景。两者共享 MCP 工具注册表、**插件中心**（`server/config/plugins/`）与 ai-shared 类型。详见 [plugin.md](./plugin.md)。
 
-**Chat 选工作流时**：助手消息展示节点时间线（`WorkflowExecutionTimeline`）+ LLM 流式正文（`streamingOutput` 轮询）。
+**Chat 选工作流时**：助手消息展示节点时间线 + LLM 流式正文（`workflow:event` WebSocket 推送）。术语见 [product/workflow-terminology.md](./product/workflow-terminology.md)。
 
 ---
 
@@ -119,35 +119,24 @@ HTTP 外部触发，发布时自动生成 `webhookSecret`。
 | `contentSource` | `input` 或 `lastOutput` |
 | `maxHistoryTurns` | 历史截断上限 |
 
-### 2.3 专家 Agent 节点
+### 2.3 专家节点
 
-将 Chat 中的专家 Agent 封装为工作流节点，最多 3 轮工具调用。
+与 Chat 共用 Registry + `runRegisteredExpert`（Workflow 执行器）/ `pluginExpert`（Chat 图）。
 
-| 节点类型 | agentType | 职责 |
-|----------|-----------|------|
-| `agent-intent` | `auto` | LLM/关键词意图识别 → 分发 |
-| `agent-editor` | `editor` | 表单 Schema 生成/校验 |
-| `agent-flow` | `flow` | BPMN 流程生成/校验 |
-| `agent-page` | `page` | 页面布局生成 |
-| `agent-general` | `general` | 通用推理 + RAG |
-| `agent`（遗留） | `agentType` 字段 | 通用专家选择器 |
+| 节点类型 | 配置 | 职责 |
+|----------|------|------|
+| `agent-intent` | — | 意图识别 → 自动选择专家并执行 |
+| `expert` | `expertId` | 插件中心注册专家（Palette 拖拽即带 id） |
 
-System Prompt 来源与 Chat 一致：`@schema-platform/ai-shared/promptBuilder`。
+内置四专家（`platform.editor` / `platform.flow` / `platform.page` / `platform.general`）通过插件 JSON 配置，不再使用 `agent-editor` 等独立节点类型。
 
 ### 2.4 工具节点
 
-| 节点类型 | 类别 | 说明 |
+| 节点类型 | 配置 | 说明 |
 |----------|------|------|
-| `tool-mcp-schema` | MCP Schema | `schema__*` 工具 |
-| `tool-mcp-flow` | MCP Flow | `flow__*` 工具 |
-| `tool-mcp-widget` | MCP Widget | `widget__*` 工具 |
-| `tool-mcp-rag` | MCP RAG | `rag__search` 等 |
-| `tool-mcp-industry` | MCP Industry | `industry__*` 工具 |
-| `tool-langgraph` | LangGraph 专有 | `update_schema`、`generate_schema` 等 |
-| `tool-http` | 工作流内置 | `http_request`（非 MCP） |
-| `tool`（遗留） | `toolCategory` 字段 | 通用工具选择器 |
+| `tool` | `toolName` | Registry 工具名（MCP `schema__search` 或 LangGraph 专有 `update_schema` 等） |
 
-工具名权威定义见 `ai/shared/toolNames.ts`。前端工具目录：`ai/app/src/constants/agentTools.ts`。
+工具名权威定义见 `ai/shared/toolNames.ts`。Palette 工具列表来自插件 Registry。
 
 ### 2.5 逻辑控制节点
 
@@ -338,7 +327,7 @@ JavaScript 表达式分支。连线 `data.branch` 为 `'true'` 或 `'false'`。
 |------|------|
 | `agentWorkflowDesigner.ts` | 图状态、dirty、entryNodeId、执行高亮 |
 | `useAgentNodePropertyPanel.ts` | 节点类型 → 属性面板组件映射 |
-| `useWorkflowChatExecution.ts` | Chat 中 execute/continue/resume + 轮询 |
+| `useWorkflowChatExecution.ts` | Chat 中 execute/continue/resume + WebSocket 进度 |
 | `usePublishedAgentWorkflows.ts` | 加载已发布工作流供 Chat 选择 |
 | `constants/agentNodes.ts` | 面板项、分类、默认 data |
 | `constants/expertNodeTypes.ts` | 专家节点元数据 |
@@ -361,8 +350,8 @@ JavaScript 表达式分支。连线 `data.branch` 为 `'true'` 或 `'false'`。
 
 ```
 用户消息 → useWorkflowChatExecution
-  → POST /workflows/:id/execute 或 /continue
-  → 轮询 /workflow-executions/:id
+  → POST /workflows/:id/execute（trigger: chat）或 /continue / resume
+  → workflow:subscribe → workflow:event 实时进度
   → workflowChatResponse 解析最终输出
 ```
 

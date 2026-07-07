@@ -39,6 +39,7 @@ import { message } from '@schema-platform/platform-shared/utils/message'
 import { isWorkflowHitlApprovalMessage, extractWorkflowStreamingText } from '@/utils/workflowChatResponse'
 import { buildWorkflowMessageExecution } from '@/utils/workflowMessageExecution'
 import { runWorkflowChatTurn } from '@/composables/useWorkflowChatExecution'
+import { connect, isConnected } from '@schema-platform/platform-shared/socket'
 import { cancelExecution } from '@/api/agentWorkflowApi'
 
 import { useConversationStore } from './conversation'
@@ -483,6 +484,7 @@ export const useAiStore = defineStore('ai', () => {
     if (!workflowId) return
 
     workflowPollAborted = false
+    if (!isConnected()) connect()
     streamStore.loading = true
     streamStore.error = null
 
@@ -1024,8 +1026,6 @@ export const useAiStore = defineStore('ai', () => {
     versionHistory: computed(() => schemaStore.versionHistory),
     currentVersionIndex: computed(() => schemaStore.currentVersionIndex),
     streamStatus: computed(() => streamStore.streamStatus),
-    /** @deprecated 使用 streamStatus 替代 */
-    sseStatus: computed(() => streamStore.streamStatus),
     retryCount: computed(() => streamStore.retryCount),
     llmProviders: computed(() => llmStore.llmProviders),
     llmDefaultProvider: computed(() => llmStore.llmDefaultProvider),

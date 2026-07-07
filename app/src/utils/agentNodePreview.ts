@@ -1,12 +1,6 @@
 import type { AgentNodeRecord, AgentNodeType, AgentWorkflowNodeData } from '@/types/agentWorkflow'
 import { getToolDisplayLabel } from '@schema-platform/ai-shared/toolNames'
 import { getToolNodeCategoryLabel } from '@/constants/toolNodeTypes'
-import {
-  EXPERT_AGENT_LABELS,
-  getExpertAgentTypeForNode,
-  getExpertNodeTypeLabel,
-  isIntentExpertNode,
-} from '@/constants/expertNodeTypes'
 
 export type PreviewTone = 'default' | 'muted' | 'primary' | 'success' | 'warning' | 'danger'
 
@@ -20,14 +14,6 @@ export interface AgentNodePreviewRow {
 export interface AgentNodePreviewSections {
   config: AgentNodePreviewRow[]
   runtime: AgentNodePreviewRow[]
-}
-
-const AGENT_TYPE_LABELS: Record<string, string> = {
-  auto: '自动识别',
-  general: 'General 通用',
-  editor: 'Editor 表单',
-  flow: 'Flow 流程',
-  page: 'Page 页面',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -206,34 +192,30 @@ export function getAgentNodePreviewSections(
       }
       config.push({ key: 'call', label: '调用', value: 'LLM 推理', tone: 'primary' })
       break
-    case 'agent':
     case 'agent-intent':
-    case 'agent-editor':
-    case 'agent-flow':
-    case 'agent-page':
-    case 'agent-general': {
-      if (isIntentExpertNode(nodeType)) {
+      config.push({
+        key: 'call',
+        label: '调用',
+        value: '意图识别 → 自动路由',
+        tone: 'primary',
+      })
+      if (data.prompt?.trim()) {
         config.push({
-          key: 'call',
-          label: '调用',
-          value: '意图识别 → 自动路由',
-          tone: 'primary',
-        })
-      } else {
-        const kind = getExpertAgentTypeForNode(nodeType, data)
-        config.push({
-          key: 'call',
-          label: '调用',
-          value: kind && kind !== 'auto'
-            ? EXPERT_AGENT_LABELS[kind]
-            : AGENT_TYPE_LABELS[data.agentType ?? 'general'] ?? 'general',
-          tone: 'primary',
+          key: 'prompt',
+          label: '指令',
+          value: formatPreviewValue(data.prompt),
+          tone: 'default',
         })
       }
-      const expertLabel = getExpertNodeTypeLabel(nodeType)
-      if (expertLabel) {
-        config.push({ key: 'expert', label: '节点', value: expertLabel, tone: 'muted' })
-      }
+      break
+    case 'expert': {
+      const expertId = data.expertId?.trim()
+      config.push({
+        key: 'call',
+        label: '调用',
+        value: expertId ? `专家 ${expertId}` : '未选择专家',
+        tone: expertId ? 'primary' : 'warning',
+      })
       if (data.prompt?.trim()) {
         config.push({
           key: 'prompt',
@@ -244,14 +226,7 @@ export function getAgentNodePreviewSections(
       }
       break
     }
-    case 'tool':
-    case 'tool-mcp-schema':
-    case 'tool-mcp-flow':
-    case 'tool-mcp-widget':
-    case 'tool-mcp-rag':
-    case 'tool-mcp-industry':
-    case 'tool-langgraph':
-    case 'tool-http': {
+    case 'tool': {
       const categoryLabel = getToolNodeCategoryLabel(nodeType, data)
       if (categoryLabel) {
         config.push({

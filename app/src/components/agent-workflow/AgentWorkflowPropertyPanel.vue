@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { computed, ref } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import { useAgentWorkflowDesignerStore } from '@/stores/agentWorkflowDesigner'
 import { useAgentNodePropertyPanel } from '@/composables/useAgentNodePropertyPanel'
 import { getAgentNodePreviewSections } from '@/utils/agentNodePreview'
 import type { AgentNodeRecord, AgentWorkflowNodeData } from '@/types/agentWorkflow'
+import * as api from '@/api/agentWorkflowApi'
 import SectionToggle from './property-panel/SectionToggle.vue'
 import FieldRow from './property-panel/FieldRow.vue'
 import TruncatedTooltipText from './property-panel/TruncatedTooltipText.vue'
+import InvocationMethodsPanel from './property-panel/panels/InvocationMethodsPanel.vue'
 import styles from './AgentWorkflowPropertyPanel.module.scss'
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) ?? '/schema-platform/api'
 const store = useAgentWorkflowDesignerStore()
+const rotatingKey = ref(false)
 const { getPanelComponent, getNodeTypeLabel } = useAgentNodePropertyPanel()
 
 const selectedNode = computed(() =>
@@ -78,6 +82,39 @@ function selectEdge(edgeId: string) {
 function deleteSelectedEdge() {
   if (!store.selectedEdgeId) return
   store.removeEdge(store.selectedEdgeId)
+}
+
+const invokeUrl = computed(() => {
+  if (!store.invokePath) return ''
+  const base = API_BASE.replace(/\/+$/, '')
+  return `${base}${store.invokePath}`
+})
+
+const displayInvokeKey = computed(() => store.invokeKeyPlain || store.invokeKeyMasked || '')
+
+function copyText(text: string, label: string) {
+  if (!text) return
+  navigator.clipboard.writeText(text)
+  ElMessage.success(`已复制${label}`)
+}
+
+async function rotateInvokeKey() {
+  if (!store.workflowId) return
+  try {
+    await ElMessageBox.confirm('轮换后旧密钥立即失效，外部集成需同步更新。', '轮换调用密钥')
+    rotatingKey.value = true
+    const res = await api.rotateWorkflowInvokeKey(store.workflowId)
+    store.invokeKeyPlain = res.invokeKey
+    store.invokeKeyMasked = res.invokeKeyMasked
+    if (res.invokePath) store.invokePath = res.invokePath
+    ElMessage.success('已生成新调用密钥')
+  } catch (e) {
+    if (e !== 'cancel' && e !== 'close') {
+      ElMessage.error(e instanceof Error ? e.message : '轮换失败')
+    }
+  } finally {
+    rotatingKey.value = false
+  }
 }
 </script>
 
@@ -272,6 +309,34 @@ function deleteSelectedEdge() {
             />
           </FieldRow>
         </SectionToggle>
+        <SectionToggle v-if="store.invokePath" title="统一调用入口" :default-open="true">
+          <p :class="styles.emptyHint">
+            已发布工作流对外调用：<code>POST</code> 入口 URL + 请求头 <code>X-Workflow-Key</code>
+          </p>
+          <FieldRow label="调用 URL">
+            <div :class="styles.copyRow">
+              <el-input :model-value="invokeUrl" size="small" readonly />
+              <AppIcon name="document-copy" :class="styles.copyIdIcon" @click="copyText(invokeUrl, '调用 URL')" />
+            </div>
+          </FieldRow>
+          <FieldRow label="Workflow Key">
+            <div :class="styles.copyRow">
+              <el-input :model-value="displayInvokeKey" size="small" readonly type="password" show-password />
+              <AppIcon
+                v-if="displayInvokeKey"
+                name="document-copy"
+                :class="styles.copyIdIcon"
+                @click="copyText(store.invokeKeyPlain || displayInvokeKey, 'Workflow Key')"
+              />
+            </div>
+          </FieldRow>
+          <div :class="styles.deleteRow">
+            <el-button size="small" :loading="rotatingKey" @click="rotateInvokeKey">
+              轮换密钥
+            </el-button>
+          </div>
+        </SectionToggle>
+        <InvocationMethodsPanel />
         <p :class="styles.emptyHint">选择节点或连线以编辑详细配置</p>
       </el-scrollbar>
     </div>

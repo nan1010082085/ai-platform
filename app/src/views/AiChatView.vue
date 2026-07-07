@@ -14,7 +14,7 @@ import type { AgentType, ChatSettings, MentionReference, RagSearchResult } from 
 import { storeToRefs } from 'pinia'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import { Plus, Clock } from '@element-plus/icons-vue'
-import { connect as connectSocket, isConnected } from '@schema-platform/platform-shared/socket'
+import { connect as connectSocket, isConnected, onConnectionChange } from '@schema-platform/platform-shared/socket'
 import AiChatPanel from '@/components/AiChatPanel.vue'
 import AiChatSettings from '@/components/AiChatSettings.vue'
 import ConversationDrawer from '@/components/ConversationDrawer.vue'
@@ -28,12 +28,12 @@ const { messages, loading, currentSchema, currentFlow, activeAgent, conversation
 
 // ---- WebSocket 连接状态 ----
 const wsConnected = ref(isConnected())
-let statusTimer: ReturnType<typeof setInterval> | null = null
+let unsubscribeConnection: (() => void) | null = null
 
 function startStatusCheck(): void {
-  statusTimer = setInterval(() => {
-    wsConnected.value = isConnected()
-  }, 1000)
+  unsubscribeConnection = onConnectionChange((next) => {
+    wsConnected.value = next
+  })
 }
 
 // ---- 防止发布按钮重复调用 ----
@@ -232,10 +232,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (statusTimer) {
-    clearInterval(statusTimer)
-    statusTimer = null
-  }
+  unsubscribeConnection?.()
+  unsubscribeConnection = null
 })
 </script>
 

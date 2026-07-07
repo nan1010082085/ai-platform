@@ -78,10 +78,10 @@ flowchart TB
 
 | 维度 | Chat LangGraph | Agent Workflow |
 |------|----------------|----------------|
-| 入口 | `chat:send` / HTTP SSE | `POST .../execute` / Webhook |
+| 入口 | `chat:send`（WebSocket） | `POST .../execute` / Webhook |
 | 编排 | `graph.streamEvents()` | `executeAgentWorkflow()` while 循环 |
 | 状态 | Checkpointer + threadId | `AgentWorkflowExecution.nodeRecords` |
-| 输出 | 流式 `chat:event` | 轮询 GET execution |
+| 输出 | 流式 `chat:event` | `workflow:event` 推送 nodeRecords / streamingOutput |
 | 取消 | `graphAbort.abort()` | execution `cancelled` |
 | HITL | `interrupt` + `chat:resume` | `hitl` 节点 + `POST .../resume` |
 
@@ -114,7 +114,7 @@ sequenceDiagram
   R-->>C: chat:event { type: done }
 ```
 
-**共用核心**：`chatStreamRunner.executeChatStream` 同时服务 WebSocket 与 HTTP SSE，仅 `send` 回调不同。
+**核心**：`chatStreamRunner.executeChatStream` 由 WebSocket `chatStreamHandler` 调用，通过 `send` 回调推送 `chat:event`。
 
 ### 2.2 LangGraph 编译图（运行时节点）
 
@@ -282,8 +282,8 @@ sequenceDiagram
 
   Note over API,Exec: Webhook 同样 202 异步
 
-  loop Client 轮询 1.5s
-    API->>DB: GET execution
+  loop workflow:event（WebSocket）
+    Exec-->>API: push execution 快照
   end
 ```
 
@@ -366,12 +366,14 @@ sequenceDiagram
     Hook->>API: resumeExecution(pendingId, { approved, comment })
   end
   API->>Exec: 异步执行
-  loop poll 1500ms
-    Hook->>API: getExecution(id)
+  Hook->>WS: workflow:subscribe(executionId)
+  loop workflow:event
+    Exec-->>WS: push nodeRecords / streamingOutput
+    WS-->>Hook: execution 快照
+    Hook-->>UI: 时间线 + 流式文本
   end
-  API-->>Hook: status=success|waiting|error
   Hook->>Hook: extractWorkflowChatResponse
-  Hook-->>UI: assistant 消息（非流式）
+  Hook-->>UI: assistant 消息
 ```
 
 ---
@@ -519,7 +521,7 @@ flowchart LR
 | Agent 单轮 tool 上限 | 3 | `graph.ts` afterAgent |
 | Workflow 专家节点 tool 上限 | 3 | agentWorkflowExecutor |
 | LangGraph recursionLimit | 30 | chatStreamRunner |
-| Workflow 轮询间隔 | 1500ms | useWorkflowChatExecution |
+| Chat Workflow 进度 | WebSocket `workflow:event` | useWorkflowExecutionStream |
 | 版本快照上限 | 20 | agentWorkflowService |
 | MCP 工具失败 | 返回 recoverable JSON | mcp/bridge |
 | RAG 无 Embedding | 关键词 Jaccard 回退 | ragService |

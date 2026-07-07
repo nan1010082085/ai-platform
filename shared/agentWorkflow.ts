@@ -2,22 +2,7 @@
  * Agent 工作流编排 — 领域类型（n8n 风格 DAG）
  */
 
-export type ToolNodeType =
-  | 'tool-mcp-schema'
-  | 'tool-mcp-flow'
-  | 'tool-mcp-widget'
-  | 'tool-mcp-rag'
-  | 'tool-mcp-industry'
-  | 'tool-langgraph'
-  | 'tool-http'
-
-export type ExpertNodeType =
-  | 'agent-intent'
-  | 'agent-editor'
-  | 'agent-flow'
-  | 'agent-page'
-  | 'agent-general'
-  | 'expert'
+export type ExpertNodeType = 'agent-intent' | 'expert'
 
 export type AgentNodeType =
   | 'manual-trigger'
@@ -26,10 +11,8 @@ export type AgentNodeType =
   | 'vision-analyze'
   | 'conversation-memory'
   | 'llm'
-  | 'agent'
   | ExpertNodeType
   | 'tool'
-  | ToolNodeType
   | 'if'
   | 'hitl'
   | 'end'
@@ -171,6 +154,18 @@ export interface AgentWorkflowSummary {
 export interface AgentWorkflowDetail extends AgentWorkflowSummary {
   draftGraph: AgentWorkflowGraph
   onCompleteWebhook?: { url: string; secret?: string } | null
+  /** 脱敏后的调用密钥 */
+  invokeKeyMasked?: string | null
+  /** 统一调用路径，如 /api/ai/workflows/invoke/my-slug */
+  invokePath?: string | null
+}
+
+export interface AgentWorkflowPublishResult {
+  publishId: string
+  version: string
+  slug?: string | null
+  /** 完整密钥，仅在发布/轮换时返回一次 */
+  invokeKey?: string | null
 }
 
 export interface AgentWorkflowOpenWebhook {
@@ -493,7 +488,7 @@ export function createIntelligentAssistantWorkflowGraph(): AgentWorkflowGraph {
       },
       {
         id: 'rag-1',
-        type: 'tool-mcp-rag',
+        type: 'tool',
         position: { x: 400, y: 200 },
         data: {
           label: '知识库检索',
@@ -626,10 +621,7 @@ export function validateAgentWorkflowGraph(graph: AgentWorkflowGraph): AgentWork
     if (node.type === 'llm' && !node.data.prompt?.trim()) {
       issues.push({ level: 'warning', nodeId: node.id, message: 'LLM 节点未配置 Prompt' })
     }
-    if (
-      (node.type === 'tool' || node.type.startsWith('tool-'))
-      && !node.data.toolName?.trim()
-    ) {
+    if (node.type === 'tool' && !node.data.toolName?.trim()) {
       issues.push({ level: 'warning', nodeId: node.id, message: '工具节点未选择具体工具' })
     }
     if (node.type === 'expert' && !node.data.expertId?.trim()) {

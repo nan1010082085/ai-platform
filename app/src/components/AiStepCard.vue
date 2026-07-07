@@ -57,17 +57,12 @@ defineEmits<{
 }>()
 
 const SEARCH_TOOL_NAMES = new Set([
-  // MCP 工具名
   'schema__search', 'schema__search_published', 'schema__fuzzy_search',
   'flow__search', 'flow__search_users',
   'widget__query', 'industry__search_templates',
-  // 向后兼容（旧工具名）
-  'search_schemas', 'search_published_schemas', 'fuzzy_search_schemas',
-  'search_flows', 'search_users', 'get_widget_catalogue',
-  'query_widgets', 'search_industry_templates',
 ])
 
-const RAG_TOOL_NAMES = new Set(['rag__search', 'rag_index', 'rag_search'])
+const RAG_TOOL_NAMES = new Set(['rag__search', 'rag_index'])
 
 /** 错误类型到用户友好描述的映射 */
 const ERROR_DESCRIPTION_MAP: Record<string, string> = {

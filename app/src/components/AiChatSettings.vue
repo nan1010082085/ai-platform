@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import type { ChatSettings } from '@/types'
 import { checkAIHealth, type AIHealthResponse } from '@/api/aiApi'
 import { CHAT_MODEL_OPTIONS } from '@/constants/chatModels'
@@ -17,6 +18,8 @@ const emit = defineEmits<{
   'update:visible': [value: boolean]
   'update:settings': [settings: ChatSettings]
 }>()
+
+const router = useRouter()
 
 const localSettings = ref<ChatSettings>(JSON.parse(JSON.stringify(props.settings)))
 const healthData = ref<AIHealthResponse | null>(null)
@@ -114,6 +117,14 @@ function handleSave(): void {
             :show-label="false"
           />
         </FieldRow>
+        <div :class="styles.navLinks">
+          <el-button link type="primary" @click="router.push('/workflows')">
+            打开 Agent 编排
+          </el-button>
+          <el-button link type="primary" @click="router.push('/plugins')">
+            插件中心
+          </el-button>
+        </div>
       </SectionToggle>
 
       <SectionToggle title="用户偏好" :count="3">

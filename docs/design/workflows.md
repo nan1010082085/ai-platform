@@ -86,18 +86,9 @@ mindmap
       conversation-memory
     专家
       agent-intent
-      agent-editor
-      agent-flow
-      agent-page
-      agent-general
+      expert
     工具
-      tool-mcp-schema
-      tool-mcp-flow
-      tool-mcp-widget
-      tool-mcp-rag
-      tool-mcp-industry
-      tool-langgraph
-      tool-http
+      tool
     逻辑
       [if]
       hitl
@@ -270,8 +261,9 @@ sequenceDiagram
   User->>View: 填写答案 / 批准或拒绝
   View->>API: POST /workflow-executions/:id/resume
   API-->>View: 继续执行
-  loop 轮询 2s
-    View->>API: getExecution()
+  loop workflow:event
+    View->>WS: subscribe
+    WS-->>View: execution 快照
   end
   View-->>User: 更新节点状态
 ```
@@ -321,7 +313,7 @@ flowchart LR
   Picker --> WF1
   WFSelect --> WF1
   Input -->|发送| Exec["execute / continue / resume"]
-  Exec --> Poll["轮询执行结果"]
+  Exec --> WS["workflow:event 推送"]
   Poll --> Reply["assistant 消息"]
 ```
 
@@ -375,7 +367,7 @@ flowchart TD
   Async --> Loop["while currentId"]
   Loop --> Run["runNode → 写 nodeRecords"]
   Run --> Wait{hitl?}
-  Wait -->|是| Pause["status=waiting\n客户端轮询"]
+  Wait -->|是| Pause["status=waiting\n客户端 workflow:subscribe"]
   Wait -->|否| Next["pickNextNode"]
   Next --> Loop
   Pause --> Resume["POST resume"]
@@ -388,5 +380,5 @@ flowchart TD
 |------|-----|----------|
 | 设计器测试 | `POST /workflows/:id/execute` | agentWorkflowExecutor |
 | Webhook | `/api/ai/webhooks/*` | 同上，202 异步 |
-| Chat 选工作流 | execute / continue / resume | 同上 + 前端 poll |
+| Chat 选工作流 | execute / continue / resume | WebSocket `workflow:event` |
 

@@ -1,10 +1,13 @@
 # @schema-platform/workflow-client
 
-Agent Workflow **Open API** 的 TypeScript 客户端，供外部系统、定时任务、微服务调用。
+Agent Workflow 的 **入口 URL + Workflow Key** TypeScript 客户端，供外部系统、脚本、定时任务调用已发布工作流。
+
+> 统一调用模型：`POST /api/ai/workflows/invoke/{slug}` + 请求头 `X-Workflow-Key`。  
+> 平台内 UI / 设计器测试仍用 JWT，见 `agentWorkflowApi.ts`。
 
 ## 安装
 
-同仓开发（server / ai 子项目）：
+同仓开发：
 
 ```json
 {
@@ -21,42 +24,45 @@ import { WorkflowClient } from '@schema-platform/workflow-client'
 
 const client = new WorkflowClient({
   baseUrl: 'https://your-platform.example.com',
-  apiKey: process.env.SCHEMA_API_KEY!,
+  workflowKey: process.env.WORKFLOW_KEY!, // 发布工作流时获得
+  tenantId: '000000', // 可选
 })
 
-// 异步执行 + 轮询
+// 按 slug 执行（推荐）
 const started = await client.executeBySlug('document-parse', {
-  async: true,
-  input: { fileUrl: 'https://example.com/a.pdf' },
-  idempotencyKey: 'req-001',
+  input: { message: 'hello' },
+  trigger: 'api',
 })
 
-const done = await client.waitForCompletion(started.executionId)
-console.log(done.status, done.nodeRecords)
+// 按 workflow ObjectId 执行
+const byId = await client.executeById('507f1f77bcf86cd799439012', { trigger: 'api' })
 
-// 或 SSE 流
-for await (const evt of client.streamExecution(started.executionId)) {
+// 轮询至终态
+const done = await client.waitForCompletion(started.id)
+
+// 轮询式进度流
+for await (const evt of client.streamExecution(started.id)) {
   if (evt.event === 'execution') console.log(evt.data)
   if (evt.event === 'done') break
 }
-
-// HITL 恢复
-await client.resume(started.executionId, { approved: true })
 ```
+
+## HTTP 约定
+
+| 操作 | 方法 | 路径 | 请求头 |
+|---|---|---|---|
+| 启动执行 | POST | `/api/ai/workflows/invoke/{slugOrId}` | `X-Workflow-Key`, `X-Tenant-Id` |
+| 查询执行 | GET | `/api/ai/workflows/invoke/executions/{executionId}` | 同上 |
 
 ## API
 
 | 方法 | 说明 |
 |---|---|
-| `executeById(id, req)` | 按 workflow ID 执行 |
-| `executeBySlug(slug, req)` | 按 slug 执行 |
+| `executeBySlug(slug, req)` | 按 slug 启动已发布工作流 |
+| `executeById(id, req)` | 按 ObjectId 启动 |
 | `getExecution(id)` | 查询执行状态 |
 | `poll(id, opts)` | 轮询至终态 |
-| `waitForCompletion(id, opts)` | 同 poll，可指定 until |
-| `streamExecution(id, signal?)` | SSE 进度流 |
-| `resume(id, input)` | HITL 恢复 |
-| `cancel(id, reason?)` | 取消执行 |
+| `waitForCompletion(id, opts)` | 同 poll |
+| `streamExecution(id, opts)` | 轮询模拟进度流 |
 
-类型与 `@schema-platform/ai-shared/agentWorkflow` 对齐。
-
-详见 [workflow-open-api.md](../docs/design/workflow-open-api.md)。
+详见 [sdk.md](../docs/sdk.md)、[agent-workflow.md](../docs/agent-workflow.md)。

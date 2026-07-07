@@ -6,6 +6,7 @@ import type {
   AgentWorkflowDetail,
   AgentWorkflowExecution,
   AgentWorkflowGraph,
+  AgentWorkflowPublishResult,
   AgentWorkflowSummary,
   AgentWorkflowTemplateId,
   AgentWorkflowVersionDetail,
@@ -103,8 +104,16 @@ export function deleteWorkflow(id: string): Promise<{ deleted: boolean }> {
   return request(`/ai/workflows/${id}`, { method: 'DELETE' })
 }
 
-export function publishWorkflow(id: string): Promise<{ publishId: string; version: string }> {
+export function publishWorkflow(id: string): Promise<AgentWorkflowPublishResult> {
   return request(`/ai/workflows/${id}/publish`, { method: 'POST' })
+}
+
+export function rotateWorkflowInvokeKey(id: string): Promise<{
+  invokeKey: string
+  invokeKeyMasked: string
+  invokePath: string | null
+}> {
+  return request(`/ai/workflows/${id}/rotate-invoke-key`, { method: 'POST' })
 }
 
 export function listWorkflowVersions(id: string): Promise<AgentWorkflowVersionEntry[]> {
@@ -121,10 +130,11 @@ export function getWorkflowVersion(
 export function executeWorkflow(
   id: string,
   input: Record<string, unknown> = {},
+  opts?: { trigger?: 'manual' | 'webhook' | 'chat' | 'api' },
 ): Promise<AgentWorkflowExecution> {
   return request(`/ai/workflows/${id}/execute`, {
     method: 'POST',
-    body: JSON.stringify({ input }),
+    body: JSON.stringify({ input, trigger: opts?.trigger }),
   })
 }
 

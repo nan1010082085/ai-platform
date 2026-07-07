@@ -11,6 +11,8 @@ import type { AgentHitlConfirmQuestion, AgentNodeRecord, AgentWorkflowExecution,
 import { useAgentWorkflowDesignerStore } from '@/stores/agentWorkflowDesigner'
 import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas.vue'
 import * as api from '@/api/agentWorkflowApi'
+import { getExecutionTriggerLabel } from '@/constants/workflowInvocation'
+import { subscribeWorkflowExecution } from '@/composables/useWorkflowExecutionStream'
 import styles from './AgentExecutionDetailView.module.scss'
 
 const route = useRoute()
@@ -28,7 +30,9 @@ const hitlSubmitting = ref(false)
 const hitlAnswers = ref<Record<string, string>>({})
 const hitlQuestionsRef = ref<InstanceType<typeof HitlConfirmQuestions> | null>(null)
 const cancelling = ref(false)
-let pollTimer: ReturnType<typeof setInterval> | null = null
+let unsubscribeWorkflow: (() => void) | null = null
+
+const TERMINAL_STATUSES = new Set(['success', 'error', 'waiting', 'cancelled'])
 
 const executionId = () => route.params.id as string
 
@@ -123,7 +127,7 @@ async function confirmHitl() {
     hitlComment.value = ''
     hitlAnswers.value = {}
     await load()
-    startPoll()
+    startWorkflowWatch()
   } catch (e) {
     ElMessage.error(e instanceof Error ? e.message : '操作失败')
   } finally {
@@ -149,10 +153,34 @@ async function rejectHitl() {
   openHitlDialog('reject')
 }
 
-function startPoll() {
-  stopPoll()
-  if (execution.value?.status === 'running') {
-    pollTimer = setInterval(load, 2000)
+function applyExecutionUpdate(data: AgentWorkflowExecution) {
+  execution.value = data
+  const active = data.nodeRecords.filter((r) => r.status === 'running').map((r) => r.nodeId)
+  const completed = data.nodeRecords
+    .filter((r) => r.status === 'success')
+    .map((r) => r.nodeId)
+  store.applyExecutionHighlight(active, completed, data.nodeRecords)
+  if (selectedRecord.value) {
+    const updated = data.nodeRecords.find((r) => r.nodeId === selectedRecord.value!.nodeId)
+    if (updated) selectedRecord.value = updated
+  }
+}
+
+function startWorkflowWatch() {
+  stopWorkflowWatch()
+  if (!execution.value || !TERMINAL_STATUSES.has(execution.value.status)) {
+    if (execution.value?.status === 'running') {
+      unsubscribeWorkflow = subscribeWorkflowExecution(executionId(), (data) => {
+        applyExecutionUpdate(data)
+      })
+    }
+  }
+}
+
+function stopWorkflowWatch() {
+  if (unsubscribeWorkflow) {
+    unsubscribeWorkflow()
+    unsubscribeWorkflow = null
   }
 }
 
@@ -162,7 +190,7 @@ async function stopExecution() {
   try {
     execution.value = await api.cancelExecution(executionId())
     ElMessage.success('已停止执行')
-    stopPoll()
+    stopWorkflowWatch()
     await load()
   } catch (e) {
     ElMessage.error(e instanceof Error ? e.message : '停止失败')
@@ -172,10 +200,7 @@ async function stopExecution() {
 }
 
 function stopPoll() {
-  if (pollTimer) {
-    clearInterval(pollTimer)
-    pollTimer = null
-  }
+  stopWorkflowWatch()
 }
 
 async function loadExecutionGraph(exec: AgentWorkflowExecution) {
@@ -196,11 +221,11 @@ onMounted(async () => {
   if (execution.value?.status === 'waiting') {
     openHitlDialog('approve')
   }
-  startPoll()
+  startWorkflowWatch()
 })
 
 onUnmounted(() => {
-  stopPoll()
+  stopWorkflowWatch()
   store.reset()
 })
 
@@ -254,8 +279,10 @@ const canSubmitHitl = computed(() => {
 watch(
   () => execution.value?.status,
   (status) => {
-    if (status !== 'running') {
-      stopPoll()
+    if (TERMINAL_STATUSES.has(status ?? '')) {
+      stopWorkflowWatch()
+    } else if (status === 'running') {
+      startWorkflowWatch()
     }
     if (status === 'waiting' && !hitlDialogVisible.value) {
       openHitlDialog('approve')
@@ -341,7 +368,9 @@ function togglePanelExpand() {
         <div :class="styles.divider" />
         <div :class="styles.titleWrap">
           <span :class="styles.title">{{ execution.workflowName }}</span>
-          <span :class="styles.meta">{{ execution.id }} · v{{ execution.version }} · {{ durationLabel }}</span>
+          <span :class="styles.meta">
+            {{ execution.id }} · v{{ execution.version }} · {{ getExecutionTriggerLabel(execution.trigger) }} · {{ durationLabel }}
+          </span>
         </div>
         <el-tag size="small" :type="(statusType[execution.status] as any) ?? 'info'">
           {{ STATUS_LABELS[execution.status] ?? execution.status }}

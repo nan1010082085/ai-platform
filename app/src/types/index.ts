@@ -177,9 +177,6 @@ export interface ChatSettings {
 
 export type StreamConnectionStatus = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'reconnecting'
 
-/** @deprecated 使用 StreamConnectionStatus 替代 */
-export type SSEConnectionStatus = StreamConnectionStatus
-
 // ---- 对话请求 ----
 
 export interface MentionReference {
@@ -235,9 +232,6 @@ export type StreamEventType =
   | 'quality_check_start'
   | 'quality_check_complete'
   | 'document_summaries'
-
-/** @deprecated 使用 StreamEventType 替代 */
-export type SSEEventType = StreamEventType
 
 export interface StreamEvent {
   type: StreamEventType
@@ -306,9 +300,6 @@ export interface StreamEvent {
   /** 文档结构化摘要（Chat 附件） */
   summaries?: MessageDocumentSummary[]
 }
-
-/** @deprecated 使用 StreamEvent 替代 */
-export type SSEEvent = StreamEvent
 
 // ---- 任务链 ----
 

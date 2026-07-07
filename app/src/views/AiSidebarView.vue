@@ -17,7 +17,7 @@ import { useAiStore } from '@/stores/ai'
 import { bridge } from '@/utils/bridge'
 import { useQiankun } from '@schema-platform/platform-shared/qiankun'
 import { message } from '@schema-platform/platform-shared/utils/message'
-import { connect as connectSocket, isConnected, emitAiApply, emitAiPublished } from '@schema-platform/platform-shared/socket'
+import { connect as connectSocket, isConnected, onConnectionChange, emitAiApply, emitAiPublished } from '@schema-platform/platform-shared/socket'
 import AiMessage from '@/components/AiMessage.vue'
 import type { Widget, FlowGraph } from '@/types'
 import type { MessageEmbeddedCard } from '@/components/AiMessage.vue'
@@ -41,14 +41,12 @@ const selectedWorkflowName = computed(() => getWorkflowName(selectedWorkflowId.v
 
 // ---- WebSocket 状态 ----
 const wsConnected = ref(isConnected())
-
-// 定期检查连接状态
-let statusTimer: ReturnType<typeof setInterval> | null = null
+let unsubscribeConnection: (() => void) | null = null
 
 function startStatusCheck(): void {
-  statusTimer = setInterval(() => {
-    wsConnected.value = isConnected()
-  }, 1000)
+  unsubscribeConnection = onConnectionChange((next) => {
+    wsConnected.value = next
+  })
 }
 
 // ---- History Popover ----
@@ -273,10 +271,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (statusTimer) {
-    clearInterval(statusTimer)
-    statusTimer = null
-  }
+  unsubscribeConnection?.()
+  unsubscribeConnection = null
 })
 
 function handleHostData(data: Record<string, unknown>) {

@@ -6,9 +6,11 @@ import {
   getBuiltInTool,
   getToolsByCategory,
   resolveToolCategory,
+  TOOL_CATEGORY_LABELS,
   type BuiltInToolDef,
   type ToolCategory,
 } from '@/constants/agentTools'
+import { getToolDisplayLabel } from '@schema-platform/ai-shared/toolNames'
 
 const experts = ref<PluginExpertSummary[]>([])
 const skills = ref<PluginSkillSummary[]>([])
@@ -41,15 +43,18 @@ const TOOL_NS_ICON: Record<string, string> = {
 }
 
 function toolPaletteItem(tool: PluginToolSummary): AgentPaletteItem {
+  const def = registryToolToDef(tool)
   const ns = tool.name.includes('__') ? tool.name.split('__')[0] : tool.kind
+  const categoryHint = TOOL_CATEGORY_LABELS[def.category] ?? def.category
+  const sourceHint = tool.source ? ` · ${tool.source}` : ''
   return {
     type: 'tool' as AgentNodeType,
-    label: tool.description?.trim() || tool.name,
+    label: def.label,
     icon: TOOL_NS_ICON[ns] ?? (tool.kind === 'graph' ? 'cpu' : 'setting'),
     category: 'tools',
-    description: [tool.kind, tool.source].filter(Boolean).join(' · ') || tool.name,
+    description: `${categoryHint}${sourceHint}`,
     defaultData: {
-      label: tool.name,
+      label: def.label,
       toolName: tool.name,
     },
   }
@@ -57,13 +62,14 @@ function toolPaletteItem(tool: PluginToolSummary): AgentPaletteItem {
 
 function registryToolToDef(tool: PluginToolSummary): BuiltInToolDef {
   const builtin = getBuiltInTool(tool.name)
-  const category = builtin?.category
+  const category = (tool.category as ToolCategory | undefined)
+    ?? builtin?.category
     ?? resolveToolCategory(tool.name)
     ?? (tool.kind === 'graph' ? 'langgraph' : tool.kind === 'http' ? 'workflow' : undefined)
   return {
     name: tool.name,
-    label: builtin?.label ?? tool.description?.trim() ?? tool.name,
-    description: builtin?.description ?? tool.description?.trim() ?? tool.name,
+    label: tool.label ?? builtin?.label ?? getToolDisplayLabel(tool.name),
+    description: builtin?.description ?? tool.description ?? TOOL_CATEGORY_LABELS[category ?? 'langgraph'] ?? tool.name,
     argsHint: tool.argsHint ?? builtin?.argsHint ?? '{}',
     category: category ?? 'langgraph',
   }
@@ -80,7 +86,6 @@ function expertPaletteItem(expert: PluginExpertSummary): AgentPaletteItem {
     defaultData: {
       label: expert.label,
       expertId: expert.id,
-      ...(expert.legacyAgentKey ? { agentType: expert.legacyAgentKey as 'editor' | 'flow' | 'page' | 'general' } : {}),
     },
   }
 }

@@ -101,6 +101,29 @@
   color: #673ab7;
 }
 
+.workflowPickerFooter {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ai-border-light, #ebedf3);
+}
+
+.workflowPickerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  color: var(--ai-color-primary, #0060a2);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.workflowPickerLink:hover {
+  opacity: 0.85;
+}
+
 /* ---- Messages ---- */
 .messages {
   flex: 1;

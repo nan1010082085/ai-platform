@@ -49,6 +49,18 @@
   color: var(--color-primary);
 }
 
+.copyRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.copyRow :global(.el-input) {
+  flex: 1;
+  min-width: 0;
+}
+
 .scroll {
   flex: 1;
   min-height: 0;

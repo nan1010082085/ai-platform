@@ -212,23 +212,6 @@ const TOOL_NAME_MAP: Record<string, string> = {
   bind_schema_to_flow_node: '绑定表单到流程节点',
   rag_index: 'RAG 索引',
   request_collaboration: '请求协作',
-  // 向后兼容（旧工具名，MCP 迁移后可能仍出现在历史消息）
-  search_schemas: '搜索表单',
-  get_schema_detail: '获取表单详情',
-  search_published_schemas: '搜索已发布表单',
-  fuzzy_search_schemas: '模糊搜索表单',
-  validate_schema: '校验 Schema',
-  validate_industry_form: '校验行业表单',
-  validate_widget_schema: '校验组件 Schema',
-  search_flows: '搜索流程',
-  get_flow_detail: '获取流程详情',
-  get_flow_node_schema: '获取流程节点表单',
-  find_flow_references: '查找流程引用',
-  get_widget_catalogue: '查询组件目录',
-  query_widgets: '查询组件',
-  search_users: '搜索用户',
-  search_industry_templates: '搜索行业模板',
-  rag_search: '智能匹配',
 }
 
 function formatToolName(name: string): string {

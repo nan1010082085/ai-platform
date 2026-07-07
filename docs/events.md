@@ -14,11 +14,12 @@
 | v2 思考推理 | `thinker_*` | ⚠️ 类型已定义，图节点未实现，不发射 |
 | v2 质量检查 | `quality_check_*` | ⚠️ 类型已定义，图节点未实现，不发射 |
 
-> Agent Workflow 执行不走 WebSocket 事件流，而是通过 REST 轮询 `nodeRecords`。Chat 选择工作流后端时，最终输出由 `workflowChatResponse` 解析。
+> **Chat LangGraph**：`chat:event`（WebSocket）。  
+> **Chat × Workflow**：REST 启动执行 + `workflow:event`（WebSocket 推送，见 §二）。
 
-## 一、事件概述
+## 一、Chat LangGraph 事件概述
 
-### 1.1 事件流向
+### 1.1 事件流向（LangGraph）
 
 ```
 Server                              Client
@@ -34,6 +35,30 @@ Server                              Client
    │◄─── chat:resume ─────────────────│  (WebSocket)
    │     { threadId, confirmed }       │
 ```
+
+## 二、Agent Workflow 执行事件（Chat）
+
+Chat 选择已发布工作流时，启动仍走 REST，进度通过 WebSocket 推送：
+
+```
+Client                              Server
+   │                                   │
+   │ POST /api/ai/workflows/:id/execute│
+   │     { input, trigger: "chat" }    │
+   │◄── executionId ───────────────────│
+   │                                   │
+   │── workflow:subscribe ────────────►│
+   │     { executionId }               │
+   │◄── workflow:event ────────────────│
+   │     { executionId, execution }    │
+   │     (nodeRecords, streamingOutput)│
+   │                                   │
+   │── workflow:unsubscribe ──────────►│
+```
+
+终态：`execution.status` 为 `success` | `error` | `waiting` | `cancelled` 时结束订阅。
+
+术语见 [product/workflow-terminology.md](./product/workflow-terminology.md)。
 
 ### 1.2 事件类型
 

@@ -2,7 +2,7 @@
  * Store 统一导出
  */
 export { useConversationStore } from './conversation'
-export { useStreamStore, useSSEStore } from './stream'
+export { useStreamStore } from './stream'
 export { useSchemaStore } from './schema'
 export { useLLMStore } from './llm'
 export { useRAGStore } from './rag'

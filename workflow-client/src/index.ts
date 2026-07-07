@@ -6,10 +6,12 @@ export {
 export type {
   AgentExecutionStatus,
   AgentWorkflowExecution,
-  ExecuteAsyncResult,
+  AgentWorkflowSummary,
   ExecuteRequest,
   PollOptions,
+  StreamOptions,
   WaitOptions,
   WorkflowClientOptions,
   WorkflowStreamEvent,
+  WorkflowTrigger,
 } from './client.js'

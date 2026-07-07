@@ -79,6 +79,10 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
   const workflowSlug = ref('')
   const onCompleteWebhookUrl = ref('')
   const onCompleteWebhookSecret = ref('')
+  const invokeKeyMasked = ref('')
+  const invokePath = ref('')
+  /** 发布/轮换后一次性展示的完整密钥 */
+  const invokeKeyPlain = ref('')
   const entryNodeId = ref('trigger-1')
   const nodes = shallowRef<Node[]>([])
   const edges = shallowRef<Edge[]>([])
@@ -282,6 +286,9 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
     workflowSlug.value = ''
     onCompleteWebhookUrl.value = ''
     onCompleteWebhookSecret.value = ''
+    invokeKeyMasked.value = ''
+    invokePath.value = ''
+    invokeKeyPlain.value = ''
     nodes.value = []
     edges.value = []
     dirty.value = false
@@ -294,6 +301,9 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
     workflowSlug,
     onCompleteWebhookUrl,
     onCompleteWebhookSecret,
+    invokeKeyMasked,
+    invokePath,
+    invokeKeyPlain,
     entryNodeId,
     nodes,
     edges,

@@ -27,8 +27,9 @@ import { getConversations, deleteConversation, publish } from '@/api/aiApi'
 import { executeWorkflow, getExecution } from '@/api/agentWorkflowApi'
 
 // ---- WebSocket mock ----
-// 模拟服务端 chat:event 推送
+// 模拟服务端 chat:event / workflow:event 推送
 let chatEventHandler: ((event: Record<string, unknown>) => void) | null = null
+let workflowEventHandler: ((event: Record<string, unknown>) => void) | null = null
 vi.mock('@schema-platform/platform-shared/socket', () => ({
   emitChatSend: vi.fn(),
   emitChatCancel: vi.fn(),
@@ -37,6 +38,22 @@ vi.mock('@schema-platform/platform-shared/socket', () => ({
     chatEventHandler = handler
     return () => { chatEventHandler = null }
   }),
+  isConnected: vi.fn(() => true),
+  connect: vi.fn(),
+  emitWorkflowSubscribe: vi.fn(({ executionId }: { executionId: string }) => {
+    queueMicrotask(() => {
+      workflowEventHandler?.({
+        executionId,
+        execution: (globalThis as { __workflowMockExecution?: Record<string, unknown> }).__workflowMockExecution,
+      })
+    })
+  }),
+  emitWorkflowUnsubscribe: vi.fn(),
+  onWorkflowEvent: vi.fn((handler: (event: Record<string, unknown>) => void) => {
+    workflowEventHandler = handler
+    return () => { workflowEventHandler = null }
+  }),
+  onWorkflowError: vi.fn(() => () => {}),
 }))
 
 import { emitChatSend } from '@schema-platform/platform-shared/socket'
@@ -476,18 +493,18 @@ describe('useAiStore', () => {
         versionId: 'pub-1',
         version: '20260101000000',
         status: 'running',
-        trigger: 'manual',
+        trigger: 'chat',
         startedAt: new Date().toISOString(),
         nodeRecords: [],
       })
-      vi.mocked(getExecution).mockResolvedValue({
+      ;(globalThis as { __workflowMockExecution?: Record<string, unknown> }).__workflowMockExecution = {
         id: 'exec-1',
         workflowId: 'wf-1',
         workflowName: 'Demo',
         versionId: 'pub-1',
         version: '20260101000000',
         status: 'success',
-        trigger: 'manual',
+        trigger: 'chat',
         startedAt: new Date().toISOString(),
         nodeRecords: [{
           nodeId: 'llm-1',
@@ -497,11 +514,15 @@ describe('useAiStore', () => {
           output: { text: 'workflow reply' },
         }],
         conversationHistory: [{ role: 'assistant', content: 'workflow reply' }],
-      })
+      }
 
       await store.sendMessage('hello workflow')
 
-      expect(executeWorkflow).toHaveBeenCalledWith('wf-1', { message: 'hello workflow' })
+      expect(executeWorkflow).toHaveBeenCalledWith(
+        'wf-1',
+        { message: 'hello workflow' },
+        { trigger: 'chat' },
+      )
       expect(emitChatSend).not.toHaveBeenCalled()
       expect(store.messages).toHaveLength(2)
       expect(store.messages[1].content).toBe('workflow reply')

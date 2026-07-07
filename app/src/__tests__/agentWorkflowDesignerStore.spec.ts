@@ -15,9 +15,9 @@ describe('agentWorkflowDesignerStore execution runtime', () => {
       nodes: [
         {
           id: 'n1',
-          type: 'tool-mcp-schema',
+          type: 'tool',
           position: { x: 0, y: 0 },
-          data: { label: 'Schema 工具' },
+          data: { label: 'Schema 工具', toolName: 'schema__search' },
         },
       ],
       edges: [],
@@ -26,8 +26,8 @@ describe('agentWorkflowDesignerStore execution runtime', () => {
     const records: AgentNodeRecord[] = [
       {
         nodeId: 'n1',
-        nodeType: 'tool',
-        nodeName: '旧工具',
+        nodeType: 'llm',
+        nodeName: '旧 LLM',
         status: 'success',
       },
     ]
@@ -35,8 +35,8 @@ describe('agentWorkflowDesignerStore execution runtime', () => {
     store.applyExecutionHighlight([], [], records)
     expect(store.nodes[0]?.data?.runtimeRecord).toBeNull()
 
-    store.replaceNode('n1', 'agent-editor')
-    expect(store.nodes[0]?.type).toBe('agent-editor')
+    store.replaceNode('n1', 'expert')
+    expect(store.nodes[0]?.type).toBe('expert')
     expect(store.nodes[0]?.data?.runtimeRecord).toBeUndefined()
   })
 
@@ -51,8 +51,8 @@ describe('agentWorkflowDesignerStore execution runtime', () => {
       edges: [{ id: 'e1', source: 't1', target: 'n1' }],
     })
 
-    store.replaceNode('n1', 'tool-mcp-rag')
-    expect(store.nodes.find((n) => n.id === 'n1')?.type).toBe('tool-mcp-rag')
+    store.replaceNode('n1', 'tool')
+    expect(store.nodes.find((n) => n.id === 'n1')?.type).toBe('tool')
     expect(store.edges.some((e) => e.source === 't1' && e.target === 'n1')).toBe(true)
   })
 

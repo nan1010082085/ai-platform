@@ -37,9 +37,7 @@ function itemsForCategory(key: string): AgentPaletteItem[] {
     return [...(staticByCategory.value.get('experts') ?? []), ...expertPaletteItems.value]
   }
   if (key === 'tools') {
-    return toolPaletteItems.value.length > 0
-      ? toolPaletteItems.value
-      : (staticByCategory.value.get('tools') ?? [])
+    return toolPaletteItems.value
   }
   return staticByCategory.value.get(key) ?? []
 }

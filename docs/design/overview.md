@@ -192,7 +192,7 @@ flowchart LR
 
   subgraph engines [服务端引擎]
     LG["LangGraph\n流式 WS"]
-    EX["Workflow Executor\nREST 轮询"]
+    EX["Workflow Executor\nWS workflow:event"]
     RS["ragService"]
   end
 

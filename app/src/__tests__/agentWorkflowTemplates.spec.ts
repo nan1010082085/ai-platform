@@ -45,7 +45,7 @@ describe('agent workflow templates', () => {
   it('assistant graph uses RAG tool then LLM', () => {
     const graph = createIntelligentAssistantWorkflowGraph()
     const rag = graph.nodes.find((n) => n.id === 'rag-1')
-    expect(rag?.type).toBe('tool-mcp-rag')
+    expect(rag?.type).toBe('tool')
     expect(rag?.data?.toolName).toBe('rag__search')
     expect(validateAgentWorkflowGraph(graph).every((i) => i.level !== 'error')).toBe(true)
   })

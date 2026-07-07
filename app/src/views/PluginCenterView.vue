@@ -8,20 +8,35 @@ import { ref, computed, onMounted } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
+import { getExpertLegacyBadge, type ExpertAgentKind } from '@/constants/expertNodeTypes'
+import { getToolDisplayLabel } from '@schema-platform/ai-shared/toolNames'
 import styles from './PluginCenterView.module.scss'
 
-type Tab = 'experts' | 'tools' | 'mcp' | 'skills'
+type LayerTab = 'experts' | 'tools' | 'mcp' | 'skills'
+type ToolKindTab = 'all' | 'mcp' | 'graph' | 'http'
 
-const tabs = [
-  { label: '专家', value: 'experts' as Tab },
-  { label: '工具', value: 'tools' as Tab },
-  { label: 'MCP', value: 'mcp' as Tab },
-  { label: '技能', value: 'skills' as Tab },
+const layerTabs = [
+  { label: '专家 Experts', value: 'experts' as LayerTab },
+  { label: '工具 Tools', value: 'tools' as LayerTab },
+  { label: 'MCP Server', value: 'mcp' as LayerTab },
+  { label: '技能 Skills', value: 'skills' as LayerTab },
 ]
 
-const activeTab = ref<Tab>('experts')
+const toolKindTabs = [
+  { label: '全部', value: 'all' as ToolKindTab },
+  { label: 'MCP', value: 'mcp' as ToolKindTab },
+  { label: 'LangGraph', value: 'graph' as ToolKindTab },
+  { label: 'HTTP', value: 'http' as ToolKindTab },
+]
+
+const activeLayer = ref<LayerTab>('experts')
+const activeToolKind = ref<ToolKindTab>('all')
 const searchInput = ref('')
-const { experts, skills, tools, mcpServers, loading, error, load, expertColor } = usePluginRegistry()
+const { experts, skills, tools, mcpServers, loading, error, load } = usePluginRegistry()
+
+function legacyBadge(key: string) {
+  return getExpertLegacyBadge(key as ExpertAgentKind)
+}
 
 const q = computed(() => searchInput.value.trim().toLowerCase())
 
@@ -36,6 +51,7 @@ const filteredExperts = computed(() =>
 
 const filteredTools = computed(() =>
   tools.value.filter((t) => {
+    if (activeToolKind.value !== 'all' && t.kind !== activeToolKind.value) return false
     if (!q.value) return true
     return [t.name, t.kind, t.source, t.description, t.argsHint]
       .filter(Boolean)
@@ -73,7 +89,9 @@ onMounted(() => {
         <div :class="styles.titleRow">
           <div>
             <h1>插件中心</h1>
-            <p :class="styles.subtitle">只读浏览服务端 Registry；编辑请修改 server/config/plugins 或通过 plugin:pack 分发</p>
+            <p :class="styles.subtitle">
+              按 config/plugins 四层类型浏览 Registry（只读）。配置变更走 Git，或 server 目录执行 plugin:pack / plugin:install。
+            </p>
           </div>
           <div :class="styles.headerActions">
             <el-button :loading="loading" @click="load">
@@ -84,7 +102,7 @@ onMounted(() => {
         </div>
 
         <div :class="styles.toolbar">
-          <FilterTabs v-model="activeTab" :tabs="tabs" />
+          <FilterTabs v-model="activeLayer" :options="layerTabs" />
           <el-input
             v-model="searchInput"
             :class="styles.search"
@@ -120,7 +138,11 @@ onMounted(() => {
           </div>
         </div>
 
-        <div v-show="activeTab === 'experts'" :class="styles.tableWrap">
+        <div v-show="activeLayer === 'tools'" :class="styles.subToolbar">
+          <FilterTabs v-model="activeToolKind" :options="toolKindTabs" />
+        </div>
+
+        <div v-show="activeLayer === 'experts'" :class="styles.tableWrap">
           <el-table :data="filteredExperts" stripe>
             <el-table-column prop="label" label="名称" min-width="140" />
             <el-table-column prop="id" label="ID" min-width="160">
@@ -128,18 +150,25 @@ onMounted(() => {
                 <span :class="styles.mono">{{ row.id }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="Legacy" width="100">
+            <el-table-column label="专家类型" width="148">
               <template #default="{ row }">
-                <el-tag v-if="row.legacyAgentKey" size="small" :color="expertColor(row.id)" effect="dark">
-                  {{ row.legacyAgentKey }}
-                </el-tag>
-                <span v-else>—</span>
+                <span
+                  v-if="row.legacyAgentKey"
+                  :class="styles.legacyBadge"
+                  :style="{ '--badge-accent': legacyBadge(row.legacyAgentKey).color }"
+                >
+                  <span :class="styles.legacyIcon">
+                    <AppIcon :name="legacyBadge(row.legacyAgentKey).icon" :size="12" />
+                  </span>
+                  <span :class="styles.legacyLabel">{{ legacyBadge(row.legacyAgentKey).label }}</span>
+                </span>
+                <span v-else :class="styles.emptyCell">—</span>
               </template>
             </el-table-column>
             <el-table-column label="工具" min-width="200">
               <template #default="{ row }">
                 <div :class="styles.tagRow">
-                  <el-tag v-for="t in row.tools" :key="t" size="small" type="info">{{ t }}</el-tag>
+                  <el-tag v-for="t in row.tools" :key="t" size="small" type="info">{{ getToolDisplayLabel(t) }}</el-tag>
                 </div>
               </template>
             </el-table-column>
@@ -147,9 +176,14 @@ onMounted(() => {
           </el-table>
         </div>
 
-        <div v-show="activeTab === 'tools'" :class="styles.tableWrap">
+        <div v-show="activeLayer === 'tools'" :class="styles.tableWrap">
           <el-table :data="filteredTools" stripe>
-            <el-table-column prop="name" label="名称" min-width="180">
+            <el-table-column label="显示名" min-width="140">
+              <template #default="{ row }">
+                {{ row.label || getToolDisplayLabel(row.name) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="name" label="工具 ID" min-width="180">
               <template #default="{ row }">
                 <span :class="styles.mono">{{ row.name }}</span>
               </template>
@@ -165,7 +199,7 @@ onMounted(() => {
           </el-table>
         </div>
 
-        <div v-show="activeTab === 'mcp'" :class="styles.tableWrap">
+        <div v-show="activeLayer === 'mcp'" :class="styles.tableWrap">
           <el-table :data="filteredMcp" stripe>
             <el-table-column prop="id" label="ID" min-width="160">
               <template #default="{ row }">
@@ -178,7 +212,7 @@ onMounted(() => {
           </el-table>
         </div>
 
-        <div v-show="activeTab === 'skills'" :class="styles.tableWrap">
+        <div v-show="activeLayer === 'skills'" :class="styles.tableWrap">
           <el-table :data="filteredSkills" stripe>
             <el-table-column prop="label" label="名称" min-width="140" />
             <el-table-column prop="id" label="ID" min-width="160">
@@ -198,7 +232,8 @@ onMounted(() => {
         </div>
 
         <p :class="styles.hint">
-          热重载：开发态修改 plugins/local/ 后 SIGHUP 或自动监听；生产使用 pnpm plugin:install 安装到 local / tenants 目录。
+          热重载：开发态改 <code>plugins/local/</code> 后 SIGHUP，或设 <code>AI_PLUGIN_WATCH=1</code> 自动监听。
+          生产安装插件包：<code>cd server && pnpm plugin:install --file dist/xxx.tgz</code>（可选 <code>--tenant &lt;id&gt;</code> 写入 tenants 目录）。
         </p>
       </div>
     </div>

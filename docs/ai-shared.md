@@ -45,7 +45,7 @@ import { EVENT_ACTION_TYPES } from '@schema-platform/ai-shared/systemKnowledge'
 
 ### 2.1 `events.ts` — 统一事件协议
 
-定义 Agent → 前端的所有 SSE/WebSocket 事件类型。
+定义 Agent → 前端的 WebSocket `chat:event` 流式协议事件类型。
 
 ```typescript
 type AgentEventType =
@@ -73,7 +73,7 @@ type AgentEventType =
 type AgentType = 'router' | 'editor' | 'page' | 'flow' | 'general'
 ```
 
-每个事件类型有对应的 TypeScript interface（如 `TextDeltaEvent`、`SchemaCompleteEvent`）。联合类型 `SSEEvent` 覆盖全部。
+每个事件类型有对应的 TypeScript interface（如 `TextDeltaEvent`、`SchemaCompleteEvent`）。联合类型 `AgentStreamEvent` 覆盖全部（`SSEEvent` 为历史别名）。
 
 详见 [events.md](./events.md)。
 
@@ -142,7 +142,7 @@ getToolDisplayLabel(name: string): string // UI 显示标签
 - `PAGE_MCP_TOOLS_PROMPT`
 - `REQUIREMENT_ANALYZER_TOOLS_PROMPT`
 
-**向后兼容**：`LEGACY_TOOL_ALIASES` 映射旧工具名（如 `search_schemas` → `schema__search`）。
+**工具名**：仅 MCP 规范名；`normalizeToolName()` 为恒等。定义见 `toolNames.ts`。
 
 ### 2.3 `promptBuilder.ts` — System Prompt 构建
 

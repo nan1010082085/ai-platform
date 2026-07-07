@@ -66,8 +66,8 @@ flowchart TD
   WFPath --> Execute["POST /workflows/:id/execute"]
   WFPath --> Continue["或 POST .../continue"]
   WFPath --> Resume["或 POST .../resume (HITL)"]
-  Execute --> Poll["轮询 GET /workflow-executions/:id"]
-  Poll --> Parse["extractWorkflowChatResponse"]
+  Execute --> WS["workflow:subscribe"]
+  WS --> Parse["extractWorkflowChatResponse"]
   Parse --> ShowMsg["追加 assistant 消息"]
 
   LGPath --> Socket["chat:send"]
@@ -78,7 +78,7 @@ flowchart TD
 | 模式 | 传输 | 流式 | HITL |
 |------|------|------|------|
 | LangGraph（默认） | WebSocket | ✅ 逐字/事件 | `interrupt` + `chat:resume` |
-| 已发布工作流 | REST 轮询 | ❌ 完成后一次性展示 | `waiting` + resume API |
+| 已发布工作流 | WebSocket + REST 启动 | ✅ `workflow:event` | `waiting` + resume API |
 
 ---
 
@@ -195,11 +195,12 @@ sequenceDiagram
   end
 
   API-->>Hook: executionId
-  loop 每 1.5s 轮询
-    Hook->>API: getExecution(id)
+  Hook->>WS: workflow:subscribe
+  loop workflow:event
+    WS-->>Hook: execution 快照
+    Hook-->>UI: 更新时间线 / 流式文本
   end
 
-  API-->>Hook: status=success|waiting|error
   Hook-->>UI: responseText + execution
 
   alt waiting
@@ -369,7 +370,7 @@ sequenceDiagram
 flowchart TD
   Send["用户发送"] --> Mode{agentWorkflowId?}
   Mode -->|无| LG["chatStreamRunner → LangGraph\nWebSocket 流式"]
-  Mode -->|有| WF["agentWorkflowExecutor\nREST 轮询 1.5s"]
+  Mode -->|有| WF["agentWorkflowExecutor\nREST 启动 + workflow:event WS"]
   LG --> MCP["tools/registry → MCP Bridge"]
   WF --> MCP
   MCP --> DB["MongoDB"]

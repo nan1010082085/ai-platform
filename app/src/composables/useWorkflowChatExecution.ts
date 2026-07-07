@@ -1,23 +1,15 @@
 import {
   continueExecution,
   executeWorkflow,
-  getExecution,
   resumeExecution,
 } from '@/api/agentWorkflowApi'
 import type { AgentWorkflowExecution } from '@/types/agentWorkflow'
-
-const WORKFLOW_POLL_INTERVAL_MS = 400
 import type { MessageDocumentAttachment } from '@/types'
 import { attachmentToWorkflowFileRef } from '@/utils/workflowFilePayload'
 import { extractWorkflowChatResponse } from '@/utils/workflowChatResponse'
+import { waitForWorkflowExecution } from '@/composables/useWorkflowExecutionStream'
 
 const TERMINAL_STATUSES = new Set(['success', 'error', 'waiting', 'cancelled'])
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms)
-  })
-}
 
 function buildWorkflowInput(
   message: string,
@@ -31,26 +23,6 @@ function buildWorkflowInput(
     input.file = attachmentToWorkflowFileRef(attachments[0])
   }
   return input
-}
-
-export async function pollWorkflowExecution(
-  executionId: string,
-  isAborted: () => boolean,
-  onProgress?: (execution: AgentWorkflowExecution) => void,
-): Promise<AgentWorkflowExecution> {
-  while (true) {
-    if (isAborted()) {
-      throw new Error('已停止生成')
-    }
-
-    const execution = await getExecution(executionId)
-    onProgress?.(execution)
-    if (TERMINAL_STATUSES.has(execution.status)) {
-      return execution
-    }
-
-    await sleep(WORKFLOW_POLL_INTERVAL_MS)
-  }
 }
 
 export async function runWorkflowChatTurn(params: {
@@ -80,16 +52,18 @@ export async function runWorkflowChatTurn(params: {
   } else if (params.lastExecutionId) {
     started = await continueExecution(params.lastExecutionId, input)
   } else {
-    started = await executeWorkflow(params.workflowId, input)
+    started = await executeWorkflow(params.workflowId, input, { trigger: 'chat' })
   }
 
   params.onExecutionStarted?.(started.id)
 
-  const execution = await pollWorkflowExecution(
-    started.id,
-    params.isAborted ?? (() => false),
-    params.onProgress,
-  )
+  const execution = TERMINAL_STATUSES.has(started.status)
+    ? started
+    : await waitForWorkflowExecution(
+        started.id,
+        params.isAborted ?? (() => false),
+        params.onProgress,
+      )
 
   return {
     execution,

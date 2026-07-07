@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { WorkflowClient, WorkflowClientError } from '../client.js'
+import { WorkflowClient, WorkflowClientError, WORKFLOW_KEY_HEADER } from '../client.js'
 import type { AgentWorkflowExecution } from '@schema-platform/ai-shared/agentWorkflow'
 
 const BASE = 'https://api.test.local'
-const KEY = 'sk_test_abc'
+const WORKFLOW_KEY = 'wf_test_invoke_key_abc123'
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -36,37 +36,56 @@ describe('WorkflowClient', () => {
     vi.restoreAllMocks()
   })
 
-  it('executeBySlug async returns poll/stream URLs', async () => {
-    const fetchMock = vi.fn(async (url: string | URL | Request) => {
-      expect(String(url)).toBe(`${BASE}/api/ai/open/workflows/by-slug/my-flow/execute?async=true`)
+  it('executeBySlug uses invoke endpoint with X-Workflow-Key', async () => {
+    const fetchMock = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+      expect(String(url)).toBe(`${BASE}/api/ai/workflows/invoke/my-flow`)
+      const headers = init?.headers as Record<string, string>
+      expect(headers[WORKFLOW_KEY_HEADER]).toBe(WORKFLOW_KEY)
+      expect(headers['X-Tenant-Id']).toBe('000000')
       return jsonResponse({
         success: true,
         data: {
           executionId: 'exec-1',
+          workflowId: 'wf-1',
+          workflowName: 'Test',
           status: 'running',
-          pollUrl: '/api/ai/open/workflow-executions/exec-1',
-          streamUrl: '/api/ai/open/workflow-executions/exec-1/stream',
+          execution: runningExecution,
         },
       })
     })
 
-    const client = new WorkflowClient({ baseUrl: BASE, apiKey: KEY, fetch: fetchMock })
-    const result = await client.executeBySlug('my-flow', { async: true, input: { x: 1 } })
+    const client = new WorkflowClient({ baseUrl: BASE, workflowKey: WORKFLOW_KEY, fetch: fetchMock })
+    const result = await client.executeBySlug('my-flow', { input: { x: 1 }, trigger: 'api' })
+    expect(result.id).toBe('exec-1')
+  })
 
-    expect(result).toMatchObject({
-      executionId: 'exec-1',
-      pollUrl: `${BASE}/api/ai/open/workflow-executions/exec-1`,
-      streamUrl: `${BASE}/api/ai/open/workflow-executions/exec-1/stream`,
+  it('executeById uses invoke endpoint with workflow id', async () => {
+    const fetchMock = vi.fn(async (url: string | URL | Request) => {
+      expect(String(url)).toBe(`${BASE}/api/ai/workflows/invoke/wf-1`)
+      return jsonResponse({
+        success: true,
+        data: {
+          executionId: 'exec-1',
+          workflowId: 'wf-1',
+          workflowName: 'Test',
+          status: 'running',
+          execution: runningExecution,
+        },
+      })
     })
+
+    const client = new WorkflowClient({ baseUrl: BASE, workflowKey: WORKFLOW_KEY, fetch: fetchMock })
+    await client.executeById('wf-1', { trigger: 'manual' })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('getExecution throws WorkflowClientError on API error', async () => {
     const fetchMock = vi.fn(async () => jsonResponse({
       success: false,
-      error: { message: 'Execution not found', code: 'workflow_not_found' },
+      error: { message: 'Execution not found', code: 'execution_not_found' },
     }, 404))
 
-    const client = new WorkflowClient({ baseUrl: BASE, apiKey: KEY, fetch: fetchMock })
+    const client = new WorkflowClient({ baseUrl: BASE, workflowKey: WORKFLOW_KEY, fetch: fetchMock })
     await expect(client.getExecution('missing')).rejects.toBeInstanceOf(WorkflowClientError)
   })
 
@@ -78,21 +97,31 @@ describe('WorkflowClient', () => {
       return jsonResponse({ success: true, data })
     })
 
-    const client = new WorkflowClient({ baseUrl: BASE, apiKey: KEY, fetch: fetchMock })
+    const client = new WorkflowClient({ baseUrl: BASE, workflowKey: WORKFLOW_KEY, fetch: fetchMock })
     const result = await client.waitForCompletion('exec-1', { intervalMs: 1 })
-
     expect(result.status).toBe('success')
     expect(calls).toBeGreaterThanOrEqual(2)
   })
 
-  it('resume sends input body', async () => {
-    const fetchMock = vi.fn(async (_url, init?: RequestInit) => {
-      expect(init?.method).toBe('POST')
-      expect(JSON.parse(String(init?.body))).toEqual({ input: { approved: true } })
-      return jsonResponse({ success: true, data: runningExecution })
+  it('streamExecution yields poll-based execution updates', async () => {
+    let calls = 0
+    const fetchMock = vi.fn(async () => {
+      calls += 1
+      const data = calls < 2 ? runningExecution : doneExecution
+      return jsonResponse({ success: true, data })
     })
 
-    const client = new WorkflowClient({ baseUrl: BASE, apiKey: KEY, fetch: fetchMock })
-    await client.resume('exec-1', { approved: true })
+    const client = new WorkflowClient({ baseUrl: BASE, workflowKey: WORKFLOW_KEY, fetch: fetchMock })
+    const events: string[] = []
+    for await (const evt of client.streamExecution('exec-1', { intervalMs: 1 })) {
+      events.push(evt.event)
+      if (evt.event === 'done') break
+    }
+    expect(events).toContain('execution')
+    expect(events).toContain('done')
+  })
+
+  it('requires workflowKey at construction', () => {
+    expect(() => new WorkflowClient({ baseUrl: BASE, workflowKey: '' })).toThrow(WorkflowClientError)
   })
 })

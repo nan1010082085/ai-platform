@@ -52,6 +52,9 @@ async function load() {
     store.workflowSlug = data.slug ?? ''
     store.onCompleteWebhookUrl = data.onCompleteWebhook?.url ?? ''
     store.onCompleteWebhookSecret = data.onCompleteWebhook?.secret ?? ''
+    store.invokeKeyMasked = data.invokeKeyMasked ?? ''
+    store.invokePath = data.invokePath ?? ''
+    store.invokeKeyPlain = ''
     publishedVersion.value = data.publishedVersion
     hasRunningExecution.value = data.hasRunningExecution
     store.loadGraph(data.draftGraph)
@@ -102,6 +105,14 @@ async function onPublish() {
     await ElMessageBox.confirm('发布后将生成新版本，用于生产执行。', '发布工作流')
     const res = await api.publishWorkflow(workflowId())
     publishedVersion.value = res.version
+    if (res.slug) store.workflowSlug = res.slug
+    if (res.invokeKey) {
+      store.invokeKeyPlain = res.invokeKey
+      store.invokeKeyMasked = `${res.invokeKey.slice(0, 8)}****${res.invokeKey.slice(-4)}`
+    }
+    if (res.slug) {
+      store.invokePath = `/api/ai/workflows/invoke/${res.slug}`
+    }
     aiStore.updateAgentWorkflowId(workflowId())
     ElMessage.success(`已发布 v${res.version}，已同步到对话中的 Agent 编排`)
     await loadVersions()

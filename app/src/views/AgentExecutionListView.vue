@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import type { AgentWorkflowExecution } from '@/types/agentWorkflow'
+import { getExecutionTriggerLabel } from '@/constants/workflowInvocation'
+import { watchRunningWorkflowExecutions } from '@/composables/useWorkflowExecutionStream'
 import * as api from '@/api/agentWorkflowApi'
 import styles from './AgentExecutionListView.module.scss'
 
@@ -15,7 +17,7 @@ const items = ref<AgentWorkflowExecution[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(20)
-let pollTimer: ReturnType<typeof setInterval> | null = null
+let stopWorkflowWatch: (() => void) | null = null
 
 const workflowId = computed(() => route.params.id as string)
 
@@ -35,6 +37,30 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: '已取消',
 }
 
+function runningExecutionIds(): string[] {
+  return items.value.filter((item) => item.status === 'running').map((item) => item.id)
+}
+
+function patchExecution(execution: AgentWorkflowExecution) {
+  const idx = items.value.findIndex((item) => item.id === execution.id)
+  if (idx >= 0) {
+    items.value[idx] = execution
+  }
+}
+
+function syncWorkflowWatch() {
+  stopWorkflowWatch?.()
+  stopWorkflowWatch = null
+
+  const ids = runningExecutionIds()
+  if (ids.length === 0) return
+
+  stopWorkflowWatch = watchRunningWorkflowExecutions(
+    runningExecutionIds,
+    patchExecution,
+  )
+}
+
 async function load(opts?: { silent?: boolean }) {
   if (!opts?.silent) loading.value = true
   try {
@@ -45,15 +71,12 @@ async function load(opts?: { silent?: boolean }) {
     })
     items.value = res.items
     total.value = res.total
-    if (res.items.some((item) => item.status === 'running')) {
-      startPoll()
-    } else {
-      stopPoll()
-    }
+    syncWorkflowWatch()
   } catch {
     items.value = []
     total.value = 0
-    stopPoll()
+    stopWorkflowWatch?.()
+    stopWorkflowWatch = null
   } finally {
     if (!opts?.silent) loading.value = false
   }
@@ -90,26 +113,6 @@ function formatTime(iso: string): string {
   return d.toLocaleString('zh-CN', { hour12: false })
 }
 
-const hasRunningExecution = computed(() =>
-  items.value.some((item) => item.status === 'running'),
-)
-
-function startPoll() {
-  stopPoll()
-  if (hasRunningExecution.value) {
-    pollTimer = setInterval(() => {
-      void load({ silent: true })
-    }, 2000)
-  }
-}
-
-function stopPoll() {
-  if (pollTimer) {
-    clearInterval(pollTimer)
-    pollTimer = null
-  }
-}
-
 async function stopExecution(id: string) {
   cancellingId.value = id
   try {
@@ -124,18 +127,18 @@ async function stopExecution(id: string) {
 }
 
 onMounted(() => {
-  void load()
+  load()
 })
 
 onUnmounted(() => {
-  stopPoll()
+  stopWorkflowWatch?.()
+  stopWorkflowWatch = null
 })
 </script>
 
 <template>
   <div :class="styles.page">
     <div :class="styles.scroll">
-      <!-- Header -->
       <div :class="styles.header">
         <div :class="styles.titleRow">
           <div>
@@ -153,7 +156,6 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Table -->
       <div :class="styles.content">
         <el-table
           v-loading="loading"
@@ -180,7 +182,7 @@ onUnmounted(() => {
           </el-table-column>
           <el-table-column label="触发方式" width="100">
             <template #default="{ row }">
-              {{ row.trigger === 'manual' ? '手动' : row.trigger === 'webhook' ? 'Webhook' : row.trigger }}
+              {{ getExecutionTriggerLabel(row.trigger) }}
             </template>
           </el-table-column>
           <el-table-column label="耗时" width="100">
@@ -219,7 +221,6 @@ onUnmounted(() => {
           </template>
         </el-table>
 
-        <!-- Pagination -->
         <div v-if="total > 0" :class="styles.pagination">
           <el-pagination
             :current-page="page"

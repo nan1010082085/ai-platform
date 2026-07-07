@@ -1,7 +1,7 @@
 import { markRaw, type Component } from 'vue'
 import type { AgentNodeType } from '@/types/agentWorkflow'
-import { TOOL_NODE_TYPES, getToolNodeTypeLabel } from '@/constants/toolNodeTypes'
-import { EXPERT_NODE_TYPES, getExpertNodeTypeLabel } from '@/constants/expertNodeTypes'
+import { getToolNodeTypeLabel } from '@/constants/toolNodeTypes'
+import { getExpertNodeTypeLabel } from '@/constants/expertNodeTypes'
 import DefaultNodePanel from '@/components/agent-workflow/property-panel/panels/DefaultNodePanel.vue'
 import TriggerNodePanel from '@/components/agent-workflow/property-panel/panels/TriggerNodePanel.vue'
 import WebhookTriggerNodePanel from '@/components/agent-workflow/property-panel/panels/WebhookTriggerNodePanel.vue'
@@ -17,7 +17,6 @@ import ExpertPluginNodePanel from '@/components/agent-workflow/property-panel/pa
 
 const toolPanel = markRaw(ToolNodePanel)
 const agentPanel = markRaw(AgentNodePanel)
-
 const expertPluginPanel = markRaw(ExpertPluginNodePanel)
 
 const registry = new Map<AgentNodeType, Component>([
@@ -27,21 +26,13 @@ const registry = new Map<AgentNodeType, Component>([
   ['vision-analyze', markRaw(VisionAnalyzeNodePanel)],
   ['conversation-memory', markRaw(ConversationMemoryNodePanel)],
   ['llm', markRaw(LlmNodePanel)],
-  ['agent', agentPanel],
+  ['agent-intent', agentPanel],
   ['tool', toolPanel],
+  ['expert', expertPluginPanel],
   ['if', markRaw(IfNodePanel)],
   ['hitl', markRaw(HitlNodePanel)],
   ['end', markRaw(DefaultNodePanel)],
-  ['expert', expertPluginPanel],
 ])
-
-for (const type of TOOL_NODE_TYPES) {
-  registry.set(type, toolPanel)
-}
-
-for (const type of EXPERT_NODE_TYPES) {
-  registry.set(type, agentPanel)
-}
 
 export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   'manual-trigger': '手动触发',
@@ -50,18 +41,12 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   'vision-analyze': '图片视觉分析',
   'conversation-memory': '对话记忆',
   llm: 'LLM',
-  agent: '专家 Agent',
-  tool: '工具',
+  'agent-intent': getExpertNodeTypeLabel('agent-intent') ?? '意图识别',
+  tool: getToolNodeTypeLabel('tool') ?? '工具',
+  expert: '插件专家',
   if: '条件分支',
   hitl: '人工确认',
   end: '结束',
-  expert: '插件专家',
-  ...Object.fromEntries(
-    TOOL_NODE_TYPES.map((type) => [type, getToolNodeTypeLabel(type) ?? type]),
-  ),
-  ...Object.fromEntries(
-    EXPERT_NODE_TYPES.map((type) => [type, getExpertNodeTypeLabel(type) ?? type]),
-  ),
 }
 
 export function useAgentNodePropertyPanel() {

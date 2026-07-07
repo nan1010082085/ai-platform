@@ -77,7 +77,9 @@ function copySecret() {
     <div :class="styles.hint">
       验签：HMAC-SHA256(secret, body 或 GET 的 query JSON)，与 BPMN Webhook 相同
     </div>
-    <div :class="styles.hint">触发时 HTTP body / query 将作为 <code>$input</code></div>
+    <div :class="styles.hint">
+      Webhook 是画布<strong>入口节点</strong>；外部系统通过下方地址调用时，执行记录的 trigger 为 webhook。
+    </div>
   </SectionToggle>
   <VariableReferencePanel :node="props.node" />
 </template>

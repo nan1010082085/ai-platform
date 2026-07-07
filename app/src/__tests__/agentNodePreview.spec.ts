@@ -46,12 +46,12 @@ describe('agentNodePreview', () => {
 
   it('omits runtime input/output when execution has no payload', () => {
     const sections = getAgentNodePreviewSections(
-      'agent',
-      { label: 'Agent', agentType: 'general' },
+      'expert',
+      { label: '专家', expertId: 'platform.general' },
       {
-        nodeId: 'agent-1',
-        nodeType: 'agent',
-        nodeName: 'Agent',
+        nodeId: 'expert-1',
+        nodeType: 'expert',
+        nodeName: '专家',
         status: 'pending',
       },
     )

@@ -12,13 +12,13 @@ describe('useAgentNodePropertyPanel', () => {
   it('returns panel components for node types', () => {
     expect(getPanelComponent('llm')).toBeTruthy()
     expect(getPanelComponent('tool')).toBeTruthy()
-    expect(getPanelComponent('agent-editor')).toBeTruthy()
+    expect(getPanelComponent('expert')).toBeTruthy()
     expect(getPanelComponent('agent-intent')).toBeTruthy()
     expect(getPanelComponent('unknown')).toBeTruthy()
   })
 
   it('returns labels for expert node types', () => {
-    expect(getNodeTypeLabel('agent-editor')).toBe('Editor 专家')
+    expect(getNodeTypeLabel('expert')).toBe('插件专家')
     expect(getNodeTypeLabel('agent-intent')).toBe('意图识别')
   })
 })
