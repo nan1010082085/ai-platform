@@ -2,7 +2,7 @@
 
 > `ai/` 项目整体架构：Chat LangGraph 与 Agent Workflow 双引擎
 
-**文档版本**：v3 (2026-07-06) — 对齐当前代码，新增 Agent Workflow 编排系统
+**文档版本**：v4 (2026-07-07) — 插件分目录、Open Workflow API、workflow-client SDK
 
 ---
 
@@ -12,21 +12,23 @@
 
 ```
 ai/
-├── app/          @ai-app              Vue 3 微前端（qiankun）：对话、RAG、监控、工作流设计器
-├── sdk/          @ai-sdk              独立 Agent 框架（无 LangGraph 依赖）
-├── shared/       @schema-platform/ai-shared   跨端类型、事件、Prompt、工作流域模型
-└── docs/         本文档目录
+├── app/              @ai-app                         Vue 3 微前端：Chat、RAG、监控、工作流设计器、插件中心
+├── sdk/              @ai-sdk                          独立 Agent 框架（无 LangGraph 依赖）
+├── shared/           @schema-platform/ai-shared       跨端类型、事件、Prompt、工作流域模型
+├── workflow-client/  @schema-platform/workflow-client Open Workflow API TypeScript 客户端
+└── docs/             本文档目录
 ```
 
 | 包 | 消费者 | 职责 |
 |---|---|---|
-| `@ai-app` | shell（qiankun） | 前端 UI：Chat、工作流设计器、执行监控、RAG 管理 |
+| `@ai-app` | shell（qiankun） | 前端 UI：Chat、工作流设计器、执行监控、RAG、插件中心 `/plugins` |
 | `@ai-sdk` | 外部/示例 | 轻量 Agent：`BaseAgent` + `ToolRegistry`，可脱离平台单独使用 |
-| `@schema-platform/ai-shared` | app、server | 单一数据源：事件协议、工具名、Prompt 构建、工作流类型与模板 |
+| `@schema-platform/ai-shared` | app、server、workflow-client | 事件协议、工具名、Prompt、工作流类型 |
+| `@schema-platform/workflow-client` | 外部系统集成 | execute / poll / stream / resume / cancel |
 
-**依赖方向**：`app → ai-shared + platform-shared`；`server → ai-shared`（仓库根 `ai-shared` symlink）；`sdk` 仅依赖 OpenAI SDK。
+**依赖方向**：`app → ai-shared + platform-shared`；`server → ai-shared`；`workflow-client → ai-shared`；`sdk` 仅依赖 OpenAI SDK。
 
-**插件中心**：Expert / Skill / Tool / MCP 由 `server/config/ai-plugins*.json` 配置，详见 [plugin-registry.md](./plugin-registry.md)。
+**插件中心**：Expert / Skill / Tool / MCP 由 `server/config/plugins/` 分目录配置（见 [plugin-registry.md](./plugin-registry.md)），支持 `plugin:pack` / `plugin:install` 与 SIGHUP 热重载。
 
 **同仓开发**：`app/package.json` 通过 `file:../shared` 引用 ai-shared；Vite alias 可直连 shared 源码，改公共包后 dev/build 自动生效。
 

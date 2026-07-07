@@ -115,14 +115,16 @@
 .empty {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
 }
 
-.emptyText {
+.emptyHint {
+  margin: 12px 16px 16px;
   color: var(--text-color-disabled);
-  font-size: var(--font-size-base);
+  font-size: 12px;
+  text-align: center;
 }
 
 .deleteRow {

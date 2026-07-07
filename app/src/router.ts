@@ -38,6 +38,11 @@ const routes = [
         component: () => import('./views/AiMonitorView.vue'),
       },
       {
+        path: 'plugins',
+        name: 'plugin-center',
+        component: () => import('./views/PluginCenterView.vue'),
+      },
+      {
         path: 'workflows',
         name: 'agent-workflows',
         component: () => import('./views/AgentWorkflowListView.vue'),

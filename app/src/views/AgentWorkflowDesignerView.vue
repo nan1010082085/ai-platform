@@ -49,6 +49,9 @@ async function load() {
     store.workflowId = data.id
     store.workflowName = data.name
     store.workflowDescription = data.description ?? ''
+    store.workflowSlug = data.slug ?? ''
+    store.onCompleteWebhookUrl = data.onCompleteWebhook?.url ?? ''
+    store.onCompleteWebhookSecret = data.onCompleteWebhook?.secret ?? ''
     publishedVersion.value = data.publishedVersion
     hasRunningExecution.value = data.hasRunningExecution
     store.loadGraph(data.draftGraph)
@@ -71,6 +74,13 @@ async function onSave(): Promise<boolean> {
     await api.updateWorkflow(store.workflowId ?? workflowId(), {
       name: store.workflowName,
       description: store.workflowDescription,
+      slug: store.workflowSlug.trim() || undefined,
+      onCompleteWebhook: store.onCompleteWebhookUrl.trim()
+        ? {
+            url: store.onCompleteWebhookUrl.trim(),
+            secret: store.onCompleteWebhookSecret.trim() || undefined,
+          }
+        : null,
       draftGraph: graph,
     })
     store.dirty = false

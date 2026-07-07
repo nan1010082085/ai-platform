@@ -33,6 +33,7 @@ export interface PluginToolSummary {
   kind: string
   description?: string
   source?: string
+  argsHint?: string
 }
 
 export interface PluginMcpServerSummary {

@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { fetchPluginRegistry, type PluginExpertSummary, type PluginToolSummary } from '@/api/pluginApi'
+import { fetchPluginRegistry, type PluginExpertSummary, type PluginToolSummary, type PluginSkillSummary, type PluginMcpServerSummary } from '@/api/pluginApi'
 import type { AgentPaletteItem } from '@/constants/agentNodes'
 import type { AgentNodeType } from '@/types/agentWorkflow'
 import {
@@ -11,7 +11,9 @@ import {
 } from '@/constants/agentTools'
 
 const experts = ref<PluginExpertSummary[]>([])
+const skills = ref<PluginSkillSummary[]>([])
 const tools = ref<PluginToolSummary[]>([])
+const mcpServers = ref<PluginMcpServerSummary[]>([])
 const loaded = ref(false)
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -62,7 +64,7 @@ function registryToolToDef(tool: PluginToolSummary): BuiltInToolDef {
     name: tool.name,
     label: builtin?.label ?? tool.description?.trim() ?? tool.name,
     description: builtin?.description ?? tool.description?.trim() ?? tool.name,
-    argsHint: builtin?.argsHint ?? '{}',
+    argsHint: tool.argsHint ?? builtin?.argsHint ?? '{}',
     category: category ?? 'langgraph',
   }
 }
@@ -99,7 +101,9 @@ export function usePluginRegistry() {
     try {
       const data = await fetchPluginRegistry()
       experts.value = data.experts
+      skills.value = data.skills
       tools.value = data.tools
+      mcpServers.value = data.mcpServers
       loaded.value = true
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err)
@@ -131,7 +135,9 @@ export function usePluginRegistry() {
 
   return {
     experts,
+    skills,
     tools,
+    mcpServers,
     loaded,
     loading,
     error,

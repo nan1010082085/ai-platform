@@ -20,6 +20,7 @@ const navItems = [
   { path: '/', label: 'AI 对话', icon: 'chat-dot-round' },
   { path: '/workflows', label: 'Agent 编排', icon: 'connection' },
   { path: '/rag', label: 'RAG 知识库', icon: 'notebook' },
+  { path: '/plugins', label: '插件中心', icon: 'box' },
   { path: '/monitor', label: '性能监控', icon: 'data-line' },
 ]
 

@@ -76,6 +76,9 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
   const workflowId = ref<string | null>(null)
   const workflowName = ref('未命名工作流')
   const workflowDescription = ref('')
+  const workflowSlug = ref('')
+  const onCompleteWebhookUrl = ref('')
+  const onCompleteWebhookSecret = ref('')
   const entryNodeId = ref('trigger-1')
   const nodes = shallowRef<Node[]>([])
   const edges = shallowRef<Edge[]>([])
@@ -276,6 +279,9 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
     workflowId.value = null
     workflowName.value = '未命名工作流'
     workflowDescription.value = ''
+    workflowSlug.value = ''
+    onCompleteWebhookUrl.value = ''
+    onCompleteWebhookSecret.value = ''
     nodes.value = []
     edges.value = []
     dirty.value = false
@@ -285,6 +291,9 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
     workflowId,
     workflowName,
     workflowDescription,
+    workflowSlug,
+    onCompleteWebhookUrl,
+    onCompleteWebhookSecret,
     entryNodeId,
     nodes,
     edges,

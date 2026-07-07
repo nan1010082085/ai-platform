@@ -87,7 +87,7 @@ function deleteSelectedEdge() {
       <AppIcon name="set-up" :size="14" />
       <span v-if="selectedNode">{{ nodeTypeDisplayName }} 配置</span>
       <span v-else-if="selectedEdge">连线配置</span>
-      <span v-else>属性配置</span>
+      <span v-else>工作流设置</span>
     </div>
 
     <template v-if="selectedNode">
@@ -234,7 +234,46 @@ function deleteSelectedEdge() {
     </template>
 
     <div v-else :class="styles.empty">
-      <span :class="styles.emptyText">请选择节点或连线</span>
+      <el-scrollbar :class="styles.scroll">
+        <SectionToggle title="工作流设置" :default-open="true">
+          <FieldRow label="Slug">
+            <el-input
+              :model-value="store.workflowSlug"
+              size="small"
+              placeholder="open-api 调用标识，如 document-parse"
+              @update:model-value="(v) => { store.workflowSlug = v; store.markDirty() }"
+            />
+          </FieldRow>
+          <FieldRow label="描述" textarea>
+            <el-input
+              type="textarea"
+              :rows="2"
+              :model-value="store.workflowDescription"
+              placeholder="工作流说明"
+              @update:model-value="(v) => { store.workflowDescription = v; store.markDirty() }"
+            />
+          </FieldRow>
+          <FieldRow label="完成回调 URL">
+            <el-input
+              :model-value="store.onCompleteWebhookUrl"
+              size="small"
+              placeholder="https://example.com/hooks/workflow-done"
+              @update:model-value="(v) => { store.onCompleteWebhookUrl = v; store.markDirty() }"
+            />
+          </FieldRow>
+          <FieldRow label="回调 Secret">
+            <el-input
+              :model-value="store.onCompleteWebhookSecret"
+              size="small"
+              type="password"
+              show-password
+              placeholder="HMAC 签名密钥（可选）"
+              @update:model-value="(v) => { store.onCompleteWebhookSecret = v; store.markDirty() }"
+            />
+          </FieldRow>
+        </SectionToggle>
+        <p :class="styles.emptyHint">选择节点或连线以编辑详细配置</p>
+      </el-scrollbar>
     </div>
   </div>
 </template>

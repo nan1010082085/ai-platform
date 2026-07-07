@@ -152,6 +152,8 @@ export interface AgentWorkflowGraph {
 export interface AgentWorkflowSummary {
   id: string
   name: string
+  /** 租户内唯一 slug，Open API by-slug 执行 */
+  slug?: string | null
   description?: string
   status: AgentWorkflowStatus
   /** 当前草稿版本号 (yyyymmddhhmmss) */
@@ -168,6 +170,12 @@ export interface AgentWorkflowSummary {
 
 export interface AgentWorkflowDetail extends AgentWorkflowSummary {
   draftGraph: AgentWorkflowGraph
+  onCompleteWebhook?: { url: string; secret?: string } | null
+}
+
+export interface AgentWorkflowOpenWebhook {
+  url: string
+  secret?: string
 }
 
 export interface AgentWorkflowVersionEntry {
@@ -211,7 +219,7 @@ export interface AgentWorkflowExecution {
   versionId: string | null
   version: string
   status: AgentExecutionStatus
-  trigger: 'manual' | 'chat' | 'webhook'
+  trigger: 'manual' | 'chat' | 'webhook' | 'api'
   startedAt: string
   finishedAt?: string
   durationMs?: number

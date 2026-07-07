@@ -59,7 +59,7 @@ describe('AgentWorkflowDesignerView render', () => {
 
     const text = wrapper.text()
     expect(text).toContain('节点')
-    expect(text).toContain('属性配置')
+    expect(text).toContain('工作流设置')
     expect(text).toContain('手动触发')
     const titleInput = wrapper.find('input[placeholder="未命名工作流"]')
     expect((titleInput.element as HTMLInputElement).value).toBe('test-save')

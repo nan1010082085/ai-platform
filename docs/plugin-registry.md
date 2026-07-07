@@ -1,36 +1,62 @@
 # 插件中心（Plugin Registry）
 
-> 配置文件驱动的 Expert / Skill / Tool / MCP 四层能力目录。Chat（LangGraph）与 Workflow（DAG）共用，避免硬编码。
+> 配置文件驱动的 Expert / Skill / Tool / MCP 四层能力目录。Chat（LangGraph）与 Workflow（DAG）共用。
+
+**路线图**：[plugin-roadmap.md](./plugin-roadmap.md)  
+**Workflow 对外开放**：[design/workflow-open-api.md](./design/workflow-open-api.md)
 
 ## 一、配置文件
 
-| 文件 | 说明 |
-|------|------|
-| `server/config/ai-plugins.builtin.json` | 内置平台专家、工具目录、MCP Server 声明（随仓库发布） |
-| `server/config/ai-plugins.json` | 环境扩展（可提交），默认可为空数组 |
-| `server/config/ai-plugins.local.json` | 本地覆盖（建议 gitignore），复制 `.example` |
-| `AI_PLUGIN_CONFIG_PATH` | 额外 manifest 绝对路径 |
-| `AI_PLUGIN_CONFIG_DIR` | 配置目录，默认 `server/config` |
+### 推荐：分目录（`server/config/plugins/`）
 
-**合并规则**：按顺序加载，同 `id` / `name` 后者覆盖前者：
-
-```text
-ai-plugins.builtin.json → ai-plugins.json → ai-plugins.local.json（若存在）→ AI_PLUGIN_CONFIG_PATH
+```
+plugins/
+├── mcp/           # 每个文件一个 MCP Server（含 id）
+├── tools/         # 按域分组，如 mcp-schema.json → { "tools": [...] }
+├── experts/       # 每个文件一个 Expert（含 id）
+├── skills/        # 每个文件一个 Skill（含 id）
+├── local/         # 本机覆盖（gitignore）
+├── tenants/{id}/  # 租户 overlay（配合 AI_PLUGIN_TENANT_ID）
+├── packs/         # 可分发插件包源码（manifest.json + layers）
+└── local.example/ # 扩展示例
 ```
 
-| 层级 | 用途 | Git |
-|------|------|-----|
-| **builtin** | 平台出厂能力（4 专家 + 5 MCP + 工具目录） | 提交 |
-| **json** | 环境/租户共用扩展 | 提交 |
-| **local** | 本机私有（外置 MCP、试验专家） | 建议 gitignore |
+详见 `server/config/plugins/README.md`。
+
+### 兼容：单文件 overlay
+
+| 文件 | 说明 |
+|------|------|
+| `ai-plugins.builtin.json` | **已废弃**（内容已迁入 `plugins/`），保留空壳兼容 |
+| `ai-plugins.json` | 环境扩展，可提交 |
+| `ai-plugins.local.json` | 本机单文件覆盖 |
+| `AI_PLUGIN_CONFIG_PATH` | 额外 manifest **文件或同结构目录** |
+| `AI_PLUGIN_CONFIG_DIR` | 配置根目录，默认 `server/config` |
+
+**合并顺序**（后者覆盖同 id / name）：
+
+```text
+plugins/ → ai-plugins.builtin.json → ai-plugins.json
+  → plugins/local/ → plugins/tenants/{AI_PLUGIN_TENANT_ID}/
+  → ai-plugins.local.json → AI_PLUGIN_CONFIG_PATH
+```
+
+**运维 CLI**（在 `server/` 目录）：
+
+```bash
+pnpm plugin:validate
+pnpm plugin:pack --dir config/plugins/packs/example.support --out dist/example.support.tgz
+pnpm plugin:install --file dist/example.support.tgz [--tenant acme]
+kill -HUP $(pgrep -f "dist/index.js")   # 热重载 Registry
+```
 
 ## 二、四层模型
 
 ```text
-mcpServers[]  →  bridge 按 transport 连接（inmemory / stdio / sse）
-tools[]       →  工具元数据（kind: mcp | graph | http）
-skills[]      →  Markdown 指令（content 或 file）
-experts[]     →  专家 Agent：prompt + tools + skills + routing
+mcp/       →  bridge 按 transport 连接（inmemory / stdio / sse）
+tools/     →  工具元数据（kind: mcp | graph | http）
+skills/    →  Markdown 指令（content 或 file）
+experts/   →  专家 Agent：prompt + tools + skills + routing
 ```
 
 ### Expert 关键字段
@@ -38,74 +64,51 @@ experts[]     →  专家 Agent：prompt + tools + skills + routing
 | 字段 | 说明 |
 |------|------|
 | `id` | 全局唯一，如 `platform.editor` |
-| `legacyAgentKey` | 对齐 LangGraph `currentAgent` / Workflow `agentType` |
-| `dynamicPrompt` | `editor` / `flow` / `page` / `general` → 运行时 `promptBuilder` |
-| `systemPrompt` | 纯外置专家使用内联 prompt |
-| `tools` | 工具名列表，执行时 `getToolsByNames` |
-| `skills` | 附加 Skill id，拼装进 system prompt |
-| `routing.keywords` | 供 LangGraph 意图匹配（`matchExpertsByRouting`） |
+| `legacyAgentKey` | 对齐 LangGraph `currentAgent` / 旧 Workflow 节点 |
+| `dynamicPrompt` | `editor` / `flow` / `page` / `general` → promptBuilder |
+| `systemPrompt` | 纯外置专家内联 prompt |
+| `tools` | 工具名列表 |
+| `skills` | Skill id 列表 |
+| `routing` | LangGraph 意图匹配 |
 | `runtime` | `langgraph` / `workflow` |
 
 ## 三、与 Chat / Workflow / 设计器
 
 | 消费方 | Registry 用法 |
 |--------|----------------|
-| **LangGraph Chat** | `editor`/`flow`/`page` 读 prompt+tools；无 legacy 专家走 `pluginExpert` 节点 |
-| **Workflow 执行器** | `runRegisteredExpert`；`expert` 节点用 `expertId` |
-| **设计器 Palette** | `GET /api/ai/plugins` → 专家区 + MCP 工具区动态列表 |
-| **ToolNodePanel** | `usePluginRegistry().getToolsForPanel()`，argsHint 回退 `agentTools` |
-
-前端 `agentTools.ts` 仅保留 **参数示例（argsHint）** 与旧图兼容，**工具清单以 Registry 为准**。
+| LangGraph Chat | legacy 专家 + `pluginExpert` 自定义专家 |
+| Workflow 执行器 | `runRegisteredExpert`；`expert` 节点 + `expertId` |
+| 设计器 | `GET /api/ai/plugins` → Palette + ToolNodePanel |
+| **外部系统** | 执行 workflow 内 expert 节点，配置来自 Registry；Open API 见 [workflow-open-api.md](./design/workflow-open-api.md) |
 
 ## 四、扩展示例
 
-复制 `ai-plugins.local.json.example` 为 `ai-plugins.local.json`，或设置：
-
 ```bash
-export AI_PLUGIN_CONFIG_PATH=/path/to/my-plugins.json
+cp -R server/config/plugins/local.example server/config/plugins/local
+# 编辑 local/experts/*.json，设 enabled: true
+# 重启 server
 ```
 
-```json
-{
-  "version": 1,
-  "experts": [
-    {
-      "id": "acme.support",
-      "label": "客服专家",
-      "systemPrompt": "你是客服助手。",
-      "tools": ["rag__search"],
-      "routing": { "keywords": ["客服", "工单"] },
-      "runtime": ["langgraph", "workflow"]
-    }
-  ]
-}
-```
-
-重启 server 后生效（当前无热重载）。
+或在 `plugins/local/experts/acme.support.json` 新增专家文件。
 
 ## 五、代码入口
 
 | 路径 | 职责 |
 |------|------|
-| `server/src/ai/plugins/types.ts` | 类型 |
-| `server/src/ai/plugins/registry.ts` | 注册表 |
-| `server/src/ai/plugins/loadPluginConfig.ts` | 读配置 |
-| `server/src/ai/plugins/resolveExpertPrompt.ts` | Prompt 拼装 |
-| `server/src/ai/plugins/dispatchExpert.ts` | `runRegisteredExpert` 统一调度 |
-| `server/src/ai/mcp/bridge.ts` | 按 Registry 声明初始化 MCP |
-| `ai/app/src/composables/usePluginRegistry.ts` | 设计器消费 Registry |
+| `server/config/plugins/` | 分文件配置 |
+| `server/src/ai/plugins/loadPluginConfig.ts` | 目录 + legacy 合并 |
+| `server/src/ai/plugins/dispatchExpert.ts` | 统一专家调度 |
+| `server/src/ai/mcp/bridge.ts` | MCP 连接 |
+| `ai/app/src/composables/usePluginRegistry.ts` | 设计器消费 |
 
-启动时由 `tools/registry.ts` 在 MCP 初始化前调用 `initPluginRegistry()`。
+部署：`deploy/pack.sh --target server` 复制整个 `server/config/`。
 
-**部署**：`deploy/pack.sh --target server` 会复制 `server/config/`（含 `ai-plugins*.json`）。
+## 六、已完成能力（P0–P1）
 
-## 六、后续（P1+）
+1. Router / taskPlanner 动态专家  
+2. `GET /api/ai/plugins`  
+3. MCP bridge 读 Registry  
+4. 设计器 Palette + `expert` 节点  
+5. `runRegisteredExpert` + `pluginExpert`  
 
-1. ~~`router` 使用 `matchExpertsByRouting`~~（已接入 `resolveRoutedExpert`，支持无 legacy 专家走 `pluginExpert` 节点）
-2. ~~`taskPlanner` prompt 动态注入 `listExperts()`~~（已接入 `buildExpertCatalogForPrompt`）
-3. ~~`GET /api/ai/plugins` 只读目录 API~~（已实现，需登录）
-4. ~~`bridge` 从 Registry 加载 MCP~~（inmemory / stdio / sse 按声明连接）
-5. ~~Workflow 设计器 Palette 从 Registry 拉专家列表~~（`expert` 节点 + PropertyPanel 下拉）
-6. ~~通用专家执行~~（`runRegisteredExpert` + Workflow `expert` 节点；Chat 侧 `pluginExpert` 图节点）
-
-扩展新专家：在 `ai-plugins.json` 或 `ai-plugins.local.json` 增加 `experts[]` 条目，重启 server，设计器 Palette 自动出现。
+未完成项见 [plugin-roadmap.md](./plugin-roadmap.md)。

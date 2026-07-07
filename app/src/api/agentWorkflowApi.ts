@@ -85,7 +85,13 @@ export function getWorkflow(id: string): Promise<AgentWorkflowDetail> {
 
 export function updateWorkflow(
   id: string,
-  patch: { name?: string; description?: string; draftGraph?: AgentWorkflowGraph },
+  patch: {
+    name?: string
+    description?: string
+    slug?: string
+    onCompleteWebhook?: { url: string; secret?: string } | null
+    draftGraph?: AgentWorkflowGraph
+  },
 ): Promise<AgentWorkflowDetail> {
   return request(`/ai/workflows/${id}`, {
     method: 'PUT',
