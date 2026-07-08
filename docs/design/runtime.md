@@ -166,7 +166,6 @@ flowchart TD
 
 **环境开关**（`graph.ts` `V2_CONFIG`）：
 
-- `AI_ENABLE_REQUIREMENT_ANALYSIS !== 'false'` → v2 管线
 - `AI_ENABLE_TASK_PLANNER !== 'false'` → 启用 taskPlanner
 
 ### 2.3 streamEvents → 前端事件映射

@@ -52,6 +52,16 @@ const routes = [
         name: 'agent-workflow-executions',
         component: () => import('./views/AgentExecutionListView.vue'),
       },
+      {
+        path: 'settings/keys',
+        name: 'api-keys',
+        component: () => import('./views/ApiKeyManagerView.vue'),
+      },
+      {
+        path: 'settings/models',
+        name: 'model-settings',
+        component: () => import('./views/ModelSettingsView.vue'),
+      },
     ],
   },
   {

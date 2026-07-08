@@ -537,12 +537,17 @@ export type AgentWorkflowTemplateId =
   | 'document-summary'
   | 'doc-image-recognition'
   | 'intelligent-assistant'
+  | 'contract-extract'
+  | 'kb-faq'
+  | 'http-notify'
+  | 'rag-ingest-qa'
+  | 'multi-doc-batch'
 
 export interface AgentWorkflowTemplateMeta {
   id: AgentWorkflowTemplateId
   name: string
   description: string
-  category: 'general' | 'document' | 'assistant'
+  category: 'general' | 'document' | 'assistant' | 'integration' | 'batch'
 }
 
 export const AGENT_WORKFLOW_TEMPLATES: AgentWorkflowTemplateMeta[] = [
@@ -570,7 +575,416 @@ export const AGENT_WORKFLOW_TEMPLATES: AgentWorkflowTemplateMeta[] = [
     description: 'RAG 检索知识库后由 LLM 生成帮助回答',
     category: 'assistant',
   },
+  {
+    id: 'contract-extract',
+    name: '合同条款提取',
+    description: '上传合同文档，解析后由 LLM 结构化提取关键条款与风险点',
+    category: 'document',
+  },
+  {
+    id: 'kb-faq',
+    name: '知识库 FAQ 生成',
+    description: 'Webhook 接收文档，由 LLM 自动生成问答对并写入知识库',
+    category: 'assistant',
+  },
+  {
+    id: 'http-notify',
+    name: 'HTTP 回调通知',
+    description: 'Webhook 接收数据 → LLM 处理 → HTTP POST 结果到外部系统',
+    category: 'integration',
+  },
+  {
+    id: 'rag-ingest-qa',
+    name: 'RAG 入库质检',
+    description: '文档解析后经 LLM 质检，合格文档自动入库，不合格触发人工审核',
+    category: 'assistant',
+  },
+  {
+    id: 'multi-doc-batch',
+    name: '单文档摘要处理',
+    description: 'Webhook 接收文档，解析后由 LLM 生成摘要并汇总结果（多次调用可累积）',
+    category: 'batch',
+  },
 ]
+
+/** 合同条款提取：Webhook 接收合同文档 → 解析 → LLM 结构化提取 → 结束 */
+export function createContractExtractWorkflowGraph(): AgentWorkflowGraph {
+  return layoutAgentWorkflowGraph({
+    entryNodeId: 'webhook-1',
+    nodes: [
+      {
+        id: 'webhook-1',
+        type: 'webhook-trigger',
+        position: { x: 80, y: 200 },
+        data: {
+          label: 'Webhook 触发',
+          webhookPath: '/contract-extract',
+          webhookMethod: 'POST',
+        },
+      },
+      {
+        id: 'parse-1',
+        type: 'document-parse',
+        position: { x: 320, y: 200 },
+        data: {
+          label: '合同文档解析',
+          documentSource: 'stream',
+          streamField: 'file',
+        },
+      },
+      {
+        id: 'llm-1',
+        type: 'llm',
+        position: { x: 560, y: 200 },
+        data: {
+          label: '条款结构化提取',
+          model: 'default',
+          systemPrompt:
+            '你是合同分析专家。从合同文本中提取关键条款，输出 JSON：{ "parties": [], "effectiveDate": "", "expiryDate": "", "totalAmount": "", "paymentTerms": "", "keyClauses": [{"clause": "", "content": "", "riskLevel": "low|medium|high"}], "risks": [] }。只输出 JSON，不要 markdown 代码块。',
+          prompt:
+            '文件名：{{$node.parse-1.filename}}\n\n合同正文：\n{{$node.parse-1.text}}\n\n请提取所有关键条款与潜在风险点。',
+        },
+      },
+      {
+        id: 'end-1',
+        type: 'end',
+        position: { x: 800, y: 200 },
+        data: { label: '结束' },
+      },
+    ],
+    edges: [
+      { id: 'e1', source: 'webhook-1', target: 'parse-1' },
+      { id: 'e2', source: 'parse-1', target: 'llm-1' },
+      { id: 'e3', source: 'llm-1', target: 'end-1' },
+    ],
+  })
+}
+
+/** 知识库 FAQ 生成：手动触发 → 文档解析 → LLM 生成问答对 → RAG 写入 → 结束 */
+export function createKbFaqWorkflowGraph(): AgentWorkflowGraph {
+  return layoutAgentWorkflowGraph({
+    entryNodeId: 'webhook-1',
+    nodes: [
+      {
+        id: 'webhook-1',
+        type: 'webhook-trigger',
+        position: { x: 80, y: 200 },
+        data: {
+          label: 'Webhook 触发',
+          webhookPath: '/kb-faq',
+          webhookMethod: 'POST',
+        },
+      },
+      {
+        id: 'parse-1',
+        type: 'document-parse',
+        position: { x: 320, y: 200 },
+        data: {
+          label: '文档解析',
+          documentSource: 'stream',
+          streamField: 'file',
+        },
+      },
+      {
+        id: 'llm-1',
+        type: 'llm',
+        position: { x: 560, y: 200 },
+        data: {
+          label: '生成 FAQ 问答对',
+          model: 'default',
+          systemPrompt:
+            '你是知识库内容专家。根据文档内容生成高质量的 FAQ 问答对。输出 JSON 数组：[{ "question": "...", "answer": "..." }]。问题应覆盖文档核心知识点，答案简洁准确。生成 5~15 对。只输出 JSON。',
+          prompt:
+            '文档标题：{{$node.parse-1.filename}}\n\n文档内容：\n{{$node.parse-1.text}}\n\n请生成 FAQ 问答对。',
+        },
+      },
+      {
+        id: 'rag-write',
+        type: 'tool',
+        position: { x: 800, y: 200 },
+        data: {
+          label: '写入知识库',
+          toolCategory: 'mcp-rag',
+          toolName: 'rag__ingest',
+          toolArgs: {
+            content: '{{$node.llm-1}}',
+            metadata: { source: 'faq-generated', filename: '{{$node.parse-1.filename}}' },
+          },
+        },
+      },
+      {
+        id: 'end-1',
+        type: 'end',
+        position: { x: 1040, y: 200 },
+        data: { label: '结束' },
+      },
+    ],
+    edges: [
+      { id: 'e1', source: 'webhook-1', target: 'parse-1' },
+      { id: 'e2', source: 'parse-1', target: 'llm-1' },
+      { id: 'e3', source: 'llm-1', target: 'rag-write' },
+      { id: 'e4', source: 'rag-write', target: 'end-1' },
+    ],
+  })
+}
+
+/** HTTP 回调通知：手动触发 → LLM 处理 → HTTP POST 结果 → 结束 */
+export function createHttpNotifyWorkflowGraph(): AgentWorkflowGraph {
+  return layoutAgentWorkflowGraph({
+    entryNodeId: 'webhook-1',
+    nodes: [
+      {
+        id: 'webhook-1',
+        type: 'webhook-trigger',
+        position: { x: 80, y: 200 },
+        data: {
+          label: 'Webhook 触发',
+          webhookPath: '/process-and-notify',
+          webhookMethod: 'POST',
+        },
+      },
+      {
+        id: 'llm-1',
+        type: 'llm',
+        position: { x: 320, y: 200 },
+        data: {
+          label: '内容处理',
+          model: 'default',
+          systemPrompt: '你是数据处理助手。对输入内容进行分析和摘要，输出结构化 JSON 结果。',
+          prompt: '请处理以下输入并输出结构化结果：\n\n{{$input}}',
+        },
+      },
+      {
+        id: 'notify-1',
+        type: 'tool',
+        position: { x: 560, y: 200 },
+        data: {
+          label: 'HTTP 回调通知',
+          toolCategory: 'workflow',
+          toolName: 'http__request',
+          toolArgs: {
+            url: '{{$input.callbackUrl}}',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: {
+              workflowId: '{{$execution.workflowId}}',
+              status: 'completed',
+              result: '{{$node.llm-1}}',
+              timestamp: '{{$now}}',
+            },
+          },
+        },
+      },
+      {
+        id: 'end-1',
+        type: 'end',
+        position: { x: 800, y: 200 },
+        data: { label: '结束' },
+      },
+    ],
+    edges: [
+      { id: 'e1', source: 'webhook-1', target: 'llm-1' },
+      { id: 'e2', source: 'llm-1', target: 'notify-1' },
+      { id: 'e3', source: 'notify-1', target: 'end-1' },
+    ],
+  })
+}
+
+/** RAG 入库质检：Webhook 接收文档 → 解析 → LLM 质检 → 判断是否合格 → 合格入库 / 不合格人工审核 */
+export function createRagIngestQaWorkflowGraph(): AgentWorkflowGraph {
+  return layoutAgentWorkflowGraph({
+    entryNodeId: 'webhook-1',
+    nodes: [
+      {
+        id: 'webhook-1',
+        type: 'webhook-trigger',
+        position: { x: 80, y: 200 },
+        data: {
+          label: 'Webhook 触发',
+          webhookPath: '/rag-ingest-qa',
+          webhookMethod: 'POST',
+        },
+      },
+      {
+        id: 'parse-1',
+        type: 'document-parse',
+        position: { x: 320, y: 200 },
+        data: {
+          label: '文档解析',
+          documentSource: 'stream',
+          streamField: 'file',
+        },
+      },
+      {
+        id: 'llm-qa',
+        type: 'llm',
+        position: { x: 560, y: 200 },
+        data: {
+          label: '内容质量检查',
+          model: 'default',
+          systemPrompt:
+            '你是文档质检员。检查文档内容是否适合入库：内容是否完整、是否有实质信息、是否为乱码或空白。输出 JSON：{ "passed": true/false, "reason": "..." }。只输出 JSON。',
+          prompt:
+            '文件名：{{$node.parse-1.filename}}\n\n文档内容：\n{{$node.parse-1.text}}\n\n请判断该文档是否适合写入知识库。',
+        },
+      },
+      {
+        id: 'if-1',
+        type: 'if',
+        position: { x: 800, y: 200 },
+        data: {
+          label: '质检是否通过',
+          expression: "lastOutput && lastOutput.passed === true",
+        },
+      },
+      {
+        id: 'rag-ingest',
+        type: 'tool',
+        position: { x: 1040, y: 100 },
+        data: {
+          label: '写入知识库',
+          toolCategory: 'mcp-rag',
+          toolName: 'rag__ingest',
+          toolArgs: {
+            content: '{{$node.parse-1.text}}',
+            metadata: { source: 'qa-passed', filename: '{{$node.parse-1.filename}}' },
+          },
+        },
+      },
+      {
+        id: 'hitl-1',
+        type: 'hitl',
+        position: { x: 1040, y: 300 },
+        data: {
+          label: '人工审核',
+          confirmMessage: '文档「{{$node.parse-1.filename}}」质检未通过，原因：{{$node.llm-qa.reason}}。请确认是否仍要入库？',
+          confirmQuestions: [
+            { id: 'q1', question: '是否强制入库？', options: ['入库', '丢弃'], required: true },
+            { id: 'q2', question: '备注说明', required: false },
+          ],
+        },
+      },
+      {
+        id: 'if-hitl',
+        type: 'if',
+        position: { x: 1280, y: 300 },
+        data: {
+          label: '用户选择',
+          expression: "hitlResult && hitlResult.q1 === '入库'",
+        },
+      },
+      {
+        id: 'rag-ingest-force',
+        type: 'tool',
+        position: { x: 1520, y: 250 },
+        data: {
+          label: '强制入库',
+          toolCategory: 'mcp-rag',
+          toolName: 'rag__ingest',
+          toolArgs: {
+            content: '{{$node.parse-1.text}}',
+            metadata: { source: 'qa-manual-override', filename: '{{$node.parse-1.filename}}' },
+          },
+        },
+      },
+      {
+        id: 'end-1',
+        type: 'end',
+        position: { x: 1520, y: 400 },
+        data: { label: '结束' },
+      },
+    ],
+    edges: [
+      { id: 'e1', source: 'webhook-1', target: 'parse-1' },
+      { id: 'e2', source: 'parse-1', target: 'llm-qa' },
+      { id: 'e3', source: 'llm-qa', target: 'if-1' },
+      { id: 'e4', source: 'if-1', target: 'rag-ingest', data: { branch: 'true' } },
+      { id: 'e5', source: 'if-1', target: 'hitl-1', data: { branch: 'false' } },
+      { id: 'e6', source: 'rag-ingest', target: 'end-1' },
+      { id: 'e7', source: 'hitl-1', target: 'if-hitl' },
+      { id: 'e8', source: 'if-hitl', target: 'rag-ingest-force', data: { branch: 'true' } },
+      { id: 'e9', source: 'if-hitl', target: 'end-1', data: { branch: 'false' } },
+      { id: 'e10', source: 'rag-ingest-force', target: 'end-1' },
+    ],
+  })
+}
+
+/** 多文档批量处理：Webhook 接收文档列表 → 解析 → LLM 摘要 → 汇总 → 结束 */
+export function createMultiDocBatchWorkflowGraph(): AgentWorkflowGraph {
+  return layoutAgentWorkflowGraph({
+    entryNodeId: 'webhook-1',
+    nodes: [
+      {
+        id: 'webhook-1',
+        type: 'webhook-trigger',
+        position: { x: 80, y: 200 },
+        data: {
+          label: 'Webhook 触发',
+          webhookPath: '/multi-doc-batch',
+          webhookMethod: 'POST',
+        },
+      },
+      {
+        id: 'parse-1',
+        type: 'document-parse',
+        position: { x: 320, y: 200 },
+        data: {
+          label: '文档解析',
+          documentSource: 'stream',
+          streamField: 'file',
+        },
+      },
+      {
+        id: 'llm-single',
+        type: 'llm',
+        position: { x: 560, y: 200 },
+        data: {
+          label: '单文档摘要',
+          model: 'default',
+          systemPrompt: '你是文档摘要助手。为每篇文档生成简洁的中文摘要，提取关键信息。输出 JSON：{ "filename": "...", "summary": "...", "keyPoints": [] }。只输出 JSON。',
+          prompt:
+            '文件名：{{$node.parse-1.filename}}\n\n文档内容：\n{{$node.parse-1.text}}\n\n请生成摘要。',
+        },
+      },
+      {
+        id: 'memory-1',
+        type: 'conversation-memory',
+        position: { x: 800, y: 200 },
+        data: {
+          label: '追加摘要到记忆',
+          memoryMode: 'append',
+          memoryRole: 'assistant',
+          contentSource: 'lastOutput',
+          maxHistoryTurns: 50,
+        },
+      },
+      {
+        id: 'llm-summary',
+        type: 'llm',
+        position: { x: 1040, y: 200 },
+        data: {
+          label: '汇总所有摘要',
+          model: 'default',
+          systemPrompt: '你是文档汇总助手。根据已处理的所有文档摘要，生成一份综合报告。输出 JSON：{ "totalDocuments": N, "summaries": [...], "overallSummary": "...", "commonThemes": [] }。只输出 JSON。',
+          prompt: '已处理的文档摘要：\n{{$conversation}}\n\n请生成综合汇总报告。',
+        },
+      },
+      {
+        id: 'end-1',
+        type: 'end',
+        position: { x: 1280, y: 200 },
+        data: { label: '结束' },
+      },
+    ],
+    edges: [
+      { id: 'e1', source: 'webhook-1', target: 'parse-1' },
+      { id: 'e2', source: 'parse-1', target: 'llm-single' },
+      { id: 'e3', source: 'llm-single', target: 'memory-1' },
+      { id: 'e4', source: 'memory-1', target: 'llm-summary' },
+      { id: 'e5', source: 'llm-summary', target: 'end-1' },
+    ],
+  })
+}
 
 export function createAgentWorkflowGraphByTemplate(
   templateId: AgentWorkflowTemplateId,
@@ -582,6 +996,16 @@ export function createAgentWorkflowGraphByTemplate(
       return createDocImageRecognitionWorkflowGraph()
     case 'intelligent-assistant':
       return createIntelligentAssistantWorkflowGraph()
+    case 'contract-extract':
+      return createContractExtractWorkflowGraph()
+    case 'kb-faq':
+      return createKbFaqWorkflowGraph()
+    case 'http-notify':
+      return createHttpNotifyWorkflowGraph()
+    case 'rag-ingest-qa':
+      return createRagIngestQaWorkflowGraph()
+    case 'multi-doc-batch':
+      return createMultiDocBatchWorkflowGraph()
     case 'blank':
     default:
       return createDefaultAgentWorkflowGraph()

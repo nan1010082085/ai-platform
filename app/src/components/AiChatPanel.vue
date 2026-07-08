@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, computed, onMounted } from 'vue'
+import { ref, nextTick, watch, computed, onMounted, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
@@ -13,7 +13,8 @@ import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
 import { useAiStore } from '@/stores/ai'
 import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
 import { useShellEmbed } from '@/composables/useShellEmbed'
-import { uploadFile } from '@/api/aiApi'
+import { uploadFile, getStarterPrompts } from '@/api/aiApi'
+import type { StarterPrompt } from '@/api/aiApi'
 import {
   DOCUMENT_UPLOAD_ACCEPT,
   DOCUMENT_FORMAT_LABEL,
@@ -201,13 +202,26 @@ function removeAttachment(index: number): void {
   pendingAttachments.value.splice(index, 1)
 }
 
-/** F3: 空状态引导 prompt 列表 */
-const starterPrompts = [
-  { icon: '&#x1F4DD;', text: '帮我生成一个用户注册表单', agent: 'editor' as AgentType },
-  { icon: '&#x1F4CB;', text: '创建一个订单审批流程', agent: 'flow' as AgentType },
-  { icon: '&#x1F50D;', text: '搜索已有的表单模板', agent: 'auto' as AgentType },
-  { icon: '&#x2699;', text: '设计一个系统配置页面', agent: 'editor' as AgentType },
+/** F3: 空状态引导 prompt 列表（从 API 获取，硬编码兜底） */
+const DEFAULT_STARTER_PROMPTS: StarterPrompt[] = [
+  { icon: 'edit', text: '帮我生成一个用户注册表单', agent: 'editor' },
+  { icon: 'list', text: '创建一个订单审批流程', agent: 'flow' },
+  { icon: 'search', text: '搜索已有的表单模板', agent: 'auto' },
+  { icon: 'setting', text: '设计一个系统配置页面', agent: 'editor' },
 ]
+
+const starterPrompts = shallowRef<StarterPrompt[]>(DEFAULT_STARTER_PROMPTS)
+
+onMounted(async () => {
+  try {
+    const remote = await getStarterPrompts()
+    if (Array.isArray(remote) && remote.length > 0) {
+      starterPrompts.value = remote
+    }
+  } catch {
+    // API 失败时保留硬编码默认值
+  }
+})
 
 /** Transform store AIMessage into display-oriented props for AiMessage component */
 function getDisplayCards(msg: AIMessage): MessageEmbeddedCard[] | undefined {
@@ -414,9 +428,9 @@ function handleCardAction(
             v-for="(prompt, idx) in starterPrompts"
             :key="idx"
             :class="$style.promptCard"
-            @click="selectedAgent = prompt.agent; emit('send', prompt.text, prompt.agent)"
+            @click="selectedAgent = prompt.agent as AgentType; emit('send', prompt.text, prompt.agent as AgentType)"
           >
-            <span :class="$style.promptIcon" v-html="prompt.icon" />
+            <AppIcon :name="prompt.icon" :size="16" :class="$style.promptIcon" />
             <span :class="$style.promptText">{{ prompt.text }}</span>
           </el-button>
         </div>

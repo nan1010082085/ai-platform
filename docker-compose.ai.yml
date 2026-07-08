@@ -1,0 +1,73 @@
+# AI Platform Demo Stack -- server + ai frontend + MongoDB
+# Usage: docker compose -f docker-compose.ai.yml up -d
+#
+# Prerequisites:
+#   - Create .env file (cp .env.example .env) with at minimum:
+#     DEEPSEEK_API_KEY, JWT_SECRET
+#   - Or pass them as environment variables below
+
+services:
+  mongo:
+    image: mongo:8
+    container_name: schema-ai-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: formgrid
+      MONGO_INITDB_ROOT_PASSWORD: formgrid
+      MONGO_INITDB_DATABASE: formgrid
+    volumes:
+      - ai-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  schema-platform-server:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    container_name: schema-ai-server
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      MONGODB_URI: mongodb://formgrid:formgrid@mongo:27017/formgrid?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-}
+      DEFAULT_LLM: ${DEFAULT_LLM:-}
+      PLATFORM_LLM_ENABLED: ${PLATFORM_LLM_ENABLED:-true}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-https://api.hpc-ai.com/inference/v1}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-m3}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1024}
+      CREDENTIAL_SECRET: ${CREDENTIAL_SECRET:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5300}
+      AI_ENABLE_TASK_PLANNER: ${AI_ENABLE_TASK_PLANNER:-true}
+
+  ai:
+    build:
+      context: ..
+      dockerfile: ai/app/Dockerfile
+    container_name: schema-ai-frontend
+    restart: unless-stopped
+    ports:
+      - "5300:5300"
+    depends_on:
+      - schema-platform-server
+
+volumes:
+  ai-mongo-data:

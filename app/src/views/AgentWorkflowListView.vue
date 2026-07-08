@@ -13,6 +13,7 @@ import type {
 import { AGENT_WORKFLOW_TEMPLATES } from '@/types/agentWorkflow'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import AgentWorkflowTemplatePreviewDialog from '@/components/agent-workflow/AgentWorkflowTemplatePreviewDialog.vue'
+import WorkflowInvokeInfo from '@/components/WorkflowInvokeInfo.vue'
 import * as api from '@/api/agentWorkflowApi'
 import styles from './AgentWorkflowListView.module.scss'
 
@@ -29,6 +30,8 @@ const selectedTemplateId = ref<AgentWorkflowTemplateId>('blank')
 const creating = ref(false)
 const previewVisible = ref(false)
 const previewTemplate = ref<AgentWorkflowTemplateMeta | null>(null)
+const tryingTemplateId = ref<AgentWorkflowTemplateId | null>(null)
+const expandedInvokeId = ref<string | null>(null)
 
 const workflowTemplates = AGENT_WORKFLOW_TEMPLATES
 
@@ -153,6 +156,22 @@ function onPreviewUse(id: AgentWorkflowTemplateId) {
   onUseTemplate(id)
 }
 
+async function onTryTemplate(templateId: AgentWorkflowTemplateId) {
+  if (tryingTemplateId.value) return
+  tryingTemplateId.value = templateId
+  try {
+    const tpl = workflowTemplates.find((t) => t.id === templateId)
+    const name = `试用-${TEMPLATE_DEFAULT_NAMES[templateId]}`
+    const wf = await api.createWorkflow(name, tpl?.description ?? '', templateId)
+    // 导航到对话页面并设置 workflowId
+    router.push({ name: 'chat', query: { workflowId: wf.id } })
+  } catch (e) {
+    message.error(e instanceof Error ? e.message : '创建试用工作流失败')
+  } finally {
+    tryingTemplateId.value = null
+  }
+}
+
 function onBrowseTemplates() {
   activeTab.value = 'templates'
 }
@@ -214,6 +233,10 @@ async function onDelete(id: string) {
   } catch (e) {
     message.error(e instanceof Error ? e.message : '删除失败')
   }
+}
+
+function toggleInvokeInfo(id: string): void {
+  expandedInvokeId.value = expandedInvokeId.value === id ? null : id
 }
 
 function formatDate(iso: string): string {
@@ -350,6 +373,22 @@ onMounted(load)
                   <AppIcon name="plus" />
                 </el-button>
               </el-tooltip>
+              <el-tooltip
+                v-if="tpl.category === 'assistant' || tpl.category === 'document'"
+                :content="tpl.category === 'assistant' ? '试用' : '在对话中体验'"
+                placement="top"
+                :show-after="300"
+              >
+                <el-button
+                  size="small"
+                  text
+                  type="success"
+                  :loading="tryingTemplateId === tpl.id"
+                  @click="onTryTemplate(tpl.id)"
+                >
+                  <AppIcon name="chat-dot-round" />
+                </el-button>
+              </el-tooltip>
             </div>
           </div>
         </div>
@@ -411,6 +450,21 @@ onMounted(load)
                 </el-button>
               </el-tooltip>
               <el-tooltip
+                v-if="item.status === 'published'"
+                :content="expandedInvokeId === item.id ? '收起调用信息' : '调用信息'"
+                placement="top"
+                :show-after="300"
+              >
+                <el-button
+                  size="small"
+                  text
+                  :type="expandedInvokeId === item.id ? 'primary' : undefined"
+                  @click="toggleInvokeInfo(item.id)"
+                >
+                  <AppIcon name="key" />
+                </el-button>
+              </el-tooltip>
+              <el-tooltip
                 :content="item.hasRunningExecution ? '执行中，不允许删除' : '删除'"
                 placement="top"
                 :show-after="300"
@@ -428,6 +482,11 @@ onMounted(load)
                 </span>
               </el-tooltip>
             </div>
+            <WorkflowInvokeInfo
+              v-if="item.status === 'published' && expandedInvokeId === item.id"
+              :workflow-id="item.id"
+              :workflow-slug="item.slug"
+            />
           </div>
         </div>
       </div>

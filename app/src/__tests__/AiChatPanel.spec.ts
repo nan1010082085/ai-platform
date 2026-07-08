@@ -2,9 +2,20 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import AiChatPanel from '@/components/AiChatPanel.vue'
+
+// Mock API
+vi.mock('@/api/aiApi', () => ({
+  getStarterPrompts: vi.fn().mockResolvedValue([
+    { icon: 'edit', text: '帮我生成一个用户注册表单', agent: 'editor' },
+    { icon: 'list', text: '创建一个订单审批流程', agent: 'flow' },
+    { icon: 'search', text: '搜索已有的表单模板', agent: 'auto' },
+    { icon: 'setting', text: '设计一个系统配置页面', agent: 'editor' },
+  ]),
+  uploadFile: vi.fn(),
+}))
 
 // Stub child components
 const AiMessageStub = { template: '<div />', props: ['role', 'label', 'content'] }
@@ -55,21 +66,23 @@ describe('AiChatPanel', () => {
     vi.clearAllMocks()
   })
 
-  it('renders header with title and agent badge', () => {
+  it('renders header with title and agent badge', async () => {
     const wrapper = mount(AiChatPanel, {
       props: defaultProps,
       global: { stubs },
     })
+    await flushPromises()
     expect(wrapper.text()).toContain('Test Chat')
     expect(wrapper.text()).toContain('Auto')
   })
 
   describe('F3: Empty state starter prompts', () => {
-    it('shows prompt cards when messages is empty', () => {
+    it('shows prompt cards from API when messages is empty', async () => {
       const wrapper = mount(AiChatPanel, {
         props: defaultProps,
         global: { stubs },
       })
+      await flushPromises()
 
       expect(wrapper.text()).toContain('开始一段新对话')
 
@@ -82,7 +95,53 @@ describe('AiChatPanel', () => {
       expect(wrapper.text()).toContain('设计一个系统配置页面')
     })
 
-    it('hides prompt cards when messages exist', () => {
+    it('falls back to hardcoded prompts when API fails', async () => {
+      const { getStarterPrompts } = await import('@/api/aiApi')
+      vi.mocked(getStarterPrompts).mockRejectedValueOnce(new Error('network error'))
+
+      const wrapper = mount(AiChatPanel, {
+        props: defaultProps,
+        global: { stubs },
+      })
+      await flushPromises()
+
+      const promptCards = wrapper.findAll('[class*="promptCard"]')
+      expect(promptCards).toHaveLength(4)
+      expect(wrapper.text()).toContain('帮我生成一个用户注册表单')
+    })
+
+    it('uses API prompts when they differ from defaults', async () => {
+      const { getStarterPrompts } = await import('@/api/aiApi')
+      vi.mocked(getStarterPrompts).mockResolvedValueOnce([
+        { icon: 'star', text: '自定义提示词', agent: 'auto' },
+      ])
+
+      const wrapper = mount(AiChatPanel, {
+        props: defaultProps,
+        global: { stubs },
+      })
+      await flushPromises()
+
+      const promptCards = wrapper.findAll('[class*="promptCard"]')
+      expect(promptCards).toHaveLength(1)
+      expect(wrapper.text()).toContain('自定义提示词')
+    })
+
+    it('falls back to hardcoded prompts when API returns empty array', async () => {
+      const { getStarterPrompts } = await import('@/api/aiApi')
+      vi.mocked(getStarterPrompts).mockResolvedValueOnce([])
+
+      const wrapper = mount(AiChatPanel, {
+        props: defaultProps,
+        global: { stubs },
+      })
+      await flushPromises()
+
+      const promptCards = wrapper.findAll('[class*="promptCard"]')
+      expect(promptCards).toHaveLength(4)
+    })
+
+    it('hides prompt cards when messages exist', async () => {
       const wrapper = mount(AiChatPanel, {
         props: {
           ...defaultProps,
@@ -92,6 +151,7 @@ describe('AiChatPanel', () => {
         },
         global: { stubs },
       })
+      await flushPromises()
 
       const promptCards = wrapper.findAll('[class*="promptCard"]')
       expect(promptCards).toHaveLength(0)
@@ -102,6 +162,7 @@ describe('AiChatPanel', () => {
         props: defaultProps,
         global: { stubs },
       })
+      await flushPromises()
 
       const promptCards = wrapper.findAll('[class*="promptCard"]')
 
@@ -120,6 +181,7 @@ describe('AiChatPanel', () => {
         props: defaultProps,
         global: { stubs },
       })
+      await flushPromises()
 
       const textarea = wrapper.find('textarea')
       await textarea.setValue('Hello')
@@ -134,6 +196,7 @@ describe('AiChatPanel', () => {
         props: defaultProps,
         global: { stubs },
       })
+      await flushPromises()
 
       const textarea = wrapper.find('textarea')
       await textarea.setValue('Hello')
@@ -147,6 +210,7 @@ describe('AiChatPanel', () => {
         props: defaultProps,
         global: { stubs },
       })
+      await flushPromises()
 
       const textarea = wrapper.find('textarea')
       await textarea.setValue('   ')

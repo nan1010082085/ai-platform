@@ -4,7 +4,6 @@
  * 对齐后端 AIConversationState 和 API 响应结构。
  */
 
-import type { ChatModel } from '@/constants/chatModels'
 import type { AgentExecutionStatus, AgentNodeRecord } from '@/types/agentWorkflow'
 
 // ---- Widget（简化引用，完整类型在 editor 包） ----
@@ -156,10 +155,8 @@ export type ReplyStyle = 'concise' | 'detailed'
 export type CodeCommentMode = 'yes' | 'no'
 export type HistorySummaryMode = 'auto' | 'manual'
 
-export type { ChatModel }
-
 export interface ChatSettings {
-  model: ChatModel
+  model: string
   /** 已发布的 Agent 工作流 ID；null 表示默认 LangGraph 对话 */
   agentWorkflowId: string | null
   preferences: {

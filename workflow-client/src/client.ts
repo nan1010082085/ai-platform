@@ -6,12 +6,21 @@ import type {
 export type { AgentExecutionStatus, AgentWorkflowExecution }
 
 export const WORKFLOW_KEY_HEADER = 'X-Workflow-Key'
+export const API_KEY_HEADER = 'X-API-Key'
 
 export interface WorkflowClientOptions {
   /** API 根地址，如 https://platform.example.com */
   baseUrl: string
-  /** 工作流调用密钥（发布时生成，请求头 X-Workflow-Key） */
-  workflowKey: string
+  /**
+   * 工作流调用密钥（发布时生成，请求头 X-Workflow-Key）。
+   * 与 apiKey 二选一，同时提供时抛错。
+   */
+  workflowKey?: string
+  /**
+   * 平台 API Key（sk-... 前缀，请求头 X-API-Key）。
+   * 与 workflowKey 二选一，同时提供时抛错。
+   */
+  apiKey?: string
   /** 租户 ID，默认 000000 */
   tenantId?: string
   fetch?: typeof fetch
@@ -78,30 +87,48 @@ function joinUrl(baseUrl: string, path: string): string {
 
 export class WorkflowClient {
   private readonly baseUrl: string
-  private readonly workflowKey: string
+  private readonly workflowKey: string | undefined
+  private readonly apiKey: string | undefined
   private readonly tenantId: string
   private readonly fetchFn: typeof fetch
 
   constructor(opts: WorkflowClientOptions) {
     this.baseUrl = trimBaseUrl(opts.baseUrl)
-    this.workflowKey = opts.workflowKey.trim()
+    this.workflowKey = opts.workflowKey?.trim() || undefined
+    this.apiKey = opts.apiKey?.trim() || undefined
     this.tenantId = (opts.tenantId ?? '000000').trim()
     this.fetchFn = opts.fetch ?? globalThis.fetch
     if (!this.fetchFn) {
       throw new Error('[WorkflowClient] fetch is not available in this environment')
     }
-    if (!this.workflowKey) {
-      throw new WorkflowClientError('workflowKey is required', 'missing_workflow_key', 401)
+    if (this.workflowKey && this.apiKey) {
+      throw new WorkflowClientError(
+        'workflowKey and apiKey are mutually exclusive; provide only one',
+        'conflicting_keys',
+        400,
+      )
+    }
+    if (!this.workflowKey && !this.apiKey) {
+      throw new WorkflowClientError(
+        'Either workflowKey or apiKey is required',
+        'missing_key',
+        401,
+      )
     }
   }
 
   private invokeHeaders(extra?: Record<string, string>): Record<string, string> {
-    return {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      [WORKFLOW_KEY_HEADER]: this.workflowKey,
       'X-Tenant-Id': this.tenantId,
       ...extra,
     }
+    if (this.workflowKey) {
+      headers[WORKFLOW_KEY_HEADER] = this.workflowKey
+    } else if (this.apiKey) {
+      headers[API_KEY_HEADER] = this.apiKey
+    }
+    return headers
   }
 
   private async request<T>(

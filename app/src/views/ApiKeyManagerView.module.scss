@@ -1,0 +1,144 @@
+.page {
+  height: 100%;
+  background: var(--bg-color-page);
+}
+
+.scroll {
+  height: 100%;
+  overflow: auto;
+}
+
+.header {
+  padding: 28px 24px 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: var(--text-color-primary);
+  }
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-color-secondary);
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.content {
+  padding: 20px 24px 32px;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+  max-width: 360px;
+}
+
+.summaryCard {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.summaryLabel {
+  font-size: 12px;
+  color: var(--text-color-secondary);
+  margin-bottom: 6px;
+}
+
+.summaryValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-color-primary);
+}
+
+.tableWrap {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 10px;
+  padding: 4px 0;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--text-color-placeholder);
+
+  p {
+    margin: 12px 0 16px;
+    font-size: 14px;
+  }
+}
+
+.emptyIcon {
+  color: var(--text-color-placeholder);
+  opacity: 0.5;
+}
+
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.keyNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--el-color-warning-light-9, #fdf6ec);
+  border: 1px solid var(--el-color-warning-light-8, #f5dab1);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--el-color-warning-dark-2, #e6a23c);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.keyNoticeIcon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.keyDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--el-fill-color-light, #f5f7fa);
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 8px;
+}
+
+.keyCode {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  word-break: break-all;
+  user-select: all;
+}

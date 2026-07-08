@@ -635,6 +635,18 @@ export async function getModelConfigs(): Promise<ModelConfigItem[]> {
   return res.items
 }
 
+// ---- Chat Starter Prompts ----
+
+export interface StarterPrompt {
+  icon: string
+  text: string
+  agent: string
+}
+
+export async function getStarterPrompts(): Promise<StarterPrompt[]> {
+  return request<StarterPrompt[]>('/ai/chat/starter-prompts')
+}
+
 // ---- AI 健康检查 ----
 
 export interface AIProviderHealth {

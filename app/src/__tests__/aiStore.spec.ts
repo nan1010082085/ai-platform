@@ -451,7 +451,7 @@ describe('useAiStore', () => {
     it('initializes with default settings', () => {
       const store = useAiStore()
       expect(store.chatSettings).toEqual({
-        model: 'deepseek-v4-flash',
+        model: '',
         agentWorkflowId: null,
         preferences: {
           replyLanguage: 'zh-CN',
@@ -548,7 +548,7 @@ describe('useAiStore', () => {
               replyLanguage: 'en-US',
               replyStyle: 'concise',
               codeComment: 'no',
-              llmModel: 'deepseek-v4-flash',
+              llmModel: '',
             }),
           }),
         }),

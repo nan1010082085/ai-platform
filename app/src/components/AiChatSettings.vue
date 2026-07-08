@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ChatSettings } from '@/types'
 import { checkAIHealth, type AIHealthResponse } from '@/api/aiApi'
-import { CHAT_MODEL_OPTIONS } from '@/constants/chatModels'
+import { useModelOptions } from '@/composables/useModelOptions'
 import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
 import SectionToggle from '@/components/agent-workflow/property-panel/SectionToggle.vue'
 import FieldRow from '@/components/agent-workflow/property-panel/FieldRow.vue'
@@ -20,6 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const { modelOptions, loading: modelsLoading, loadModelOptions } = useModelOptions()
 
 const localSettings = ref<ChatSettings>(JSON.parse(JSON.stringify(props.settings)))
 const healthData = ref<AIHealthResponse | null>(null)
@@ -40,6 +41,7 @@ watch(() => props.visible, (val) => {
   if (val) {
     localSettings.value = JSON.parse(JSON.stringify(props.settings))
     fetchHealth()
+    void loadModelOptions()
   }
 })
 
@@ -95,11 +97,11 @@ function handleSave(): void {
 
       <SectionToggle title="模型" :count="1">
         <FieldRow label="对话模型" hint="选择 Chat 对话使用的大模型">
-          <el-select v-model="localSettings.model">
+          <el-select v-model="localSettings.model" :loading="modelsLoading">
             <el-option
-              v-for="option in CHAT_MODEL_OPTIONS"
+              v-for="option in modelOptions"
               :key="option.value"
-              :label="`DeepSeek ${option.label}`"
+              :label="option.label"
               :value="option.value"
             />
           </el-select>

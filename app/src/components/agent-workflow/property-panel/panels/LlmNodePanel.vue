@@ -2,11 +2,12 @@
 import SectionToggle from '../SectionToggle.vue'
 import FieldRow from '../FieldRow.vue'
 import VariableReferencePanel from './VariableReferencePanel.vue'
-import { CHAT_MODEL_OPTIONS, DEFAULT_CHAT_MODEL } from '@/constants/chatModels'
+import { useModelOptions } from '@/composables/useModelOptions'
 import type { AgentNodePanelEmits, AgentNodePanelProps } from '../types'
 
 const props = defineProps<AgentNodePanelProps>()
 const emit = defineEmits<AgentNodePanelEmits>()
+const { modelOptions, defaultModel, loading: modelsLoading } = useModelOptions()
 
 function update(key: string, value: unknown) {
   emit('updateNodeData', key, value)
@@ -18,13 +19,14 @@ function update(key: string, value: unknown) {
     <FieldRow label="模型" hint="选择调用的大模型">
       <el-select
         :model-value="String(props.node.data?.model ?? 'default')"
+        :loading="modelsLoading"
         @update:model-value="update('model', $event)"
       >
-        <el-option :label="`默认模型 (${DEFAULT_CHAT_MODEL})`" value="default" />
+        <el-option :label="`默认模型 (${defaultModel || '未配置'})`" value="default" />
         <el-option
-          v-for="item in CHAT_MODEL_OPTIONS"
+          v-for="item in modelOptions"
           :key="item.value"
-          :label="`DeepSeek ${item.label}`"
+          :label="item.label"
           :value="item.value"
         />
       </el-select>

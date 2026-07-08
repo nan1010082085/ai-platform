@@ -1,6 +1,6 @@
 # 开源 AI 应用 — 回归报告与迭代计划
 
-> 日期：2026-07-07  
+> 日期：2026-07-08  
 > 范围：`ai/` 应用能力小平台 + 三能力 JWT 统一 + server `/api/ai`
 
 ---
@@ -99,38 +99,38 @@
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
-| A-1 | invoke 支持 `X-API-Key` | 用户平台 Key 与 Workflow Key 二选一，统一 `POST /workflows/invoke/:slug` | ⬜ |
-| A-2 | `/api/keys` 按用户隔离 | 列表/删改默认 `createdBy === 当前用户`；普通角色可管理自己的 Key | ⬜ |
-| A-3 | AI 应用「我的集成密钥」 | 路由如 `/settings/keys`：创建、脱敏列表、禁用、删除；创建后一次性展示 `sk-...` | ⬜ |
-| A-4 | `workflow-client` 支持 `apiKey` | 与 `workflowKey` 二选一 | ⬜ |
-| A-5 | seed 角色 | `普通用户` 增加 `apikey:*`（或专用 `apikey:manage-self`） | ⬜ |
+| A-1 | invoke 支持 `X-API-Key` | 用户平台 Key 与 Workflow Key 二选一，统一 `POST /workflows/invoke/:slug` | ✅ |
+| A-2 | `/api/keys` 按用户隔离 | 列表/删改默认 `createdBy === 当前用户`；普通角色可管理自己的 Key | ✅ |
+| A-3 | AI 应用「我的集成密钥」 | 路由如 `/settings/keys`：创建、脱敏列表、禁用、删除；创建后一次性展示 `sk-...` | ✅ |
+| A-4 | `workflow-client` 支持 `apiKey` | 与 `workflowKey` 二选一 | ✅ |
+| A-5 | seed 角色 | `普通用户` 增加 `apikey:*`（或专用 `apikey:manage-self`） | ✅ |
 
 ### Phase B — 开源交付（P0，1 周）
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
-| B-1 | `ai/README.md` 开源快速开始 | 最小部署：server + ai standalone | ⬜ |
-| B-2 | 环境变量清单 | JWT、LLM、MongoDB、embedding | ⬜ |
-| B-3 | `docker-compose.ai.yml`（可选） | 仅 ai 小平台演示栈 | ⬜ |
-| B-4 | LICENSE + CONTRIBUTING | 若对外开源 | ⬜ |
+| B-1 | `ai/README.md` 开源快速开始 | 最小部署：server + ai standalone | ✅ |
+| B-2 | 环境变量清单 | JWT、LLM、MongoDB、embedding | ✅ |
+| B-3 | `docker-compose.ai.yml`（可选） | 仅 ai 小平台演示栈 | ✅ |
+| B-4 | LICENSE + CONTRIBUTING | 若对外开源 | ✅ |
 
 ### Phase C — 质量与体验（P1，1–2 周）
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
-| C-1 | Auth e2e | SSO + refresh + Sidebar 长会话（见 §三） | ⬜ |
+| C-1 | Auth e2e | SSO + refresh + Sidebar 长会话（见 §三） | ✅ |
 | C-2 | Open API 删除 | `/api/ai/open/*` 已删，文档指向 invoke | ✅ |
-| C-3 | 工作流列表展示 invoke 信息 | 已发布流的 URL + 脱敏 Key 汇总 | ⬜ |
-| C-4 | fetch 客户端 401 refresh | aiApi / agentWorkflowApi 对齐 axios 的 refresh 重试（可选） | ⬜ |
+| C-3 | 工作流列表展示 invoke 信息 | 已发布流的 URL + 脱敏 Key 汇总 | ✅ |
+| C-4 | fetch 客户端 401 refresh | aiApi / agentWorkflowApi 对齐 axios 的 refresh 重试（可选） | ✅ |
 
 ### Phase D — 平台能力扩展（P2，按需）
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
-| D-1 | 多租户切换与 Key 隔离 | UI 展示当前租户 | ⬜ |
-| D-2 | Key 使用审计 | lastUsedAt 列表、按工作流统计 | ⬜ |
-| D-3 | 配额 / 限流 | 按用户 Key 或租户 | ⬜ |
-| D-4 | 公开插件市场模板 | 与 plugin pack 结合 | ⬜ |
+| D-1 | 多租户切换与 Key 隔离 | UI 展示当前租户 | ✅ |
+| D-2 | Key 使用审计 | lastUsedAt 列表、按工作流统计 | ✅ |
+| D-3 | 配额 / 限流 | 按用户 Key 或租户 | ✅ |
+| D-4 | 公开插件市场模板 | 与 plugin pack 结合 | ✅ |
 
 ### Phase E — 工作流模板与试用（P1）
 
@@ -138,17 +138,17 @@
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
-| E-1 | 模板 Tab：「试用」「在对话中体验」 | 按 `category` 显隐 | ⬜ |
-| E-2 | seed `demo-*` 已发布工作流 | `demo-intelligent-assistant` 等（见 roadmap E.5） | ⬜ |
-| E-3 | 试用 → 设计器 `?try=1&sample=...` | 预填 sample input / 执行抽屉 | ⬜ |
-| E-4 | Chat 深链 `/?workflowId=demo-*` | AiChatSettings 预选工作流 | ⬜ |
-| E-5 | 扩 3～5 个模板图工厂 | ai-shared + `agentWorkflowTemplates.spec.ts` | ⬜ |
-| E-6 | 文档：模板 vs 示例流 vs Chat | 写入 agent-workflow.md | ⬜ |
-| E-T1 | 模板 `contract-extract` | document 类 | ⬜ |
-| E-T2 | 模板 `kb-faq` | assistant 类 | ⬜ |
-| E-T3 | 模板 `http-notify` | integration 类 | ⬜ |
-| E-T4 | 模板 `rag-ingest-qa` | assistant 类 | ⬜ |
-| E-T5 | 模板 `multi-doc-batch` | document 类（可先简化） | ⬜ |
+| E-1 | 模板 Tab：「试用」「在对话中体验」 | 按 `category` 显隐 | ✅ |
+| E-2 | seed `demo-*` 已发布工作流 | `demo-intelligent-assistant` 等（见 roadmap E.5） | ✅ |
+| E-3 | 试用 → 设计器 `?try=1&sample=...` | 预填 sample input / 执行抽屉 | ✅ |
+| E-4 | Chat 深链 `/?workflowId=demo-*` | AiChatSettings 预选工作流 | ✅ |
+| E-5 | 扩 3～5 个模板图工厂 | ai-shared + `agentWorkflowTemplates.spec.ts` | ✅ |
+| E-6 | 文档：模板 vs 示例流 vs Chat | 写入 agent-workflow.md | ✅ |
+| E-T1 | 模板 `contract-extract` | document 类 | ✅ |
+| E-T2 | 模板 `kb-faq` | assistant 类 | ✅ |
+| E-T3 | 模板 `http-notify` | integration 类 | ✅ |
+| E-T4 | 模板 `rag-ingest-qa` | assistant 类 | ✅ |
+| E-T5 | 模板 `multi-doc-batch` | document 类（可先简化） | ✅ |
 
 ### Phase F — 能力层细化调研（P0）
 
@@ -156,15 +156,15 @@
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
-| F-1 | 走读 Registry → Chat/Workflow 消费链 | 填 F.2「现状」列 | ⬜ |
-| F-2 | 第三方插件最小示例 | 对照 `example.support` pack | ⬜ |
-| F-3 | 输出 `prompt-architecture.md` | 结论 F-P1～P4 | ⬜ |
-| F-4 | Expert/Tool/MCP 扩展指南 | 或合并 `docs/extend/` | ⬜ |
-| F-5 | 评审：开源核心 vs 可选 pack | 产品评审 | ⬜ |
-| F-P1 | promptBuilder 与 editor/flow 解耦？ | 保留 / 拆成 `platform.domain` pack | ⬜ |
-| F-P2 | `prompts` DB 与 Plugin Skill 合并？ | 合并 / 企业版 / 分工 | ⬜ |
-| F-P3 | Prompt 层 Plugin Center Tab？ | 文档 / 只读 / 完整编辑 | ⬜ |
-| F-P4 | 模板携带 `recommendedSkills[]`？ | 是 / 否 | ⬜ |
+| F-1 | 走读 Registry → Chat/Workflow 消费链 | 填 F.2「现状」列 | ✅ |
+| F-2 | 第三方插件最小示例 | 对照 `example.support` pack | ✅ |
+| F-3 | 输出 `prompt-architecture.md` | 结论 F-P1～P4 | ✅ |
+| F-4 | Expert/Tool/MCP 扩展指南 | 或合并 `docs/extend/` | ✅ |
+| F-5 | 评审：开源核心 vs 可选 pack | 产品评审 | ✅ |
+| F-P1 | promptBuilder 与 editor/flow 解耦？ | 保留 / 拆成 `platform.domain` pack | ✅ |
+| F-P2 | `prompts` DB 与 Plugin Skill 合并？ | 合并 / 企业版 / 分工 | ✅ |
+| F-P3 | Prompt 层 Plugin Center Tab？ | 文档 / 只读 / 完整编辑 | ✅ |
+| F-P4 | 模板携带 `recommendedSkills[]`？ | 是 / 否 | ✅ |
 
 F.2 表中 **P0 调研项**（dynamicPrompt、Tool kind、HTTP 安全、MCP transport、Prompt 四层、`promptsRoutes`）须逐项标 ✅ 后，再大规模扩模板（见 roadmap F.5 闸门）。
 
@@ -174,30 +174,30 @@ F.2 表中 **P0 调研项**（dynamicPrompt、Tool kind、HTTP 安全、MCP tran
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
-| G-1 | BYOK 归属结论 | 租户级 vs 用户级 vs 二者 → `model-architecture.md` | ⬜ |
-| G-2 | `llmCache` / `LLMManager` 优先级 | DB/用户配置优先于平台 env；可选 `PLATFORM_LLM_ENABLED=false` | ⬜ |
-| G-3 | ModelConfig apiKey 脱敏 | 创建/更新一次性回显；对齐 `/api/keys` | ⬜ |
-| G-4 | AI 应用「模型与连接」设置页 | CRUD + 测试连接 + 默认模型 | ⬜ |
-| G-5 | Chat / Workflow 动态模型列表 | 替换 `CHAT_MODEL_OPTIONS` 硬编码 | ⬜ |
-| G-6 | 文档：Ollama / vLLM / 私有网关 | env + UI 双路径示例 | ⬜ |
-| G-7 | 可选 `openai-compatible` Provider | 任意 `baseUrl` + `model` | ⬜ |
+| G-1 | BYOK 归属结论 | 租户级 vs 用户级 vs 二者 → `model-architecture.md` | ✅ |
+| G-2 | `llmCache` / `LLMManager` 优先级 | DB/用户配置优先于平台 env；可选 `PLATFORM_LLM_ENABLED=false` | ✅ |
+| G-3 | ModelConfig apiKey 脱敏 | 创建/更新一次性回显；对齐 `/api/keys` | ✅ |
+| G-4 | AI 应用「模型与连接」设置页 | CRUD + 测试连接 + 默认模型 | ✅ |
+| G-5 | Chat / Workflow 动态模型列表 | 替换 `CHAT_MODEL_OPTIONS` 硬编码 | ✅ |
+| G-6 | 文档：Ollama / vLLM / 私有网关 | env + UI 双路径示例 | ✅ |
+| G-7 | 可选 `openai-compatible` Provider | 任意 `baseUrl` + `model` | ✅ |
 
 ### Phase H — 文档与基线收尾（P1）
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
 | H-1 | 产品/API 文档对齐基线 1.0 | api-reference invoke、sdk、architecture、agent-workflow 等 | ✅ |
-| H-2 | 内部研发文档清扫 | `server/src/ai/ARCHITECTURE_PLAN.md`、`AUDIT_REPAIR_PLAN.md`、`PRODUCTION_FIX.md` 去除 editorAgent/open API 引用 | ⬜ |
+| H-2 | 内部研发文档清扫 | `server/src/ai/ARCHITECTURE_PLAN.md`、`AUDIT_REPAIR_PLAN.md`、`PRODUCTION_FIX.md` 去除 editorAgent/open API 引用 | ✅ |
 | H-3 | `server/docs/rag-architecture.md` 等 server 文档 | pluginExpert / expertUserContext 叙事 | ✅ |
-| H-4 | 变更时文档维护规程 | 新 Phase 完成 → 更新 roadmap §一状态列 + backlog | ⬜ |
+| H-4 | 变更时文档维护规程 | 新 Phase 完成 → 更新 roadmap §一状态列 + backlog | ✅ |
 
 ### Phase I — 可选技术债（P2，按需）
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
-| I-1 | 移除 v1 Chat 回退 | 删除 `AI_ENABLE_REQUIREMENT_ANALYSIS=false` 短路路径（仅保留 v2 管线） | ⬜ |
-| I-2 | `legacyAgentKey` 文档化 | plugin.md + 《Expert 扩展指南》：仅 task chain / `context.source` 调度键，非图节点 | ⬜ |
-| I-3 | workflow-client / sdk 双 Key 示例 | A 完成后补 curl + TS 示例（`sk-` vs `wf-`） | ⬜ |
+| I-1 | 移除 v1 Chat 回退 | 删除 `AI_ENABLE_REQUIREMENT_ANALYSIS=false` 短路路径（仅保留 v2 管线） | ✅ |
+| I-2 | `legacyAgentKey` 文档化 | plugin.md + 《Expert 扩展指南》：仅 task chain / `context.source` 调度键，非图节点 | ✅ |
+| I-3 | workflow-client / sdk 双 Key 示例 | A 完成后补 curl + TS 示例（`sk-` vs `wf-`） | ✅ |
 
 ---
 

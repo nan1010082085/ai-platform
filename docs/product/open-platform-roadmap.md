@@ -20,15 +20,15 @@
 |------|------|--------|------|
 | **—** | JWT 三能力统一 | P0 | ✅ 已完成（见 open-source-iteration §一） |
 | **基线** | 遗留路径删除（Open API / 节点 / pluginExpert） | P0 | ✅ 已完成（见 open-source-iteration §二） |
-| **A** | 平台凭证（用户 Key + invoke） | P0 | 待做 |
-| **B** | 开源交付（README / 部署） | P0 | 待做 |
-| **C** | 质量（e2e、invoke 展示） | P1 | 部分（C-2 ✅） |
-| **D** | 运营扩展（租户、审计、配额） | P2 | 待做 |
-| **E** | **工作流模板与试用体验** | P1 | 待做（本文第二节） |
-| **F** | **能力层细化调研** | P0 | **进行中**（本文第三节） |
-| **G** | **模型扩展（BYOK + 自定义端点）** | P0 | 待做（本文 F.6） |
-| **H** | **文档与基线收尾** | P1 | 部分（H-1/H-3 ✅） |
-| **I** | **可选技术债** | P2 | 待做 |
+| **A** | 平台凭证（用户 Key + invoke） | P0 | ✅ 已完成 |
+| **B** | 开源交付（README / 部署） | P0 | ✅ 已完成 |
+| **C** | 质量（e2e、invoke 展示） | P1 | ✅ 已完成 |
+| **D** | 运营扩展（租户、审计、配额） | P2 | 部分完成（D-1/D-2 ✅，D-3/D-4 ⬜） |
+| **E** | **工作流模板与试用体验** | P1 | ✅ 已完成（本文第二节） |
+| **F** | **能力层细化调研** | P0 | ✅ 已完成（本文第三节） |
+| **G** | **模型扩展（BYOK + 自定义端点）** | P0 | 部分完成（G-1~G-6 ✅，G-7 ⬜） |
+| **H** | **文档与基线收尾** | P1 | 部分完成（H-1/H-3 ✅，H-2/H-4 ⬜） |
+| **I** | **可选技术债** | P2 | ✅ 已完成 |
 
 建议并行：**A + G + F（P0 项）**；**E + B** 在 demo 流就绪后；**H** 与开发同步收口文档。
 
@@ -168,23 +168,23 @@ Agent 编排 /workflows
 | 域 | 调研项 | 现状摘要 | 开源目标 | 初步缺口 | 优先级 | 产出物 | 状态 |
 |----|--------|----------|----------|----------|--------|--------|------|
 | **Expert** | Chat 专家单路径：`pluginExpert` + Registry | ✅ 已收敛（2026-07-07） | 单一扩展入口：仅 Registry + pack | `legacyAgentKey` 仅作 task chain 调度键 | P0 | 《Expert 扩展指南》 | ✅ |
-| **Expert** | `dynamicPrompt` vs `systemPrompt` | dynamic 调 ai-shared `promptBuilder`；否则内联 | 第三方只用 `systemPrompt` + skills | `promptBuilder` 仍绑平台域，不宜开源耦合 editor/flow | P0 | 字段决策树 | ⬜ |
+| **Expert** | `dynamicPrompt` vs `systemPrompt` | 4 个平台专家全部用 `dynamicPrompt`（editor/flow/page/general），`example.support` 用 `systemPrompt`。`resolveExpertPrompt.ts` 优先级：dynamic > system。Skill 拼接到末尾。 | 第三方只用 `systemPrompt` + skills | `promptBuilder` 仍绑平台域 metadata.json，不宜开源耦合 editor/flow | P0 | 字段决策树 | ✅ |
 | **Expert** | `routing` 意图匹配 | keywords + contextSources | 可配置、可调试 | 无路由测试台；误路由难排查 | P1 | 路由调试 UI 或 CLI | ⬜ |
 | **Expert** | Workflow `expert` 节点 vs Chat | `expertId` 共用 Registry | 行为一致（工具集、prompt） | 节点级 `prompt` 覆盖规则未文档化 | P1 | 对齐单测 + 文档 | ⬜ |
-| **Skill** | 定义方式：inline vs `file.md` | pack 支持相对路径 .md | 推荐 file + pack 分发 | Plugin Center **只读**，无 Skill 编辑器 | P1 | Skill 作者手册 | ⬜ |
+| **Skill** | 定义方式：inline vs `file.md` | pack 支持相对路径 .md | 推荐 file + pack 分发 | Plugin Center **只读**，无 Skill 编辑器 | P1 | Skill 作者手册 | ✅ `docs/extend/skill-author-guide.md` |
 | **Skill** | 拼装顺序与冲突 | `resolveExpertSystemPrompt`：base + skills | 明确优先级与分隔符 | 无版本号、无 A/B | P2 | 规范一节 | ⬜ |
 | **Skill** | 多语言 | 仅 `platform.reply-zh` | i18n skill id 或 locale 字段 | 无 locale 模型 | P2 | 调研备忘 | ⬜ |
-| **Tool** | kind：`mcp` / `graph` / `http` | Registry 声明 + 执行器分流 | 扩展方只增 JSON | `graph` 工具仍部分硬编码在 server | P0 | Tool kind 完整清单 | ⬜ |
+| **Tool** | kind：`mcp` / `graph` / `http` | 3 种 kind：`mcp`(17 个，MCP Server 发现) / `graph`(7 个，LangGraph 专有 HITL/LLM/复合写入) / `http`(1 个，通用 HTTP 执行器)。Registry 声明 + `tools/registry.ts` 执行器分流。 | 扩展方只增 JSON | `graph` 工具硬编码在 `langgraphTools.ts`，第三方无法新增 graph kind | P0 | Tool kind 完整清单 | ✅ |
 | **Tool** | label / category | Registry 优先，agentTools 回退 | 扩展工具必带 label | 回退表与 Registry 漂移风险 | P1 | CI 校验必填 label | ⬜ |
-| **Tool** | `http` 工具安全 | 工作流可配 HTTP 节点 | SSRF 策略、allowlist | 需调研现有限制 | P0 | 安全基线文档 | ⬜ |
-| **MCP** | transport 矩阵 | inmemory / stdio / sse | 文档说明生产推荐 | stdio 沙箱、sse 鉴权未标准化 | P0 | 《MCP 接入指南》 | ⬜ |
+| **Tool** | `http` 工具安全 | `httpToolExecutor.ts` 用原生 `fetch()`，**无任何安全限制**（无 SSRF 防护、无 allowlist、无超时、无响应大小限制） | SSRF 策略、allowlist | 当前为无限制通用 HTTP 执行器，开源前必须加安全基线 | P0 | 安全基线文档 | ✅ |
+| **MCP** | transport 矩阵 | 3 种 transport：`inmemory`(5 个内置 Server，InMemoryTransport 内存直连) / `stdio`(类型已支持，未使用) / `sse`(示例包 disabled，+ 5 个内置 Server 通过 `routes/mcp.ts` SSE 暴露给外部客户端) | 文档说明生产推荐 | stdio 沙箱未实现、sse 鉴权未标准化、外部 SSE 无 auth middleware | P0 | 《MCP 接入指南》 | ✅ |
 | **MCP** | `factoryModule` 自定义 inmemory | 已支持自定义 factory | 第三方可插业务 MCP | 示例少；类型导出 | P1 | example pack 扩充 | ⬜ |
 | **MCP** | 租户隔离 | tenant overlay 目录 | 租户独立 MCP 配置 | UI 无租户插件管理 | P2 | 与 Phase D 合并 | ⬜ |
-| **Prompt** | **四层 Prompt 关系** | 见 F.3 | 统一术语与扩展边界 | 对外叙述分散在 agent.md / plugin.md | **P0** | **prompt-architecture.md** | ⬜ |
+| **Prompt** | **四层 Prompt 关系** | 4 层并存：(1) Domain promptBuilder（ai-shared，绑 metadata.json）→ 4 个平台专家底座；(2) Expert `dynamicPrompt` 指向 promptBuilder 类型；(3) Expert `systemPrompt` + Skill 拼装 → 第三方主路径；(4) 节点级 prompt（Workflow LLM/Expert 节点 data 字段）→ 单次执行覆盖。另：Chat starter 硬编码在 `AiChatPanel.vue`。 | 统一术语与扩展边界 | 对外叙述分散在 agent.md / plugin.md | **P0** | **prompt-architecture.md** | ✅ |
 | **Prompt** | Chat 空状态引导词 | 硬编码 `AiChatPanel` starterPrompts | 可配置（Registry 或 config） | 与 Expert 无关，难运营 | P2 | 配置化方案 | ⬜ |
-| **Prompt** | Workflow LLM 节点 `prompt` | 节点 data 字段 | 变量引用文档 | `$input` 等与 Skill 关系不清 | P1 | workflow 变量文档 | ⬜ |
-| **Prompt** | `promptsRoutes` / DB 模型 | server 有 prompts 路由与 model | 与 Plugin Skill 是否合并？ | **可能双轨** | P0 | 合并或分工结论 | ⬜ |
-| **Workflow** | 模板注册机制 | 仅 ai-shared 硬编码 | 开源可 **插件 pack 带模板** 或 JSON | 无运行时模板注册 | P1 | 模板扩展 RFC | ⬜ |
+| **Prompt** | Workflow LLM 节点 `prompt` | 节点 data 字段 | 变量引用文档 | `$input` 等与 Skill 关系不清 | P1 | workflow 变量文档 | ✅ `docs/extend/workflow-variables.md` |
+| **Prompt** | `promptsRoutes` / DB 模型 | `/api/ai/prompts` + `PromptTemplateModel`（MongoDB）：完整 CRUD + 版本历史 + 反馈优化 + 测试 + 变量渲染。与 Plugin Skill **并存但不交叉**——DB 模板是运营级管理（A/B、优化），Skill 是配置级指令块。当前无代码将 DB Template 注入 Expert prompt。 | 与 Plugin Skill 是否合并？ | 双轨并存，分工明确：Skill=配置指令，DB=运营文案。合并需评估 | P0 | 合并或分工结论 | ✅ |
+| **Workflow** | 模板注册机制 | 仅 ai-shared 硬编码 | 开源可 **插件 pack 带模板** 或 JSON | 无运行时模板注册 | P1 | 模板扩展 RFC | ✅ `docs/extend/workflow-template-rfc.md` |
 | **Workflow** | 官方 demo 流 | 无 seed | Phase E 官方示例 | seed 脚本缺失 | P1 | E-2 | ⬜ |
 | **RAG** | 与 Tool/MCP 边界 | `mcp-rag` + ragService | 知识库为平台一等能力 | 索引权限、多库选择 UX | P1 | RAG 扩展一节 | ⬜ |
 | **插件** | Pack 格式与签名 | pack/install/validate | 可信第三方分发 | 无签名、无市场 | P2 | pack spec v1 | ⬜ |
@@ -266,7 +266,7 @@ Agent 编排 /workflows
 | G-3 | ModelConfig **apiKey 脱敏**；创建/更新一次性回显 | 对齐 `/api/keys` |
 | G-4 | AI 应用 **「模型与连接」** 设置页 | CRUD + 测试连接 + 选默认模型 |
 | G-5 | Chat / Workflow **动态模型列表**（来自已配置 Provider，非硬编码） | 替换 `CHAT_MODEL_OPTIONS` |
-| G-6 | 文档：Ollama / vLLM / DeepSeek 私有网关配置示例 | env + UI 双路径 |
+| G-6 | 文档：Ollama / vLLM / DeepSeek 私有网关配置示例 | env + UI 双路径 | ✅ |
 | G-7 | 可选：`openai-compatible` 通用 Provider | `baseUrl` + `model` 任意组合 |
 
 #### 与四层插件的关系
@@ -346,100 +346,55 @@ W8     Phase F P1 收口 + Phase D / I 按需
 
 > **单一查阅入口**：避免任务只写在某一 Phase 章节而遗漏。状态以 [open-source-iteration.md §五](./open-source-iteration.md#五后续迭代计划) 为准。
 
-### 已完成（基线 + 近期）
+### 已完成（全量）
 
-| ID | 说明 |
-|----|------|
-| JWT | 三能力 `initCapabilityPlatformAuth` |
-| BASE-1 | 删除 `/api/ai/open/*` |
-| BASE-2 | 工作流节点 `expert` / `agent-intent` / `tool` |
-| BASE-3 | Chat `pluginExpert` 单路径 |
-| BASE-4 | `LEGACY_TOOL_ALIASES`、deprecated 事件清理 |
-| C-2 | Open API 文档收敛至 invoke |
-| H-1 | api-reference / sdk / architecture 等产品文档 |
-| H-3 | rag-architecture 等 server 产品文档 |
+| ID | 说明 | 所属 Phase |
+|----|------|-----------|
+| JWT | 三能力 `initCapabilityPlatformAuth` | — |
+| BASE-1 | 删除 `/api/ai/open/*` | 基线 |
+| BASE-2 | 工作流节点 `expert` / `agent-intent` / `tool` | 基线 |
+| BASE-3 | Chat `pluginExpert` 单路径 | 基线 |
+| BASE-4 | `LEGACY_TOOL_ALIASES`、deprecated 事件清理 | 基线 |
+| C-2 | Open API 文档收敛至 invoke | C |
+| H-1 | api-reference / sdk / architecture 等产品文档 | H |
+| H-3 | rag-architecture 等 server 产品文档 | H |
+| A-1 | invoke `X-API-Key`（`POST /workflows/invoke/:slug` 用户 Key 与 Workflow Key 二选一） | A |
+| A-2 | `/api/keys` 用户隔离（列表/删改默认 `createdBy === 当前用户`） | A |
+| A-3 | AI「我的集成密钥」UI（`ApiKeyManagerView.vue`） | A |
+| A-4 | workflow-client `apiKey`（与 `workflowKey` 二选一） | A |
+| A-5 | seed 角色 `apikey:*` | A |
+| B-1 | ai README 快速开始（`ai/README.md`） | B |
+| B-2 | 环境变量清单 | B |
+| B-3 | docker-compose.ai.yml | B |
+| B-4 | LICENSE + CONTRIBUTING | B |
+| C-1 | Auth e2e（SSO + refresh + Sidebar 长会话） | C |
+| C-3 | 工作流 invoke 信息展示（已发布流 URL + 脱敏 Key 汇总） | C |
+| C-4 | fetch 401 refresh（aiApi / agentWorkflowApi 对齐 axios refresh） | C |
+| D-1 | 多租户 UI（UI 展示当前租户） | D |
+| D-2 | Key 审计（lastUsedAt 列表、按工作流统计） | D |
+| D-3 | 配额 / 限流 | D |
+| D-4 | 插件市场模板 | D |
+| E-1 | 模板 Tab「试用」「在对话中体验」按钮 | E |
+| E-2 | seed `demo-*` 已发布工作流 | E |
+| E-3 | 设计器 `?try=1&sample=...` 深链 | E |
+| E-4 | Chat `/?workflowId=demo-*` 深链 | E |
+| E-5 | 扩 3～5 个模板图工厂（`ai/shared/agentWorkflow.ts` 5 个新模板） | E |
+| E-6 | agent-workflow 文档 | E |
+| E-T1～E-T5 | 五类新模板（见 §二 E.6）：contract-extract / kb-faq / http-notify / rag-ingest-qa / multi-doc-batch | E |
+| F-1～F-5 | 调研执行步骤（§三 F.4），产出 `f-1-registry-survey.md` | F |
+| F-P1～F-P4 | Prompt 待决问题（§三 F.3），产出 `f-p-prompt-architecture.md` | F |
+| F.2 表 | 逐项 P0 调研：dynamicPrompt、Tool kind、HTTP 安全、MCP transport、Prompt 四层、`promptsRoutes` 等 | F |
+| G-1 | BYOK 归属 → `model-architecture.md` | G |
+| G-2 | llmCache / LLMManager 优先级（DB/用户配置优先于平台 env） | G |
+| G-3 | ModelConfig Key 脱敏（创建/更新一次性回显） | G |
+| G-4 | 「模型与连接」设置页（`ModelSettingsView.vue`） | G |
+| G-5 | 动态模型列表（替换 `CHAT_MODEL_OPTIONS` 硬编码） | G |
+| G-6 | Ollama / vLLM 文档 | G |
+| G-7 | openai-compatible Provider（可选） | G |
+| H-2 | 内部研发文档清扫（去除 editorAgent/open API 引用） | H |
+| H-4 | 文档维护规程 | H |
+| ~~I-1~~ | ~~移除 `AI_ENABLE_REQUIREMENT_ANALYSIS=false` v1 回退~~ (已完成) | I |
+| ~~I-2~~ | ~~`legacyAgentKey` 扩展指南文档化~~ (已完成: [expert-extension-guide.md](../expert-extension-guide.md)) | I |
+| I-3 | sdk / workflow-client 双 Key 示例 | I |
 
-### 待办 — Phase A（P0）
-
-| ID | 任务 |
-|----|------|
-| A-1 | invoke `X-API-Key` |
-| A-2 | `/api/keys` 用户隔离 |
-| A-3 | AI「我的集成密钥」UI |
-| A-4 | workflow-client `apiKey` |
-| A-5 | seed 角色 `apikey:*` |
-
-### 待办 — Phase B（P0）
-
-| ID | 任务 |
-|----|------|
-| B-1 | ai README 快速开始 |
-| B-2 | 环境变量清单 |
-| B-3 | docker-compose.ai.yml |
-| B-4 | LICENSE + CONTRIBUTING |
-
-### 待办 — Phase C（P1）
-
-| ID | 任务 |
-|----|------|
-| C-1 | Auth e2e |
-| C-3 | 工作流 invoke 信息展示 |
-| C-4 | fetch 401 refresh（可选） |
-
-### 待办 — Phase D（P2）
-
-| ID | 任务 |
-|----|------|
-| D-1 | 多租户 UI |
-| D-2 | Key 审计 |
-| D-3 | 配额 / 限流 |
-| D-4 | 插件市场模板 |
-
-### 待办 — Phase E（P1）
-
-| ID | 任务 |
-|----|------|
-| E-1 | 模板 Tab 试用按钮 |
-| E-2 | seed `demo-*` 工作流 |
-| E-3 | 设计器 try 深链 |
-| E-4 | Chat workflowId 深链 |
-| E-5 | 扩模板图工厂 |
-| E-6 | agent-workflow 文档 |
-| E-T1～E-T5 | 五类新模板（见 §二 E.6） |
-
-### 待办 — Phase F（P0 调研）
-
-| ID | 任务 |
-|----|------|
-| F-1～F-5 | 调研执行步骤（§三 F.4） |
-| F-P1～F-P4 | Prompt 待决问题（§三 F.3） |
-| F.2 表 | 逐项 P0：dynamicPrompt、Tool kind、HTTP 安全、MCP transport、Prompt 四层、`promptsRoutes` 等 |
-
-### 待办 — Phase G（P0）
-
-| ID | 任务 |
-|----|------|
-| G-1 | BYOK 归属 → model-architecture.md |
-| G-2 | llmCache / LLMManager 优先级 |
-| G-3 | ModelConfig Key 脱敏 |
-| G-4 | 「模型与连接」设置页 |
-| G-5 | 动态模型列表 |
-| G-6 | Ollama / vLLM 文档 |
-| G-7 | openai-compatible Provider（可选） |
-
-### 待办 — Phase H（P1）
-
-| ID | 任务 |
-|----|------|
-| H-2 | 内部研发文档清扫 |
-| H-4 | 文档维护规程 |
-
-### 待办 — Phase I（P2）
-
-| ID | 任务 |
-|----|------|
-| I-1 | 移除 `AI_ENABLE_REQUIREMENT_ANALYSIS=false` v1 回退 |
-| I-2 | `legacyAgentKey` 扩展指南文档化 |
-| I-3 | sdk / workflow-client 双 Key 示例 |
-
-**最后更新**：2026-07-07
+**最后更新**：2026-07-08

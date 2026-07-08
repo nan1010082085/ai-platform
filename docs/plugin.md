@@ -3,7 +3,7 @@
 > **独立文档**：Expert / Skill / Tool / MCP 四层能力目录的配置、运行时、UI 与演进路线。  
 > Chat LangGraph 与 Agent Workflow **共用**同一 Registry。
 
-**相关**：[五项迭代完成记录](./product/ai-five-phase-iteration.md) · [Workflow 开放 API](./design/workflow-open-api.md) · 服务端配置说明 `server/config/plugins/README.md`
+**相关**：[Expert 扩展指南](./expert-extension-guide.md) · [五项迭代完成记录](./product/ai-five-phase-iteration.md) · [Workflow 开放 API](./design/workflow-open-api.md) · 服务端配置说明 `server/config/plugins/README.md`
 
 ---
 
@@ -69,11 +69,55 @@ plugins/ → plugins/local/ → plugins/tenants/{AI_PLUGIN_TENANT_ID}/ → AI_PL
 | 字段 | 说明 |
 |------|------|
 | `id` | 全局唯一，如 `platform.editor` |
-| `legacyAgentKey` | 对齐 LangGraph `currentAgent` |
+| `legacyAgentKey` | **task chain 调度键**（见下方说明），非图节点 ID |
 | `dynamicPrompt` | `editor` / `flow` / `page` / `general` |
 | `tools` / `skills` | 引用的工具名、Skill id 列表 |
 | `routing` | Chat 意图匹配 keywords / contextSources |
 | `runtime` | `langgraph` / `workflow` |
+
+### `legacyAgentKey` 说明
+
+`legacyAgentKey` 是 **task chain 调度键**，用于将旧版 `currentAgent` 字符串映射到插件中心的 Expert 声明。它**不是** LangGraph 图节点 ID，也不是 Expert ID。
+
+**类型定义**（`server/src/ai/plugins/types.ts`）：
+
+```typescript
+type LegacyAgentKey = 'editor' | 'flow' | 'page' | 'general' | 'router'
+```
+
+**职责边界**：
+
+| 是什么 | 不是什么 |
+|--------|----------|
+| task chain 中 `step.agent` 的值 | LangGraph 图节点名（如 `pluginExpert`） |
+| 旧版 `session.currentAgent` 的合法值 | Expert 的唯一标识（`id` 才是） |
+| `PluginRegistry.getExpertByLegacyKey()` 的查找键 | Workflow 节点 ID |
+
+**使用场景**：
+
+1. **taskPlanner** — 生成任务链时，每个 step 的 `agent` 字段使用 `legacyAgentKey`（如 `"agent": "editor"`）
+2. **LangGraph 路由** — `resolveExpertForSession` 先按 `expertId` 查找，回退到 `legacyAgentKey` 匹配
+3. **Workflow 执行器** — `dispatchAgent` 将非 dotted 的 agentType 作为 `legacyAgentKey` 传给 `runRegisteredExpert`
+4. **用户上下文注入** — `buildExpertUserContent` 按 `legacyAgentKey` 分支注入 Schema/Flow 上下文
+
+**注册机制**：`PluginRegistry` 在 `registerManifest` 时将 `legacyAgentKey` 索引到 `expertsByLegacy` Map，供 `getExpertByLegacyKey()` O(1) 查找。
+
+**配置示例**（`experts/platform.editor.json`）：
+
+```json
+{
+  "id": "platform.editor",
+  "legacyAgentKey": "editor",
+  "dynamicPrompt": "editor",
+  "tools": ["schema__search", "generate_schema", ...],
+  "routing": {
+    "keywords": ["表单", "schema", "form"],
+    "contextSources": ["editor", "standalone"]
+  }
+}
+```
+
+**扩展自定义 Expert 时**：只有需要参与 task chain 调度（被 taskPlanner 或 router 引用）的 Expert 才需要设置 `legacyAgentKey`。纯 Workflow 专家或独立运行的专家可以省略此字段，直接使用 `id` 引用。
 
 ---
 
@@ -210,3 +254,31 @@ cp -R server/config/plugins/local.example server/config/plugins/local
 # 编辑 experts/*.json enabled: true
 pnpm plugin:validate
 ```
+
+### 新增 Expert 指南
+
+**最小配置**：
+
+```json
+{
+  "id": "my.custom-expert",
+  "label": "自定义专家",
+  "description": "专家用途说明",
+  "tools": [],
+  "skills": [],
+  "runtime": ["langgraph", "workflow"]
+}
+```
+
+**是否需要 `legacyAgentKey`？**
+
+| 场景 | 是否设置 |
+|------|----------|
+| 需要被 taskPlanner 作为任务链步骤调度 | 是，且值必须是 `LegacyAgentKey` 联合类型中的一个 |
+| 需要被 LangGraph router 通过意图匹配路由 | 是（router 按 `legacyAgentKey` 写入 `session.currentAgent`） |
+| 仅在 Workflow 设计器中作为 `expert` 节点使用 | 否，直接用 `id`（如 `"expertId": "my.custom-expert"`） |
+| 仅通过 API 或 `runRegisteredExpert` 显式调用 | 否，传 `{ expertId: "my.custom-expert" }` 即可 |
+
+**注意**：`legacyAgentKey` 的合法值是固定枚举（`editor` | `flow` | `page` | `general` | `router`），不能自定义新值。如果需要全新的调度维度，应使用 `expertId` 作为调度键，而非扩展 `legacyAgentKey`。
+
+完整扩展指南见 [Expert 扩展指南](./expert-extension-guide.md)。

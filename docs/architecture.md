@@ -98,8 +98,6 @@ ai/
 
 ### 3.2 v2 默认流程
 
-环境变量 `AI_ENABLE_REQUIREMENT_ANALYSIS`（默认 `true`）控制是否启用需求分析管线。
-
 ```
 START
   → router
@@ -114,13 +112,10 @@ START
   → summarizer → END
 ```
 
-**v1 回退**：`AI_ENABLE_REQUIREMENT_ANALYSIS=false` 时，`router` 后直接走 `routeAfterRouter`（无需求分析管线，仍进 `pluginExpert`）。
-
-**其他环境变量**：
+**环境变量**：
 
 | 变量 | 默认 | 说明 |
 |------|------|------|
-| `AI_ENABLE_REQUIREMENT_ANALYSIS` | `true` | 启用需求分析 → 确认 → 规划管线 |
 | `AI_ENABLE_TASK_PLANNER` | `true` | 启用任务规划节点 |
 
 ### 3.3 专家与插件中心
