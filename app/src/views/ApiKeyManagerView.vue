@@ -65,7 +65,7 @@ async function handleCreate(): Promise<void> {
   }
   creating.value = true
   try {
-    const item = await createApiKey({ name })
+    const item = await createApiKey({ name, permissions: ['workflow:execute'] })
     createdFullKey.value = item.key
     showCreateDialog.value = false
     showKeyDialog.value = true

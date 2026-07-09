@@ -185,7 +185,7 @@ describe('ApiKeyManagerView', () => {
     await submitBtn!.trigger('click')
     await flushPromises()
 
-    expect(mockCreateApiKey).toHaveBeenCalledWith({ name: '新密钥' })
+    expect(mockCreateApiKey).toHaveBeenCalledWith({ name: '新密钥', permissions: ['workflow:execute'] })
     // Full key should be shown in reveal dialog
     expect(wrapper.text()).toContain('sk-abcdef1234567890abcdef1234567890')
     expect(wrapper.text()).toContain('此密钥仅展示一次')
@@ -267,7 +267,7 @@ describe('ApiKeyManagerView', () => {
     await flushPromises()
 
     expect(mockCreateApiKey).toHaveBeenCalledTimes(1)
-    expect(mockCreateApiKey).toHaveBeenCalledWith({ name: '自定义名称' })
+    expect(mockCreateApiKey).toHaveBeenCalledWith({ name: '自定义名称', permissions: ['workflow:execute'] })
     // After creation, list should be refreshed
     expect(mockGetApiKeys).toHaveBeenCalledTimes(2)
     wrapper.unmount()
