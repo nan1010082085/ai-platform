@@ -5,6 +5,7 @@ import type { ChatSettings } from '@/types'
 import { checkAIHealth, type AIHealthResponse } from '@/api/aiApi'
 import { useModelOptions } from '@/composables/useModelOptions'
 import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
+import ModelOptionSelect from '@/components/ModelOptionSelect.vue'
 import SectionToggle from '@/components/agent-workflow/property-panel/SectionToggle.vue'
 import FieldRow from '@/components/agent-workflow/property-panel/FieldRow.vue'
 import styles from './AiChatSettings.module.scss'
@@ -97,14 +98,12 @@ function handleSave(): void {
 
       <SectionToggle title="模型" :count="1">
         <FieldRow label="对话模型" hint="选择 Chat 对话使用的大模型">
-          <el-select v-model="localSettings.model" :loading="modelsLoading">
-            <el-option
-              v-for="option in modelOptions"
-              :key="option.value"
-              :label="option.label"
-              :value="option.value"
-            />
-          </el-select>
+          <ModelOptionSelect
+            v-model="localSettings.model"
+            :options="modelOptions"
+            :loading="modelsLoading"
+            placeholder="选择对话模型"
+          />
         </FieldRow>
       </SectionToggle>
 

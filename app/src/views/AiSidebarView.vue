@@ -24,6 +24,7 @@ import type { MessageEmbeddedCard } from '@/components/AiMessage.vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
 import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
+import { usePublishedAgentWorkflowsStore } from '@/stores/publishedAgentWorkflows'
 import { Clock } from '@element-plus/icons-vue'
 
 const store = useAiStore()
@@ -232,12 +233,18 @@ async function handleApply() {
   }
 }
 
-onMounted(() => {
-  void loadPublishedWorkflows()
+onMounted(async () => {
+  await loadPublishedWorkflows()
 
   const workflowId = route.query.workflowId
   if (typeof workflowId === 'string' && workflowId.trim()) {
-    store.updateAgentWorkflowId(workflowId.trim())
+    const id = workflowId.trim()
+    const publishedStore = usePublishedAgentWorkflowsStore()
+    if (publishedStore.isPublishedWorkflow(id)) {
+      store.updateAgentWorkflowId(id)
+    }
+  } else {
+    usePublishedAgentWorkflowsStore().sanitizeStoredWorkflowSelection()
   }
 
   // 连接 Socket

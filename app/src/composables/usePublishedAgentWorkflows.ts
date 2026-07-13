@@ -13,5 +13,6 @@ export function usePublishedAgentWorkflows() {
     loadPublishedWorkflows: store.loadPublishedWorkflows,
     getWorkflowName: store.getWorkflowName,
     isPublishedWorkflow: store.isPublishedWorkflow,
+    sanitizeStoredWorkflowSelection: store.sanitizeStoredWorkflowSelection,
   }
 }

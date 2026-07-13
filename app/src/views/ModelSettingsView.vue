@@ -24,6 +24,7 @@ import {
   type TestConnectionResult,
   type ExportModelConfigPayload,
 } from '@/api/modelConfigApi'
+import { checkAIHealth, type AIProviderHealth } from '@/api/aiApi'
 import { useModelPresets, type ProviderPreset } from '@/composables/useModelPresets'
 import { useModelOptions } from '@/composables/useModelOptions'
 import styles from './ModelSettingsView.module.scss'
@@ -36,9 +37,10 @@ const {
   getQuickAddOptions,
 } = useModelPresets()
 
-const { defaultModel, modelOptions } = useModelOptions()
+const { defaultModel, modelOptions, loadModelOptions } = useModelOptions()
 
 const configs = ref<ModelConfigItem[]>([])
+const envProviders = ref<AIProviderHealth[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(20)
@@ -58,9 +60,6 @@ const providerFilter = ref<ModelProvider | ''>('')
 const providerOptions: Array<{ value: ModelProvider | ''; label: string }> = [
   { value: '', label: '全部' },
   { value: 'deepseek', label: 'DeepSeek' },
-  { value: 'openai', label: 'OpenAI' },
-  { value: 'anthropic', label: 'Anthropic' },
-  { value: 'ollama', label: 'Ollama' },
   { value: 'mimo', label: 'Mimo' },
 ]
 
@@ -129,6 +128,19 @@ async function loadConfigs(): Promise<void> {
     })
     configs.value = res.items
     total.value = res.total
+
+    if (res.items.length === 0) {
+      try {
+        const health = await checkAIHealth()
+        envProviders.value = health.status === 'ok' ? health.providers : []
+      } catch {
+        envProviders.value = []
+      }
+    } else {
+      envProviders.value = []
+    }
+
+    await loadModelOptions()
   } catch (e) {
     ElMessage.error((e as Error).message || '加载失败')
   } finally {
@@ -660,6 +672,12 @@ onMounted(() => {
           <div v-if="configs.length === 0 && !loading" :class="styles.empty">
             <AppIcon name="setting" :size="40" :class="styles.emptyIcon" />
             <p>暂无模型配置</p>
+            <p v-if="envProviders.length > 0" :class="styles.envHint">
+              检测到环境变量已配置
+              <strong>{{ envProviders.map((p) => `${p.name} (${p.model})`).join('、') }}</strong>，
+              Chat 当前可用，但需写入数据库后才会出现在此列表。
+              重启后端将自动同步，或点击下方快速添加。
+            </p>
             <el-button type="primary" plain size="small" @click="openCreateDialog">
               新增第一个配置
             </el-button>

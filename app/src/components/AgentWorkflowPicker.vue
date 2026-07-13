@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
+import {
+  DEFAULT_CHAT_WORKFLOW_HINT,
+  DEFAULT_CHAT_WORKFLOW_LABEL,
+} from '@/constants/chatWorkflow'
 
 const DEFAULT_WORKFLOW_VALUE = ''
 
@@ -17,10 +21,20 @@ const emit = defineEmits<{
   'update:modelValue': [value: string | null]
 }>()
 
-const { workflowOptions, loading, loadPublishedWorkflows, isPublishedWorkflow } = usePublishedAgentWorkflows()
+const {
+  workflowOptions,
+  loading,
+  loaded,
+  loadPublishedWorkflows,
+  isPublishedWorkflow,
+} = usePublishedAgentWorkflows()
 
 const selectedValue = computed({
-  get: () => props.modelValue ?? DEFAULT_WORKFLOW_VALUE,
+  get: () => {
+    if (!props.modelValue) return DEFAULT_WORKFLOW_VALUE
+    if (loaded.value && !isPublishedWorkflow(props.modelValue)) return DEFAULT_WORKFLOW_VALUE
+    return props.modelValue
+  },
   set: (value: string | null | undefined) => {
     const normalized = value ?? DEFAULT_WORKFLOW_VALUE
     emit('update:modelValue', normalized === DEFAULT_WORKFLOW_VALUE ? null : normalized)
@@ -41,6 +55,13 @@ watch(
   { immediate: true },
 )
 
+watch(loaded, (isLoaded) => {
+  if (!isLoaded || !props.modelValue) return
+  if (!isPublishedWorkflow(props.modelValue)) {
+    emit('update:modelValue', null)
+  }
+})
+
 function handleVisibleChange(visible: boolean) {
   if (visible) {
     loadPublishedWorkflows(true).catch(() => {})
@@ -57,11 +78,11 @@ function handleVisibleChange(visible: boolean) {
       clearable
       filterable
       :loading="loading"
-      placeholder="默认（LangGraph 对话）"
+      :placeholder="DEFAULT_CHAT_WORKFLOW_LABEL"
       style="width: 100%"
       @visible-change="handleVisibleChange"
     >
-      <el-option :value="DEFAULT_WORKFLOW_VALUE" label="默认（LangGraph 对话）" />
+      <el-option :value="DEFAULT_WORKFLOW_VALUE" :label="DEFAULT_CHAT_WORKFLOW_LABEL" />
       <el-option
         v-for="option in workflowOptions"
         :key="option.value"
@@ -69,10 +90,7 @@ function handleVisibleChange(visible: boolean) {
         :value="option.value"
       />
     </el-select>
-    <p v-if="modelValue && !isPublishedWorkflow(modelValue)" class="warn">
-      当前选中的编排未发布或已不存在，请重新选择。
-    </p>
-    <p v-if="showLabel" class="hint">选择已发布的工作流后，发送消息将触发该编排而非默认对话。</p>
+    <p v-if="showLabel" class="hint">{{ DEFAULT_CHAT_WORKFLOW_HINT }}</p>
   </div>
 </template>
 
@@ -89,12 +107,5 @@ function handleVisibleChange(visible: boolean) {
   font-size: 11px;
   line-height: 1.4;
   color: #909399;
-}
-
-.warn {
-  margin: 6px 0 0;
-  font-size: 11px;
-  line-height: 1.4;
-  color: #e6a23c;
 }
 </style>

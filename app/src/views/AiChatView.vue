@@ -19,6 +19,7 @@ import AiChatPanel from '@/components/AiChatPanel.vue'
 import AiChatSettings from '@/components/AiChatSettings.vue'
 import ConversationDrawer from '@/components/ConversationDrawer.vue'
 import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
+import { usePublishedAgentWorkflowsStore } from '@/stores/publishedAgentWorkflows'
 
 const store = useAiStore()
 const route = useRoute()
@@ -211,15 +212,21 @@ function handleMessageFeedback(messageIndex: number, type: 'positive' | 'negativ
 
 // ---- Bridge ----
 
-onMounted(() => {
+onMounted(async () => {
   store.loadConversations()
   connectSocket()
   startStatusCheck()
-  void loadPublishedWorkflows()
+  await loadPublishedWorkflows()
 
   const workflowId = route.query.workflowId
   if (typeof workflowId === 'string' && workflowId.trim()) {
-    store.updateAgentWorkflowId(workflowId.trim())
+    const id = workflowId.trim()
+    const publishedStore = usePublishedAgentWorkflowsStore()
+    if (publishedStore.isPublishedWorkflow(id)) {
+      store.updateAgentWorkflowId(id)
+    }
+  } else {
+    usePublishedAgentWorkflowsStore().sanitizeStoredWorkflowSelection()
   }
 
   bridge.on('ai:set-context', (payload) => {

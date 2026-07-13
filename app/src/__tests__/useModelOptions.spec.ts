@@ -9,10 +9,16 @@ vi.mock('@/api/modelConfigApi', () => ({
   getModelConfigs: vi.fn(),
 }))
 
+vi.mock('@/api/aiApi', () => ({
+  checkAIHealth: vi.fn(),
+}))
+
 import { getModelConfigs } from '@/api/modelConfigApi'
+import { checkAIHealth } from '@/api/aiApi'
 import { useModelOptions, _resetModelOptionsState } from '@/composables/useModelOptions'
 
 const mockGetModelConfigs = vi.mocked(getModelConfigs)
+const mockCheckAIHealth = vi.mocked(checkAIHealth)
 
 const sampleItems = [
   {
@@ -85,11 +91,11 @@ describe('useModelOptions', () => {
     await flushPromises()
     const opts = result.modelOptions.value
     expect(opts[0].value).toBe('deepseek-v4-flash')
-    expect(opts[0].label).toBe('DeepSeek Flash (deepseek)')
+    expect(opts[0].label).toBe('DeepSeek Flash · deepseek-v4-flash')
     expect(opts[0].provider).toBe('deepseek')
     expect(opts[0].isDefault).toBe(true)
     expect(opts[1].value).toBe('gpt-4o')
-    expect(opts[1].label).toBe('GPT-4o (openai)')
+    expect(opts[1].label).toBe('GPT-4o · gpt-4o')
   })
 
   it('sets default model from isDefault item', async () => {
@@ -114,8 +120,39 @@ describe('useModelOptions', () => {
     expect(result.modelOptions.value).toHaveLength(0)
   })
 
+  it('falls back to env health providers when DB list is empty', async () => {
+    mockGetModelConfigs.mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 100,
+      totalPages: 0,
+    })
+    mockCheckAIHealth.mockResolvedValue({
+      status: 'ok',
+      defaultProvider: 'deepseek',
+      hasApiKey: true,
+      providers: [{
+        name: 'deepseek',
+        hasApiKey: true,
+        model: 'deepseek-v4-flash',
+        isDefault: true,
+      }],
+    })
+
+    const result = mountWithComposable()
+    await flushPromises()
+
+    expect(mockCheckAIHealth).toHaveBeenCalled()
+    expect(result.modelOptions.value).toHaveLength(1)
+    expect(result.modelOptions.value[0].value).toBe('deepseek-v4-flash')
+    expect(result.modelOptions.value[0].source).toBe('env')
+    expect(result.defaultModel.value).toBe('deepseek-v4-flash')
+  })
+
   it('handles API error gracefully', async () => {
     mockGetModelConfigs.mockRejectedValue(new Error('Network error'))
+    mockCheckAIHealth.mockRejectedValue(new Error('Health unavailable'))
     const result = mountWithComposable()
     await flushPromises()
     expect(result.loaded.value).toBe(false)
