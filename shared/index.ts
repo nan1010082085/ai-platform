@@ -99,6 +99,7 @@ export type {
   AgentNodeRecord,
   AgentWorkflowExecution,
   AgentWorkflowValidationIssue,
+  ImageGenerateNodeData,
 } from './agentWorkflow.js'
 
 export {

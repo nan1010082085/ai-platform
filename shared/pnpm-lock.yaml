@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@schema-platform/flow-shared':
-        specifier: file:../../flow-shared
-        version: file:../../flow-shared
+        specifier: file:../../shared/flow-shared
+        version: file:../../shared/flow-shared
     devDependencies:
       typescript:
         specifier: ~5.7.3
@@ -140,8 +140,8 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@schema-platform/flow-shared@file:../../flow-shared':
-    resolution: {directory: ../../flow-shared, type: directory}
+  '@schema-platform/flow-shared@file:../../shared/flow-shared':
+    resolution: {directory: ../../shared/flow-shared, type: directory}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -536,7 +536,7 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@schema-platform/flow-shared@file:../../flow-shared': {}
+  '@schema-platform/flow-shared@file:../../shared/flow-shared': {}
 
   '@standard-schema/spec@1.1.0': {}
 
