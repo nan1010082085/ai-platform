@@ -28,7 +28,7 @@ Complete list of environment variables for the Schema Form AI platform.
 |---|---|---|
 | `DEEPSEEK_API_KEY` | DeepSeek API key | -- |
 | `DEEPSEEK_BASE_URL` | DeepSeek API base URL | `https://api.deepseek.com` |
-| `DEEPSEEK_MODEL` | Default model | `deepseek-chat` |
+| `DEEPSEEK_MODEL` | Default model | `deepseek-v4-flash` |
 
 ### OpenAI
 

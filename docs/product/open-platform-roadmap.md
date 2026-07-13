@@ -9,6 +9,7 @@
 |------|------|
 | [platform.md](../platform.md) | 三能力一体、JWT、双 Key |
 | [open-source-iteration.md](./open-source-iteration.md) | JWT 统一、基线 1.0、**Phase A～I 可执行拆解** |
+| [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md) | **Phase J**：LangGraph 对话节点 → Workflow 白盒补齐 |
 | [plugin.md](../plugin.md) | 插件中心架构与 CLI |
 | 本文 | **模板策略 + 能力调研清单 + 阶段总表** |
 
@@ -29,8 +30,9 @@
 | **G** | **模型扩展（BYOK + 自定义端点）** | P0 | 部分完成（G-1~G-6 ✅，G-7 ⬜） |
 | **H** | **文档与基线收尾** | P1 | 部分完成（H-1/H-3 ✅，H-2/H-4 ⬜） |
 | **I** | **可选技术债** | P2 | ✅ 已完成 |
+| **J** | **LangGraph 对话节点白盒化** | P1 | ⬜ 计划中（见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md)） |
 
-建议并行：**A + G + F（P0 项）**；**E + B** 在 demo 流就绪后；**H** 与开发同步收口文档。
+建议并行：**A + G + F（P0 项）**；**E + B** 在 demo 流就绪后；**H** 与开发同步收口文档；**J** 在 J-0 运行时抽取后与模板扩展并行。
 
 ---
 

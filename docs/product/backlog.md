@@ -1,6 +1,6 @@
 # AI 平台 — 未完成任务与进度
 
-> 最后更新：**2026-07-08** · **全量任务索引**见 [open-platform-roadmap.md § 七](./open-platform-roadmap.md#七全量任务索引) · 可执行拆解见 [open-source-iteration.md](./open-source-iteration.md)
+> 最后更新：**2026-07-13** · **全量任务索引**见 [open-platform-roadmap.md § 七](./open-platform-roadmap.md#七全量任务索引) · 可执行拆解见 [open-source-iteration.md](./open-source-iteration.md) · **LangGraph→Workflow 对话节点**见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md)
 
 **已完成总览**：[ai-five-phase-iteration.md](./ai-five-phase-iteration.md) · [plugin.md](../plugin.md) · [sdk.md](../sdk.md) · [platform.md](../platform.md)
 
@@ -26,6 +26,7 @@
 | Phase G — 模型扩展 | **86%**（G-1~G-6 ✅、G-7 openai-compatible Provider ⬜） |
 | Phase H — 文档与基线收尾 | **50%**（H-1/H-3 ✅、H-2 内部文档清扫部分完成 ⬜、H-4 文档维护规程 ⬜） |
 | Phase I — 可选技术债 | **100%**（v1 回退 + legacyAgentKey + 双 Key 示例） |
+| **Phase J** — LangGraph 对话节点白盒化 | **0%**（见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md)） |
 
 ---
 
@@ -116,6 +117,22 @@
 - **主路径**：全部业务 API **JWT**（`authMiddleware`）
 - **集成**：`POST /api/ai/workflows/invoke/{slug}` + **`X-Workflow-Key`**（`wf-...`）或 **`X-API-Key`**（`sk-...`）二选一
 - **workflow-client**：JWT 或 Key（支持 `workflowKey` / `apiKey` 二选一）
+
+---
+
+## Phase J — LangGraph 对话节点补齐（新增）
+
+> 详规：[langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md)
+
+| 子阶段 | 主题 | 优先级 | 状态 |
+|--------|------|--------|------|
+| **J-0** | 共享运行时抽取（`server/src/ai/runtime/*`） | P0 | ⬜ |
+| **J-1** | `intent-router`、`summarizer` | P0 | ⬜ |
+| **J-2** | `requirement-analyzer` + `hitl` 增强 | P1 | ⬜ |
+| **J-3** | `task-planner`、`task-chain`、`collaboration-router` | P1 | ⬜ |
+| **J-4** | 官方模板 + `demo-chat-parity` seed | P1 | ⬜ |
+
+**缺失节点一览**（相对 Chat LangGraph）：`intent-router`、`requirement-analyzer`、`task-planner`、`task-chain`、`collaboration-router`、`summarizer`；`hitl` 增强以对接需求确认。
 
 ---
 
