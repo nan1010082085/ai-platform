@@ -83,9 +83,10 @@ const routes = [
 
 function inferRouteBase(): string {
   const p = window.location.pathname
-  const match = p.match(/^(.+?\/)(app|standalone)\/([^/]+)(\/|$)/)
-  if (match) {
-    return `${match[1]}${match[2]}/${match[3]}`
+  // qiankun 容器内：/schema-platform/app/ai/... 或 /schema-platform/standalone/ai/...
+  const qiankunMatch = p.match(/^(.+?\/)(app|standalone)\/([^/]+)(\/|$)/)
+  if (qiankunMatch) {
+    return `${qiankunMatch[1]}${qiankunMatch[2]}/${qiankunMatch[3]}`
   }
   return ''
 }
@@ -94,9 +95,13 @@ function resolveRouteBase(routeBase?: string): string {
   if (routeBase) return routeBase
   const inferred = inferRouteBase()
   if (inferred) return inferred
+  // 独立部署时优先用 VITE_ROUTE_BASE（与 nginx 部署路径一致），
+  // 避免 BASE_URL 和 VITE_ROUTE_BASE 重复拼接导致路径双倍。
+  const envBase = import.meta.env.VITE_ROUTE_BASE
+  if (envBase && envBase !== '/') return envBase
   const viteBase = import.meta.env.BASE_URL
   if (viteBase && viteBase !== '/') return viteBase
-  return import.meta.env.VITE_ROUTE_BASE || '/'
+  return '/'
 }
 
 export function createAiRouter(routeBase?: string) {
