@@ -1,11 +1,10 @@
 /**
  * 插件中心 API 客户端
+ *
+ * 使用 platform-shared apiClient（自动 401 refresh + retry）。
  */
 
-import type { AiApiError } from './aiApi'
-import { resolveAuthToken } from '@schema-platform/platform-shared/utils/authSession'
-
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) ?? '/schema-platform/api'
+import { apiClient } from '@schema-platform/platform-shared/utils/apiClient'
 
 export interface PluginExpertSummary {
   id: string
@@ -52,26 +51,6 @@ export interface PluginRegistrySnapshot {
   mcpServers: PluginMcpServerSummary[]
 }
 
-function resolveToken(): string | null {
-  return resolveAuthToken()
-}
-
 export async function fetchPluginRegistry(): Promise<PluginRegistrySnapshot> {
-  const headers: Record<string, string> = {}
-  const token = resolveToken()
-  if (token) headers.Authorization = `Bearer ${token}`
-
-  const response = await fetch(`${BASE_URL}/ai/plugins`, { headers })
-  if (!response.ok) {
-    const body = await response.json().catch(() => null)
-    const msg = body?.error?.message ?? `${response.status} ${response.statusText}`
-    throw new Error(msg)
-  }
-  const body = await response.json() as { success: boolean; data: PluginRegistrySnapshot }
-  if (!body.success) {
-    throw new Error('Failed to load plugin registry')
-  }
-  return body.data
+  return apiClient.get<PluginRegistrySnapshot>('/ai/plugins')
 }
-
-export type { AiApiError }

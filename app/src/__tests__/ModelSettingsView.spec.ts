@@ -66,6 +66,17 @@ const sampleConfigs = [
 ]
 
 const stubs = {
+  AppDialog: {
+    template: `
+      <div v-if="modelValue" class="el-dialog-stub">
+        <div class="el-dialog__title">{{ title }}</div>
+        <slot />
+        <slot name="footer" />
+      </div>
+    `,
+    props: ['modelValue', 'title', 'width', 'closeOnClickModal', 'destroyOnClose', 'loading', 'showFullscreenBtn', 'appendToBody', 'draggable'],
+    emits: ['update:modelValue', 'confirm', 'cancel', 'close'],
+  },
   ElDialog: {
     template: `
       <div v-if="modelValue" class="el-dialog-stub">
@@ -199,10 +210,10 @@ describe('ModelSettingsView', () => {
     await createBtn!.trigger('click')
     await wrapper.vm.$nextTick()
 
-    // Fill form fields (name input is first input in dialog)
-    const inputs = wrapper.findAll('input')
-    if (inputs.length > 0) {
-      await inputs[0].setValue('新模型')
+    // Fill form fields (skip file inputs)
+    const textInputs = wrapper.findAll('input').filter((i) => i.element.type !== 'file')
+    if (textInputs.length > 0) {
+      await textInputs[0].setValue('新模型')
     }
 
     // Submit

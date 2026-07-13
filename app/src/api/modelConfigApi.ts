@@ -75,7 +75,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 // ---- 类型 ----
 
-export type ModelProvider = 'deepseek' | 'openai' | 'anthropic' | 'ollama'
+export type ModelProvider = 'deepseek' | 'openai' | 'anthropic' | 'ollama' | 'mimo'
 
 export interface ModelConfigItem {
   id: string
@@ -184,4 +184,68 @@ export async function testModelConnection(id: string, message?: string): Promise
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: message ?? 'Hello, respond with OK' }),
   })
+}
+
+// ---- 导入 / 导出 / 批量测试 ----
+
+export interface ExportModelConfigPayload {
+  version: 1
+  exportedAt: string
+  configs: Omit<CreateModelConfigPayload, 'id' | 'createdAt' | 'updatedAt'>[]
+}
+
+/** 导出全部模型配置为 JSON 格式 */
+export async function exportModelConfigs(): Promise<ExportModelConfigPayload> {
+  const res = await getModelConfigs({ page: 1, pageSize: 1000 })
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    configs: res.items.map(({ id: _id, createdAt: _ca, updatedAt: _ua, apiKey: _ak, ...rest }) => rest),
+  }
+}
+
+/** 从导出的 JSON 批量导入模型配置 */
+export async function importModelConfigs(payload: ExportModelConfigPayload): Promise<{
+  imported: number
+  skipped: number
+  errors: string[]
+}> {
+  if (!payload?.configs?.length || payload.version !== 1) {
+    throw new Error('无效的导入文件格式')
+  }
+  let imported = 0
+  let skipped = 0
+  const errors: string[] = []
+  for (const cfg of payload.configs) {
+    try {
+      await createModelConfig(cfg)
+      imported++
+    } catch (e) {
+      const msg = (e as Error).message || '未知错误'
+      if (msg.includes('already exists') || msg.includes('duplicate')) {
+        skipped++
+      } else {
+        errors.push(`${cfg.name}: ${msg}`)
+      }
+    }
+  }
+  return { imported, skipped, errors }
+}
+
+/** 批量测试多个模型连接，返回 id → 结果映射 */
+export async function bulkTestConnections(
+  ids: string[],
+): Promise<Map<string, { success: boolean; result?: TestConnectionResult; error?: string }>> {
+  const results = new Map<string, { success: boolean; result?: TestConnectionResult; error?: string }>()
+  await Promise.allSettled(
+    ids.map(async (id) => {
+      try {
+        const result = await testModelConnection(id)
+        results.set(id, { success: true, result })
+      } catch (e) {
+        results.set(id, { success: false, error: (e as Error).message || '测试失败' })
+      }
+    }),
+  )
+  return results
 }
