@@ -388,10 +388,72 @@ export interface Conversation {
   updatedAt: string
 }
 
+// ---- Action Proposal ----
+
+/** 行动项 */
+export interface ActionItem {
+  id: string
+  title: string
+  description: string
+  assignee?: string
+  deadline?: string
+  priority: 'high' | 'medium' | 'low'
+  type: 'todo' | 'approval' | 'review' | 'decision'
+}
+
+/** 行动方案 */
+export interface ActionProposal {
+  id: string
+  documentTitle?: string
+  summary?: string
+  actionItems: ActionItem[]
+  approvalChain?: string[]
+}
+
+/** 行动方案状态 */
+export type ProposalStatus = 'pending' | 'approved' | 'rejected'
+
+// ---- Image & PPT Generation ----
+
+/** 图片生成结果 */
+export interface ImageGenerateResult {
+  imageUrl?: string
+  prompt?: string
+  model?: string
+  size?: string
+  style?: string
+  quality?: string
+  loading?: boolean
+  error?: string
+}
+
+/** PPT 幻灯片数据 */
+export interface PptSlideData {
+  index: number
+  type: 'title' | 'content' | 'chart' | 'comparison' | 'summary'
+  heading: string
+  content?: string[]
+  speakerNotes?: string
+}
+
+/** PPT 生成结果 */
+export interface PptGenerateResult {
+  slides?: PptSlideData[]
+  metadata?: {
+    title: string
+    template: string
+    totalSlides: number
+    style: string
+  }
+  loading?: boolean
+  error?: string
+  blob?: Blob
+}
+
 // ---- Step Card ----
 
 /** 步骤类型 */
-export type StepType = 'thinking' | 'tool_call' | 'tool_error' | 'result' | 'text' | 'code' | 'requirement_confirm'
+export type StepType = 'thinking' | 'tool_call' | 'tool_error' | 'result' | 'text' | 'code' | 'requirement_confirm' | 'action_proposal' | 'image_generate' | 'ppt_generate'
 
 /** 步骤状态 */
 export type StepStatus = 'pending' | 'running' | 'done' | 'error'
@@ -433,6 +495,12 @@ export interface StepData {
   requirementNextQuestionId?: string | null
   /** 是否等待用户确认（requirement_confirm 类型） */
   waitingConfirmation?: boolean
+  /** 行动方案数据（action_proposal 类型） */
+  actionProposal?: ActionProposal
+  /** 图片生成数据（image_generate 类型） */
+  imageGenerateData?: ImageGenerateResult
+  /** PPT 生成数据（ppt_generate 类型） */
+  pptGenerateData?: PptGenerateResult
 }
 
 // ---- Requirement Analysis ----

@@ -11,6 +11,7 @@ export type {
   AgentExecutionStatus,
   AgentNodeRecordStatus,
   AgentWorkflowNodeData,
+  ImageGenerateNodeData,
   AgentWorkflowNode,
   AgentWorkflowEdge,
   AgentWorkflowGraph,

@@ -7,12 +7,14 @@ import AiMessage from './AiMessage.vue'
 import TaskChainBar from './TaskChainBar.vue'
 import AiRagSearch from './AiRagSearch.vue'
 import AiMentionInput from './AiMentionInput.vue'
+import SmartSuggestionCard from './SmartSuggestionCard.vue'
 import DocumentPreviewPanel from './document/DocumentPreviewPanel.vue'
 import DocumentPreviewDrawer from './document/DocumentPreviewDrawer.vue'
 import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
 import { useAiStore } from '@/stores/ai'
 import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
 import { useShellEmbed } from '@/composables/useShellEmbed'
+import { useSmartSuggestions } from '@/composables/useSmartSuggestions'
 import { uploadFile, getStarterPrompts } from '@/api/aiApi'
 import type { StarterPrompt } from '@/api/aiApi'
 import {
@@ -82,6 +84,8 @@ const emit = defineEmits<{
   'requirement-confirm': [answers: Record<string, string>]
   'requirement-answer': [questionId: string, value: string]
   'requirement-skip': []
+  'suggestion-accept': [id: string]
+  'suggestion-dismiss': [id: string]
 }>()
 
 const selectedAgent = ref<AgentType>(props.agent)
@@ -93,6 +97,35 @@ const store = useAiStore()
 const router = useRouter()
 const { shouldHideSubAppMenu } = useShellEmbed()
 const { loadPublishedWorkflows, getWorkflowName } = usePublishedAgentWorkflows()
+
+// ---- Smart Suggestions ----
+const {
+  suggestions: allSuggestions,
+  acceptedIds: suggestionAcceptedIds,
+  dismissedIds: suggestionDismissedIds,
+  acceptSuggestion,
+  dismissSuggestion,
+} = useSmartSuggestions({
+  messages: computed(() => props.messages),
+  currentSchema: computed(() => store.currentSchema),
+  currentFlow: computed(() => store.currentFlow),
+})
+
+const visibleSuggestions = computed(() =>
+  allSuggestions.value.filter(
+    (s) => !suggestionAcceptedIds.value.has(s.id) && !suggestionDismissedIds.value.has(s.id),
+  ),
+)
+
+function handleSuggestionAccept(id: string): void {
+  acceptSuggestion(id)
+  emit('suggestion-accept', id)
+}
+
+function handleSuggestionDismiss(id: string): void {
+  dismissSuggestion(id)
+  emit('suggestion-dismiss', id)
+}
 
 const selectedWorkflowId = computed({
   get: () => store.chatSettings.agentWorkflowId,
@@ -467,6 +500,25 @@ function handleCardAction(
         @requirement-answer="(qid, val) => emit('requirement-answer', qid, val)"
         @requirement-skip="emit('requirement-skip')"
       />
+    </div>
+
+    <!-- Smart Suggestions -->
+    <div v-if="visibleSuggestions.length > 0 && !loading" :class="$style.suggestionsArea">
+      <div :class="$style.suggestionsHeader">
+        <AppIcon name="magic-stick" :size="14" :class="$style.suggestionsIcon" />
+        <span :class="$style.suggestionsTitle">智能建议</span>
+      </div>
+      <div :class="$style.suggestionsList">
+        <SmartSuggestionCard
+          v-for="suggestion in visibleSuggestions"
+          :key="suggestion.id"
+          :suggestion="suggestion"
+          :accepted="suggestionAcceptedIds.has(suggestion.id)"
+          :dismissed="suggestionDismissedIds.has(suggestion.id)"
+          @accept="handleSuggestionAccept"
+          @dismiss="handleSuggestionDismiss"
+        />
+      </div>
     </div>
 
     <!-- Retry Banner (Stream disconnected) -->

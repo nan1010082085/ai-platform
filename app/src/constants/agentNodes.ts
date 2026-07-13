@@ -115,6 +115,35 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
     description: '结束工作流',
     defaultData: { label: '结束' },
   },
+  {
+    type: 'image-generate',
+    label: '图片生成',
+    icon: 'picture',
+    category: 'ai',
+    description: '调用 AI 生成图片（DALL-E 3 / Mimo 等）',
+    defaultData: {
+      label: '图片生成',
+      imagePrompt: '{{$input.message}}',
+      imageModel: 'dall-e-3',
+      imageSize: '1024x1024',
+      imageStyle: 'vivid',
+      imageQuality: 'standard',
+    },
+  },
+  {
+    type: 'ppt-generate',
+    label: 'PPT 生成',
+    icon: 'data-board',
+    category: 'ai',
+    description: '根据文本内容自动生成演示文稿',
+    defaultData: {
+      label: 'PPT 生成',
+      pptTemplate: 'business',
+      pptMaxSlides: 10,
+      pptStyle: 'professional',
+      pptIncludeImages: false,
+    },
+  },
 ]
 
 export const AGENT_NODE_COLORS: Record<string, string> = {
@@ -130,6 +159,8 @@ export const AGENT_NODE_COLORS: Record<string, string> = {
   if: '#9B59B6',
   hitl: '#F56C6C',
   end: '#909399',
+  'image-generate': '#FF6B35',
+  'ppt-generate': '#67C23A',
 }
 
 export function getPaletteItem(type: AgentNodeType): AgentPaletteItem | undefined {

@@ -1,0 +1,391 @@
+/* ---- Card ---- */
+.card {
+  border: 1px solid var(--border-color-lighter, #e4e7ed);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--bg-color, #fff);
+}
+
+.cardApproved {
+  border-color: var(--color-success, #67c23a);
+  background: var(--color-success-light-9, #f0f9eb);
+}
+
+.cardRejected {
+  border-color: var(--border-color-lighter, #e4e7ed);
+  opacity: 0.6;
+}
+
+/* ---- Header ---- */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-color-primary, #303133);
+}
+
+.docTitle {
+  font-size: 12px;
+  color: var(--text-color-secondary, #909399);
+  padding: 2px 8px;
+  background: var(--bg-color-page, #f5f7fa);
+  border-radius: 4px;
+}
+
+.countBadge {
+  font-size: 12px;
+  color: var(--color-primary, #409eff);
+  font-weight: 500;
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.statusApproved {
+  color: var(--color-success, #67c23a);
+  background: var(--color-success-light-9, #f0f9eb);
+}
+
+.statusRejected {
+  color: var(--text-color-secondary, #909399);
+  background: var(--bg-color-page, #f5f7fa);
+}
+
+/* ---- Summary ---- */
+.summary {
+  font-size: 13px;
+  color: var(--text-color-regular, #606266);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--bg-color-page, #f5f7fa);
+  border-radius: 6px;
+}
+
+/* ---- Select All ---- */
+.selectAllRow {
+  margin-bottom: 8px;
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-color-regular, #606266);
+  user-select: none;
+}
+
+.checkboxInner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-color, #dcdfe6);
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.checked {
+  background: var(--color-primary, #409eff);
+  border-color: var(--color-primary, #409eff);
+  color: #fff;
+}
+
+/* ---- Item List ---- */
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.item {
+  border: 1px solid var(--border-color-lighter, #e4e7ed);
+  border-radius: 6px;
+  padding: 10px 12px;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.item:hover {
+  border-color: var(--color-primary-light-5, #c6e2ff);
+}
+
+.itemSelected {
+  border-color: var(--color-primary, #409eff);
+  background: var(--color-primary-light-9, #ecf5ff);
+}
+
+.itemEditing {
+  cursor: default;
+}
+
+.itemHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.itemBadges {
+  display: flex;
+  gap: 4px;
+}
+
+.priorityBadge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.typeBadge {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--text-color-secondary, #909399);
+}
+
+.itemTitle {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-color-primary, #303133);
+}
+
+.editBtn {
+  padding: 2px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-color-secondary, #909399);
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.editBtn:hover {
+  color: var(--color-primary, #409eff);
+  background: var(--color-primary-light-9, #ecf5ff);
+}
+
+/* ---- Item Body (view mode) ---- */
+.itemBody {
+  margin-top: 6px;
+  padding-left: 30px;
+}
+
+.itemDesc {
+  font-size: 12px;
+  color: var(--text-color-regular, #606266);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.itemMeta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-color-secondary, #909399);
+}
+
+.itemMeta span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ---- Edit Form ---- */
+.editForm {
+  margin-top: 8px;
+  padding-left: 30px;
+}
+
+.editRow {
+  margin-bottom: 8px;
+}
+
+.editRow label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-color-secondary, #909399);
+  margin-bottom: 4px;
+}
+
+.editInput,
+.editTextarea,
+.editSelect {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color, #dcdfe6);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  background: var(--bg-color, #fff);
+  color: var(--text-color-primary, #303133);
+}
+
+.editInput:focus,
+.editTextarea:focus,
+.editSelect:focus {
+  outline: none;
+  border-color: var(--color-primary, #409eff);
+}
+
+.editTextarea {
+  resize: vertical;
+}
+
+.editRowInline {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+
+  .editRow {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+.editActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.saveBtn,
+.cancelBtn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.saveBtn {
+  background: var(--color-primary, #409eff);
+  border-color: var(--color-primary, #409eff);
+  color: #fff;
+}
+
+.saveBtn:hover {
+  background: var(--color-primary-light-3, #79bbff);
+}
+
+.cancelBtn {
+  background: transparent;
+  border-color: var(--border-color, #dcdfe6);
+  color: var(--text-color-regular, #606266);
+}
+
+.cancelBtn:hover {
+  border-color: var(--color-primary, #409eff);
+  color: var(--color-primary, #409eff);
+}
+
+/* ---- Approval Chain ---- */
+.chain {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+  font-size: 12px;
+  color: var(--text-color-secondary, #909399);
+  border-top: 1px solid var(--border-color-lighter, #ebeef5);
+  margin-bottom: 12px;
+}
+
+.chainLabel {
+  font-weight: 500;
+}
+
+.chainPerson {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chainArrow {
+  color: var(--text-color-placeholder, #c0c4cc);
+  margin: 0 2px;
+}
+
+/* ---- Actions ---- */
+.actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color-lighter, #ebeef5);
+}
+
+.approveBtn,
+.rejectBtn,
+.resetBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.approveBtn {
+  background: var(--color-primary, #409eff);
+  border-color: var(--color-primary, #409eff);
+  color: #fff;
+}
+
+.approveBtn:hover {
+  background: var(--color-primary-light-3, #79bbff);
+}
+
+.rejectBtn {
+  background: transparent;
+  border-color: var(--border-color, #dcdfe6);
+  color: var(--text-color-regular, #606266);
+}
+
+.rejectBtn:hover {
+  border-color: var(--color-danger, #f56c6c);
+  color: var(--color-danger, #f56c6c);
+}
+
+.resetBtn {
+  background: transparent;
+  border-color: var(--border-color, #dcdfe6);
+  color: var(--text-color-regular, #606266);
+}
+
+.resetBtn:hover {
+  border-color: var(--color-primary, #409eff);
+  color: var(--color-primary, #409eff);
+}

@@ -14,6 +14,9 @@ import DocumentParseNodePanel from '@/components/agent-workflow/property-panel/p
 import VisionAnalyzeNodePanel from '@/components/agent-workflow/property-panel/panels/VisionAnalyzeNodePanel.vue'
 import ConversationMemoryNodePanel from '@/components/agent-workflow/property-panel/panels/ConversationMemoryNodePanel.vue'
 import ExpertPluginNodePanel from '@/components/agent-workflow/property-panel/panels/ExpertPluginNodePanel.vue'
+import ImageGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/ImageGenerateNodePanel.vue'
+import PptGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/PptGenerateNodePanel.vue'
+import EndNodePanel from '@/components/agent-workflow/property-panel/panels/EndNodePanel.vue'
 
 const toolPanel = markRaw(ToolNodePanel)
 const agentPanel = markRaw(AgentNodePanel)
@@ -31,7 +34,9 @@ const registry = new Map<AgentNodeType, Component>([
   ['expert', expertPluginPanel],
   ['if', markRaw(IfNodePanel)],
   ['hitl', markRaw(HitlNodePanel)],
-  ['end', markRaw(DefaultNodePanel)],
+  ['end', markRaw(EndNodePanel)],
+  ['image-generate', markRaw(ImageGenerateNodePanel)],
+  ['ppt-generate', markRaw(PptGenerateNodePanel)],
 ])
 
 export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
@@ -47,6 +52,8 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   if: '条件分支',
   hitl: '人工确认',
   end: '结束',
+  'image-generate': '图片生成',
+  'ppt-generate': 'PPT 生成',
 }
 
 export function useAgentNodePropertyPanel() {

@@ -651,3 +651,35 @@
   background: rgba(255, 82, 82, 0.1);
   color: var(--ai-color-danger, #ff5252);
 }
+
+/* ---- Smart Suggestions ---- */
+.suggestionsArea {
+  padding: 0 24px 12px;
+  background: var(--ai-bg-page, #F5F6FA);
+  flex-shrink: 0;
+}
+
+.suggestionsHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.suggestionsIcon {
+  color: var(--ai-color-primary, #00d4ff);
+}
+
+.suggestionsTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ai-text-secondary, #666666);
+  letter-spacing: 0.3px;
+}
+
+.suggestionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

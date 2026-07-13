@@ -11,9 +11,12 @@ import RequirementConfirmCard from './RequirementConfirmCard.vue'
 import { getNextQuestion } from '@/utils/requirementConfirmFlow'
 import JsonCard from './JsonCard.vue'
 import JsonDetailDialog from './JsonDetailDialog.vue'
+import ActionProposalCard from './ActionProposalCard.vue'
+import ImagePreviewCard from './ImagePreviewCard.vue'
+import PptPreviewCard from './PptPreviewCard.vue'
 import type { SchemaField } from './SchemaCard.vue'
 import type { FlowNode } from './FlowCard.vue'
-import type { StepData, Widget, FlowGraph, MessageDocumentAttachment, MessageDocumentSummary } from '@/types'
+import type { StepData, Widget, FlowGraph, MessageDocumentAttachment, MessageDocumentSummary, ActionProposal, ActionItem } from '@/types'
 import DocumentAttachmentCard from './document/DocumentAttachmentCard.vue'
 import DocumentSummaryCard from './document/DocumentSummaryCard.vue'
 import WorkflowExecutionTimeline from './workflow/WorkflowExecutionTimeline.vue'
@@ -81,6 +84,15 @@ const emit = defineEmits<{
   'requirement-confirm': [answers: Record<string, string>]
   'requirement-answer': [questionId: string, value: string]
   'requirement-skip': []
+  'action-proposal-toggle-item': [proposalIndex: number, itemId: string]
+  'action-proposal-toggle-all': [proposalIndex: number]
+  'action-proposal-approve': [proposalIndex: number, selectedIds: string[]]
+  'action-proposal-reject': [proposalIndex: number]
+  'action-proposal-modify': [proposalIndex: number, itemId: string, changes: Partial<ActionItem>]
+  'action-proposal-reset': [proposalIndex: number]
+  'image-regenerate': [stepIndex: number]
+  'image-download': [stepIndex: number]
+  'ppt-download': [stepIndex: number]
   'preview-document': [documentId: string]
   copy: []
   regenerate: []
@@ -212,6 +224,12 @@ const TOOL_NAME_MAP: Record<string, string> = {
   bind_schema_to_flow_node: '绑定表单到流程节点',
   rag_index: 'RAG 索引',
   request_collaboration: '请求协作',
+  action_proposals: '生成行动方案',
+  generate_action_proposals: '生成行动方案',
+  image__generate: '图片生成',
+  generate_image: '图片生成',
+  ppt__generate: 'PPT 生成',
+  generate_ppt: 'PPT 生成',
 }
 
 function formatToolName(name: string): string {
@@ -381,6 +399,63 @@ const steps = computed<StepData[]>(() => {
         }
       }
 
+      // 行动方案卡片
+      if ((tc.name === 'action_proposals' || tc.name === 'generate_action_proposals') && tc.result) {
+        const resultData = tc.result as Record<string, unknown>
+        const proposalData = resultData.proposal ?? resultData
+        if (proposalData && typeof proposalData === 'object' && 'actionItems' in proposalData) {
+          result.push({
+            type: 'action_proposal',
+            title: '智能拟办',
+            status: 'done',
+            actionProposal: proposalData as ActionProposal,
+            timestamp: now,
+            agent: props.agent,
+          })
+          continue
+        }
+      }
+
+      // 图片生成卡片
+      if ((tc.name === 'image__generate' || tc.name === 'generate_image') && tc.result) {
+        const resultData = tc.result as Record<string, unknown>
+        result.push({
+          type: 'image_generate',
+          title: '图片生成',
+          status: hasError ? 'error' : 'done',
+          imageGenerateData: {
+            imageUrl: resultData.imageUrl as string | undefined,
+            prompt: (resultData.prompt as string) ?? (tc.arguments?.prompt as string),
+            model: (resultData.model as string) ?? (tc.arguments?.model as string),
+            size: (resultData.size as string) ?? (tc.arguments?.size as string),
+            style: (resultData.style as string) ?? (tc.arguments?.style as string),
+            quality: (resultData.quality as string) ?? (tc.arguments?.quality as string),
+            error: tc.error,
+          },
+          timestamp: now,
+          agent: props.agent,
+        })
+        continue
+      }
+
+      // PPT 生成卡片
+      if ((tc.name === 'ppt__generate' || tc.name === 'generate_ppt') && tc.result) {
+        const resultData = tc.result as Record<string, unknown>
+        result.push({
+          type: 'ppt_generate',
+          title: 'PPT 生成',
+          status: hasError ? 'error' : 'done',
+          pptGenerateData: {
+            slides: resultData.slides as import('@/types').PptSlideData[] | undefined,
+            metadata: resultData.metadata as import('@/types').PptGenerateResult['metadata'],
+            error: tc.error,
+          },
+          timestamp: now,
+          agent: props.agent,
+        })
+        continue
+      }
+
       result.push({
         type: hasError ? 'tool_error' : 'tool_call',
         title: formatToolName(tc.name),
@@ -442,6 +517,15 @@ const steps = computed<StepData[]>(() => {
 
   return result
 })
+
+/** 追踪 action_proposal 步骤在 steps 中的序号（用于 emit 回传索引） */
+function getActionProposalIndex(stepIdx: number): number {
+  let count = 0
+  for (let i = 0; i <= stepIdx; i++) {
+    if (steps.value[i]?.type === 'action_proposal') count++
+  }
+  return count - 1
+}
 </script>
 
 <template>
@@ -520,6 +604,44 @@ const steps = computed<StepData[]>(() => {
               :waiting-confirmation="step.waitingConfirmation ?? true"
               @answer="(qid, val) => emit('requirement-answer', qid, val)"
               @skip="emit('requirement-skip')"
+            />
+
+            <!-- Action Proposal: 行动方案卡片 -->
+            <ActionProposalCard
+              v-else-if="step.type === 'action_proposal' && step.actionProposal"
+              :proposal="step.actionProposal"
+              @toggle-item="(itemId) => emit('action-proposal-toggle-item', getActionProposalIndex(idx), itemId)"
+              @toggle-all="emit('action-proposal-toggle-all', getActionProposalIndex(idx))"
+              @approve="(selectedIds) => emit('action-proposal-approve', getActionProposalIndex(idx), selectedIds)"
+              @reject="emit('action-proposal-reject', getActionProposalIndex(idx))"
+              @modify="(itemId, changes) => emit('action-proposal-modify', getActionProposalIndex(idx), itemId, changes)"
+              @reset="emit('action-proposal-reset', getActionProposalIndex(idx))"
+            />
+
+            <!-- Image Generate: 图片生成预览卡片 -->
+            <ImagePreviewCard
+              v-else-if="step.type === 'image_generate'"
+              :image-url="step.imageGenerateData?.imageUrl"
+              :prompt="step.imageGenerateData?.prompt"
+              :model="step.imageGenerateData?.model"
+              :size="step.imageGenerateData?.size"
+              :style="step.imageGenerateData?.style"
+              :quality="step.imageGenerateData?.quality"
+              :loading="step.imageGenerateData?.loading ?? step.status === 'running'"
+              :error="step.imageGenerateData?.error ?? step.error"
+              @download="emit('image-download', idx)"
+              @regenerate="emit('image-regenerate', idx)"
+            />
+
+            <!-- PPT Generate: PPT 生成预览卡片 -->
+            <PptPreviewCard
+              v-else-if="step.type === 'ppt_generate'"
+              :slides="step.pptGenerateData?.slides"
+              :metadata="step.pptGenerateData?.metadata"
+              :loading="step.pptGenerateData?.loading ?? step.status === 'running'"
+              :error="step.pptGenerateData?.error ?? step.error"
+              :blob="step.pptGenerateData?.blob"
+              @download="emit('ppt-download', idx)"
             />
 
             <!-- Thinking/Tool/Result: 用卡片包裹 -->

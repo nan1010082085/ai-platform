@@ -3,6 +3,10 @@ export { default as SchemaCard } from './SchemaCard.vue'
 export { default as FlowCard } from './FlowCard.vue'
 export { default as FlowPreviewCard } from './FlowPreviewCard.vue'
 export { default as AiLoadingDots } from './AiLoadingDots.vue'
+export { default as ActionProposalCard } from './ActionProposalCard.vue'
+export { default as SmartSuggestionCard } from './SmartSuggestionCard.vue'
+export { default as ImagePreviewCard } from './ImagePreviewCard.vue'
+export { default as PptPreviewCard } from './PptPreviewCard.vue'
 
 export type {
   MessageRole,
@@ -14,3 +18,4 @@ export type {
 export type { SchemaField, SchemaCardProps } from './SchemaCard.vue'
 export type { FlowNode, FlowCardProps } from './FlowCard.vue'
 export type { FlowPreviewCardProps } from './FlowPreviewCard.vue'
+export type { ActionItem, ActionProposal } from '@/types'

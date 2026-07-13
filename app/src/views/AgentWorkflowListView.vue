@@ -40,6 +40,16 @@ const TEMPLATE_DEFAULT_NAMES: Record<AgentWorkflowTemplateId, string> = {
   'document-summary': '文档摘要编排',
   'doc-image-recognition': '文档图片识别',
   'intelligent-assistant': '智能助手问答',
+  'contract-extract': '合同条款提取',
+  'kb-faq': '知识库 FAQ 生成',
+  'http-notify': 'HTTP 回调通知',
+  'rag-ingest-qa': 'RAG 入库质检',
+  'multi-doc-batch': '多文档批量处理',
+  'smart-suggestions': '智能建议',
+  'smart-action-proposals': '智能拟办',
+  'image-text-generation': '图文生成',
+  'ppt-generation': 'PPT 生成',
+  'image-analysis': '图片智能分析',
 }
 
 type ListTab = 'all' | 'draft' | 'published' | 'templates'
@@ -56,12 +66,24 @@ const TEMPLATE_ICONS: Record<AgentWorkflowTemplateId, string> = {
   'document-summary': 'document',
   'doc-image-recognition': 'picture',
   'intelligent-assistant': 'chat-dot-round',
+  'contract-extract': 'document-checked',
+  'kb-faq': 'notebook',
+  'http-notify': 'bell',
+  'rag-ingest-qa': 'search',
+  'multi-doc-batch': 'files',
+  'smart-suggestions': 'magic-stick',
+  'smart-action-proposals': 'finished',
+  'image-text-generation': 'picture-outline',
+  'ppt-generation': 'data-board',
+  'image-analysis': 'view',
 }
 
 const TEMPLATE_CATEGORY_LABELS: Record<AgentWorkflowTemplateMeta['category'], string> = {
   general: '通用',
   document: '文档',
   assistant: '助手',
+  integration: '集成',
+  batch: '批处理',
 }
 
 const sortOptions = [
