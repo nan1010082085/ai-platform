@@ -129,8 +129,8 @@
 |----|------|------|------|
 | D-1 | 多租户切换与 Key 隔离 | UI 展示当前租户 | ✅ |
 | D-2 | Key 使用审计 | lastUsedAt 列表、按工作流统计 | ✅ |
-| D-3 | 配额 / 限流 | 按用户 Key 或租户 | ✅ |
-| D-4 | 公开插件市场模板 | 与 plugin pack 结合 | ✅ |
+| D-3 | 配额 / 限流 | 按用户 Key 或租户 | ⬜（仅全局 IP 限流） |
+| D-4 | 公开插件市场模板 | 与 plugin pack 结合 | ⬜（仅 schema 定义） |
 
 ### Phase E — 工作流模板与试用（P1）
 
@@ -180,16 +180,16 @@ F.2 表中 **P0 调研项**（dynamicPrompt、Tool kind、HTTP 安全、MCP tran
 | G-4 | AI 应用「模型与连接」设置页 | CRUD + 测试连接 + 默认模型 | ✅ |
 | G-5 | Chat / Workflow 动态模型列表 | 替换 `CHAT_MODEL_OPTIONS` 硬编码 | ✅ |
 | G-6 | 文档：Ollama / vLLM / 私有网关 | env + UI 双路径示例 | ✅ |
-| G-7 | 可选 `openai-compatible` Provider | 任意 `baseUrl` + `model` | ✅ |
+| G-7 | 可选 `openai-compatible` Provider | 任意 `baseUrl` + `model` | ⬜（无独立 provider 类型） |
 
 ### Phase H — 文档与基线收尾（P1）
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
 | H-1 | 产品/API 文档对齐基线 1.0 | api-reference invoke、sdk、architecture、agent-workflow 等 | ✅ |
-| H-2 | 内部研发文档清扫 | `server/src/ai/ARCHITECTURE_PLAN.md`、`AUDIT_REPAIR_PLAN.md`、`PRODUCTION_FIX.md` 去除 editorAgent/open API 引用 | ✅ |
+| H-2 | 内部研发文档清扫 | `server/src/ai/ARCHITECTURE_PLAN.md`、`AUDIT_REPAIR_PLAN.md`、`PRODUCTION_FIX.md` 去除 editorAgent/open API 引用 | ⬜（仅加 disclaimer） |
 | H-3 | `server/docs/rag-architecture.md` 等 server 文档 | pluginExpert / expertUserContext 叙事 | ✅ |
-| H-4 | 变更时文档维护规程 | 新 Phase 完成 → 更新 roadmap §一状态列 + backlog | ✅ |
+| H-4 | 变更时文档维护规程 | 新 Phase 完成 → 更新 roadmap §一状态列 + backlog | ⬜ |
 
 ### Phase I — 可选技术债（P2，按需）
 

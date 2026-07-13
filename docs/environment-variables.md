@@ -53,6 +53,14 @@ Complete list of environment variables for the Schema Form AI platform.
 | `CLAUDE_BASE_URL` | Claude API base URL | -- |
 | `CLAUDE_MODEL` | Claude model name | -- |
 
+### Mimo
+
+| Variable | Description | Default |
+|---|---|---|
+| `MIMO_API_KEY` | Mimo API key | -- |
+| `MIMO_BASE_URL` | Mimo API base URL | `https://token-plan-cn.xiaomimimo.com/v1` |
+| `MIMO_MODEL` | Mimo model name | `mimo-v2.5` |
+
 ### Platform LLM Strategy
 
 | Variable | Description | Default |
@@ -101,7 +109,7 @@ EMBEDDING_DIMENSIONS=1536
 | Variable | Description | Default |
 |---|---|---|
 | `WORKFLOW_FETCH_TIMEOUT_MS` | Workflow fetch timeout | `30000` |
-| `WORKFLOW_LLM_TIMEOUT_MS` | Workflow LLM call timeout | `60000` |
+| `WORKFLOW_LLM_TIMEOUT_MS` | Workflow LLM call timeout | `120000` |
 
 ## Redis (optional)
 

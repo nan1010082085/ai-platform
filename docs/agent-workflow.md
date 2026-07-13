@@ -104,8 +104,12 @@ HTTP 外部触发，发布时自动生成 `webhookSecret`。
 
 | 配置字段 | 说明 |
 |----------|------|
-| `visionPrompt` | 视觉分析指令 |
+| `visionPrompt` | 视觉分析指令（支持 `{{$...}}` 模板变量） |
 | `documentSource` / `documentId` / `inputField` | 同 document-parse |
+| `visionImageWidth` | 发送前压缩宽度（px），不设置不压缩 |
+| `visionImageQuality` | JPEG 质量 1-100，不设置不压缩 |
+
+压缩预处理使用 sharp，可大幅减少视觉模型 token 消耗。典型用法：Phase1 小图 400px/50 快速提取，Phase2 大图 1024px/85 深度分析。
 
 #### `conversation-memory`
 
@@ -160,7 +164,38 @@ JavaScript 表达式分支。连线 `data.branch` 为 `'true'` 或 `'false'`。
 
 #### `end`
 
-终止节点。工作流输出 = 最后一个上游节点的输出。
+终止节点。支持配置输出来源：
+
+| 配置字段 | 说明 |
+|----------|------|
+| `outputSource` | `lastOutput`（默认，最后节点输出）/ `node`（指定节点）/ `custom`（自定义 JSON 模板） |
+| `outputNodeId` | `outputSource=node` 时指定节点 ID |
+| `outputTemplate` | `outputSource=custom` 时的 JSON 模板，支持 `{{$node.xxx}}` 变量 |
+
+回调 URL 在工作流级别配置（`onCompleteWebhook`），不在 end 节点。
+
+#### `image-generate`
+
+AI 图片生成节点。
+
+| 配置字段 | 说明 |
+|----------|------|
+| `imagePrompt` | 图片描述 Prompt |
+| `imageModel` | `dall-e-3` / `dall-e-2` / `mimo-image` |
+| `imageSize` | `1024x1024` / `1024x1792` / `1792x1024` |
+| `imageStyle` | `natural` / `vivid` |
+| `imageQuality` | `standard` / `hd` |
+
+#### `ppt-generate`
+
+AI PPT 生成节点。
+
+| 配置字段 | 说明 |
+|----------|------|
+| `pptTemplate` | `business` / `tech` / `education` / `creative` |
+| `pptMaxSlides` | 最大页数 |
+| `pptStyle` | `professional` / `casual` / `academic` |
+| `pptIncludeImages` | 是否包含配图 |
 
 ---
 
@@ -189,14 +224,24 @@ JavaScript 表达式分支。连线 `data.branch` 为 `'true'` 或 `'false'`。
 
 定义在 `ai/shared/agentWorkflow.ts`，通过 `createAgentWorkflowGraphByTemplate(id)` 创建。
 
-| ID | 名称 | 场景 |
-|----|------|------|
-| `blank` | 空白工作流 | 手动 → LLM → 结束 |
-| `document-summary` | 文档摘要 | Webhook 接收 documentId → 解析 → LLM 摘要 |
-| `doc-image-recognition` | 文档/图片识别 | 解析 → if(OCR) → 视觉+结构化 \| 文档结构化 |
-| `intelligent-assistant` | 智能助手问答 | 记录问题 → RAG 检索 → LLM 回答（含对话历史） |
+| ID | 名称 | 触发 | 场景 |
+|----|------|------|------|
+| `blank` | 空白工作流 | 手动 | 手动 → LLM → 结束 |
+| `document-summary` | 文档摘要 | Webhook | 接收 documentId → 解析 → LLM 摘要 |
+| `doc-image-recognition` | 文档/图片识别 | 手动 | 解析 → if(OCR) → 视觉+结构化 \| 文档结构化 |
+| `intelligent-assistant` | 智能助手问答 | 手动 | 记录问题 → RAG 检索 → LLM 回答 |
+| `contract-extract` | 合同条款提取 | Webhook | 解析 → LLM 结构化提取 |
+| `kb-faq` | 知识库 FAQ 生成 | Webhook | 解析 → LLM 生成 FAQ → RAG 入库 |
+| `http-notify` | HTTP 回调通知 | Webhook | 内容处理 → HTTP 通知外部 |
+| `rag-ingest-qa` | RAG 入库质检 | Webhook | 解析 → LLM 质检 → 合格入库/人工审核 |
+| `multi-doc-batch` | 多文档批量处理 | Webhook | 解析 → LLM 摘要 → 记忆累积 → 汇总 |
+| `smart-suggestions` | 智能建议 | 手动 | 上下文 → RAG → LLM → 条件 → HITL |
+| `smart-action-proposals` | 智能拟办 | Webhook | 文档解析 → LLM 提取行动项 → HITL → 通知 |
+| `image-text-generation` | 图文生成 | 手动 | LLM 大纲 → LLM 文案 |
+| `ppt-generation` | PPT 生成 | 手动 | 记忆 → LLM 大纲 → LLM 详情 |
+| `image-analysis` | 图片智能分析 | 手动 | Phase1 小图提取 → Phase2 大图情感文案 |
 
-元数据列表：`AGENT_WORKFLOW_TEMPLATES`。
+元数据列表：`AGENT_WORKFLOW_TEMPLATES`（14 个）。
 
 创建 API：`POST /api/ai/workflows` body `{ "templateId": "document-summary", "name": "..." }`
 
@@ -340,7 +385,10 @@ JavaScript 表达式分支。连线 `data.branch` 为 `'true'` 或 `'false'`。
 - 必须有入口节点
 - 至少一个触发节点
 - 连线引用有效节点
-- LLM/工具节点的必填配置检查（warning 级别）
+- 节点 ID 不重复（error）
+- `if` 节点必须有 true/false 两条分支（error）
+- `webhook-trigger` 必须有 `webhookPath`（error）
+- LLM/工具/专家节点的必填配置检查（warning）
 
 ---
 
