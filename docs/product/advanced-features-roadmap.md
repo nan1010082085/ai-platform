@@ -15,10 +15,11 @@
 | **模型管理** | 多 Provider、默认模型、测试连接 | ✅ 成熟 | DeepSeek/OpenAI/Anthropic/Ollama/Mimo |
 | **插件体系** | 专家、工具、MCP Server、技能 | ✅ 成熟 | 热加载注册表 |
 | **API 开放** | 统一调用、JWT 认证、Webhook | ✅ 成熟 | slug + X-Workflow-Key |
-| **监控** | 性能指标、告警、Agent 分布 | ⚠️ 基础 | 可扩展更多维度 |
-| **图文/PPT 生成** | — | ❌ 缺失 | 需新增 |
-| **智能建议** | — | ❌ 缺失 | 需新增 |
-| **智能拟办** | — | ❌ 缺失 | 需新增 |
+| **监控** | 性能指标、告警、Agent 分布、节点级埋点 | ✅ 成熟 | node-stats API + TTL 自动清理 |
+| **图文生成** | DALL-E 代理、图片预览卡片 | ✅ 完成 | POST /api/ai/generate-image |
+| **智能建议** | LLM 驱动、上下文感知建议卡片 | ✅ 完成 | POST /api/ai/suggestions |
+| **智能拟办** | LLM 提取行动项、持久化、审批流 | ✅ 完成 | POST /api/ai/action-proposals |
+| **PPT 生成** | 客户端 pptxgenjs 渲染 | 🔧 前端完成 | 缺 server API（可选，前端已可生成） |
 
 ### 架构优势
 
@@ -131,9 +132,10 @@ interface ImageGenerateNodeData {
 ```
 
 **前端改动**：
-- 新增 `ImageGenerateNodePanel.vue` — 图片生成节点属性面板
-- 新增 `ImagePreviewCard.vue` — 图片预览卡片
-- 扩展 `AiMessage` 支持图片渲染
+- 新增 `ImageGenerateNodePanel.vue` — 图片生成节点属性面板 ✅
+- 新增 `ImagePreviewCard.vue` — 图片预览卡片 ✅
+- 扩展 `AiMessage` 支持图片渲染 ✅
+- Server: `POST /api/ai/generate-image` ✅
 
 ---
 
@@ -175,9 +177,10 @@ interface PptGenerateNodeData {
 ```
 
 **前端改动**：
-- 新增 `PptGenerateNodePanel.vue` — PPT 生成节点属性面板
-- 新增 `PptPreviewCard.vue` — PPT 预览卡片（缩略图 + 下载按钮）
-- 新增 `pptRenderer.ts` — 浏览器端 PPT 生成工具
+- 新增 `PptGenerateNodePanel.vue` — PPT 生成节点属性面板 ✅
+- 新增 `PptPreviewCard.vue` — PPT 预览卡片（缩略图 + 下载按钮） ✅
+- 新增 `pptRenderer.ts` — 浏览器端 PPT 生成工具 ✅
+- Server API: 可选（前端已可独立生成 PPT）
 
 ---
 
@@ -186,10 +189,10 @@ interface PptGenerateNodeData {
 | 阶段 | 功能 | 工作量 | 价值 | 优先级 | 实现状态 |
 |------|------|--------|------|--------|---------|
 | **P0** | Mimo 模型接入 | 0.5d | ⭐⭐⭐ | 🔴 立即 | ✅ 完成（ModelSettingsView + useModelPresets） |
-| **P1** | 智能建议 | 3d | ⭐⭐⭐⭐⭐ | 🟠 高 | ✅ 前端完成（SmartSuggestionCard + useSmartSuggestions → AiChatPanel） |
-| **P1** | 智能拟办 | 3d | ⭐⭐⭐⭐⭐ | 🟠 高 | ✅ 前端完成（ActionProposalCard + useActionProposals → AiMessage） |
-| **P2** | 图文生成 | 5d | ⭐⭐⭐⭐ | 🟡 中 | 🔧 组件完成，未集成到 AiMessage；缺 server API |
-| **P2** | PPT 生成 | 5d | ⭐⭐⭐⭐ | 🟡 中 | 🔧 组件+渲染器完成，未集成到 AiMessage；缺 server API |
+| **P1** | 智能建议 | 3d | ⭐⭐⭐⭐⭐ | 🟠 高 | ✅ 全栈完成（前端 + POST /api/ai/suggestions） |
+| **P1** | 智能拟办 | 3d | ⭐⭐⭐⭐⭐ | 🟠 高 | ✅ 全栈完成（前端 + MongoDB 持久化 + 审批 API） |
+| **P2** | 图文生成 | 5d | ⭐⭐⭐⭐ | 🟡 中 | ✅ 全栈完成（前端 + POST /api/ai/generate-image） |
+| **P2** | PPT 生成 | 5d | ⭐⭐⭐⭐ | 🟡 中 | 🔧 前端完成（pptRenderer + PptPreviewCard），server API 可选 |
 
 ---
 
@@ -202,24 +205,24 @@ interface PptGenerateNodeData {
 | `pptxgenjs` | 浏览器端 PPT 生成 | P2 |
 | `mimo-sdk`（可选） | Mimo API 封装 | P0 |
 
-### 新增 API 端点（server 侧）
+### API 端点（server 侧）
 
-| 端点 | 方法 | 用途 |
-|------|------|------|
-| `/api/ai/suggestions` | POST | 获取智能建议 |
-| `/api/ai/action-proposals` | POST | 创建拟办 |
-| `/api/ai/action-proposals/:id/approve` | PUT | 审批拟办 |
-| `/api/ai/generate-image` | POST | 图片生成 |
-| `/api/ai/generate-ppt` | POST | PPT 生成 |
+| 端点 | 方法 | 用途 | 状态 |
+|------|------|------|------|
+| `/api/ai/suggestions` | POST | 获取智能建议 | ✅ |
+| `/api/ai/action-proposals` | POST | 创建拟办（MongoDB 持久化） | ✅ |
+| `/api/ai/action-proposals/:id/approve` | PUT | 审批拟办 | ✅ |
+| `/api/ai/generate-image` | POST | 图片生成（代理 OpenAI DALL-E） | ✅ |
+| `/api/ai/generate-ppt` | POST | PPT 生成 | ⬜ 可选（前端 pptRenderer 已可生成） |
 
-### 新增 MCP 工具
+### MCP 工具（规划中，未实现）
 
-| 工具名 | 类别 | 用途 |
-|--------|------|------|
-| `smart__suggest` | langgraph | 智能建议 |
-| `action__propose` | langgraph | 拟办生成 |
-| `image__generate` | langgraph | 图片生成 |
-| `ppt__generate` | langgraph | PPT 生成 |
+| 工具名 | 类别 | 用途 | 状态 |
+|--------|------|------|------|
+| `smart__suggest` | langgraph | 智能建议 | ⬜ 规划 |
+| `action__propose` | langgraph | 拟办生成 | ⬜ 规划 |
+| `image__generate` | langgraph | 图片生成 | ⬜ 规划 |
+| `ppt__generate` | langgraph | PPT 生成 | ⬜ 规划 |
 
 ---
 

@@ -57,8 +57,8 @@
 
 | 套件 | 结果 |
 |------|------|
-| `ai/app` vitest | **330 / 330** |
-| `server/src/ai` vitest | **370 / 370** |
+| `ai/app` vitest | **389 / 389** |
+| `server/src/ai` vitest | **360 / 360** |
 
 ---
 
@@ -85,9 +85,9 @@
 | 监控 | ✅ | `AiMonitorView` |
 | JWT 三能力统一 | ✅ 本轮 | `initCapabilityPlatformAuth` |
 | 开源文档 | ✅ 部分 | platform.md、sdk.md、plugin.md；内部研发文档 H-2 待清扫 |
-| 模型 BYOK / 自定义端点 | ❌ | 后端字段已有；UI 与 llmCache 优先级见 Phase G |
-| Docker / 一键部署 | ❌ | Phase B |
-| 集成密钥 UI | ❌ | Phase A-3 |
+| 模型 BYOK / 自定义端点 | ✅ | ModelSettingsView + useModelPresets + llmCache 优先级 |
+| Docker / 一键部署 | ✅ | `docker-compose.ai.yml` |
+| 集成密钥 UI | ✅ | ApiKeyManagerView（创建/列表/禁用/删除） |
 
 ---
 
