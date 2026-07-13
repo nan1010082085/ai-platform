@@ -55,6 +55,17 @@ const sampleKeys = [
 ]
 
 const stubs = {
+  AppDialog: {
+    template: `
+      <div v-if="modelValue" class="el-dialog-stub">
+        <div class="el-dialog__title">{{ title }}</div>
+        <slot />
+        <slot name="footer" />
+      </div>
+    `,
+    props: ['modelValue', 'title', 'width', 'closeOnClickModal', 'destroyOnClose', 'loading', 'showFullscreenBtn', 'appendToBody', 'draggable', 'destroyOnClose'],
+    emits: ['update:modelValue', 'confirm', 'cancel', 'close'],
+  },
   ElDialog: {
     template: `
       <div v-if="modelValue" class="el-dialog-stub">

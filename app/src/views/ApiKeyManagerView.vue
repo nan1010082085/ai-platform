@@ -9,6 +9,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import {
   createApiKey,
   getApiKeys,
@@ -241,12 +242,11 @@ onMounted(() => {
     </div>
 
     <!-- 创建密钥对话框 -->
-    <el-dialog
+    <AppDialog
       v-model="showCreateDialog"
       title="创建集成密钥"
       width="420px"
-      :close-on-click-modal="false"
-      destroy-on-close
+      :loading="creating"
     >
       <el-form label-position="top">
         <el-form-item label="密钥名称" required>
@@ -261,18 +261,16 @@ onMounted(() => {
       </el-form>
       <template #footer>
         <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" :loading="creating" @click="handleCreate">
-          创建
-        </el-button>
+        <el-button type="primary" :loading="creating" @click="handleCreate">创建</el-button>
       </template>
-    </el-dialog>
+    </AppDialog>
 
     <!-- 创建成功后展示完整 Key -->
-    <el-dialog
+    <AppDialog
       v-model="showKeyDialog"
       title="密钥已创建"
       width="520px"
-      :close-on-click-modal="false"
+      :show-fullscreen-btn="false"
     >
       <div :class="styles.keyNotice">
         <AppIcon name="warning" :size="18" :class="styles.keyNoticeIcon" />
@@ -288,6 +286,6 @@ onMounted(() => {
       <template #footer>
         <el-button type="primary" @click="showKeyDialog = false">我已保存，关闭</el-button>
       </template>
-    </el-dialog>
+    </AppDialog>
   </div>
 </template>
