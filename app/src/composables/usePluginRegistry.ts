@@ -10,7 +10,7 @@ import {
   type BuiltInToolDef,
   type ToolCategory,
 } from '@/constants/agentTools'
-import { getToolDisplayLabel } from '@schema-platform/ai-shared/toolNames'
+import { getToolDisplayLabel } from '@schema-platform/platform-shared/ai/toolNames'
 
 const experts = ref<PluginExpertSummary[]>([])
 const skills = ref<PluginSkillSummary[]>([])

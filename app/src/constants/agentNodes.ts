@@ -144,6 +144,86 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
       pptIncludeImages: false,
     },
   },
+  {
+    type: 'intent-router',
+    label: '意图路由',
+    icon: 'share',
+    category: 'logic',
+    description: '自动识别用户意图并路由到对应专家',
+    defaultData: {
+      label: '意图路由',
+      routingMode: 'auto',
+      enableMultiIntentChain: false,
+      fallbackExpertId: '',
+    },
+  },
+  {
+    type: 'summarizer',
+    label: '多步总结',
+    icon: 'document',
+    category: 'ai',
+    description: '汇总任务链输出或自定义内容生成摘要',
+    defaultData: {
+      label: '多步总结',
+      summarySource: 'taskChain',
+      customPrompt: '',
+      stream: false,
+      model: 'default',
+    },
+  },
+  {
+    type: 'requirement-analyzer',
+    label: '需求分析',
+    icon: 'search',
+    category: 'ai',
+    description: '分析用户需求的完整性与可行性',
+    defaultData: {
+      label: '需求分析',
+      enableRag: true,
+      enableTools: true,
+      completenessThreshold: 80,
+      model: 'default',
+    },
+  },
+  {
+    type: 'task-planner',
+    label: '任务规划',
+    icon: 'list',
+    category: 'ai',
+    description: '将需求拆解为可执行的任务步骤',
+    defaultData: {
+      label: '任务规划',
+      inputSource: 'message',
+      maxSteps: 8,
+      strategy: 'sequential',
+      model: 'default',
+    },
+  },
+  {
+    type: 'task-chain',
+    label: '任务链',
+    icon: 'connection',
+    category: 'logic',
+    description: '按步骤依次执行任务链中的每个任务',
+    defaultData: {
+      label: '任务链',
+      chainSource: 'upstream',
+      staticChain: [],
+      onStepOutput: '',
+    },
+  },
+  {
+    type: 'collaboration-router',
+    label: '协作路由',
+    icon: 'coordinate',
+    category: 'logic',
+    description: '检测协作工具并路由多轮协作交互',
+    defaultData: {
+      label: '协作路由',
+      detectCollaborationTool: true,
+      maxCollaborationRounds: 3,
+    },
+  },
 ]
 
 export const AGENT_NODE_COLORS: Record<string, string> = {
@@ -161,6 +241,12 @@ export const AGENT_NODE_COLORS: Record<string, string> = {
   end: '#909399',
   'image-generate': '#FF6B35',
   'ppt-generate': '#67C23A',
+  'intent-router': '#9B59B6',
+  summarizer: '#409EFF',
+  'requirement-analyzer': '#409EFF',
+  'task-planner': '#409EFF',
+  'task-chain': '#E6A23C',
+  'collaboration-router': '#9B59B6',
 }
 
 export function getPaletteItem(type: AgentNodeType): AgentPaletteItem | undefined {

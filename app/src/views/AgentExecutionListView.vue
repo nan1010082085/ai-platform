@@ -21,7 +21,8 @@ let stopWorkflowWatch: (() => void) | null = null
 
 const workflowId = computed(() => route.params.id as string)
 
-const statusType: Record<string, string> = {
+type TagType = 'success' | 'info' | 'warning' | 'danger' | 'primary'
+const statusType: Record<string, TagType> = {
   running: 'primary',
   success: 'success',
   error: 'danger',
@@ -170,7 +171,7 @@ onUnmounted(() => {
           </el-table-column>
           <el-table-column label="状态" width="110">
             <template #default="{ row }">
-              <el-tag :type="(statusType[row.status] as any) ?? 'info'" size="small" :effect="row.status === 'running' ? 'dark' : 'light'">
+              <el-tag :type="statusType[row.status] ?? 'info'" size="small" :effect="row.status === 'running' ? 'dark' : 'light'">
                 {{ STATUS_LABELS[row.status] ?? row.status }}
               </el-tag>
             </template>

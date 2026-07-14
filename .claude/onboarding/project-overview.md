@@ -19,7 +19,6 @@ ai 是 Schema Platform 的 AI 助手模块，负责：
 ```
 ai/
 ├── app/        # 前端应用 (@ai-app)
-├── sdk/        # Agent SDK (@ai-sdk)
 └── shared/     # 共享逻辑 (@schema-platform/ai-shared)
 ```
 
@@ -249,7 +248,6 @@ cd app && npx vue-tsc --noEmit
 - `docs/` - 设计文档
 
 ### 3. 代码示例
-- `sdk/src/examples/` - SDK 示例
 - `app/src/components/` - 组件示例
 - `app/src/stores/` - Store 示例
 

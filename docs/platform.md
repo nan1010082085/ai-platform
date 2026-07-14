@@ -146,8 +146,7 @@ WebSocket chat:* / workflow:*
 | Agent 工作流 | 可视化编排、发布、执行、监控 |
 | 插件中心 | Expert / Skill / Tool / MCP 配置 |
 | RAG | 知识库索引与检索 |
-| 对外集成 | invoke + 用户平台 Key / 工作流 Key |
-| SDK | `workflow-client`（集成）、`@ai-sdk`（独立 Agent 实验，不依赖本平台） |
+| 对外集成 | invoke + 用户平台 Key / 工作流 Key（直接调用 REST API） |
 
 **不包含**：
 
@@ -183,4 +182,3 @@ WebSocket chat:* / workflow:*
 2. **invoke 路由**：同时接受 `X-API-Key`（用户平台 Key）与 `X-Workflow-Key`。
 3. **AI 应用 UI**：「我的集成密钥」— 每用户 CRUD 自己的 `sk-...`（不做在 shell）。
 4. **后端**：`GET/DELETE/PATCH /api/keys` 默认按 `createdBy` 过滤；普通角色具备 `apikey:*`（仅自己的）。
-5. **workflow-client**：支持 `apiKey` 与 `workflowKey` 两种构造参数。

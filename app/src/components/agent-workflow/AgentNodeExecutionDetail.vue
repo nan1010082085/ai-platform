@@ -22,7 +22,7 @@ const STATUS_LABELS: Record<string, string> = {
   waiting: '待确认',
 }
 
-const STATUS_TYPE: Record<string, string> = {
+const STATUS_TYPE: Record<string, 'primary' | 'success' | 'info' | 'warning' | 'danger'> = {
   running: 'primary',
   success: 'success',
   error: 'danger',
@@ -73,7 +73,7 @@ async function copyJson(label: string, value: unknown) {
         <div :class="styles.headerText">
           <div :class="styles.headerTop">
             <span :class="styles.nodeName">{{ record.nodeName }}</span>
-            <el-tag size="small" :type="(STATUS_TYPE[record.status] as any) ?? 'info'">
+            <el-tag size="small" :type="STATUS_TYPE[record.status] ?? 'info'">
               {{ STATUS_LABELS[record.status] ?? record.status }}
             </el-tag>
           </div>

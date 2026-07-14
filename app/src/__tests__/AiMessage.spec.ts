@@ -6,6 +6,12 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import AiMessage from '@/components/AiMessage.vue'
 
+// Mock pdfjs-dist to avoid DOMMatrix not defined in jsdom
+vi.mock('pdfjs-dist', () => ({
+  GlobalWorkerOptions: { workerSrc: '' },
+  getDocument: vi.fn(),
+}))
+
 // Mock marked to return predictable HTML
 vi.mock('marked', () => ({
   marked: {

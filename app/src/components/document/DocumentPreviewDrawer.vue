@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { getDocumentPreview, downloadDocumentFile } from '@/api/aiApi'
+import { ref, computed, watch } from 'vue'
+import { getDocumentPreview, downloadDocumentFile, getDocumentFileUrl } from '@/api/aiApi'
 import type { DocumentPreviewResult } from '@/api/aiApi'
+import PdfPreviewCard from './PdfPreviewCard.vue'
+import ExcelPreviewCard from './ExcelPreviewCard.vue'
 import styles from './DocumentPreviewDrawer.module.scss'
 
 const props = defineProps<{
@@ -17,6 +19,35 @@ const loading = ref(false)
 const preview = ref<DocumentPreviewResult | null>(null)
 const error = ref<string | null>(null)
 const downloading = ref(false)
+
+const isPdf = computed(() => {
+  if (!preview.value) return false
+  return (
+    preview.value.mimetype === 'application/pdf' ||
+    preview.value.filename.toLowerCase().endsWith('.pdf')
+  )
+})
+
+const isExcel = computed(() => {
+  if (!preview.value) return false
+  const fn = preview.value.filename.toLowerCase()
+  return (
+    preview.value.mimetype === 'application/vnd.ms-excel' ||
+    preview.value.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+    fn.endsWith('.xls') ||
+    fn.endsWith('.xlsx')
+  )
+})
+
+const pdfUrl = computed(() => {
+  if (!isPdf.value || !props.documentId) return ''
+  return getDocumentFileUrl(props.documentId)
+})
+
+const excelUrl = computed(() => {
+  if (!isExcel.value || !props.documentId) return ''
+  return getDocumentFileUrl(props.documentId)
+})
 
 async function handleDownloadOriginal(): Promise<void> {
   if (!props.documentId || !preview.value?.hasOriginalFile) return
@@ -83,7 +114,24 @@ function close() {
           下载原文件
         </el-button>
       </div>
-      <el-scrollbar :class="styles.scroll">
+
+      <!-- PDF inline viewer -->
+      <PdfPreviewCard
+        v-if="isPdf"
+        :url="pdfUrl"
+        :class="styles.pdfViewer"
+      />
+
+      <!-- Excel table viewer -->
+      <ExcelPreviewCard
+        v-else-if="isExcel"
+        :url="excelUrl"
+        :filename="preview.filename"
+        :class="styles.excelViewer"
+      />
+
+      <!-- Plain text fallback for non-PDF/non-Excel or as supplement -->
+      <el-scrollbar v-if="!isPdf && !isExcel" :class="styles.scroll">
         <pre :class="styles.text">{{ preview.text }}</pre>
       </el-scrollbar>
     </div>

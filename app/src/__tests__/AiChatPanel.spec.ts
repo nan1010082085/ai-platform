@@ -6,6 +6,12 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import AiChatPanel from '@/components/AiChatPanel.vue'
 
+// Mock pdfjs-dist to avoid DOMMatrix not defined in jsdom
+vi.mock('pdfjs-dist', () => ({
+  GlobalWorkerOptions: { workerSrc: '' },
+  getDocument: vi.fn(),
+}))
+
 // Mock API
 vi.mock('@/api/aiApi', () => ({
   getStarterPrompts: vi.fn().mockResolvedValue([

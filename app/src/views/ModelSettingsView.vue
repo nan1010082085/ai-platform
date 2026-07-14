@@ -1,833 +1,780 @@
 <script setup lang="ts">
 /**
- * 模型与连接 — 管理 /api/model-configs CRUD + 测试连接 + 选默认模型
+ * 模型与连接 — 供应商 + 模型两级管理
  *
- * Enhanced: quick-add presets, connection status, model comparison, import/export
+ * 左侧面板：供应商列表（CRUD + 测试连接）
+ * 右侧面板：选中供应商的模型列表（CRUD + 设为默认 + 启用/禁用）
  */
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
+import QuickAddPresets from '@/components/model-settings/QuickAddPresets.vue'
+import ProviderList from '@/components/model-settings/ProviderList.vue'
+import ProviderDialog from '@/components/model-settings/ProviderDialog.vue'
+import ModelList from '@/components/model-settings/ModelList.vue'
+import ModelDialog from '@/components/model-settings/ModelDialog.vue'
+import type { ProviderPreset } from '@/components/model-settings/types'
+import type { ModelFormState } from '@/components/model-settings/ModelDialog.vue'
 import {
-  getModelConfigs,
-  createModelConfig,
-  updateModelConfig,
-  deleteModelConfig,
-  testModelConnection,
-  exportModelConfigs,
-  importModelConfigs,
-  bulkTestConnections,
-  type ModelConfigItem,
-  type ModelProvider,
-  type CreateModelConfigPayload,
-  type TestConnectionResult,
-  type ExportModelConfigPayload,
-} from '@/api/modelConfigApi'
-import { checkAIHealth, type AIProviderHealth } from '@/api/aiApi'
-import { useModelPresets, type ProviderPreset } from '@/composables/useModelPresets'
-import { useModelOptions } from '@/composables/useModelOptions'
+  listProviders,
+  createProvider,
+  updateProvider,
+  deleteProvider,
+  testProvider,
+  getEmbeddingConfig,
+  updateEmbeddingConfig,
+  type Provider,
+  type CreateProviderPayload,
+  type UpdateProviderPayload,
+  type TestConnectionResult as ProviderTestResult,
+  type EmbeddingConfig,
+  type EmbeddingProvider,
+  type UpdateEmbeddingConfigPayload,
+} from '@/api/providerApi'
+import {
+  listModels,
+  createModel,
+  updateModel,
+  deleteModel,
+  testModel,
+  type Model,
+  type CreateModelPayload,
+  type UpdateModelPayload,
+  type TestConnectionResult as ModelTestResult,
+} from '@/api/modelApi'
 import styles from './ModelSettingsView.module.scss'
 
-const {
-  getAllPresets,
-  getPreset,
-  applyPreset,
-  createConfigFromPreset,
-  getQuickAddOptions,
-} = useModelPresets()
+// ---- Provider presets for quick-add ----
 
-const { defaultModel, modelOptions, loadModelOptions } = useModelOptions()
-
-const configs = ref<ModelConfigItem[]>([])
-const envProviders = ref<AIProviderHealth[]>([])
-const total = ref(0)
-const page = ref(1)
-const pageSize = ref(20)
-const loading = ref(false)
-
-// Quick-add presets
-const presets = getAllPresets()
-const quickAddPresets = computed(() => getQuickAddOptions(configs.value))
-const quickAddLoading = ref<ModelProvider | null>(null)
-
-// Connection status tracking
-const connectionStatus = ref<Map<string, 'ok' | 'fail' | 'testing'>>(new Map())
-const testingAllIds = ref(false)
-
-// Provider 过滤
-const providerFilter = ref<ModelProvider | ''>('')
-const providerOptions: Array<{ value: ModelProvider | ''; label: string }> = [
-  { value: '', label: '全部' },
-  { value: 'deepseek', label: 'DeepSeek' },
-  { value: 'mimo', label: 'Mimo' },
+const PROVIDER_PRESETS: ProviderPreset[] = [
+  {
+    type: 'deepseek',
+    label: 'DeepSeek',
+    icon: 'chat-dot-round',
+    color: '#4D6BFE',
+    defaultBaseUrl: 'https://api.deepseek.com',
+    description: 'DeepSeek V4，中文能力强，高性价比',
+    placeholderApiKey: 'sk-...',
+    defaultModels: ['deepseek-chat', 'deepseek-reasoner'],
+  },
+  {
+    type: 'ollama',
+    label: 'Ollama',
+    icon: 'monitor',
+    color: '#2080F0',
+    defaultBaseUrl: 'http://localhost:11434/v1',
+    description: '本地 Ollama，无需 API Key',
+    placeholderApiKey: '',
+    defaultModels: [],
+  },
+  {
+    type: 'mimo',
+    label: 'Mimo',
+    icon: 'magic-stick',
+    color: '#FF6B35',
+    defaultBaseUrl: 'https://token-plan-cn.xiaomimimo.com/v1',
+    description: '小米 Mimo，OpenAI 兼容接口',
+    placeholderApiKey: 'tp-...',
+    defaultModels: ['mimo-v2.5'],
+  },
 ]
 
-// 创建/编辑表单
-const showFormDialog = ref(false)
-const isEditing = ref(false)
-const editingId = ref('')
-const formSubmitting = ref(false)
-const form = ref<CreateModelConfigPayload>({
-  name: '',
-  provider: 'deepseek',
-  model: '',
-  apiKey: '',
-  baseUrl: '',
-  parameters: { temperature: 0.7, maxTokens: 4096 },
-  isDefault: false,
-})
+// ---- State: Providers ----
 
-// 测试连接
-const testingId = ref('')
-const testResult = ref<TestConnectionResult | null>(null)
-const testError = ref('')
-const showTestDialog = ref(false)
+const providers = ref<Provider[]>([])
+const providersLoading = ref(false)
+const selectedProviderId = ref('')
 
-// 模型对比
-const showCompareDialog = ref(false)
-const compareSelected = ref<string[]>([])
-
-// 导入
-const fileInputRef = ref<HTMLInputElement | null>(null)
-
-const modelPlaceholder = computed(() => {
-  const map: Record<string, string> = {
-    deepseek: 'deepseek-chat',
-    openai: 'gpt-4o',
-    anthropic: 'claude-sonnet-4-20250514',
-    ollama: 'llama3',
-    mimo: 'mimo-v2.5',
-  }
-  return map[form.value.provider] ?? '模型名称'
-})
-
-const baseUrlPlaceholder = computed(() => {
-  const map: Record<string, string> = {
-    mimo: 'https://token-plan-cn.xiaomimimo.com/v1',
-    ollama: 'http://localhost:11434/v1',
-  }
-  return map[form.value.provider] ?? '留空使用 Provider 默认地址'
-})
-
-const summaryTotal = computed(() => total.value)
-const summaryDefault = computed(() => configs.value.filter((c) => c.isDefault).length)
-const summaryProviders = computed(() => new Set(configs.value.map((c) => c.provider)).size)
-
-const compareItems = computed(() =>
-  configs.value.filter((c) => compareSelected.value.includes(c.id)),
+const selectedProvider = computed(() =>
+  providers.value.find((p) => p.id === selectedProviderId.value) ?? null,
 )
 
-async function loadConfigs(): Promise<void> {
-  loading.value = true
+// Provider connection status
+const providerConnStatus = ref<Map<string, 'ok' | 'fail' | 'testing'>>(new Map())
+
+// ---- State: Models ----
+
+const models = ref<Model[]>([])
+const modelsLoading = ref(false)
+
+// ---- State: Default model (global) ----
+
+const globalDefaultModel = ref<Model | null>(null)
+
+// ---- State: Provider form dialog ----
+
+const showProviderDialog = ref(false)
+const isEditingProvider = ref(false)
+const editingProviderId = ref('')
+const providerFormSubmitting = ref(false)
+const providerInitialForm = ref<CreateProviderPayload>({
+  name: '',
+  type: 'deepseek',
+  baseUrl: '',
+  apiKey: '',
+  isActive: true,
+})
+
+// ---- State: Model form dialog ----
+
+const showModelDialog = ref(false)
+const isEditingModel = ref(false)
+const editingModelId = ref('')
+const modelFormSubmitting = ref(false)
+const modelInitialForm = ref<ModelFormState>({
+  name: '',
+  model: '',
+  parameters: { temperature: 0.7, maxTokens: 4096 },
+  isDefault: false,
+  isActive: true,
+})
+
+// Ollama dynamic model list
+const ollamaModels = ref<string[]>([])
+const ollamaModelsLoading = ref(false)
+
+// ---- State: Test result dialog ----
+
+const showTestDialog = ref(false)
+const testDialogTitle = ref('')
+const testDialogLoading = ref(false)
+const testResult = ref<ProviderTestResult | ModelTestResult | null>(null)
+const testError = ref('')
+
+// ---- State: Embedding config ----
+
+const embeddingConfig = ref<EmbeddingConfig | null>(null)
+const embeddingLoading = ref(false)
+const showEmbeddingDialog = ref(false)
+const embeddingFormSubmitting = ref(false)
+const embeddingForm = ref<{
+  provider: EmbeddingProvider
+  model: string
+  baseUrl: string
+  apiKey: string
+  dimensions: number
+}>({
+  provider: 'siliconflow',
+  model: '',
+  baseUrl: '',
+  apiKey: '',
+  dimensions: 1536,
+})
+
+// ---- Load providers ----
+
+async function loadProviders(): Promise<void> {
+  providersLoading.value = true
   try {
-    const res = await getModelConfigs({
-      page: page.value,
-      pageSize: pageSize.value,
-      provider: providerFilter.value || undefined,
-    })
-    configs.value = res.items
-    total.value = res.total
-
-    if (res.items.length === 0) {
-      try {
-        const health = await checkAIHealth()
-        envProviders.value = health.status === 'ok' ? health.providers : []
-      } catch {
-        envProviders.value = []
-      }
-    } else {
-      envProviders.value = []
+    providers.value = await listProviders()
+    // Auto-select first provider if none selected
+    if (!selectedProviderId.value && providers.value.length > 0) {
+      selectedProviderId.value = providers.value[0]!.id
     }
-
-    await loadModelOptions()
+    // Auto-select global default model
+    const allModels = await listModels()
+    globalDefaultModel.value = allModels.find((m) => m.isDefault) ?? null
   } catch (e) {
-    ElMessage.error((e as Error).message || '加载失败')
+    ElMessage.error((e as Error).message || '加载供应商列表失败')
   } finally {
-    loading.value = false
+    providersLoading.value = false
   }
 }
 
-function handlePageChange(newPage: number): void {
-  page.value = newPage
-  void loadConfigs()
+// ---- Load models for selected provider ----
+
+async function loadModels(): Promise<void> {
+  if (!selectedProviderId.value) {
+    models.value = []
+    return
+  }
+  modelsLoading.value = true
+  try {
+    models.value = await listModels(selectedProviderId.value)
+  } catch (e) {
+    ElMessage.error((e as Error).message || '加载模型列表失败')
+  } finally {
+    modelsLoading.value = false
+  }
 }
 
-function handleProviderFilterChange(): void {
-  page.value = 1
-  void loadConfigs()
+/** For Ollama: fetch /api/tags to get available models */
+async function fetchOllamaModels(): Promise<void> {
+  if (!selectedProvider.value || selectedProvider.value.type !== 'ollama') return
+  ollamaModelsLoading.value = true
+  try {
+    const baseUrl = selectedProvider.value.baseUrl || 'http://localhost:11434'
+    const tagsUrl = baseUrl.replace(/\/v1\/?$/, '') + '/api/tags'
+    const res = await fetch(tagsUrl)
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+    const data = (await res.json()) as { models?: Array<{ name: string }> }
+    ollamaModels.value = (data.models ?? []).map((m) => m.name)
+  } catch (e) {
+    ollamaModels.value = []
+    console.warn('Failed to fetch Ollama models:', e)
+  } finally {
+    ollamaModelsLoading.value = false
+  }
 }
 
-function openCreateDialog(): void {
-  isEditing.value = false
-  editingId.value = ''
-  form.value = {
+// Watch provider selection
+watch(selectedProviderId, () => {
+  void loadModels()
+  if (selectedProvider.value?.type === 'ollama') {
+    void fetchOllamaModels()
+  } else {
+    ollamaModels.value = []
+  }
+})
+
+// ---- Provider CRUD ----
+
+function openCreateProviderDialog(): void {
+  isEditingProvider.value = false
+  editingProviderId.value = ''
+  providerInitialForm.value = {
     name: '',
-    provider: 'deepseek',
-    model: '',
-    apiKey: '',
+    type: 'deepseek',
     baseUrl: '',
-    parameters: { temperature: 0.7, maxTokens: 4096 },
-    isDefault: false,
-  }
-  showFormDialog.value = true
-}
-
-/** 从预设快速创建（无需打开对话框） */
-async function handleQuickAdd(preset: ProviderPreset): Promise<void> {
-  quickAddLoading.value = preset.provider
-  try {
-    const payload = createConfigFromPreset(preset)
-    await createModelConfig(payload)
-    ElMessage.success(`已添加 ${preset.label} 预设配置`)
-    void loadConfigs()
-  } catch (e) {
-    ElMessage.error((e as Error).message || '添加失败')
-  } finally {
-    quickAddLoading.value = null
-  }
-}
-
-function applyProviderPreset(provider: ModelProvider): void {
-  const preset = applyPreset(provider)
-  if (preset) {
-    form.value.model = preset.model
-    form.value.baseUrl = preset.baseUrl
-    const presetInfo = getPreset(provider)
-    if (presetInfo && !form.value.name) {
-      form.value.name = `${presetInfo.label} - ${preset.model}`
-    }
-  }
-}
-
-function openEditDialog(item: ModelConfigItem): void {
-  isEditing.value = true
-  editingId.value = item.id
-  form.value = {
-    name: item.name,
-    provider: item.provider,
-    model: item.model,
     apiKey: '',
-    baseUrl: item.baseUrl,
-    parameters: { ...item.parameters },
-    isDefault: item.isDefault,
+    isActive: true,
   }
-  showFormDialog.value = true
+  showProviderDialog.value = true
 }
 
-async function handleSubmit(): Promise<void> {
-  if (!form.value.name.trim()) {
-    ElMessage.warning('请输入配置名称')
-    return
+function openCreateProviderDialogWithPreset(preset: ProviderPreset): void {
+  isEditingProvider.value = false
+  editingProviderId.value = ''
+  providerInitialForm.value = {
+    name: preset.label,
+    type: preset.type,
+    baseUrl: preset.defaultBaseUrl,
+    apiKey: '',
+    isActive: true,
   }
-  if (!form.value.model.trim()) {
-    ElMessage.warning('请输入模型名称')
-    return
-  }
+  showProviderDialog.value = true
+}
 
-  formSubmitting.value = true
+function openEditProviderDialog(provider: Provider): void {
+  isEditingProvider.value = true
+  editingProviderId.value = provider.id
+  providerInitialForm.value = {
+    name: provider.name,
+    type: provider.type,
+    baseUrl: provider.baseUrl,
+    apiKey: '',
+    isActive: provider.isActive,
+  }
+  showProviderDialog.value = true
+}
+
+async function handleProviderSubmit(formData: CreateProviderPayload): Promise<void> {
+  providerFormSubmitting.value = true
   try {
-    if (isEditing.value) {
-      const payload: Record<string, unknown> = {
-        name: form.value.name,
-        provider: form.value.provider,
-        model: form.value.model,
-        baseUrl: form.value.baseUrl,
-        parameters: form.value.parameters,
-        isDefault: form.value.isDefault,
+    if (isEditingProvider.value) {
+      const payload: UpdateProviderPayload = {
+        name: formData.name,
+        type: formData.type,
+        baseUrl: formData.baseUrl,
+        isActive: formData.isActive,
       }
-      if (form.value.apiKey) {
-        payload.apiKey = form.value.apiKey
+      if (formData.apiKey) {
+        payload.apiKey = formData.apiKey
       }
-      await updateModelConfig(editingId.value, payload)
-      ElMessage.success('更新成功')
+      await updateProvider(editingProviderId.value, payload)
+      ElMessage.success('供应商已更新')
     } else {
-      await createModelConfig(form.value)
-      ElMessage.success('创建成功')
+      await createProvider(formData)
+      ElMessage.success('供应商已创建')
     }
-    showFormDialog.value = false
-    void loadConfigs()
+    showProviderDialog.value = false
+    await loadProviders()
   } catch (e) {
     ElMessage.error((e as Error).message || '操作失败')
   } finally {
-    formSubmitting.value = false
+    providerFormSubmitting.value = false
   }
 }
 
-async function handleDelete(item: ModelConfigItem): Promise<void> {
+async function handleDeleteProvider(provider: Provider): Promise<void> {
   try {
     await ElMessageBox.confirm(
-      `确定删除模型配置「${item.name}」？删除后相关功能将无法使用此模型。`,
-      '删除确认',
+      `确定删除供应商「${provider.name}」？其下的所有模型将被级联删除。`,
+      '删除供应商',
       { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' },
     )
-    await deleteModelConfig(item.id)
-    ElMessage.success('已删除')
-    connectionStatus.value.delete(item.id)
-    void loadConfigs()
+    await deleteProvider(provider.id)
+    ElMessage.success('供应商已删除')
+    if (selectedProviderId.value === provider.id) {
+      selectedProviderId.value = providers.value[0]?.id ?? ''
+    }
+    providerConnStatus.value.delete(provider.id)
+    await loadProviders()
   } catch (e) {
     if (e === 'cancel') return
     ElMessage.error((e as Error).message || '删除失败')
   }
 }
 
-async function handleSetDefault(item: ModelConfigItem): Promise<void> {
-  const existingDefault = configs.value.find((c) => c.isDefault && c.id !== item.id)
+async function handleTestProviderConn(provider: Provider): Promise<void> {
+  testDialogTitle.value = `测试连接 — ${provider.name}`
+  testDialogLoading.value = true
+  testResult.value = null
+  testError.value = ''
+  showTestDialog.value = true
+  providerConnStatus.value.set(provider.id, 'testing')
+  try {
+    const result = await testProvider(provider.id)
+    testResult.value = result
+    providerConnStatus.value.set(provider.id, 'ok')
+  } catch (e) {
+    testError.value = (e as Error).message || '测试失败'
+    providerConnStatus.value.set(provider.id, 'fail')
+  } finally {
+    testDialogLoading.value = false
+  }
+}
+
+/** Quick-add preset: create provider directly */
+async function handleQuickAdd(preset: ProviderPreset): Promise<void> {
+  try {
+    await createProvider({
+      name: preset.label,
+      type: preset.type,
+      baseUrl: preset.defaultBaseUrl,
+      isActive: true,
+    })
+    ElMessage.success(`已添加 ${preset.label}`)
+    await loadProviders()
+  } catch (e) {
+    ElMessage.error((e as Error).message || '添加失败')
+  }
+}
+
+// ---- Model CRUD ----
+
+function openCreateModelDialog(): void {
+  if (!selectedProviderId.value) {
+    ElMessage.warning('请先选择一个供应商')
+    return
+  }
+  isEditingModel.value = false
+  editingModelId.value = ''
+  modelInitialForm.value = {
+    name: '',
+    model: '',
+    parameters: { temperature: 0.7, maxTokens: 4096 },
+    isDefault: false,
+    isActive: true,
+  }
+  showModelDialog.value = true
+
+  // For Ollama, fetch available models
+  if (selectedProvider.value?.type === 'ollama') {
+    void fetchOllamaModels()
+  }
+}
+
+function openEditModelDialog(model: Model): void {
+  isEditingModel.value = true
+  editingModelId.value = model.id
+  modelInitialForm.value = {
+    name: model.name,
+    model: model.model,
+    parameters: { ...model.parameters },
+    isDefault: model.isDefault,
+    isActive: model.isActive,
+  }
+  showModelDialog.value = true
+}
+
+async function handleModelSubmit(formData: ModelFormState): Promise<void> {
+  modelFormSubmitting.value = true
+  try {
+    if (isEditingModel.value) {
+      const payload: UpdateModelPayload = {
+        name: formData.name,
+        model: formData.model,
+        parameters: formData.parameters,
+        isDefault: formData.isDefault,
+        isActive: formData.isActive,
+      }
+      await updateModel(editingModelId.value, payload)
+      ElMessage.success('模型已更新')
+    } else {
+      const payload: CreateModelPayload = {
+        name: formData.name,
+        providerId: selectedProviderId.value,
+        model: formData.model,
+        parameters: formData.parameters,
+        isDefault: formData.isDefault,
+        isActive: formData.isActive,
+      }
+      await createModel(payload)
+      ElMessage.success('模型已创建')
+    }
+    showModelDialog.value = false
+    await loadModels()
+    // Refresh global default
+    const allModels = await listModels()
+    globalDefaultModel.value = allModels.find((m) => m.isDefault) ?? null
+  } catch (e) {
+    ElMessage.error((e as Error).message || '操作失败')
+  } finally {
+    modelFormSubmitting.value = false
+  }
+}
+
+async function handleDeleteModel(model: Model): Promise<void> {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除模型「${model.name}」？`,
+      '删除模型',
+      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' },
+    )
+    await deleteModel(model.id)
+    ElMessage.success('模型已删除')
+    await loadModels()
+    const allModels = await listModels()
+    globalDefaultModel.value = allModels.find((m) => m.isDefault) ?? null
+  } catch (e) {
+    if (e === 'cancel') return
+    ElMessage.error((e as Error).message || '删除失败')
+  }
+}
+
+async function handleSetDefault(model: Model): Promise<void> {
+  const existingDefault = models.value.find((m) => m.isDefault && m.id !== model.id)
   const warnMsg = existingDefault ? `将替换当前默认模型「${existingDefault.name}」，` : ''
   try {
     await ElMessageBox.confirm(
-      `${warnMsg}确定将「${item.name}」设为默认模型？`,
+      `${warnMsg}确定将「${model.name}」设为默认模型？`,
       '设置默认模型',
       { confirmButtonText: '确定', cancelButtonText: '取消', type: 'info' },
     )
-    await updateModelConfig(item.id, { isDefault: true })
+    await updateModel(model.id, { isDefault: true })
     ElMessage.success(`已设为默认模型`)
-    void loadConfigs()
+    await loadModels()
+    const allModels = await listModels()
+    globalDefaultModel.value = allModels.find((m) => m.isDefault) ?? null
   } catch (e) {
     if (e === 'cancel') return
     ElMessage.error((e as Error).message || '设置失败')
   }
 }
 
-async function handleTestConnection(item: ModelConfigItem): Promise<void> {
-  testingId.value = item.id
+async function handleToggleActive(model: Model): Promise<void> {
+  try {
+    await updateModel(model.id, { isActive: !model.isActive })
+    ElMessage.success(model.isActive ? '已禁用' : '已启用')
+    await loadModels()
+  } catch (e) {
+    ElMessage.error((e as Error).message || '操作失败')
+  }
+}
+
+async function handleTestModel(model: Model): Promise<void> {
+  testDialogTitle.value = `测试模型 — ${model.name}`
+  testDialogLoading.value = true
   testResult.value = null
   testError.value = ''
   showTestDialog.value = true
-  connectionStatus.value.set(item.id, 'testing')
   try {
-    const result = await testModelConnection(item.id)
+    const result = await testModel(model.id)
     testResult.value = result
-    connectionStatus.value.set(item.id, 'ok')
   } catch (e) {
     testError.value = (e as Error).message || '测试失败'
-    connectionStatus.value.set(item.id, 'fail')
   } finally {
-    testingId.value = ''
+    testDialogLoading.value = false
   }
 }
 
-/** 批量测试所有连接 */
-async function handleTestAll(): Promise<void> {
-  if (configs.value.length === 0) return
-  testingAllIds.value = true
-  const ids = configs.value.map((c) => c.id)
-  ids.forEach((id) => connectionStatus.value.set(id, 'testing'))
-  try {
-    const results = await bulkTestConnections(ids)
-    let okCount = 0
-    let failCount = 0
-    results.forEach((r, id) => {
-      if (r.success) {
-        connectionStatus.value.set(id, 'ok')
-        okCount++
-      } else {
-        connectionStatus.value.set(id, 'fail')
-        failCount++
-      }
-    })
-    ElMessage.success(`测试完成：${okCount} 成功，${failCount} 失败`)
-  } catch (e) {
-    ElMessage.error((e as Error).message || '批量测试失败')
-  } finally {
-    testingAllIds.value = false
-  }
-}
+// ---- Helpers ----
 
-/** 导出配置为 JSON 文件下载 */
-async function handleExport(): Promise<void> {
-  try {
-    const payload = await exportModelConfigs()
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `model-configs-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-    ElMessage.success('导出成功')
-  } catch (e) {
-    ElMessage.error((e as Error).message || '导出失败')
-  }
-}
-
-/** 触发文件选择 */
-function triggerImport(): void {
-  fileInputRef.value?.click()
-}
-
-/** 处理文件导入 */
-async function handleImportFile(event: Event): Promise<void> {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-
-  try {
-    const text = await file.text()
-    const data = JSON.parse(text) as ExportModelConfigPayload
-    const result = await importModelConfigs(data)
-    const parts: string[] = []
-    if (result.imported > 0) parts.push(`${result.imported} 条已导入`)
-    if (result.skipped > 0) parts.push(`${result.skipped} 条已跳过（重复）`)
-    if (result.errors.length > 0) parts.push(`${result.errors.length} 条失败`)
-    ElMessage.success(parts.join('，') || '导入完成')
-    if (result.errors.length > 0) {
-      console.warn('Import errors:', result.errors)
-    }
-    void loadConfigs()
-  } catch (e) {
-    ElMessage.error((e as Error).message || '导入失败，请检查文件格式')
-  } finally {
-    input.value = ''
-  }
-}
-
-/** 打开对比对话框 */
-function openCompareDialog(): void {
-  if (compareSelected.value.length < 2) {
-    ElMessage.warning('请至少选择 2 个模型进行对比')
-    return
-  }
-  showCompareDialog.value = true
-}
-
-function toggleCompareSelection(id: string): void {
-  const idx = compareSelected.value.indexOf(id)
-  if (idx >= 0) {
-    compareSelected.value.splice(idx, 1)
-  } else {
-    compareSelected.value.push(id)
-  }
-}
-
-function formatDate(iso: string | undefined): string {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function getProviderLabel(provider: string): string {
+function getEmbeddingProviderLabel(provider: string): string {
   const map: Record<string, string> = {
-    deepseek: 'DeepSeek',
+    siliconflow: 'SiliconFlow',
     openai: 'OpenAI',
-    anthropic: 'Anthropic',
-    ollama: 'Ollama',
-    mimo: 'Mimo',
+    custom: '自定义',
   }
   return map[provider] ?? provider
 }
 
-function getProviderTagType(provider: string): string {
-  const map: Record<string, string> = {
-    deepseek: '',
-    openai: 'success',
-    anthropic: 'warning',
-    ollama: 'info',
-    mimo: 'danger',
-  }
-  return map[provider] ?? ''
+// ---- Refresh all ----
+
+async function handleRefreshAll(): Promise<void> {
+  await loadProviders()
+  await loadModels()
+  void loadEmbeddingConfig()
 }
 
-function getStatusClass(id: string): string {
-  const status = connectionStatus.value.get(id)
-  if (status === 'ok') return styles.statusDotOk
-  if (status === 'fail') return styles.statusDotFail
-  if (status === 'testing') return styles.statusDotTesting
-  return ''
+// ---- Embedding Config ----
+
+const EMBEDDING_PROVIDER_PRESETS: Array<{
+  value: EmbeddingProvider
+  label: string
+  defaultBaseUrl: string
+  defaultModel: string
+  defaultDimensions: number
+  description: string
+}> = [
+  {
+    value: 'siliconflow',
+    label: 'SiliconFlow',
+    defaultBaseUrl: 'https://api.siliconflow.cn/v1',
+    defaultModel: 'BAAI/bge-m3',
+    defaultDimensions: 1024,
+    description: 'SiliconFlow 托管 BGE-M3，中文效果最佳',
+  },
+  {
+    value: 'openai',
+    label: 'OpenAI',
+    defaultBaseUrl: 'https://api.openai.com/v1',
+    defaultModel: 'text-embedding-3-small',
+    defaultDimensions: 1536,
+    description: 'OpenAI text-embedding-3-small',
+  },
+  {
+    value: 'custom',
+    label: '自定义',
+    defaultBaseUrl: '',
+    defaultModel: '',
+    defaultDimensions: 1536,
+    description: 'OpenAI 兼容接口',
+  },
+]
+
+async function loadEmbeddingConfig(): Promise<void> {
+  embeddingLoading.value = true
+  try {
+    embeddingConfig.value = await getEmbeddingConfig()
+  } catch (e) {
+    ElMessage.error((e as Error).message || '加载嵌入模型配置失败')
+  } finally {
+    embeddingLoading.value = false
+  }
 }
+
+function openEmbeddingDialog(): void {
+  if (embeddingConfig.value) {
+    embeddingForm.value = {
+      provider: embeddingConfig.value.provider,
+      model: embeddingConfig.value.model,
+      baseUrl: embeddingConfig.value.baseUrl,
+      apiKey: '',
+      dimensions: embeddingConfig.value.dimensions,
+    }
+  }
+  showEmbeddingDialog.value = true
+}
+
+function applyEmbeddingPreset(preset: typeof EMBEDDING_PROVIDER_PRESETS[number]): void {
+  embeddingForm.value.provider = preset.value
+  embeddingForm.value.baseUrl = preset.defaultBaseUrl
+  embeddingForm.value.model = preset.defaultModel
+  embeddingForm.value.dimensions = preset.defaultDimensions
+}
+
+async function handleEmbeddingSubmit(): Promise<void> {
+  if (!embeddingForm.value.model.trim()) {
+    ElMessage.warning('请输入模型标识')
+    return
+  }
+  embeddingFormSubmitting.value = true
+  try {
+    const payload: UpdateEmbeddingConfigPayload = {
+      provider: embeddingForm.value.provider,
+      model: embeddingForm.value.model,
+      baseUrl: embeddingForm.value.baseUrl,
+      dimensions: embeddingForm.value.dimensions,
+    }
+    if (embeddingForm.value.apiKey) {
+      payload.apiKey = embeddingForm.value.apiKey
+    }
+    embeddingConfig.value = await updateEmbeddingConfig(payload)
+    showEmbeddingDialog.value = false
+    ElMessage.success('嵌入模型配置已更新')
+  } catch (e) {
+    ElMessage.error((e as Error).message || '更新失败')
+  } finally {
+    embeddingFormSubmitting.value = false
+  }
+}
+
+// ---- Init ----
 
 onMounted(() => {
-  void loadConfigs()
+  void loadProviders()
+  void loadEmbeddingConfig()
 })
 </script>
 
 <template>
   <div :class="styles.page">
     <div :class="styles.scroll">
+      <!-- Header -->
       <header :class="styles.header">
         <div :class="styles.titleRow">
           <div>
             <h1>模型与连接</h1>
             <p :class="styles.subtitle">
-              管理 LLM Provider 连接配置，测试连通性，设置默认模型。Chat 和 Agent 编排将使用此处配置的模型。
+              管理 LLM 供应商与模型配置，测试连通性，设置默认模型。
             </p>
-            <div v-if="defaultModel" :class="styles.activeModelHint">
+            <div v-if="globalDefaultModel" :class="styles.activeModelHint">
               <AppIcon name="circle-check-filled" :size="14" />
-              <span>当前默认模型：<strong>{{ defaultModel }}</strong></span>
-              <span v-if="modelOptions.length > 0" :class="styles.hintExtra">
-                （共 {{ modelOptions.length }} 个可用模型）
+              <span>
+                当前默认模型：<strong>{{ globalDefaultModel.name }}</strong>
+                <span :class="styles.hintExtra">（{{ globalDefaultModel.model }}）</span>
               </span>
             </div>
           </div>
           <div :class="styles.headerActions">
-            <el-select
-              :model-value="providerFilter"
-              placeholder="按 Provider 筛选"
-              clearable
-              style="width: 140px"
-              @update:model-value="providerFilter = $event; handleProviderFilterChange()"
-            >
-              <el-option
-                v-for="opt in providerOptions"
-                :key="opt.value"
-                :label="opt.label"
-                :value="opt.value"
-              />
-            </el-select>
-            <el-button :loading="loading" @click="loadConfigs">
+            <el-button :loading="providersLoading" @click="handleRefreshAll">
               <AppIcon name="refresh" :size="14" style="margin-right: 4px" />
               刷新
             </el-button>
-            <el-button @click="handleExport">
-              <AppIcon name="download" :size="14" style="margin-right: 4px" />
-              导出
-            </el-button>
-            <el-button @click="triggerImport">
-              <AppIcon name="upload" :size="14" style="margin-right: 4px" />
-              导入
-            </el-button>
-            <input
-              ref="fileInputRef"
-              type="file"
-              accept=".json"
-              style="display: none"
-              @change="handleImportFile"
-            />
-            <el-button type="primary" @click="openCreateDialog">
+            <el-button type="primary" @click="openCreateProviderDialog()">
               <AppIcon name="plus" :size="14" style="margin-right: 4px" />
-              新增配置
+              添加供应商
             </el-button>
           </div>
         </div>
       </header>
 
+      <!-- Content: Two-column layout -->
       <div :class="styles.content">
-        <!-- Quick-add presets for unconfigured providers -->
-        <div v-if="quickAddPresets.length > 0" :class="styles.quickAddSection">
-          <div :class="styles.quickAddLabel">快速添加 Provider 预设：</div>
-          <div :class="styles.quickAddRow">
-            <button
-              v-for="preset in quickAddPresets"
-              :key="preset.provider"
-              :class="styles.presetCard"
-              :disabled="quickAddLoading === preset.provider"
-              @click="handleQuickAdd(preset)"
-            >
-              <div :class="styles.presetCardIcon" :style="{ color: preset.color }">
-                <AppIcon :name="preset.icon" :size="20" />
-              </div>
-              <div :class="styles.presetCardInfo">
-                <div :class="styles.presetCardName">{{ preset.label }}</div>
-                <div :class="styles.presetCardDesc">{{ preset.defaultModel }}</div>
-              </div>
-              <AppIcon
-                v-if="quickAddLoading === preset.provider"
-                name="loading"
-                :size="16"
-              />
-              <AppIcon v-else name="plus" :size="16" :class="styles.presetCardAdd" />
-            </button>
-          </div>
-        </div>
+        <!-- Quick-add presets (only when providers list is empty) -->
+        <QuickAddPresets
+          v-if="providers.length === 0 && !providersLoading"
+          :presets="PROVIDER_PRESETS"
+          @quick-add="handleQuickAdd"
+        />
 
-        <div :class="styles.summary">
-          <div :class="styles.summaryCard">
-            <div :class="styles.summaryLabel">总计</div>
-            <div :class="styles.summaryValue">{{ summaryTotal }}</div>
-          </div>
-          <div :class="styles.summaryCard">
-            <div :class="styles.summaryLabel">默认模型</div>
-            <div :class="styles.summaryValue">{{ summaryDefault }}</div>
-          </div>
-          <div :class="styles.summaryCard">
-            <div :class="styles.summaryLabel">Provider 数</div>
-            <div :class="styles.summaryValue">{{ summaryProviders }}</div>
-          </div>
-        </div>
-
-        <div :class="styles.tableWrap" v-loading="loading">
-          <div :class="styles.tableToolbar">
-            <el-button
-              size="small"
-              :loading="testingAllIds"
-              @click="handleTestAll"
-            >
-              <AppIcon name="connection" :size="14" style="margin-right: 4px" />
-              测试全部连接
-            </el-button>
-            <el-button
-              v-if="compareSelected.length >= 2"
-              size="small"
-              type="primary"
-              plain
-              @click="openCompareDialog"
-            >
-              对比选中 ({{ compareSelected.length }})
-            </el-button>
-          </div>
-          <el-table :data="configs" stripe @selection-change="(rows: ModelConfigItem[]) => { compareSelected = rows.map(r => r.id) }">
-            <el-table-column type="selection" width="40" />
-            <el-table-column prop="name" label="名称" min-width="140">
-              <template #default="{ row }">
-                <span>{{ row.name }}</span>
-                <el-tag
-                  v-if="row.isDefault"
-                  :class="styles.defaultBadge"
-                  type="success"
-                  size="small"
-                  effect="plain"
-                >
-                  默认
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="Provider" width="120">
-              <template #default="{ row }">
-                <el-tag :type="getProviderTagType(row.provider)" :class="styles.providerTag" size="small">
-                  {{ getProviderLabel(row.provider) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="model" label="模型" min-width="160" />
-            <el-table-column label="状态" width="70" align="center">
-              <template #default="{ row }">
-                <span
-                  :class="[styles.statusDot, getStatusClass(row.id)]"
-                  :title="
-                    connectionStatus.get(row.id) === 'ok' ? '连接正常' :
-                    connectionStatus.get(row.id) === 'fail' ? '连接失败' :
-                    connectionStatus.get(row.id) === 'testing' ? '测试中...' : '未测试'
-                  "
-                />
-              </template>
-            </el-table-column>
-            <el-table-column label="Base URL" min-width="180">
-              <template #default="{ row }">
-                <span style="font-size: 12px; color: var(--text-color-secondary)">
-                  {{ row.baseUrl || '默认' }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column label="参数" width="160">
-              <template #default="{ row }">
-                <span style="font-size: 12px; color: var(--text-color-secondary)">
-                  T={{ row.parameters?.temperature ?? '—' }}, Max={{ row.parameters?.maxTokens ?? '—' }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column label="更新时间" width="170">
-              <template #default="{ row }">
-                {{ formatDate(row.updatedAt) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="260" fixed="right">
-              <template #default="{ row }">
-                <el-button
-                  link
-                  type="primary"
-                  size="small"
-                  :loading="testingId === row.id"
-                  @click="handleTestConnection(row)"
-                >
-                  <AppIcon name="connection" :size="14" style="margin-right: 2px" />
-                  测试
-                </el-button>
-                <el-button
-                  v-if="!row.isDefault"
-                  link
-                  type="success"
-                  size="small"
-                  @click="handleSetDefault(row)"
-                >
-                  <AppIcon name="check" :size="14" style="margin-right: 2px" />
-                  设为默认
-                </el-button>
-                <el-button
-                  link
-                  type="primary"
-                  size="small"
-                  @click="openEditDialog(row)"
-                >
-                  <AppIcon name="edit" :size="14" style="margin-right: 2px" />
-                  编辑
-                </el-button>
-                <el-button
-                  link
-                  type="danger"
-                  size="small"
-                  @click="handleDelete(row)"
-                >
-                  <AppIcon name="delete" :size="14" style="margin-right: 2px" />
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <div v-if="configs.length === 0 && !loading" :class="styles.empty">
-            <AppIcon name="setting" :size="40" :class="styles.emptyIcon" />
-            <p>暂无模型配置</p>
-            <p v-if="envProviders.length > 0" :class="styles.envHint">
-              检测到环境变量已配置
-              <strong>{{ envProviders.map((p) => `${p.name} (${p.model})`).join('、') }}</strong>，
-              Chat 当前可用，但需写入数据库后才会出现在此列表。
-              重启后端将自动同步，或点击下方快速添加。
-            </p>
-            <el-button type="primary" plain size="small" @click="openCreateDialog">
-              新增第一个配置
-            </el-button>
-          </div>
-        </div>
-
-        <div v-if="total > pageSize" :class="styles.pagination">
-          <el-pagination
-            :current-page="page"
-            :page-size="pageSize"
-            :total="total"
-            layout="prev, pager, next"
-            @current-change="handlePageChange"
+        <div :class="styles.twoColLayout" v-loading="providersLoading">
+          <!-- Left panel: Provider list -->
+          <ProviderList
+            :providers="providers"
+            :selected-provider-id="selectedProviderId"
+            :providers-loading="providersLoading"
+            :provider-conn-status="providerConnStatus"
+            :selected-provider-model-count="models.length"
+            @select="(id) => (selectedProviderId = id)"
+            @test-connection="handleTestProviderConn"
+            @edit="openEditProviderDialog"
+            @delete="handleDeleteProvider"
+            @add="openCreateProviderDialog()"
           />
+
+          <!-- Right panel: Model list -->
+          <div :class="styles.modelPanel">
+            <template v-if="selectedProvider">
+              <ModelList
+                :models="models"
+                :models-loading="modelsLoading"
+                :selected-provider="selectedProvider"
+                @test-connection="handleTestProviderConn"
+                @test-model="handleTestModel"
+                @set-default="handleSetDefault"
+                @toggle-active="handleToggleActive"
+                @edit="openEditModelDialog"
+                @delete="handleDeleteModel"
+                @create="openCreateModelDialog"
+              />
+            </template>
+
+            <!-- No provider selected -->
+            <div v-else :class="styles.noProviderSelected">
+              <AppIcon name="setting" :size="40" />
+              <p>请从左侧选择一个供应商</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Embedding model config card -->
+        <div :class="styles.embeddingSection">
+          <div :class="styles.embeddingHeader">
+            <div :class="styles.embeddingTitle">
+              <AppIcon name="connection" :size="16" />
+              <h3>嵌入模型</h3>
+            </div>
+            <el-button size="small" type="primary" plain @click="openEmbeddingDialog">
+              <AppIcon name="edit" :size="14" style="margin-right: 4px" />
+              编辑配置
+            </el-button>
+          </div>
+          <div v-if="embeddingLoading" :class="styles.embeddingLoading">
+            <AppIcon name="loading" :size="20" />
+          </div>
+          <div v-else-if="embeddingConfig" :class="styles.embeddingBody">
+            <div :class="styles.embeddingRow">
+              <div :class="styles.embeddingField">
+                <span :class="styles.embeddingLabel">供应商</span>
+                <span :class="styles.embeddingValue">{{ getEmbeddingProviderLabel(embeddingConfig.provider) }}</span>
+              </div>
+              <div :class="styles.embeddingField">
+                <span :class="styles.embeddingLabel">模型</span>
+                <span :class="[styles.embeddingValue, styles.embeddingMono]">{{ embeddingConfig.model }}</span>
+              </div>
+              <div :class="styles.embeddingField">
+                <span :class="styles.embeddingLabel">Base URL</span>
+                <span :class="[styles.embeddingValue, styles.embeddingMono]">{{ embeddingConfig.baseUrl }}</span>
+              </div>
+              <div :class="styles.embeddingField">
+                <span :class="styles.embeddingLabel">API Key</span>
+                <span :class="[styles.embeddingValue, styles.embeddingMono]">{{ embeddingConfig.apiKey || '(未配置)' }}</span>
+              </div>
+              <div :class="styles.embeddingField">
+                <span :class="styles.embeddingLabel">维度</span>
+                <span :class="styles.embeddingValue">{{ embeddingConfig.dimensions }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 创建/编辑对话框 -->
-    <AppDialog
-      v-model="showFormDialog"
-      :title="isEditing ? '编辑模型配置' : '新增模型配置'"
-      width="560px"
-      :loading="formSubmitting"
-      @confirm="handleSubmit"
-    >
-      <!-- 快速添加预设 -->
-      <div v-if="!isEditing" :class="styles.presetSection">
-        <div :class="styles.presetLabel">快速添加：</div>
-        <div :class="styles.presetGrid">
-          <button
-            v-for="preset in presets"
-            :key="preset.provider"
-            :class="styles.presetCard"
-            @click="form.provider = preset.provider; applyProviderPreset(preset.provider)"
-          >
-            <div :class="styles.presetIcon" :style="{ color: preset.color }">
-              <AppIcon :name="preset.icon" :size="20" />
-            </div>
-            <div :class="styles.presetInfo">
-              <div :class="styles.presetName">{{ preset.label }}</div>
-              <div :class="styles.presetDesc">{{ preset.defaultModel }}</div>
-            </div>
-          </button>
-        </div>
-      </div>
+    <!-- Provider create/edit dialog -->
+    <ProviderDialog
+      v-model="showProviderDialog"
+      :is-editing="isEditingProvider"
+      :initial-form="providerInitialForm"
+      :submitting="providerFormSubmitting"
+      @submit="handleProviderSubmit"
+    />
 
-      <el-form label-position="top">
-        <el-form-item label="配置名称" required>
-          <el-input
-            v-model="form.name"
-            placeholder="例如：DeepSeek 主力模型 / GPT-4o 备用"
-            maxlength="100"
-            show-word-limit
-          />
-        </el-form-item>
-        <div :class="styles.formRow">
-          <el-form-item label="Provider" required>
-            <el-select v-model="form.provider" style="width: 100%" @change="applyProviderPreset">
-              <el-option
-                v-for="preset in presets"
-                :key="preset.provider"
-                :label="preset.label"
-                :value="preset.provider"
-              >
-                <div style="display: flex; align-items: center; gap: 8px">
-                  <span :style="{ color: preset.color, fontWeight: 600 }">{{ preset.label }}</span>
-                  <span style="font-size: 11px; color: #909399">{{ preset.description }}</span>
-                </div>
-              </el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="模型名称" required>
-            <el-input v-model="form.model" :placeholder="modelPlaceholder" maxlength="100" />
-          </el-form-item>
-        </div>
-        <!-- Provider hint -->
-        <div v-if="getPreset(form.provider)" :class="styles.providerHint">
-          <AppIcon :name="getPreset(form.provider)!.icon" :size="14" />
-          <span>{{ getPreset(form.provider)!.description }}</span>
-          <span v-if="getPreset(form.provider)!.defaultBaseUrl" :class="styles.hintUrl">
-            默认地址：{{ getPreset(form.provider)!.defaultBaseUrl }}
-          </span>
-        </div>
-        <el-form-item label="API Key">
-          <el-input
-            v-model="form.apiKey"
-            :placeholder="isEditing ? '留空则不更新' : getPreset(form.provider)?.placeholderApiKey || 'sk-...'"
-            maxlength="500"
-            show-password
-          />
-        </el-form-item>
-        <el-form-item label="Base URL">
-          <el-input
-            v-model="form.baseUrl"
-            :placeholder="baseUrlPlaceholder"
-            maxlength="500"
-          />
-        </el-form-item>
-        <div :class="styles.formRow">
-          <el-form-item label="Temperature">
-            <el-input-number
-              v-model="form.parameters!.temperature"
-              :min="0"
-              :max="2"
-              :step="0.1"
-              :precision="1"
-              style="width: 100%"
-            />
-          </el-form-item>
-          <el-form-item label="Max Tokens">
-            <el-input-number
-              v-model="form.parameters!.maxTokens"
-              :min="1"
-              :max="128000"
-              :step="256"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </div>
-        <el-form-item label="设为默认">
-          <el-switch v-model="form.isDefault" />
-          <span style="margin-left: 8px; font-size: 12px; color: var(--text-color-secondary)">
-            同一 Provider 下只保留一个默认模型
-          </span>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showFormDialog = false">取消</el-button>
-        <el-button type="primary" :loading="formSubmitting" @click="handleSubmit">
-          {{ isEditing ? '保存' : '创建' }}
-        </el-button>
-      </template>
-    </AppDialog>
+    <!-- Model create/edit dialog -->
+    <ModelDialog
+      v-model="showModelDialog"
+      :is-editing="isEditingModel"
+      :initial-form="modelInitialForm"
+      :submitting="modelFormSubmitting"
+      :selected-provider="selectedProvider"
+      :ollama-models="ollamaModels"
+      :ollama-models-loading="ollamaModelsLoading"
+      @submit="handleModelSubmit"
+    />
 
-    <!-- 测试连接结果对话框 -->
+    <!-- Test connection result dialog -->
     <AppDialog
       v-model="showTestDialog"
-      title="连接测试"
+      :title="testDialogTitle"
       width="480px"
       :show-fullscreen-btn="false"
     >
-      <div v-if="testingId" style="text-align: center; padding: 20px">
+      <div v-if="testDialogLoading" style="text-align: center; padding: 20px">
         <AppIcon name="loading" :size="24" />
         <p style="margin-top: 8px; color: var(--text-color-secondary)">正在测试连接...</p>
       </div>
       <template v-else>
         <div v-if="testResult" :class="[styles.testResult, styles.testSuccess]">
           <div style="font-weight: 600; margin-bottom: 4px">连接成功</div>
-          <div>Provider: {{ testResult.provider }} | 模型: {{ testResult.model }} | Tokens: {{ testResult.tokens }}</div>
+          <div v-if="'provider' in testResult">
+            Provider: {{ testResult.provider }}
+            <template v-if="'model' in testResult"> | 模型: {{ testResult.model }}</template>
+            <template v-if="'tokens' in testResult"> | Tokens: {{ testResult.tokens }}</template>
+          </div>
           <div v-if="testResult.reply" :class="styles.testReply">{{ testResult.reply }}</div>
         </div>
         <div v-if="testError" :class="[styles.testResult, styles.testError]">
@@ -840,71 +787,79 @@ onMounted(() => {
       </template>
     </AppDialog>
 
-    <!-- 模型对比对话框 -->
+    <!-- Embedding config edit dialog -->
     <AppDialog
-      v-model="showCompareDialog"
-      title="模型对比"
-      width="80%"
+      v-model="showEmbeddingDialog"
+      title="编辑嵌入模型配置"
+      width="520px"
+      :loading="embeddingFormSubmitting"
+      @confirm="handleEmbeddingSubmit"
     >
-      <div :class="styles.compareGrid">
-        <div
-          v-for="item in compareItems"
-          :key="item.id"
-          :class="styles.compareColumn"
-        >
-          <div :class="styles.compareHeader">
-            <el-tag :type="getProviderTagType(item.provider)" size="small">
-              {{ getProviderLabel(item.provider) }}
-            </el-tag>
-            <span :class="styles.compareName">{{ item.name }}</span>
-          </div>
-          <table :class="styles.compareTable">
-            <tr>
-              <td :class="styles.compareKey">模型</td>
-              <td>{{ item.model }}</td>
-            </tr>
-            <tr>
-              <td :class="styles.compareKey">Base URL</td>
-              <td>{{ item.baseUrl || '默认' }}</td>
-            </tr>
-            <tr>
-              <td :class="styles.compareKey">Temperature</td>
-              <td>{{ item.parameters?.temperature ?? '—' }}</td>
-            </tr>
-            <tr>
-              <td :class="styles.compareKey">Max Tokens</td>
-              <td>{{ item.parameters?.maxTokens ?? '—' }}</td>
-            </tr>
-            <tr>
-              <td :class="styles.compareKey">Top P</td>
-              <td>{{ item.parameters?.topP ?? '—' }}</td>
-            </tr>
-            <tr>
-              <td :class="styles.compareKey">默认</td>
-              <td>{{ item.isDefault ? '是' : '否' }}</td>
-            </tr>
-            <tr>
-              <td :class="styles.compareKey">状态</td>
-              <td>
-                <span
-                  :class="[styles.statusDot, getStatusClass(item.id)]"
-                />
-                {{
-                  connectionStatus.get(item.id) === 'ok' ? '正常' :
-                  connectionStatus.get(item.id) === 'fail' ? '失败' :
-                  connectionStatus.get(item.id) === 'testing' ? '测试中...' : '未测试'
-                }}
-              </td>
-            </tr>
-            <tr>
-              <td :class="styles.compareKey">更新时间</td>
-              <td>{{ formatDate(item.updatedAt) }}</td>
-            </tr>
-          </table>
+      <div :class="styles.presetSection">
+        <div :class="styles.presetLabel">快速选择预设：</div>
+        <div :class="styles.presetGrid">
+          <button
+            v-for="preset in EMBEDDING_PROVIDER_PRESETS"
+            :key="preset.value"
+            :class="styles.presetCard"
+            @click="applyEmbeddingPreset(preset)"
+          >
+            <div :class="styles.presetInfo">
+              <div :class="styles.presetName">{{ preset.label }}</div>
+              <div :class="styles.presetDesc">{{ preset.description }}</div>
+            </div>
+          </button>
         </div>
       </div>
+
+      <el-form label-position="top">
+        <el-form-item label="供应商">
+          <el-select v-model="embeddingForm.provider" style="width: 100%">
+            <el-option
+              v-for="preset in EMBEDDING_PROVIDER_PRESETS"
+              :key="preset.value"
+              :label="preset.label"
+              :value="preset.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="模型标识" required>
+          <el-input
+            v-model="embeddingForm.model"
+            placeholder="例如：BAAI/bge-m3 / text-embedding-3-small"
+            maxlength="200"
+          />
+        </el-form-item>
+        <el-form-item label="Base URL">
+          <el-input
+            v-model="embeddingForm.baseUrl"
+            placeholder="例如：https://api.siliconflow.cn/v1"
+            maxlength="500"
+          />
+        </el-form-item>
+        <el-form-item label="API Key">
+          <el-input
+            v-model="embeddingForm.apiKey"
+            placeholder="留空则不更新"
+            maxlength="500"
+            show-password
+          />
+        </el-form-item>
+        <el-form-item label="向量维度">
+          <el-input-number
+            v-model="embeddingForm.dimensions"
+            :min="1"
+            :max="10000"
+            :step="1"
+            style="width: 100%"
+          />
+        </el-form-item>
+      </el-form>
       <template #footer>
-        <el-button @click="showCompareDialog = false">关闭</el-button>
+        <el-button @click="showEmbeddingDialog = false">取消</el-button>
+        <el-button type="primary" :loading="embeddingFormSubmitting" @click="handleEmbeddingSubmit">
+          保存
+        </el-button>
       </template>
     </AppDialog>
   </div>

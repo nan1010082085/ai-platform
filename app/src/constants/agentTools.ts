@@ -30,7 +30,7 @@ import {
   RAG_INDEX,
   normalizeToolName,
   getToolDisplayLabel,
-} from '@schema-platform/ai-shared/toolNames'
+} from '@schema-platform/platform-shared/ai/toolNames'
 
 export type ToolCategory =
   | 'mcp-schema'

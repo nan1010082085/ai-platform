@@ -3,10 +3,10 @@
  */
 
 export const DOCUMENT_UPLOAD_ACCEPT =
-  'image/*,.pdf,.doc,.docx,.txt,.csv,.ofd'
+  'image/*,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.ofd'
 
 export const DOCUMENT_FORMAT_LABEL =
-  'PNG、JPG、GIF、WebP、PDF、DOC、DOCX、TXT、CSV、OFD'
+  'PNG、JPG、GIF、WebP、PDF、DOC、DOCX、TXT、CSV、XLS、XLSX、OFD'
 
 const EXTENSION_MIME_MAP: Record<string, string> = {
   '.pdf': 'application/pdf',
@@ -14,6 +14,8 @@ const EXTENSION_MIME_MAP: Record<string, string> = {
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   '.txt': 'text/plain',
   '.csv': 'text/csv',
+  '.xls': 'application/vnd.ms-excel',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   '.ofd': 'application/ofd',
 }
 
@@ -24,11 +26,13 @@ export function isAllowedDocumentUpload(filename: string, mimetype: string): boo
   if (type.startsWith('image/')) return true
   if (['application/pdf', 'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/plain', 'text/csv', 'application/csv', 'application/ofd', 'application/x-ofd'].includes(type)) {
+    'text/plain', 'text/csv', 'application/csv', 'application/ofd', 'application/x-ofd',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(type)) {
     return true
   }
   if (type === 'application/vnd.ms-excel' && ext === '.csv') return true
-  if (type === 'application/octet-stream' && (ext === '.ofd' || ext === '.csv')) return true
+  if (type === 'application/octet-stream' && (ext === '.ofd' || ext === '.csv' || ext === '.xls' || ext === '.xlsx')) return true
   return ext in EXTENSION_MIME_MAP
 }
 

@@ -51,7 +51,8 @@ const statusIcon: Record<string, string> = {
   pending: 'more',
 }
 
-const statusType: Record<string, string> = {
+type TagType = 'success' | 'info' | 'warning' | 'danger' | 'primary'
+const statusType: Record<string, TagType> = {
   running: 'primary',
   success: 'success',
   error: 'danger',
@@ -372,7 +373,7 @@ function togglePanelExpand() {
             {{ execution.id }} · v{{ execution.version }} · {{ getExecutionTriggerLabel(execution.trigger) }} · {{ durationLabel }}
           </span>
         </div>
-        <el-tag size="small" :type="(statusType[execution.status] as any) ?? 'info'">
+        <el-tag size="small" :type="statusType[execution.status] ?? 'info'">
           {{ STATUS_LABELS[execution.status] ?? execution.status }}
         </el-tag>
       </div>

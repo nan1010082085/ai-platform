@@ -146,52 +146,157 @@
   }
 }
 
-/* ---- Summary ---- */
+/* ---- Two-column layout ---- */
 
-.summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.twoColLayout {
+  display: flex;
+  gap: 20px;
+  min-height: 500px;
+}
+
+.providerPanel {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.providerPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-color-primary);
+  }
+}
+
+.providerList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: calc(100vh - 280px);
+  padding-right: 4px;
+}
+
+.providerCard {
+  display: flex;
+  align-items: flex-start;
   gap: 12px;
-  margin-bottom: 20px;
-  max-width: 540px;
-}
-
-.summaryCard {
-  background: var(--bg-color);
-  border: 1px solid var(--border-color-lighter);
-  border-radius: 10px;
   padding: 14px 16px;
+  border: 2px solid var(--el-border-color-lighter, #e4e7ed);
+  border-radius: 10px;
+  background: var(--el-bg-color, #fff);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--el-color-primary-light-5, #a0cfff);
+    background: var(--el-color-primary-light-9, #ecf5ff);
+  }
 }
 
-.summaryLabel {
-  font-size: 12px;
+.providerCardActive {
+  border-color: var(--el-color-primary, #409eff);
+  background: var(--el-color-primary-light-9, #ecf5ff);
+  box-shadow: 0 0 0 1px var(--el-color-primary-light-5, #a0cfff);
+}
+
+.providerCardIcon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--el-fill-color-light, #f5f7fa);
+}
+
+.providerCardBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.providerCardName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.providerCardUrl {
+  font-size: 11px;
   color: var(--text-color-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin-bottom: 6px;
 }
 
-.summaryValue {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-color-primary);
+.providerCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-color-secondary);
 }
 
-/* ---- Table ---- */
+.providerCardStatus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-.tableWrap {
+/* ---- Model panel (right) ---- */
+
+.modelPanel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.modelPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-color-primary);
+  }
+}
+
+.modelPanelTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modelPanelActions {
+  display: flex;
+  gap: 8px;
+}
+
+.modelTableWrap {
   background: var(--bg-color);
   border: 1px solid var(--border-color-lighter);
   border-radius: 10px;
   padding: 4px 0;
-}
-
-.tableToolbar {
-  display: flex;
-  gap: 8px;
-  padding: 8px 16px 4px;
-}
-
-.providerTag {
-  font-size: 12px;
 }
 
 .defaultBadge {
@@ -227,85 +332,6 @@
   50% { opacity: 0.4; }
 }
 
-/* ---- Comparison dialog ---- */
-
-.compareGrid {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-}
-
-.compareColumn {
-  flex: 1;
-  min-width: 240px;
-  border: 1px solid var(--el-border-color-lighter, #e4e7ed);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.compareHeader {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 14px;
-  background: var(--el-fill-color-light, #f5f7fa);
-  border-bottom: 1px solid var(--el-border-color-lighter, #e4e7ed);
-}
-
-.compareName {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--el-text-color-primary, #303133);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.compareTable {
-  width: 100%;
-  border-collapse: collapse;
-
-  td {
-    padding: 8px 14px;
-    font-size: 13px;
-    color: var(--el-text-color-regular, #606266);
-    border-bottom: 1px solid var(--el-border-color-extra-light, #f2f6fc);
-  }
-
-  tr:last-child td {
-    border-bottom: none;
-  }
-}
-
-.compareKey {
-  font-weight: 500;
-  color: var(--el-text-color-secondary, #909399);
-  width: 100px;
-  white-space: nowrap;
-}
-
-/* ---- Provider hint ---- */
-
-.providerHint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  margin-bottom: 16px;
-  background: var(--el-color-info-light-9, #f4f4f5);
-  border-radius: 6px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary, #909399);
-  line-height: 1.4;
-}
-
-.hintUrl {
-  margin-left: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 11px;
-  color: var(--el-text-color-placeholder, #c0c4cc);
-}
-
 /* ---- Empty state ---- */
 
 .empty {
@@ -336,13 +362,37 @@
   text-align: center;
 }
 
-.pagination {
+.noProviderSelected {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  color: var(--text-color-placeholder);
+  background: var(--bg-color);
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 10px;
+
+  p {
+    margin: 12px 0 0;
+    font-size: 14px;
+  }
 }
 
-/* ---- Form ---- */
+/* ---- Provider dialog form ---- */
+
+.providerFormHint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  background: var(--el-color-info-light-9, #f4f4f5);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary, #909399);
+  line-height: 1.4;
+}
 
 .formRow {
   display: flex;
@@ -352,6 +402,8 @@
 .formRow > * {
   flex: 1;
 }
+
+/* ---- Test result ---- */
 
 .testResult {
   margin-top: 12px;
@@ -383,6 +435,35 @@
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+/* ---- Provider test status badge ---- */
+
+.providerTestBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.providerTestOk {
+  background: var(--el-color-success-light-9, #f0f9eb);
+  color: var(--el-color-success, #67c23a);
+}
+
+.providerTestFail {
+  background: var(--el-color-danger-light-9, #fef0f0);
+  color: var(--el-color-danger, #f56c6c);
+}
+
+.providerTestTesting {
+  background: var(--el-color-warning-light-9, #fdf6ec);
+  color: var(--el-color-warning, #e6a23c);
+}
+
+/* ---- Model form ---- */
 
 .presetSection {
   margin-bottom: 20px;
@@ -425,4 +506,112 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ---- Provider card actions (hover visible) ---- */
+
+.providerCardActions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+
+  .providerCard:hover &,
+  .providerCardActive & {
+    opacity: 1;
+  }
+}
+
+.providerCardActionBtn {
+  padding: 4px !important;
+  height: auto !important;
+}
+
+/* ---- Edit provider info section ---- */
+
+.editProviderInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: var(--el-fill-color-light, #f5f7fa);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-color-secondary);
+}
+
+.editProviderInfoName {
+  font-weight: 600;
+  color: var(--text-color-primary);
+}
+
+/* ---- Embedding config section ---- */
+
+.embeddingSection {
+  margin-top: 20px;
+  padding: 20px;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 10px;
+}
+
+.embeddingHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.embeddingTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-color-primary);
+  }
+}
+
+.embeddingLoading {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  color: var(--text-color-secondary);
+}
+
+.embeddingBody {
+  padding: 0;
+}
+
+.embeddingRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.embeddingField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.embeddingLabel {
+  font-size: 12px;
+  color: var(--text-color-secondary);
+}
+
+.embeddingValue {
+  font-size: 13px;
+  color: var(--text-color-primary);
+  font-weight: 500;
+}
+
+.embeddingMono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  word-break: break-all;
 }

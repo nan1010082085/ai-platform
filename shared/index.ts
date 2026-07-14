@@ -13,6 +13,16 @@ export type {
   AIMetadata,
 } from './types.js'
 
+// 模型提供商与模型配置
+export type {
+  ProviderType,
+  Provider,
+  ProviderWithMaskedKey,
+  ModelParameters,
+  Model,
+  ProviderWithModels,
+} from './providerModel.js'
+
 // 统一事件协议
 export type {
   AgentEventType,
@@ -100,10 +110,18 @@ export type {
   AgentWorkflowExecution,
   AgentWorkflowValidationIssue,
   ImageGenerateNodeData,
+  TaskPlanStep,
+  IntentRouterNodeData,
+  SummarizerNodeData,
+  RequirementAnalyzerNodeData,
+  TaskPlannerNodeData,
+  TaskChainNodeData,
+  CollaborationRouterNodeData,
 } from './agentWorkflow.js'
 
 export {
   createDefaultAgentWorkflowGraph,
+  createDefaultNodeData,
   createDocumentSummaryWorkflowGraph,
   createDocImageRecognitionWorkflowGraph,
   createIntelligentAssistantWorkflowGraph,
@@ -112,6 +130,7 @@ export {
   createHttpNotifyWorkflowGraph,
   createRagIngestQaWorkflowGraph,
   createMultiDocBatchWorkflowGraph,
+  createChatParityAssistantWorkflowGraph,
   createAgentWorkflowGraphByTemplate,
   layoutAgentWorkflowGraph,
   validateAgentWorkflowGraph,

@@ -4,7 +4,7 @@ import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import type { StepType, StepStatus } from '@/types'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import { getToolDisplayLabel } from '@schema-platform/ai-shared/toolNames'
+import { getToolDisplayLabel } from '@schema-platform/platform-shared/ai/toolNames'
 
 export interface AiStepCardProps {
   /** 步骤序号（从 1 开始） */

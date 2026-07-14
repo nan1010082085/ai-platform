@@ -33,53 +33,62 @@ GET /api/ai/workflows/invoke/executions/{executionId}
 
 ---
 
-## 两个 npm 包
+## 外部集成方式
 
-| 包 | 目录 | 用途 |
-|---|---|---|
-| `@schema-platform/workflow-client` | `ai/workflow-client/` | 调 **本平台** 已发布工作流（Key 鉴权） |
-| `@ai-sdk` | `ai/sdk/` | **脱离本平台** 的轻量 Agent 框架 |
+外部系统（cron、中台、第三方）直接调用 REST API，无需额外 SDK。
 
-**ai-app 自身**不用这两个包；浏览器侧用 `agentWorkflowApi.ts` / `aiApi.ts` + JWT。
+### cURL 示例
 
----
+```bash
+# 执行工作流
+curl -X POST http://localhost:3001/api/ai/workflows/invoke/your-workflow-slug \
+  -H "X-Tenant-Id: 000000" \
+  -H "X-Workflow-Key: wf_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{"input": {"key": "value"}, "trigger": "api"}'
 
-## `@schema-platform/workflow-client`
-
-面向集成方（cron、中台、第三方）。构造参数以代码为准，目标形态：
-
-```ts
-// 用户平台 Key — 同一 key 调不同 slug
-const client = new WorkflowClient({
-  baseUrl: 'https://your-host',
-  apiKey: process.env.MY_PLATFORM_KEY!,  // sk_...，待 SDK 扩展
-  tenantId: '000000',
-})
-
-// 或：单工作流 Key
-const client = new WorkflowClient({
-  baseUrl: 'https://your-host',
-  workflowKey: process.env.WORKFLOW_KEY!, // wf_...
-})
+# 查询执行状态
+curl http://localhost:3001/api/ai/workflows/invoke/executions/{executionId} \
+  -H "X-Workflow-Key: wf_your_key"
 ```
 
-当前实现仅 `workflowKey`；`apiKey` 与 invoke 认 `X-API-Key` 见 [platform.md](./platform.md) 演进清单。
+### JavaScript/TypeScript 示例
 
-详见 [workflow-client README](../workflow-client/README.md)。
+```typescript
+// 执行工作流
+const response = await fetch('http://localhost:3001/api/ai/workflows/invoke/your-slug', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Tenant-Id': '000000',
+    'X-Workflow-Key': 'wf_your_key',
+  },
+  body: JSON.stringify({ input: { key: 'value' }, trigger: 'api' }),
+})
 
----
+const { data } = await response.json()
+const { executionId, execution } = data
 
-## `@ai-sdk`
-
-不连接 schema-platform server，自备 LLM API Key，用于独立 Agent 实验或二次开发。
-
-详见 [ai/sdk/README.md](../sdk/README.md)。
+// 轮询等待完成
+let status = execution.status
+while (!['success', 'error', 'cancelled'].includes(status)) {
+  await new Promise(r => setTimeout(r, 800))
+  const pollRes = await fetch(
+    `http://localhost:3001/api/ai/workflows/invoke/executions/${executionId}`,
+    { headers: { 'X-Workflow-Key': 'wf_your_key' } }
+  )
+  const { data: pollData } = await pollRes.json()
+  status = pollData.status
+}
+```
 
 ---
 
 ## 已移除的路径
 
-`/api/ai/open/*` 已在基线 1.0 删除。外部集成请使用 **`POST /api/ai/workflows/invoke/{slug}`**（见上文）。
+- `/api/ai/open/*` — 基线 1.0 删除
+- `@ai-sdk` — 无消费者，已删除
+- `@schema-platform/workflow-client` — 仅为 REST API 包装器，外部系统直接调用 API 即可
 
 ---
 

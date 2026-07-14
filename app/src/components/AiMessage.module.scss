@@ -405,3 +405,55 @@
 .msgUser .attachmentCards {
   margin-left: auto;
 }
+
+/* ---- Inline image grid (user uploaded images) ---- */
+.imageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px;
+  margin-bottom: 6px;
+  max-width: 100%;
+}
+
+.msgUser .imageGrid {
+  margin-left: auto;
+  max-width: 80%;
+}
+
+.imageItem {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid var(--border-color-lighter, #e4e7ed);
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: var(--color-primary-light-5, #a0cfff);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &:hover .imageZoomHint {
+    opacity: 1;
+  }
+}
+
+.inlineImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.imageZoomHint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.2s;
+}

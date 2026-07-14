@@ -27,12 +27,15 @@
 | **D** | 运营扩展（租户、审计、配额） | P2 | 部分完成（D-1/D-2 ✅，D-3/D-4 ⬜） |
 | **E** | **工作流模板与试用体验** | P1 | ✅ 已完成（本文第二节） |
 | **F** | **能力层细化调研** | P0 | ✅ 已完成（本文第三节） |
-| **G** | **模型扩展（BYOK + 自定义端点）** | P0 | 部分完成（G-1~G-6 ✅，G-7 ⬜） |
+| **G** | **模型扩展（BYOK + 自定义端点）** | P0 | ✅ 已完成（含 Provider/Model 两级结构） |
 | **H** | **文档与基线收尾** | P1 | 部分完成（H-1/H-3 ✅，H-2/H-4 ⬜） |
 | **I** | **可选技术债** | P2 | ✅ 已完成 |
-| **J** | **LangGraph 对话节点白盒化** | P1 | ⬜ 计划中（见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md)） |
+| **J** | **LangGraph 对话节点白盒化** | P0 | ✅ 已完成（5 runtime + 6 节点 + 2 模板） |
+| **K** | **Provider/Model 两级结构** | P0 | ✅ 已完成 |
+| **L** | **消息组件化重构** | P1 | 🔄 进行中 |
+| **M** | **Chat 预览增强** | P1 | ✅ 已完成 |
 
-建议并行：**A + G + F（P0 项）**；**E + B** 在 demo 流就绪后；**H** 与开发同步收口文档；**J** 在 J-0 运行时抽取后与模板扩展并行。
+当前重点：**Phase L（消息组件化）**；待规划：Phase D-3/D-4、Phase H-2/H-4、Phase G-7。
 
 ---
 
@@ -302,33 +305,35 @@ Expert 的 `tools` / `skills` 不替代 Model；Workflow `llm` 节点应引用 *
 
 ---
 
-## 四、Phase A～I 摘要
+## 四、Phase A～M 摘要
 
 > **任务 ID 与状态列**见 [open-source-iteration.md §五](./open-source-iteration.md#五后续迭代计划) · **全量索引**见 [§ 七](#七全量任务索引)。
 
-| 阶段 | 核心 |
-|------|------|
-| **A** | invoke + 用户平台 Key（`sk-`）、我的集成密钥 UI、workflow-client `apiKey` |
-| **B** | ai README、env 清单、docker-compose、LICENSE |
-| **C** | Auth e2e、工作流 invoke 信息展示、fetch 401 refresh（Open API 已删 ✅） |
-| **D** | 多租户、Key 审计、配额、插件市场 |
-| **E** | 模板 Tab「试用」、`demo-*` seed、扩模板库 E-T1～T5 |
-| **F** | Expert/Skill/Tool/MCP/Prompt 调研 + prompt-architecture |
-| **G** | BYOK、llmCache 优先级、模型设置 UI、动态模型列表 |
-| **H** | 产品/内部文档对齐基线 1.0、维护规程 |
-| **I** | v1 管线回退删除、`legacyAgentKey` 文档、双 Key SDK 示例 |
+| 阶段 | 核心 | 状态 |
+|------|------|------|
+| **A** | invoke + 用户平台 Key（`sk-`）、我的集成密钥 UI | ✅ |
+| **B** | ai README、env 清单、docker-compose、LICENSE | ✅ |
+| **C** | Auth e2e、工作流 invoke 信息展示、fetch 401 refresh | ✅ |
+| **D** | 多租户、Key 审计、配额、插件市场 | 50% |
+| **E** | 模板 Tab「试用」、`demo-*` seed、扩模板库 E-T1～T5 | ✅ |
+| **F** | Expert/Skill/Tool/MCP/Prompt 调研 + prompt-architecture | ✅ |
+| **G** | BYOK、llmCache 优先级、模型设置 UI、动态模型列表 | ✅ |
+| **H** | 产品/内部文档对齐基线 1.0、维护规程 | 50% |
+| **I** | v1 管线回退删除、`legacyAgentKey` 文档、双 Key 示例 | ✅ |
+| **J** | LangGraph 对话节点白盒化 | ✅ |
+| **K** | Provider/Model 两级结构 | ✅ |
+| **L** | 消息组件化重构 | 🔄 |
+| **M** | Chat 预览增强 | ✅ |
 
 ---
 
-## 五、推荐排期（8 周示意）
+## 五、推荐排期
 
 ```text
-W1–2   Phase A（凭证）+ Phase G（G-1～G-3）+ Phase F P0 调研启动
-W3     prompt-architecture.md + model-architecture.md（F-3、G-1）
-W4     Phase E-1/E-2（试用按钮 + demo 官方流）+ Phase G-4 UI 启动
-W5–6   Phase E 模板扩展 + Phase B 开源交付 + Phase G-5～G-6
-W7     Phase C e2e + Phase H-2 内部文档清扫
-W8     Phase F P1 收口 + Phase D / I 按需
+已完成：Phase A/B/C/E/F/G/I/J/K/M
+进行中：Phase L（消息组件化）
+待规划：Phase D（配额/限流 + 插件市场）+ Phase H（文档收尾）+ Phase G-7（openai-compatible）
+远期：音频/视频/3D 预览
 ```
 
 ---
@@ -363,7 +368,7 @@ W8     Phase F P1 收口 + Phase D / I 按需
 | A-1 | invoke `X-API-Key`（`POST /workflows/invoke/:slug` 用户 Key 与 Workflow Key 二选一） | A |
 | A-2 | `/api/keys` 用户隔离（列表/删改默认 `createdBy === 当前用户`） | A |
 | A-3 | AI「我的集成密钥」UI（`ApiKeyManagerView.vue`） | A |
-| A-4 | workflow-client `apiKey`（与 `workflowKey` 二选一） | A |
+| A-4 | 外部集成支持 `X-API-Key`（与 `X-Workflow-Key` 二选一） | A |
 | A-5 | seed 角色 `apikey:*` | A |
 | B-1 | ai README 快速开始（`ai/README.md`） | B |
 | B-2 | 环境变量清单 | B |
@@ -397,6 +402,6 @@ W8     Phase F P1 收口 + Phase D / I 按需
 | H-4 | 文档维护规程 | H |
 | ~~I-1~~ | ~~移除 `AI_ENABLE_REQUIREMENT_ANALYSIS=false` v1 回退~~ (已完成) | I |
 | ~~I-2~~ | ~~`legacyAgentKey` 扩展指南文档化~~ (已完成: [expert-extension-guide.md](../expert-extension-guide.md)) | I |
-| I-3 | sdk / workflow-client 双 Key 示例 | I |
+| ~~I-3~~ | ~~双 Key 示例~~ (已完成: curl + TS 示例) | I |
 
-**最后更新**：2026-07-08
+**最后更新**：2026-07-14

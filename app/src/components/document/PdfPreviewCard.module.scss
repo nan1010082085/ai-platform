@@ -1,0 +1,111 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: var(--el-fill-color-light);
+  flex-shrink: 0;
+}
+
+.pageNav,
+.zoomControls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+  background: var(--el-fill-color-blank);
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  font-size: 12px;
+
+  &:hover:not(:disabled) {
+    border-color: var(--el-color-primary);
+    color: var(--el-color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.zoomLabel {
+  min-width: 48px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pageInfo {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  min-width: 48px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.viewport {
+  position: relative;
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 16px;
+  background: var(--el-fill-color-lighter);
+}
+
+.canvas {
+  display: block;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  background: #fff;
+}
+
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  z-index: 1;
+}
+
+.spinner {
+  color: var(--el-color-primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--el-color-danger);
+  font-size: 14px;
+  z-index: 1;
+}

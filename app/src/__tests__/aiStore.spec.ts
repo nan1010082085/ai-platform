@@ -7,6 +7,7 @@ import { useAiStore } from '@/stores/ai'
 import { useConversationStore } from '@/stores/conversation'
 import { useSchemaStore } from '@/stores/schema'
 import { useStreamStore } from '@/stores/stream'
+import type { Widget, FlowGraph, Conversation } from '@/types'
 
 // Mock the API module (REST endpoints only — chat is now via WebSocket)
 vi.mock('@/api/aiApi', () => ({
@@ -225,7 +226,7 @@ describe('useAiStore', () => {
       const streamStore = useStreamStore()
       conversationStore.messages = [{ role: 'user', content: 'hi', timestamp: new Date() }]
       conversationStore.currentConversationId = 'conv-1'
-      schemaStore.setCurrentSchema([{ id: '1' }] as any)
+      schemaStore.setCurrentSchema([{ id: '1' }] as Widget[])
       streamStore.error = 'some error'
 
       store.clearConversation()
@@ -244,7 +245,7 @@ describe('useAiStore', () => {
       const convos = [
         { id: '1', title: 'test', source: 'standalone', activeAgent: 'editor', createdAt: '', updatedAt: '' },
       ]
-      vi.mocked(getConversations).mockResolvedValue(convos as any)
+      vi.mocked(getConversations).mockResolvedValue(convos as Conversation[])
 
       await store.loadConversations()
 
@@ -289,7 +290,7 @@ describe('useAiStore', () => {
       const store = useAiStore()
       const conversationStore = useConversationStore()
       conversationStore.currentConversationId = 'conv-1'
-      store.setCurrentSchema([{ id: '1', type: 'input' }] as any)
+      store.setCurrentSchema([{ id: '1', type: 'input' }])
       vi.mocked(publish).mockResolvedValue({ id: 's1', publishId: 'p1' })
 
       const result = await store.publishCurrent()
@@ -305,7 +306,7 @@ describe('useAiStore', () => {
     it('publishes flow when no schema', async () => {
       const store = useAiStore()
       useConversationStore().currentConversationId = 'conv-1'
-      store.setCurrentFlow({ nodes: [], edges: [] } as any)
+      store.setCurrentFlow({ nodes: [], edges: [] })
       vi.mocked(publish).mockResolvedValue({ id: 'f1', publishId: 'p2' })
 
       const result = await store.publishCurrent()
@@ -564,13 +565,13 @@ describe('useAiStore', () => {
 
     it('returns true when schema exists', () => {
       const store = useAiStore()
-      store.setCurrentSchema([{ id: '1' }] as any)
+      store.setCurrentSchema([{ id: '1' }] as Widget[])
       expect(store.hasPreview).toBe(true)
     })
 
     it('returns true when flow exists', () => {
       const store = useAiStore()
-      store.setCurrentFlow({ nodes: [], edges: [] } as any)
+      store.setCurrentFlow({ nodes: [], edges: [] })
       expect(store.hasPreview).toBe(true)
     })
   })
@@ -585,7 +586,7 @@ describe('useAiStore', () => {
       const convos = [
         { id: 'conv-existing', title: 'test', source: 'standalone', activeAgent: 'editor', createdAt: '', updatedAt: '' },
       ]
-      vi.mocked(getConversations).mockResolvedValue(convos as any)
+      vi.mocked(getConversations).mockResolvedValue(convos as Conversation[])
 
       mockChatStream([
         { type: 'text_delta', content: '回复内容' },

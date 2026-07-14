@@ -25,6 +25,16 @@
   margin-bottom: 12px;
 }
 
+.pdfViewer {
+  flex: 1;
+  min-height: 0;
+}
+
+.excelViewer {
+  flex: 1;
+  min-height: 0;
+}
+
 .scroll {
   flex: 1;
 }

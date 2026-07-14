@@ -56,13 +56,30 @@ interface ApiResponse<T> {
 }
 
 /** 构建请求 headers，自动注入 Authorization */
-function buildHeaders(extra?: Record<string, string>): Record<string, string> {
+export function buildHeaders(extra?: Record<string, string>): Record<string, string> {
   const headers: Record<string, string> = { ...extra }
   const token = resolveToken()
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
   return headers
+}
+
+/**
+ * 带认证的原始 fetch，返回 Response 对象。
+ * 适用于需要读取二进制流（arrayBuffer / blob）的场景。
+ */
+export async function fetchRaw(url: string, init?: RequestInit): Promise<Response> {
+  const mergedInit: RequestInit = { ...init }
+  mergedInit.headers = buildHeaders(init?.headers as Record<string, string>)
+
+  const response = await fetch(url, mergedInit)
+  if (response.status === 401) {
+    onUnauthorized?.()
+    redirectToLogin()
+    throw new AiApiError('Authentication required', 401)
+  }
+  return response
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -129,7 +146,7 @@ export interface UploadResult {
   chunkCount?: number
   excerpt?: string
   hasOriginalFile?: boolean
-  extractionMethod?: 'ocr' | 'pdf' | 'docx' | 'doc' | 'csv' | 'ofd' | 'txt' | 'empty'
+  extractionMethod?: 'ocr' | 'pdf' | 'docx' | 'doc' | 'csv' | 'xlsx' | 'ofd' | 'txt' | 'empty'
 }
 
 export async function uploadFile(file: File): Promise<UploadResult> {
@@ -162,7 +179,7 @@ export interface DocumentPreviewResult {
   chunks: Array<{ page: number; text: string; startOffset: number }>
   summary?: StructuredSummary
   hasOriginalFile?: boolean
-  extractionMethod?: 'ocr' | 'pdf' | 'docx' | 'doc' | 'csv' | 'ofd' | 'txt' | 'empty'
+  extractionMethod?: 'ocr' | 'pdf' | 'docx' | 'doc' | 'csv' | 'xlsx' | 'ofd' | 'txt' | 'empty'
 }
 
 export interface StructuredSummary {
@@ -474,6 +491,32 @@ export async function deleteRagEmbedding(schemaId: string): Promise<{ schemaId: 
   return request<{ schemaId: string; deleted: boolean }>(`/ai/rag/${encodeURIComponent(schemaId)}`, {
     method: 'DELETE',
   })
+}
+
+export interface RagUploadResult {
+  documentId: string
+  filename: string
+  action: 'created' | 'updated' | 'skipped'
+}
+
+export async function uploadRagDocument(file: File): Promise<RagUploadResult> {
+  const form = new FormData()
+  form.append('file', file)
+  const response = await fetch(`${BASE_URL}/ai/rag/upload`, {
+    method: 'POST',
+    headers: buildHeaders(),
+    body: form,
+  })
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    const msg = body?.error?.message ?? `${response.status} ${response.statusText}`
+    throw new AiApiError(msg, response.status)
+  }
+  const body = (await response.json()) as ApiResponse<RagUploadResult>
+  if (!body.success) {
+    throw new AiApiError(body.error?.message ?? 'Upload failed', response.status)
+  }
+  return body.data
 }
 
 // ---- LLM Provider Management ----

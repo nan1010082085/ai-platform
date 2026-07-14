@@ -9,7 +9,7 @@ import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
 import { getExpertLegacyBadge, type ExpertAgentKind } from '@/constants/expertNodeTypes'
-import { getToolDisplayLabel } from '@schema-platform/ai-shared/toolNames'
+import { getToolDisplayLabel } from '@schema-platform/platform-shared/ai/toolNames'
 import styles from './PluginCenterView.module.scss'
 
 type LayerTab = 'experts' | 'tools' | 'mcp' | 'skills'

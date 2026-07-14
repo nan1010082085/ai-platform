@@ -57,9 +57,7 @@ cd server && pnpm test
 ```
 ai/
   app/               Vue 3 frontend (Chat, Workflows, RAG, Plugins)
-  sdk/               Standalone Agent SDK
   shared/            Cross-package types, events, promptBuilder
-  workflow-client/   Open Workflow API client
   docs/              Documentation
 server/              Koa.js + MongoDB backend
 flow-shared/         Flow engine shared types

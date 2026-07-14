@@ -53,6 +53,11 @@ export type AgentEventType =
   // v2: 质量检查
   | 'quality_check_start'
   | 'quality_check_complete'
+  // v2: workflow 事件
+  | 'workflow:route_decided'
+  | 'workflow:summary_stream'
+  | 'workflow:requirement_analyzed'
+  | 'workflow:task_step_complete'
 
 // ────────────────────────────────────────────
 // Agent 类型
@@ -404,6 +409,50 @@ export interface QualityCheckCompleteEvent extends AgentEvent {
 }
 
 // ────────────────────────────────────────────
+// v2: workflow 事件
+// ────────────────────────────────────────────
+
+export interface WorkflowRouteDecidedEvent extends AgentEvent {
+  type: 'workflow:route_decided'
+  executionId: string
+  nodeId: string
+  expertId: string
+  legacyAgentKey: string
+  routeReason: string
+}
+
+export interface WorkflowSummaryStreamEvent extends AgentEvent {
+  type: 'workflow:summary_stream'
+  executionId: string
+  nodeId: string
+  chunk: string
+  done: boolean
+}
+
+export interface WorkflowRequirementAnalyzedEvent extends AgentEvent {
+  type: 'workflow:requirement_analyzed'
+  executionId: string
+  nodeId: string
+  analysis: unknown
+}
+
+export interface WorkflowTaskStepCompleteEvent extends AgentEvent {
+  type: 'workflow:task_step_complete'
+  executionId: string
+  nodeId: string
+  stepIndex: number
+  stepId: string
+  output: unknown
+}
+
+/** Workflow 事件联合类型 */
+export type WorkflowEvent =
+  | WorkflowRouteDecidedEvent
+  | WorkflowSummaryStreamEvent
+  | WorkflowRequirementAnalyzedEvent
+  | WorkflowTaskStepCompleteEvent
+
+// ────────────────────────────────────────────
 // 联合类型
 // ────────────────────────────────────────────
 
@@ -442,5 +491,10 @@ export type AgentStreamEvent =
   | ThinkerCompleteEvent
   | QualityCheckStartEvent
   | QualityCheckCompleteEvent
+  // workflow 事件
+  | WorkflowRouteDecidedEvent
+  | WorkflowSummaryStreamEvent
+  | WorkflowRequirementAnalyzedEvent
+  | WorkflowTaskStepCompleteEvent
 
 export type SSEEvent = AgentStreamEvent

@@ -1,0 +1,182 @@
+<script setup lang="ts">
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import type { Provider } from '@/api/providerApi'
+import type { Model, ModelParameters } from '@/api/modelApi'
+import styles from '@/views/ModelSettingsView.module.scss'
+
+defineProps<{
+  models: Model[]
+  modelsLoading: boolean
+  selectedProvider: Provider
+}>()
+
+const emit = defineEmits<{
+  testConnection: [provider: Provider]
+  testModel: [model: Model]
+  setDefault: [model: Model]
+  toggleActive: [model: Model]
+  edit: [model: Model]
+  delete: [model: Model]
+  create: []
+}>()
+
+function paramSummary(params: ModelParameters | undefined): string {
+  if (!params) return '--'
+  const parts: string[] = []
+  if (params.temperature != null) parts.push(`T=${params.temperature}`)
+  if (params.maxTokens != null) parts.push(`Max=${params.maxTokens}`)
+  if (params.topP != null) parts.push(`P=${params.topP}`)
+  return parts.length > 0 ? parts.join(', ') : '--'
+}
+
+function formatDate(iso: string | undefined): string {
+  if (!iso) return '--'
+  return new Date(iso).toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+</script>
+
+<template>
+  <div :class="styles.modelPanelHeader">
+    <div :class="styles.modelPanelTitle">
+      <h3>{{ selectedProvider.name }} — 模型</h3>
+      <el-tag size="small" :type="selectedProvider.isActive ? 'success' : 'info'">
+        {{ selectedProvider.isActive ? '启用' : '禁用' }}
+      </el-tag>
+    </div>
+    <div :class="styles.modelPanelActions">
+      <el-button
+        size="small"
+        @click="emit('testConnection', selectedProvider)"
+      >
+        <AppIcon name="connection" :size="14" style="margin-right: 4px" />
+        测试连接
+      </el-button>
+      <el-button
+        type="primary"
+        size="small"
+        @click="emit('create')"
+      >
+        <AppIcon name="plus" :size="14" style="margin-right: 4px" />
+        添加模型
+      </el-button>
+    </div>
+  </div>
+
+  <div :class="styles.modelTableWrap" v-loading="modelsLoading">
+    <el-table :data="models" stripe>
+      <el-table-column prop="name" label="名称" min-width="140">
+        <template #default="{ row }">
+          <span>{{ row.name }}</span>
+          <el-tag
+            v-if="row.isDefault"
+            :class="styles.defaultBadge"
+            type="success"
+            size="small"
+            effect="plain"
+          >
+            默认
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="model" label="Model 标识" min-width="160">
+        <template #default="{ row }">
+          <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px">
+            {{ row.model }}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="参数摘要" width="160">
+        <template #default="{ row }">
+          <span style="font-size: 12px; color: var(--text-color-secondary)">
+            {{ paramSummary(row.parameters) }}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="状态" width="80" align="center">
+        <template #default="{ row }">
+          <el-tag
+            :type="row.isActive ? 'success' : 'info'"
+            size="small"
+            effect="plain"
+          >
+            {{ row.isActive ? '启用' : '禁用' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="更新时间" width="130">
+        <template #default="{ row }">
+          <span style="font-size: 12px; color: var(--text-color-secondary)">
+            {{ formatDate(row.updatedAt) }}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="280" fixed="right">
+        <template #default="{ row }">
+          <el-button
+            link
+            type="primary"
+            size="small"
+            @click="emit('testModel', row)"
+          >
+            <AppIcon name="connection" :size="14" style="margin-right: 2px" />
+            测试
+          </el-button>
+          <el-button
+            v-if="!row.isDefault"
+            link
+            type="success"
+            size="small"
+            @click="emit('setDefault', row)"
+          >
+            <AppIcon name="check" :size="14" style="margin-right: 2px" />
+            设为默认
+          </el-button>
+          <el-button
+            link
+            size="small"
+            @click="emit('toggleActive', row)"
+          >
+            <AppIcon
+              :name="row.isActive ? 'circle-close' : 'circle-check'"
+              :size="14"
+              style="margin-right: 2px"
+            />
+            {{ row.isActive ? '禁用' : '启用' }}
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            size="small"
+            @click="emit('edit', row)"
+          >
+            <AppIcon name="edit" :size="14" style="margin-right: 2px" />
+            编辑
+          </el-button>
+          <el-button
+            link
+            type="danger"
+            size="small"
+            @click="emit('delete', row)"
+          >
+            <AppIcon name="delete" :size="14" style="margin-right: 2px" />
+            删除
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <!-- Empty state for models -->
+    <div v-if="models.length === 0 && !modelsLoading" :class="styles.empty">
+      <AppIcon name="setting" :size="32" :class="styles.emptyIcon" />
+      <p>暂无模型</p>
+      <el-button type="primary" plain size="small" @click="emit('create')">
+        添加第一个模型
+      </el-button>
+    </div>
+  </div>
+</template>

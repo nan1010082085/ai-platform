@@ -6,7 +6,7 @@ import {
   createDocumentSummaryWorkflowGraph,
   createIntelligentAssistantWorkflowGraph,
   validateAgentWorkflowGraph,
-} from '@schema-platform/ai-shared'
+} from '@schema-platform/platform-shared/ai'
 
 describe('agent workflow templates', () => {
   it('includes doc-image and assistant templates', () => {

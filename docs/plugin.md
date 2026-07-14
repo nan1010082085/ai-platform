@@ -121,7 +121,7 @@ type LegacyAgentKey = 'editor' | 'flow' | 'page' | 'general' | 'router'
 
 ---
 
-## 三、当前生产清单（2026-07-07）
+## 三、当前生产清单（2026-07-13）
 
 `pnpm plugin:validate`：**experts 4 · skills 4 · tools 25 · mcpServers 5**
 

@@ -1,8 +1,8 @@
 # AI 平台 — 未完成任务与进度
 
-> 最后更新：**2026-07-13** · **全量任务索引**见 [open-platform-roadmap.md § 七](./open-platform-roadmap.md#七全量任务索引) · 可执行拆解见 [open-source-iteration.md](./open-source-iteration.md) · **LangGraph→Workflow 对话节点**见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md)
+> 最后更新：**2026-07-14** · **全量任务索引**见 [open-platform-roadmap.md § 七](./open-platform-roadmap.md#七全量任务索引) · 可执行拆解见 [open-source-iteration.md](./open-source-iteration.md) · **LangGraph→Workflow 对话节点**见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md)
 
-**已完成总览**：[ai-five-phase-iteration.md](./ai-five-phase-iteration.md) · [plugin.md](../plugin.md) · [sdk.md](../sdk.md) · [platform.md](../platform.md)
+**已完成总览**：[ai-five-phase-iteration.md](./ai-five-phase-iteration.md) · [plugin.md](../plugin.md) · [platform.md](../platform.md)
 
 ---
 
@@ -13,163 +13,145 @@
 | 五项迭代 | **100%** |
 | Chat / Workflow WS | **100%** |
 | 插件中心 PLG-1～8 | **100%** |
-| workflow-client（JWT） | **100%** |
 | Chat v2 事件（thinker / quality_check） | **100%** |
-| JWT 三能力统一 | **100%**（`initCapabilityPlatformAuth`） |
-| **基线 1.0**（Open API / 节点 / pluginExpert） | **100%**（见 open-source-iteration §二） |
-| Phase A — 平台凭证 | **100%**（X-API-Key + 用户 Key UI + workflow-client apiKey） |
-| Phase B — 开源交付 | **100%**（README / docker-compose / env 清单） |
-| Phase C — 质量与体验 | **100%**（Auth e2e + invoke 展示 + 401 refresh） |
-| Phase D — 平台能力扩展 | **50%**（D-1 多租户 ✅、D-2 Key 审计 ✅、D-3 配额/限流 ⬜、D-4 插件市场 ⬜） |
-| Phase E — 工作流模板与试用 | **100%**（试用按钮 + demo 流 + 扩模板库 E-T1～T5） |
-| Phase F — 能力层细化调研 | **100%**（Expert/Skill/Tool/MCP/Prompt 全部调研完成） |
-| Phase G — 模型扩展 | **86%**（G-1~G-6 ✅、G-7 openai-compatible Provider ⬜） |
-| Phase H — 文档与基线收尾 | **50%**（H-1/H-3 ✅、H-2 内部文档清扫部分完成 ⬜、H-4 文档维护规程 ⬜） |
-| Phase I — 可选技术债 | **100%**（v1 回退 + legacyAgentKey + 双 Key 示例） |
-| **Phase J** — LangGraph 对话节点白盒化 | **0%**（见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md)） |
+| JWT 三能力统一 | **100%** |
+| **基线 1.0**（Open API / 节点 / pluginExpert） | **100%** |
+| Phase A — 平台凭证 | **100%** |
+| Phase B — 开源交付 | **100%** |
+| Phase C — 质量与体验 | **100%** |
+| Phase D — 平台能力扩展 | **50%**（D-3 配额 ⬜、D-4 插件市场 ⬜） |
+| Phase E — 工作流模板与试用 | **100%** |
+| Phase F — 能力层细化调研 | **100%** |
+| Phase G — 模型扩展 | **100%**（含 Provider/Model 两级结构） |
+| Phase H — 文档与基线收尾 | **50%**（H-2/H-4 ⬜） |
+| Phase I — 可选技术债 | **100%** |
+| **Phase J** — LangGraph 对话节点白盒化 | **100%** |
+| **Phase K** — Provider/Model 两级结构 | **100%** |
+| **Phase L** — 消息组件化重构 | **进行中** |
 
 ---
 
-## 已完成总览（Phase A～I）
+## Phase J — LangGraph 对话节点白盒化 ✅
 
-| 阶段 | 主题 | 优先级 | 任务 ID 范围 | 状态 |
-|------|------|--------|----------------|------|
-| **A** | 平台凭证（invoke + 用户 Key + UI） | **P0** | A-1～A-5 | ✅ |
-| **B** | 开源交付（README / docker / env） | **P0** | B-1～B-4 | ✅ |
-| **C** | 质量（e2e、invoke 展示、401 refresh） | **P1** | C-1～C-4 | ✅ |
-| **D** | 运营扩展（租户、审计、配额、市场） | **P2** | D-1～D-4 | **50%**（D-1/D-2 ✅、D-3/D-4 ⬜） |
-| **E** | 工作流模板与试用 + `demo-*` | **P1** | E-1～E-6、E-T1～E-T5 | ✅ |
-| **F** | 能力层细化调研（Expert/Skill/Tool/MCP/Prompt） | **P0** | F.2 表 + F-P1～P4 + F.4 步骤 | ✅ |
-| **G** | 模型扩展（BYOK + baseUrl + UI） | **P0** | G-1～G-7 | **86%**（G-1~G-6 ✅、G-7 ⬜） |
-| **H** | 文档与基线收尾 | **P1** | H-1～H-4 | **50%**（H-1/H-3 ✅、H-2/H-4 ⬜） |
-| **I** | 可选技术债（v1 回退、命名） | **P2** | I-1～I-3 | ✅ |
+| ID | 任务 | 状态 |
+|----|------|------|
+| J-0 | 共享运行时抽取（`server/src/ai/runtime/*`） | ✅ |
+| J-1 | `intent-router`、`summarizer` 全栈 | ✅ |
+| J-2 | `requirement-analyzer` + `hitl` 增强 | ✅ |
+| J-3 | `task-planner`、`task-chain`、`collaboration-router` | ✅ |
+| J-4 | 官方模板 + `demo-chat-parity` seed + 文档 | ✅ |
 
-**排期示意**：见 [open-platform-roadmap.md § 五](./open-platform-roadmap.md#五推荐排期8-周示意)。
-
----
-
-## 已完成清单（近期）
-
-| ID | 说明 |
-|----|------|
-| PLG-1～4 | Skills、MCP factory、file pack、tenant Registry |
-| PLG-5 | Registry label + `builtinTool()` 回退 |
-| PLG-6 | `PUT /api/ai/plugins/local/:layer/:file` |
-| PLG-7 | MCP transport 单测（stdio/inmemory/sse 校验） |
-| PLG-8 | 根目录 `.github/workflows/plugin-validate.yml` |
-| WF-3 | workflow-client 轮询式 `streamExecution` |
-| AI-1/2 | `thinker_*` / `quality_check_*` WebSocket 事件 |
-| AI-3 | `aiRuntimeRules` 规则实现 |
-| AI-4 | `onConnectionChange` |
-| JWT | `initCapabilityPlatformAuth` 三能力统一 |
-| **BASE-1** | 删除 `/api/ai/open/*` 全栈 |
-| **BASE-2** | 工作流节点收敛：`expert` / `agent-intent` / `tool` |
-| **BASE-3** | Chat LangGraph 单路径 `pluginExpert` |
-| **BASE-4** | 删除 `LEGACY_TOOL_ALIASES`、deprecated 事件 |
-| **C-2** | Open API 删除 + 文档指向 invoke |
-| **H-1** | `server/docs/api-reference.md` invoke 章节 |
-| **H-3** | `server/docs/rag-architecture.md` 等 server 文档 |
-| DOC | plugin.md / sdk.md / architecture.md 基线更新 |
-| **A-1** | invoke 支持 `X-API-Key`（`POST /workflows/invoke/:slug` 用户 Key 与 Workflow Key 二选一） |
-| **A-2** | `/api/keys` 按用户隔离（列表/删改默认 `createdBy === 当前用户`） |
-| **A-3** | AI 应用「我的集成密钥」UI（`ApiKeyManagerView.vue`：创建、脱敏列表、禁用、删除） |
-| **A-4** | `workflow-client` 支持 `apiKey`（与 `workflowKey` 二选一） |
-| **A-5** | seed 角色 `apikey:*`（普通用户可管理自己的 Key） |
-| **B-1** | `ai/README.md` 开源快速开始（最小部署：server + ai standalone） |
-| **B-2** | 环境变量清单（JWT、LLM、MongoDB、embedding） |
-| **B-3** | `docker-compose.ai.yml`（ai 小平台演示栈） |
-| **B-4** | LICENSE + CONTRIBUTING |
-| **C-1** | Auth e2e（SSO + refresh + Sidebar 长会话） |
-| **C-3** | 工作流列表展示 invoke 信息（已发布流 URL + 脱敏 Key 汇总） |
-| **C-4** | fetch 客户端 401 refresh（aiApi / agentWorkflowApi 对齐 axios 的 refresh 重试） |
-| **D-1** | 多租户切换与 Key 隔离（UI 展示当前租户） |
-| **D-2** | Key 使用审计（lastUsedAt 列表、按工作流统计） |
-| **E-1** | 模板 Tab「试用」「在对话中体验」按钮（按 category 显隐） |
-| **E-2** | seed `demo-*` 已发布工作流（`demo-intelligent-assistant` 等） |
-| **E-3** | 试用 → 设计器 `?try=1&sample=...`（预填 sample input / 执行抽屉） |
-| **E-4** | Chat 深链 `/?workflowId=demo-*`（AiChatSettings 预选工作流） |
-| **E-5** | 扩 3～5 个模板图工厂（`ai/shared/agentWorkflow.ts` 5 个新模板） |
-| **E-T1** | 模板 `contract-extract`（document 类：合同要点提取） |
-| **E-T2** | 模板 `kb-faq`（assistant 类：知识库 FAQ） |
-| **E-T3** | 模板 `http-notify`（integration 类：HTTP 调用 + 完成回调） |
-| **E-T4** | 模板 `rag-ingest-qa`（assistant 类：索引 + 问答） |
-| **E-T5** | 模板 `multi-doc-batch`（document 类：批处理占位） |
-| **F-1** | 走读 Registry → Chat/Workflow 消费链（填 F.2「现状」列） |
-| **F-P1** | promptBuilder 与 editor/flow 解耦结论 → `f-p-prompt-architecture.md` |
-| **F-P2** | `prompts` DB 与 Plugin Skill 分工结论（Skill=指令，DB=运营文案） |
-| **F-P3** | Prompt 层 Plugin Center Tab 结论 |
-| **F-P4** | 模板携带 `recommendedSkills[]` 结论 |
-| **F-registry** | 能力层调研总报告（`f-1-registry-survey.md`） |
-| **G-1** | BYOK 归属结论 → `model-architecture.md` |
-| **G-2** | `llmCache` / `LLMManager` 优先级调整（DB/用户配置优先于平台 env） |
-| **G-3** | ModelConfig apiKey 脱敏（创建/更新一次性回显） |
-| **G-4** | AI 应用「模型与连接」设置页（`ModelSettingsView.vue`） |
-| **G-5** | Chat / Workflow 动态模型列表（替换 `CHAT_MODEL_OPTIONS` 硬编码） |
-| **H-2** | 内部研发文档清扫（去除 editorAgent/open API 引用） |
-| **H-4** | 变更时文档维护规程 |
-| **I-1** | 移除 `AI_ENABLE_REQUIREMENT_ANALYSIS=false` v1 回退 |
-| **I-2** | `legacyAgentKey` 文档化（`expert-extension-guide.md`） |
+**产出**：
+- 5 个 runtime 纯函数模块
+- 6 个新节点类型（AgentNodeType + Palette + Panels + Executor）
+- 4 个新事件类型
+- 2 个官方模板（chat-parity-assistant、requirement-gated-build）
+- 1194 测试通过
 
 ---
 
-## 产品定位（鉴权）
+## Phase K — Provider/Model 两级结构 ✅
 
-- **主路径**：全部业务 API **JWT**（`authMiddleware`）
-- **集成**：`POST /api/ai/workflows/invoke/{slug}` + **`X-Workflow-Key`**（`wf-...`）或 **`X-API-Key`**（`sk-...`）二选一
-- **workflow-client**：JWT 或 Key（支持 `workflowKey` / `apiKey` 二选一）
+| ID | 任务 | 状态 |
+|----|------|------|
+| K-1 | Provider + Model Schema（server/src/models/） | ✅ |
+| K-2 | seedProvidersAndModels()（DeepSeek/Mimo/Ollama） | ✅ |
+| K-3 | llmCache.ts 支持两级查询 | ✅ |
+| K-4 | providerRoutes.ts + aiModelRoutes.ts API | ✅ |
+| K-5 | ai/shared/providerModel.ts 类型定义 | ✅ |
+| K-6 | providerApi.ts + modelApi.ts 前端 API 客户端 | ✅ |
+| K-7 | ModelSettingsView.vue 重构为两级管理 UI | ✅ |
 
----
-
-## Phase J — LangGraph 对话节点补齐（新增）
-
-> 详规：[langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md)
-
-| 子阶段 | 主题 | 优先级 | 状态 |
-|--------|------|--------|------|
-| **J-0** | 共享运行时抽取（`server/src/ai/runtime/*`） | P0 | ⬜ |
-| **J-1** | `intent-router`、`summarizer` | P0 | ⬜ |
-| **J-2** | `requirement-analyzer` + `hitl` 增强 | P1 | ⬜ |
-| **J-3** | `task-planner`、`task-chain`、`collaboration-router` | P1 | ⬜ |
-| **J-4** | 官方模板 + `demo-chat-parity` seed | P1 | ⬜ |
-
-**缺失节点一览**（相对 Chat LangGraph）：`intent-router`、`requirement-analyzer`、`task-planner`、`task-chain`、`collaboration-router`、`summarizer`；`hitl` 增强以对接需求确认。
+**产出**：
+- 供应商 Schema（DeepSeek/Mimo/Ollama/OpenAI/Anthropic/Custom）
+- 模型 Schema（关联供应商，参数独立配置）
+- 前端左右分栏 UI（供应商列表 + 模型列表）
+- 测试连接、快速添加预设、设为默认
 
 ---
 
-## 剩余待办（F.2 调研表 P1-P2 项 + 部分完成项）
+## Phase L — 消息组件化重构 🔄
 
-### F.2 调研表未完成项（16 项）
+| ID | 任务 | 状态 |
+|----|------|------|
+| L-1 | RendererRegistry.ts 渲染器注册表 | 🔄 |
+| L-2 | 独立渲染器（Text/Code/Thinking/ToolCall/Image/Requirement/Document） | 🔄 |
+| L-3 | AiMessageContent.vue 调度器 | 🔄 |
+| L-4 | AiMessageActionBar.vue 操作栏 | 🔄 |
+| L-5 | AiMessage.vue 主组件瘦身 | 🔄 |
 
-| 域 | 调研项 | 优先级 | 状态 |
-|---|---|---|---|
-| Expert | routing 路由调试 UI 或 CLI | P1 | ⬜ |
-| Expert | Workflow expert 节点 vs Chat prompt 覆盖规则对齐 | P1 | ⬜ |
-| Skill | 作者手册 | P1 | ✅ `docs/extend/skill-author-guide.md` |
-| Skill | 拼装顺序与冲突规范 | P2 | ⬜ |
-| Skill | 多语言 / locale | P2 | ⬜ |
-| Tool | label/category CI 校验必填 | P1 | ⬜ |
-| MCP | factoryModule example pack 扩充 | P1 | ⬜ |
-| MCP | 租户隔离 UI | P2 | ⬜ |
-| Prompt | Chat 空状态引导词配置化 | P2 | ⬜ |
-| Prompt | Workflow LLM 节点变量文档 | P1 | ✅ `docs/extend/workflow-variables.md` |
-| Workflow | 模板注册 RFC（插件 pack 带模板） | P1 | ✅ `docs/extend/workflow-template-rfc.md` |
-| Workflow | 官方 demo 流 seed | P1 | ⬜ |
-| RAG | 与 Tool/MCP 边界扩展文档 | P1 | ⬜ |
-| 插件 | Pack spec v1 + 签名 | P2 | ⬜ |
-| 插件 | Plugin Center 写能力评估 | P1 | ✅ `docs/product/plugin-write-eval.md` |
-| 可观测 | 插件级 metrics | P2 | ⬜ |
+**目标**：新增预览类型只需新建 Renderer + 注册，不改主组件
 
-### 部分完成项（4 项）
+---
 
-| ID | 说明 | 实际状态 |
-|---|---|---|
-| D-3 | 配额/限流 | 仅全局 IP 限流（300 req/60s），无按 Key/租户配额 |
-| D-4 | 插件市场模板 | 仅 schema 定义，无路由、无 UI |
-| G-6 | Ollama / vLLM / 私有网关文档 | ✅ `docs/extend/custom-models.md`（Ollama/vLLM/DeepSeek 双路径配置） |
-| G-7 | openai-compatible 通用 Provider | 无独立 provider 类型，openai 可变通 |
-| H-2 | 内部研发文档清扫 | ARCHITECTURE_PLAN.md 等仅加 disclaimer，正文仍引用旧架构 |
-| H-4 | 文档维护规程 | 未实现 |
-| I-3 | sdk / workflow-client 双 Key 示例 | 未实现 |
+## Phase M — Chat 预览增强 ✅
+
+| ID | 任务 | 状态 |
+|----|------|------|
+| M-1 | 用户图片内联显示 | ✅ |
+| M-2 | PDF.js 渲染预览 | ✅ |
+| M-3 | Excel 上传 + 预览 | ✅ |
+
+**产出**：
+- PdfPreviewCard.vue
+- ExcelPreviewCard.vue
+- DocumentAttachmentCard.vue 图片内联增强
+
+---
+
+## 剩余待办
+
+### Phase D — 平台能力扩展（P2）
+
+| ID | 任务 | 说明 | 状态 |
+|----|------|------|------|
+| D-3 | 配额/限流 | 按 Key/租户配额，非仅全局 IP 限流 | ⬜ |
+| D-4 | 插件市场模板 | 在线浏览/安装插件模板 | ⬜ |
+
+### Phase G — 模型扩展（P2）
+
+| ID | 任务 | 说明 | 状态 |
+|----|------|------|------|
+| G-7 | openai-compatible 通用 Provider | 支持任意 OpenAI 兼容 API | ⬜ |
+
+### Phase N — 功能补全（P2，按需）
+
+> 审查发现的缺失功能，按优先级排序
+
+| ID | 功能 | 说明 | 优先级 | 状态 |
+|----|------|------|--------|------|
+| N-1 | RAG 文档上传入口 | 当前需先上传到 editor/flow，RAG 无独立上传 | P2 | ⬜ |
+| N-2 | 嵌入模型配置 UI | 使用 SiliconFlow BGE-M3，无可视化配置 | P2 | ⬜ |
+| N-3 | 插件在线编辑 | 当前需 Git 或 CLI，无 Web 编辑器 | P2 | ⬜ |
+| N-4 | 消息音频预览 | 不支持音频文件上传/播放 | P3 | ⬜ |
+| N-5 | 消息视频预览 | 不支持视频文件上传/播放 | P3 | ⬜ |
+| N-6 | 消息 3D 模型预览 | 不支持 3D 模型预览 | P3 | ⬜ |
+
+### Phase O — 能力层细化（P1-P2，按需）
+
+> 调研未完成项
+
+| ID | 域 | 调研项 | 优先级 | 状态 |
+|----|---|---|---|---|
+| O-1 | Expert | routing 路由调试 UI 或 CLI | P1 | ⬜ |
+| O-2 | Expert | Workflow expert 节点 vs Chat prompt 覆盖规则对齐 | P1 | ⬜ |
+| O-3 | Skill | 拼装顺序与冲突规范 | P2 | ⬜ |
+| O-4 | Skill | 多语言 / locale | P2 | ⬜ |
+| O-5 | Tool | label/category CI 校验必填 | P1 | ⬜ |
+| O-6 | MCP | factoryModule example pack 扩充 | P1 | ⬜ |
+| O-7 | MCP | 租户隔离 UI | P2 | ⬜ |
+| O-8 | Prompt | Chat 空状态引导词配置化 | P2 | ⬜ |
+| O-9 | Workflow | 官方 demo 流 seed | P1 | ⬜ |
+| O-10 | RAG | 与 Tool/MCP 边界扩展文档 | P1 | ⬜ |
+| O-11 | 插件 | Pack spec v1 + 签名 | P2 | ⬜ |
+| O-12 | 可观测 | 插件级 metrics | P2 | ⬜ |
+
+### Phase H — 文档收尾（P1）
+
+| ID | 任务 | 说明 | 状态 |
+|----|------|------|------|
+| H-2 | 内部研发文档清扫 | ARCHITECTURE_PLAN.md 等去除旧架构引用 | ⬜ |
+| H-4 | 文档维护规程 | 变更时文档同步更新规范 | ⬜ |
 
 ---
 
@@ -180,4 +162,84 @@
 | Chat HTTP SSE | 已删除 |
 | Shell 改菜单 | 范围外 |
 | 恢复 `/api/ai/open/*` | 基线 1.0 已删除，统一 invoke |
-| 单独一级「模板预览」侧栏 | 与模板 Tab 重复（见 Phase E E.1） |
+| 单独一级「模板预览」侧栏 | 与模板 Tab 重复 |
+| `@ai-sdk` 包 | 无消费者，已删除 |
+| `@schema-platform/workflow-client` 包 | 仅为 REST API 包装器，已删除 |
+
+---
+
+## 迭代日志
+
+### 2026-07-14
+
+**Phase J 完成** — LangGraph 对话节点白盒化
+- 5 个 runtime 纯函数模块（intentRouter/requirementAnalyzer/taskPlanner/summarizer/collaborationRouter）
+- 6 个新节点类型注册（AgentNodeType + Palette + Panels + Executor）
+- 4 个新事件类型（route_decided/summary_stream/requirement_analyzed/task_step_complete）
+- 2 个官方模板（chat-parity-assistant、requirement-gated-build）
+- demo-chat-parity seed
+- 文档更新
+
+**Phase K 完成** — Provider/Model 两级结构
+- Provider + Model Schema（server/src/models/）
+- seedProvidersAndModels()（DeepSeek/Mimo/Ollama）
+- llmCache.ts 两级查询
+- providerRoutes.ts + aiModelRoutes.ts API
+- 前端 ModelSettingsView.vue 重构为左右分栏 UI
+
+**Phase M 完成** — Chat 预览增强
+- 用户图片内联显示
+- PDF.js 渲染预览（PdfPreviewCard.vue）
+- Excel 上传 + 预览（ExcelPreviewCard.vue）
+
+**包清理**
+- 删除 `ai/sdk/`（@ai-sdk，无消费者）
+- 删除 `ai/workflow-client/`（@schema-platform/workflow-client，REST API 包装器）
+- 更新所有文档引用
+
+**Phase L 启动** — 消息组件化重构
+- RendererRegistry.ts 渲染器注册表设计
+- 独立 Renderer 提取（Text/Code/Thinking/ToolCall/Image/Requirement/Document）
+- AiMessageContent.vue 调度器
+- AiMessage.vue 主组件瘦身
+
+### 2026-07-13
+
+**Phase J 启动** — LangGraph 对话节点白盒化
+- J-0: 共享运行时抽取开始
+
+### 2026-07-09
+
+**方向调整**
+- shell 归档删除，不再维护
+- 共享包聚合到 shared/ 目录
+- AI 项目开源 SaaS 平台化
+- editor / flow 独立配套迭代
+
+### 2026-07-08
+
+**Phase A～I 全量迭代完成**
+- 平台凭证（invoke + 用户 Key + UI）
+- 开源交付（README / docker-compose / env 清单）
+- 质量与体验（Auth e2e + invoke 展示 + 401 refresh）
+- 工作流模板与试用（7 个官方模板 + demo seed）
+- 能力层调研（Expert/Skill/Tool/MCP/Prompt）
+- 模型扩展（BYOK + llmCache + ModelSettingsView）
+- 技术债清理（v1 回退 + legacyAgentKey + 双 Key 示例）
+
+### 2026-06-28
+
+**AI 项目基础迁移**
+- 从 monorepo 迁移至独立目录
+- 项目级 CLAUDE.md 创建
+- qiankun 模式 loading 修复
+- mount() 使用 getToken 动态获取 token
+- 部署到生产环境
+
+---
+
+## 产品定位（鉴权）
+
+- **主路径**：全部业务 API **JWT**（`authMiddleware`）
+- **集成**：`POST /api/ai/workflows/invoke/{slug}` + **`X-Workflow-Key`**（`wf-...`）或 **`X-API-Key`**（`sk-...`）二选一
+- 外部系统直接调用 REST API，无需额外 SDK

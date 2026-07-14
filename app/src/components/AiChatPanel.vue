@@ -21,7 +21,7 @@ import {
   DOCUMENT_UPLOAD_ACCEPT,
   DOCUMENT_FORMAT_LABEL,
   isAllowedDocumentUpload,
-} from '@schema-platform/ai-shared'
+} from '@schema-platform/platform-shared/ai'
 import type { AIMessage, AgentType, Attachment, TaskChainStep, StreamConnectionStatus, MentionReference, RagSearchResult, MessageDocumentAttachment } from '@/types'
 import type { MessageEmbeddedCard } from './AiMessage.vue'
 

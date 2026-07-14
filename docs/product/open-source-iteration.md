@@ -1,6 +1,6 @@
 # 开源 AI 应用 — 回归报告与迭代计划
 
-> 日期：2026-07-08  
+> 日期：2026-07-14  
 > 范围：`ai/` 应用能力小平台 + 三能力 JWT 统一 + server `/api/ai`
 
 ---
@@ -102,7 +102,7 @@
 | A-1 | invoke 支持 `X-API-Key` | 用户平台 Key 与 Workflow Key 二选一，统一 `POST /workflows/invoke/:slug` | ✅ |
 | A-2 | `/api/keys` 按用户隔离 | 列表/删改默认 `createdBy === 当前用户`；普通角色可管理自己的 Key | ✅ |
 | A-3 | AI 应用「我的集成密钥」 | 路由如 `/settings/keys`：创建、脱敏列表、禁用、删除；创建后一次性展示 `sk-...` | ✅ |
-| A-4 | `workflow-client` 支持 `apiKey` | 与 `workflowKey` 二选一 | ✅ |
+| A-4 | 外部集成支持 `X-API-Key` | 与 `X-Workflow-Key` 二选一 | ✅ |
 | A-5 | seed 角色 | `普通用户` 增加 `apikey:*`（或专用 `apikey:manage-self`） | ✅ |
 
 ### Phase B — 开源交付（P0，1 周）
@@ -197,17 +197,65 @@ F.2 表中 **P0 调研项**（dynamicPrompt、Tool kind、HTTP 安全、MCP tran
 |----|------|------|------|
 | I-1 | 移除 v1 Chat 回退 | 删除 `AI_ENABLE_REQUIREMENT_ANALYSIS=false` 短路路径（仅保留 v2 管线） | ✅ |
 | I-2 | `legacyAgentKey` 文档化 | plugin.md + 《Expert 扩展指南》：仅 task chain / `context.source` 调度键，非图节点 | ✅ |
-| I-3 | workflow-client / sdk 双 Key 示例 | A 完成后补 curl + TS 示例（`sk-` vs `wf-`） | ✅ |
+| I-3 | 双 Key 示例 | curl + TS 示例（`sk-` vs `wf-`） | ✅ |
+
+### Phase J — LangGraph 对话节点白盒化（P0，完成）
+
+> 详细规格见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md) · 节点参考见 [agent-workflow.md §2.5](../agent-workflow.md#25-对话智能节点phase-j)
+
+| ID | 任务 | 说明 | 状态 |
+|----|------|------|------|
+| J-0 | 共享运行时抽取 | `server/src/ai/runtime/*` + Chat 回归 | ✅ |
+| J-1 | 意图路由 + 总结节点 | `intent-router`、`summarizer` 全栈 | ✅ |
+| J-2 | 需求分析链路 | `requirement-analyzer` + `hitl` 增强 | ✅ |
+| J-3 | 任务链闭环 | `task-planner`、`task-chain`、`collaboration-router` | ✅ |
+| J-4 | 模板与文档 | 官方模板 + 术语表更新 + seed | ✅ |
+
+**产出**：5 runtime 模块、6 新节点类型、4 新事件、2 模板、1194 测试通过
+
+### Phase K — Provider/Model 两级结构（P0，完成）
+
+| ID | 任务 | 说明 | 状态 |
+|----|------|------|------|
+| K-1 | Provider Schema | `server/src/models/Provider.ts` | ✅ |
+| K-2 | Model Schema | `server/src/models/Model.ts` | ✅ |
+| K-3 | Seed 逻辑 | `seedProvidersAndModels()`（DeepSeek/Mimo/Ollama） | ✅ |
+| K-4 | llmCache 两级查询 | Provider+Model → LLMConfig | ✅ |
+| K-5 | Provider API | `providerRoutes.ts` CRUD + test | ✅ |
+| K-6 | Model API | `aiModelRoutes.ts` CRUD + test | ✅ |
+| K-7 | 前端 UI | ModelSettingsView.vue 左右分栏 | ✅ |
+
+**产出**：供应商/模型两级管理、Ollama 接入、快速添加预设
+
+### Phase L — 消息组件化重构（P1，进行中）
+
+| ID | 任务 | 说明 | 状态 |
+|----|------|------|------|
+| L-1 | RendererRegistry | 渲染器注册表 | 🔄 |
+| L-2 | 独立渲染器 | Text/Code/Thinking/ToolCall/Image/Requirement/Document | 🔄 |
+| L-3 | AiMessageContent | 内容调度器 | 🔄 |
+| L-4 | AiMessageActionBar | 操作栏 | 🔄 |
+| L-5 | AiMessage 瘦身 | 主组件 ~100 行 | 🔄 |
+
+**目标**：新增预览类型只需新建 Renderer + 注册
+
+### Phase M — Chat 预览增强（P1，完成）
+
+| ID | 任务 | 说明 | 状态 |
+|----|------|------|------|
+| M-1 | 用户图片内联 | DocumentAttachmentCard 缩略图 | ✅ |
+| M-2 | PDF 渲染 | PdfPreviewCard.vue | ✅ |
+| M-3 | Excel 预览 | ExcelPreviewCard.vue | ✅ |
 
 ---
 
 ## 六、优先级建议
 
 ```text
-P0 并行：Phase A（凭证）+ Phase G（模型 BYOK）+ Phase F（能力调研 P0 项）
-P1 随后：Phase E（模板试用 + demo 流）+ Phase B（开源可跑）+ Phase H（文档收尾）
-P1 质量：Phase C（e2e、invoke UI）
-P2 按需：Phase D（运营）+ Phase I（技术债）
+P0 已完成：Phase A/J/K（凭证 + 节点白盒 + Provider/Model）
+P1 进行中：Phase L（消息组件化）+ Phase H（文档收尾）
+P2 待规划：Phase D（配额/限流 + 插件市场）+ Phase G-7（openai-compatible）
+P3 远期：音频/视频/3D 预览
 详见 open-platform-roadmap.md § 五排期
 ```
 
@@ -215,7 +263,6 @@ P2 按需：Phase D（运营）+ Phase I（技术债）
 
 ## 七、相关文档
 
-- **[open-platform-roadmap.md](./open-platform-roadmap.md)** — 总路线图（模板 + 能力调研 + 排期）
+- **[open-platform-roadmap.md](./open-platform-roadmap.md)** — 总路线图
 - [platform.md](../platform.md) — 三能力 + JWT + 凭证
-- [sdk.md](../sdk.md) — 集成与 SDK
 - [product/backlog.md](./backlog.md) — **进度入口**（进行中 Phase 一览）

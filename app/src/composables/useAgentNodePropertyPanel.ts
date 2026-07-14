@@ -17,6 +17,12 @@ import ExpertPluginNodePanel from '@/components/agent-workflow/property-panel/pa
 import ImageGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/ImageGenerateNodePanel.vue'
 import PptGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/PptGenerateNodePanel.vue'
 import EndNodePanel from '@/components/agent-workflow/property-panel/panels/EndNodePanel.vue'
+import IntentRouterNodePanel from '@/components/agent-workflow/property-panel/panels/IntentRouterNodePanel.vue'
+import SummarizerNodePanel from '@/components/agent-workflow/property-panel/panels/SummarizerNodePanel.vue'
+import RequirementAnalyzerNodePanel from '@/components/agent-workflow/property-panel/panels/RequirementAnalyzerNodePanel.vue'
+import TaskPlannerNodePanel from '@/components/agent-workflow/property-panel/panels/TaskPlannerNodePanel.vue'
+import TaskChainNodePanel from '@/components/agent-workflow/property-panel/panels/TaskChainNodePanel.vue'
+import CollaborationRouterNodePanel from '@/components/agent-workflow/property-panel/panels/CollaborationRouterNodePanel.vue'
 
 const toolPanel = markRaw(ToolNodePanel)
 const agentPanel = markRaw(AgentNodePanel)
@@ -37,6 +43,12 @@ const registry = new Map<AgentNodeType, Component>([
   ['end', markRaw(EndNodePanel)],
   ['image-generate', markRaw(ImageGenerateNodePanel)],
   ['ppt-generate', markRaw(PptGenerateNodePanel)],
+  ['intent-router', markRaw(IntentRouterNodePanel)],
+  ['summarizer', markRaw(SummarizerNodePanel)],
+  ['requirement-analyzer', markRaw(RequirementAnalyzerNodePanel)],
+  ['task-planner', markRaw(TaskPlannerNodePanel)],
+  ['task-chain', markRaw(TaskChainNodePanel)],
+  ['collaboration-router', markRaw(CollaborationRouterNodePanel)],
 ])
 
 export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
@@ -54,6 +66,12 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   end: '结束',
   'image-generate': '图片生成',
   'ppt-generate': 'PPT 生成',
+  'intent-router': '意图路由',
+  summarizer: '多步总结',
+  'requirement-analyzer': '需求分析',
+  'task-planner': '任务规划',
+  'task-chain': '任务链',
+  'collaboration-router': '协作路由',
 }
 
 export function useAgentNodePropertyPanel() {

@@ -118,18 +118,14 @@ The AI app runs standalone or embeds in editor/flow via qiankun micro-frontend a
 ```
 ai/
   app/               @ai-app                           Vue 3 frontend: Chat, Workflows, RAG, Plugins
-  sdk/               @ai-sdk                           Standalone Agent SDK (no LangGraph dependency)
   shared/            @schema-platform/ai-shared        Cross-package types, events, promptBuilder
-  workflow-client/   @schema-platform/workflow-client   Open Workflow API client for external integration
   docs/              Architecture & design documentation
 ```
 
 | Package | Description |
 |---------|-------------|
 | `@ai-app` | Full AI application: Chat, workflow designer, execution monitor, RAG, plugin center |
-| `@ai-sdk` | Lightweight Agent framework (`BaseAgent` + `ToolRegistry`), usable standalone |
 | `@schema-platform/ai-shared` | Shared types, event protocol, prompt builder, workflow domain model |
-| `@schema-platform/workflow-client` | TypeScript client for invoking published workflows via REST API |
 
 ---
 
@@ -162,34 +158,6 @@ curl -X POST http://localhost:3001/api/ai/workflows/invoke/your-workflow-slug \
   -H "Content-Type: application/json" \
   -d '{"input": "your data"}'
 ```
-
----
-
-## Agent SDK
-
-The `@ai-sdk` package provides a standalone Agent framework, independent of this platform:
-
-```typescript
-import { BaseAgent, buildTool, createToolRegistry } from '@ai-sdk'
-
-const registry = createToolRegistry()
-registry.register(buildTool({
-  name: 'search',
-  description: 'Search documents',
-  parameters: z.object({ query: z.string() }),
-  execute: async ({ query }) => await search(query),
-}))
-
-const agent = new BaseAgent({
-  model: 'deepseek-chat',
-  apiKey: process.env.DEEPSEEK_API_KEY,
-  tools: registry,
-})
-
-const result = await agent.execute('Find documents about climate change')
-```
-
-See [ai/sdk/README.md](./sdk/README.md) for full API reference.
 
 ---
 

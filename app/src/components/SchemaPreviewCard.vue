@@ -7,6 +7,7 @@
  */
 import { computed } from 'vue'
 import type { Widget } from '@/types'
+import type { ButtonType } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 export interface SchemaPreviewCardProps {
@@ -81,9 +82,9 @@ function getButtonText(w: Widget): string {
 }
 
 /** 获取按钮类型 */
-function getButtonType(w: Widget): string {
+function getButtonType(w: Widget): ButtonType {
   const p = w.props as Record<string, unknown> | undefined
-  return (p?.type as string) ?? 'default'
+  return ((p?.type as string) ?? 'default') as ButtonType
 }
 </script>
 
@@ -239,7 +240,7 @@ function getButtonType(w: Widget): string {
             :class="$style.formItem"
           >
             <el-button
-              :type="getButtonType(widget) as any"
+              :type="getButtonType(widget)"
               :disabled="compact"
             >
               {{ getButtonText(widget) }}

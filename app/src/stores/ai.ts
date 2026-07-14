@@ -1,15 +1,20 @@
 /**
- * AI 对话状态管理（向后兼容层）
+ * AI 对话状态管理（主 Orchestrator Store）
  *
- * 此文件保持向后兼容性，内部使用拆分后的 store。
- * 新代码应直接使用拆分后的 store：
- * - useConversationStore: 对话管理
- * - useStreamStore: 流式连接
- * - useSchemaStore: Schema 状态
- * - useLLMStore: LLM Provider
- * - useRAGStore: RAG 搜索
- * - useChatSettingsStore: 聊天设置
- * - useHITLStore: HITL 中断
+ * 组合子 store 和子模块，暴露统一接口。
+ * 子模块：
+ * - ai/events.ts — 流式事件处理
+ * - ai/workflow.ts — 工作流执行
+ * - ai/requirement.ts — 需求确认流程
+ *
+ * 子 store（独立 Pinia store）：
+ * - conversation.ts — 对话管理
+ * - stream.ts — 流式连接
+ * - schema.ts — Schema 状态
+ * - llm.ts — LLM Provider
+ * - rag.ts — RAG 搜索
+ * - chatSettings.ts — 聊天设置
+ * - hitl.ts — HITL 中断
  */
 
 import { defineStore } from 'pinia'
@@ -20,9 +25,7 @@ import type {
   ChatContext,
   Widget,
   FlowGraph,
-  TaskChainStep,
   MentionReference,
-  StreamEvent,
 } from '@/types'
 import type {
   SearchResult,
@@ -35,12 +38,9 @@ import {
   mentionSearch,
   submitMessageFeedback,
 } from '@/api/aiApi'
-import { message } from '@schema-platform/platform-shared/utils/message'
-import { isWorkflowHitlApprovalMessage, extractWorkflowStreamingText } from '@/utils/workflowChatResponse'
-import { buildWorkflowMessageExecution } from '@/utils/workflowMessageExecution'
-import { runWorkflowChatTurn } from '@/composables/useWorkflowChatExecution'
-import { connect, isConnected } from '@schema-platform/platform-shared/socket'
-import { cancelExecution } from '@/api/agentWorkflowApi'
+import { handleStreamEvent } from './ai/events'
+import { createWorkflowModule } from './ai/workflow'
+import { createRequirementModule } from './ai/requirement'
 
 import { useConversationStore } from './conversation'
 import { useStreamStore } from './stream'
@@ -49,14 +49,8 @@ import { useLLMStore } from './llm'
 import { useRAGStore } from './rag'
 import { useChatSettingsStore } from './chatSettings'
 import { useHITLStore } from './hitl'
-import type { RequirementAnalysis } from '@/types'
-import {
-  buildRequirementContext,
-  isAllRequiredAnswered,
-  resolveAnswerForQuestion,
-  getInputPlaceholder,
-  type RequirementConfirmContext,
-} from '@/utils/requirementConfirmFlow'
+import { getInputPlaceholder } from '@/utils/requirementConfirmFlow'
+import type { RequirementConfirmContext } from '@/utils/requirementConfirmFlow'
 
 export const useAiStore = defineStore('ai', () => {
   // ---- 内部 store 引用 ----
@@ -70,396 +64,39 @@ export const useAiStore = defineStore('ai', () => {
 
   // ---- 本地状态 ----
   const activeAgent = ref<AgentType>('auto')
-  const lastWorkflowExecutionId = ref<string | null>(null)
-  const pendingWorkflowExecutionId = ref<string | null>(null)
-  const activeWorkflowExecutionId = ref<string | null>(null)
-  let workflowPollAborted = false
   const context = ref<ChatContext>({ source: 'standalone' })
-  const taskChain = ref<TaskChainStep[]>([])
+  const taskChain = ref<import('@/types').TaskChainStep[]>([])
   const taskChainIndex = ref(0)
 
-  // ---- 流式事件处理 ----
+  // ---- 子模块初始化 ----
 
-  function handleStreamEvent(event: StreamEvent, assistantIndex: number): void {
-    const msg = conversationStore.messages[assistantIndex]
-    if (!msg) {
-      console.warn('[ai] handleStreamEvent: msg not found at index', assistantIndex)
-      return
-    }
+  const workflowModule = createWorkflowModule({
+    lastWorkflowExecutionId: ref<string | null>(null),
+    pendingWorkflowExecutionId: ref<string | null>(null),
+    activeWorkflowExecutionId: ref<string | null>(null),
+    workflowPollAborted: false,
+  })
 
-    // 强制触发响应式更新的辅助函数
-    function updateMessage(updates: Partial<AIMessage>): void {
-      Object.assign(msg, updates)
-    }
+  const requirementModule = createRequirementModule({
+    conversationStore,
+    hitlStore,
+    streamStore,
+  })
 
-    switch (event.type) {
-      case 'agent_switch':
-        if (event.agent) {
-          const collaborationNote = event.collaboration && event.description
-            ? `\n\n[协作] 请求 ${event.agent === 'editor' ? 'Editor' : 'Flow'} 专家协助：${event.description}`
-            : ''
-          updateMessage({
-            agent: event.agent as 'editor' | 'flow' | 'general',
-            thinking: (msg.thinking ?? '') + collaborationNote,
-          })
-        }
-        break
+  // ---- 流式事件处理适配 ----
 
-      case 'thinking_delta':
-        if (event.content) {
-          updateMessage({ thinking: (msg.thinking ?? '') + event.content })
-        }
-        break
-
-      case 'text_delta':
-        if (event.content) {
-          updateMessage({ content: (msg.content ?? '') + event.content })
-        }
-        break
-
-      case 'document_summaries': {
-        const summaries = (event as { summaries?: AIMessage['documentSummaries'] }).summaries
-        if (summaries?.length) {
-          updateMessage({ documentSummaries: summaries })
-        }
-        break
-      }
-
-      case 'schema_start':
-        // Schema 开始生成
-        break
-
-      case 'schema_progress':
-        if (event.step) {
-          schemaStore.setBuildStep(event.step)
-        }
-        if (event.schema) {
-          schemaStore.setCurrentSchema(event.schema as Widget[])
-        }
-        if (event.step && event.description) {
-          const stepLabels: Record<string, string> = {
-            layout: '布局结构',
-            components: '表单组件',
-            validation: '验证规则',
-            styling: '样式配置',
-          }
-          const stepLabel = stepLabels[event.step] ?? event.step
-          const progressNote = `\n\n[生成进度] ${stepLabel}: ${event.description}`
-          updateMessage({ thinking: (msg.thinking ?? '') + progressNote })
-        }
-        break
-
-      case 'schema_complete':
-        schemaStore.setBuildStep(null)
-        if (event.schema) {
-          schemaStore.setCurrentSchema(event.schema as Widget[])
-        }
-        if (event.description) {
-          updateMessage({
-            schema: event.schema as Widget[],
-            content: (msg.content ?? '') + event.description,
-          })
-        } else if (event.schema) {
-          updateMessage({ schema: event.schema as Widget[] })
-        }
-        break
-
-      case 'schema_diff':
-        if (event.diff) {
-          schemaStore.setSchemaDiff(event.diff as any, event.description)
-        }
-        break
-
-      case 'flow_start':
-        // Flow 开始生成
-        break
-
-      case 'flow_progress':
-        if (event.step && event.description) {
-          const progressNote = `\n\n[流程生成] ${event.step}: ${event.description}`
-          updateMessage({ thinking: (msg.thinking ?? '') + progressNote })
-        }
-        break
-
-      case 'flow_complete':
-        if (event.flow) {
-          schemaStore.setCurrentFlow(event.flow as FlowGraph)
-        }
-        if (event.description) {
-          updateMessage({
-            flow: event.flow as FlowGraph,
-            content: (msg.content ?? '') + event.description,
-          })
-        } else if (event.flow) {
-          updateMessage({ flow: event.flow as FlowGraph })
-        }
-        break
-
-      case 'flow_diff':
-        if (event.diff) {
-          schemaStore.setFlowDiff(event.diff as any)
-        }
-        break
-
-      case 'tool_call_start': {
-        const newToolCalls = [...(msg.toolCalls ?? [])]
-        if (event.tools) {
-          for (const tool of event.tools) {
-            newToolCalls.push({
-              id: tool.id,
-              name: tool.name,
-              arguments: tool.arguments ?? {},
-            })
-          }
-        }
-        updateMessage({ toolCalls: newToolCalls })
-        break
-      }
-
-      case 'tool_call_end': {
-        const updatedToolCalls = [...(msg.toolCalls ?? [])]
-        if (event.tools) {
-          for (const tool of event.tools) {
-            const existing = tool.id
-              ? updatedToolCalls.find((t) => t.id === tool.id && !t.result)
-              : updatedToolCalls.find((t) => t.name === tool.name && !t.result)
-            if (existing) {
-              existing.result = tool.result
-            }
-          }
-        }
-        updateMessage({ toolCalls: updatedToolCalls })
-        break
-      }
-
-      case 'tool_error': {
-        const errorToolCalls = [...(msg.toolCalls ?? [])]
-        const errorMsg = event.content ?? '工具执行失败'
-        const existing = event.runId
-          ? errorToolCalls.find((t) => t.id === event.runId)
-          : errorToolCalls.find((t) => t.name === (event.toolName ?? 'unknown') && !t.result)
-        if (existing) {
-          existing.error = errorMsg
-          existing.result = { error: errorMsg }
-        } else {
-          errorToolCalls.push({
-            name: event.toolName ?? 'unknown',
-            arguments: {},
-            result: { error: errorMsg },
-            error: errorMsg,
-          })
-        }
-        updateMessage({ toolCalls: errorToolCalls })
-        break
-      }
-
-      case 'chain_start':
-      case 'chain_step':
-        if (event.steps) {
-          taskChain.value = event.steps
-          taskChainIndex.value = event.currentIndex ?? 0
-        }
-        break
-
-      case 'chain_complete':
-        taskChain.value = []
-        taskChainIndex.value = 0
-        break
-
-      case 'done':
-        if (event.conversationId) {
-          conversationStore.currentConversationId = event.conversationId
-          conversationStore.loadConversations()
-        }
-        break
-
-      case 'interrupt': {
-        if (event.threadId) {
-          conversationStore.currentConversationId = event.threadId
-        }
-        hitlStore.setInterrupt({
-          threadId: event.threadId ?? '',
-          type: event.interruptType ?? 'unknown',
-          message: event.message ?? '需要您的确认',
-          data: event.data,
-        })
-
-        if (event.interruptType === 'requirement_confirm') {
-          const analysis = (event.data as Record<string, unknown> | undefined)?.analysis
-          if (analysis) {
-            const newToolCalls = [...(msg.toolCalls ?? [])]
-            if (!newToolCalls.some((tc) => tc.name === 'requirement_confirm')) {
-              newToolCalls.push({
-                name: 'requirement_confirm',
-                arguments: {},
-                result: {
-                  analysis,
-                  waitingConfirmation: true,
-                  partialAnswers: {},
-                },
-              })
-              updateMessage({ toolCalls: newToolCalls, status: 'received' })
-            } else {
-              updateMessage({ status: 'received' })
-            }
-          }
-          break
-        }
-
-        updateMessage({ status: 'received' })
-
-        conversationStore.messages.push({
-          role: 'assistant',
-          type: 'interrupt',
-          content: event.message ?? '需要您的确认',
-          data: hitlStore.pendingInterrupt,
-          timestamp: new Date(),
-          status: 'received',
-        })
-        break
-      }
-
-      case 'error':
-        streamStore.error = event.content ?? 'Unknown error'
-        if (msg.status === 'streaming') {
-          const agentLabel = event.agent ? ` [${event.agent}]` : ''
-          updateMessage({
-            content: (msg.content || msg.thinking || '')
-              + `\n\n⚠️${agentLabel} ${event.content ?? '未知错误'}`,
-            status: 'error',
-          })
-        }
-        break
-
-      // v2: 需求分析事件
-      case 'requirement_analysis_start':
-        updateMessage({
-          thinking: (msg.thinking ?? '') + '\n\n🔍 正在分析需求...',
-        })
-        break
-
-      case 'requirement_analysis_complete': {
-        const analysis = event.analysis
-        if (analysis) {
-          if (event.needsConfirmation && analysis.confirmQuestions.length > 0) {
-            updateMessage({
-              thinking: (msg.thinking ?? '') + '\n\n📊 需求分析完成，等待确认…',
-            })
-          } else {
-            const complexityLabel = analysis.complexity === 'complex' ? '复杂' :
-              analysis.complexity === 'medium' ? '中等' : '简单'
-
-            updateMessage({
-              thinking: (msg.thinking ?? '')
-                + `\n\n📊 需求分析完成`
-                + `\n- 意图：${analysis.intent}`
-                + `\n- 类型：${analysis.type}`
-                + `\n- 复杂度：${complexityLabel}`
-                + `\n- 完整性：${analysis.completeness.score}%`,
-            })
-          }
-        }
-        break
-      }
-
-      case 'requirement_confirm_response': {
-        // 用户确认了需求，更新消息状态
-        const newToolCalls = [...(msg.toolCalls ?? [])]
-        const confirmIndex = newToolCalls.findIndex(tc => tc.name === 'requirement_confirm')
-        if (confirmIndex >= 0) {
-          newToolCalls[confirmIndex] = {
-            ...newToolCalls[confirmIndex],
-            result: {
-              ...newToolCalls[confirmIndex].result as Record<string, unknown>,
-              waitingConfirmation: false,
-              userAnswers: event.answers,
-            },
-          }
-          updateMessage({ toolCalls: newToolCalls })
-        }
-        break
-      }
-
-      // v2: 任务规划事件
-      case 'task_plan_start':
-        updateMessage({
-          thinking: (msg.thinking ?? '') + '\n\n📋 正在规划任务...',
-        })
-        break
-
-      case 'task_plan_complete': {
-        const plan = event.plan
-        if (plan && plan.chain) {
-          const stepsText = plan.chain
-            .map((step, i) => `${i + 1}. [${step.agent}] ${step.description}`)
-            .join('\n')
-
-          updateMessage({
-            thinking: (msg.thinking ?? '')
-              + `\n\n📋 任务规划完成`
-              + `\n- 执行模式：${plan.strategy.mode}`
-              + `\n- 步骤数：${plan.chain.length}`
-              + `\n\n执行计划：\n${stepsText}`,
-          })
-        }
-        break
-      }
-
-      // v2: 思考推理事件
-      case 'thinker_start':
-        updateMessage({
-          thinking: (msg.thinking ?? '') + '\n\n🤔 正在思考执行策略...',
-        })
-        break
-
-      case 'thinker_complete': {
-        const { adjustments, risks, suggestions } = event
-        let thinkerText = '\n\n🤔 思考完成'
-
-        if (risks && risks.length > 0) {
-          thinkerText += `\n\n风险评估：${risks.map(r => `\n- ${r.description}`).join('')}`
-        }
-
-        if (suggestions && suggestions.length > 0) {
-          thinkerText += `\n\n建议：${suggestions.map(s => `\n- ${s.description}`).join('')}`
-        }
-
-        if (adjustments?.skipSteps && adjustments.skipSteps.length > 0) {
-          thinkerText += `\n\n调整：跳过步骤 ${adjustments.skipSteps.join(', ')}`
-        }
-
-        updateMessage({
-          thinking: (msg.thinking ?? '') + thinkerText,
-        })
-        break
-      }
-
-      // v2: 质量检查事件
-      case 'quality_check_start':
-        updateMessage({
-          thinking: (msg.thinking ?? '') + '\n\n✅ 正在检查质量...',
-        })
-        break
-
-      case 'quality_check_complete': {
-        const result = event.result
-        if (result) {
-          let qualityText = '\n\n✅ 质量检查完成'
-          qualityText += `\n- 结构有效：${result.structure.valid ? '是' : '否'}`
-          qualityText += `\n- 完整性：${result.completeness.score}%`
-          qualityText += `\n- 一致性：${result.consistency.score}%`
-
-          if (result.suggestions && result.suggestions.length > 0) {
-            qualityText += `\n\n改进建议：${result.suggestions.map(s => `\n- ${s.description}`).join('')}`
-          }
-
-          updateMessage({
-            thinking: (msg.thinking ?? '') + qualityText,
-          })
-        }
-        break
-      }
-    }
+  function handleStreamEventForStore(
+    event: import('@/types').StreamEvent,
+    assistantIndex: number,
+  ): void {
+    handleStreamEvent(event, assistantIndex, conversationStore.messages, {
+      schemaStore,
+      streamStore,
+      hitlStore,
+      conversationStore,
+      taskChain,
+      taskChainIndex,
+    })
   }
 
   // ---- Actions ----
@@ -469,102 +106,18 @@ export const useAiStore = defineStore('ai', () => {
     context.value.source = agent === 'auto' ? 'standalone' : (agent as 'editor' | 'flow')
   }
 
-  function resetWorkflowExecutionState(): void {
-    lastWorkflowExecutionId.value = null
-    pendingWorkflowExecutionId.value = null
-    activeWorkflowExecutionId.value = null
-    workflowPollAborted = false
-  }
-
-  async function sendWorkflowMessage(
-    content: string,
-    attachments?: import('@/types').MessageDocumentAttachment[],
-  ): Promise<void> {
-    const workflowId = chatSettingsStore.chatSettings.agentWorkflowId
-    if (!workflowId) return
-
-    workflowPollAborted = false
-    if (!isConnected()) connect()
-    streamStore.loading = true
-    streamStore.error = null
-
-    const ragPrefix = ragStore.getRagContextContent()
-    const enrichedContent = ragPrefix + content
-
-    conversationStore.messages.push({
-      role: 'user',
-      content: enrichedContent,
-      attachments,
-      timestamp: new Date(),
-      status: 'sent',
-    })
-
-    const assistantIndex = conversationStore.messages.length
-    conversationStore.messages.push({
-      role: 'assistant',
-      content: '',
-      timestamp: new Date(),
-      status: 'streaming',
-    })
-
-    try {
-      const hitlDecision = pendingWorkflowExecutionId.value
-        ? isWorkflowHitlApprovalMessage(content)
-        : null
-
-      const result = await runWorkflowChatTurn({
-        workflowId,
-        message: enrichedContent,
-        attachments,
-        lastExecutionId: pendingWorkflowExecutionId.value ? null : lastWorkflowExecutionId.value,
-        pendingExecutionId: pendingWorkflowExecutionId.value,
-        hitlApproved: hitlDecision === null ? true : hitlDecision,
-        isAborted: () => workflowPollAborted,
-        onExecutionStarted: (id) => {
-          activeWorkflowExecutionId.value = id
-        },
-        onProgress: (execution) => {
-          if (workflowPollAborted) return
-          conversationStore.messages[assistantIndex].workflowExecution =
-            buildWorkflowMessageExecution(execution)
-          const partial = extractWorkflowStreamingText(execution)
-          if (partial != null) {
-            conversationStore.messages[assistantIndex].content = partial
-          }
-        },
-      })
-
-      if (workflowPollAborted) {
-        conversationStore.messages[assistantIndex].content = '已停止生成'
-        conversationStore.messages[assistantIndex].status = 'received'
-        return
-      }
-
-      lastWorkflowExecutionId.value = result.lastExecutionId
-      pendingWorkflowExecutionId.value = result.pendingExecutionId
-      conversationStore.messages[assistantIndex].workflowExecution =
-        buildWorkflowMessageExecution(result.execution)
-      conversationStore.messages[assistantIndex].content = result.responseText
-      conversationStore.messages[assistantIndex].status = 'received'
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '工作流执行失败'
-      streamStore.error = errorMessage
-      conversationStore.messages[assistantIndex].content = errorMessage
-      conversationStore.messages[assistantIndex].status = 'error'
-      message.error(errorMessage)
-    } finally {
-      activeWorkflowExecutionId.value = null
-      streamStore.loading = false
-    }
-  }
-
   async function sendMessage(
     content: string,
     mentions?: MentionReference[],
     attachments?: import('@/types').MessageDocumentAttachment[],
   ): Promise<void> {
     if (chatSettingsStore.chatSettings.agentWorkflowId) {
-      await sendWorkflowMessage(content, attachments)
+      await workflowModule.sendWorkflowMessage(content, {
+        chatSettingsStore,
+        streamStore,
+        ragStore,
+        conversationStore,
+      }, attachments)
       return
     }
 
@@ -573,10 +126,10 @@ export const useAiStore = defineStore('ai', () => {
       const trimmed = content.trim()
       if (!trimmed) return
       if (/^(跳过|skip)$/i.test(trimmed)) {
-        await skipRequirement()
+        await requirementModule.skipRequirement(handleStreamEventForStore)
         return
       }
-      await submitRequirementAnswer(trimmed)
+      await requirementModule.submitRequirementAnswer(trimmed, handleStreamEventForStore)
       return
     }
 
@@ -609,7 +162,7 @@ export const useAiStore = defineStore('ai', () => {
     })
 
     await streamStore.executeStream(enrichedContent, mentions, assistantIndex, conversationStore.messages, {
-      onStreamEvent: handleStreamEvent,
+      onStreamEvent: handleStreamEventForStore,
       onDone: (conversationId) => {
         if (conversationId) conversationStore.loadConversations()
       },
@@ -642,7 +195,7 @@ export const useAiStore = defineStore('ai', () => {
         lastIdx,
         conversationStore.messages,
         {
-          onStreamEvent: handleStreamEvent,
+          onStreamEvent: handleStreamEventForStore,
           onDone: (conversationId) => {
             if (conversationId) conversationStore.loadConversations()
           },
@@ -685,7 +238,7 @@ export const useAiStore = defineStore('ai', () => {
     msg.status = 'streaming'
 
     await streamStore.executeStream(userContent, userMentions, messageIndex, conversationStore.messages, {
-      onStreamEvent: handleStreamEvent,
+      onStreamEvent: handleStreamEventForStore,
       onDone: (conversationId) => {
         if (conversationId) conversationStore.loadConversations()
       },
@@ -708,7 +261,7 @@ export const useAiStore = defineStore('ai', () => {
     hitlStore.clearInterrupt()
 
     await streamStore.executeResume(interrupt.threadId, confirmed, conversationStore.messages, {
-      onStreamEvent: handleStreamEvent,
+      onStreamEvent: handleStreamEventForStore,
       onDone: (conversationId) => {
         if (conversationId) conversationStore.loadConversations()
       },
@@ -741,7 +294,7 @@ export const useAiStore = defineStore('ai', () => {
     conversationStore.clearConversation()
     schemaStore.clearSchemaState()
     hitlStore.clearInterrupt()
-    resetWorkflowExecutionState()
+    workflowModule.resetWorkflowExecutionState()
     streamStore.streamStatus = 'idle'
     streamStore.retryCount = 0
     streamStore.lastMessagePayload = null
@@ -759,173 +312,11 @@ export const useAiStore = defineStore('ai', () => {
     const payload = schemaStore.currentSchema ?? schemaStore.currentFlow
     if (!payload) return null
 
-    return conversationStore.publishCurrent({ type, data: payload as any })
+    return conversationStore.publishCurrent({ type, data: payload })
   }
 
   function setContext(ctx: Partial<ChatContext>): void {
     context.value = { ...context.value, ...ctx }
-  }
-
-  // ---- 需求确认 ----
-
-  function findRequirementConfirmToolCall(): {
-    msgIndex: number
-    toolIndex: number
-    result: Record<string, unknown>
-  } | null {
-    for (let i = conversationStore.messages.length - 1; i >= 0; i--) {
-      const msg = conversationStore.messages[i]
-      if (msg.role !== 'assistant' || !msg.toolCalls) continue
-      const toolIndex = msg.toolCalls.findIndex((tc) => tc.name === 'requirement_confirm')
-      if (toolIndex < 0) continue
-      const result = msg.toolCalls[toolIndex].result as Record<string, unknown> | undefined
-      if (!result?.analysis) continue
-      if (result.waitingConfirmation === false) continue
-      return { msgIndex: i, toolIndex, result }
-    }
-    return null
-  }
-
-  function getRequirementConfirmContext(): RequirementConfirmContext | null {
-    if (hitlStore.pendingInterrupt?.type !== 'requirement_confirm') return null
-    const found = findRequirementConfirmToolCall()
-    const analysis = (found?.result.analysis ?? (hitlStore.pendingInterrupt.data as Record<string, unknown> | undefined)?.analysis) as RequirementAnalysis | undefined
-    if (!analysis) return null
-    const partialAnswers = (found?.result.partialAnswers ?? {}) as Record<string, string>
-    return buildRequirementContext(analysis, partialAnswers)
-  }
-
-  function syncRequirementPartialAnswers(partialAnswers: Record<string, string>): void {
-    const found = findRequirementConfirmToolCall()
-    if (!found) return
-    const msg = conversationStore.messages[found.msgIndex]
-    if (!msg.toolCalls) return
-    const newToolCalls = [...msg.toolCalls]
-    newToolCalls[found.toolIndex] = {
-      ...newToolCalls[found.toolIndex],
-      result: {
-        ...found.result,
-        partialAnswers,
-        waitingConfirmation: true,
-      },
-    }
-    msg.toolCalls = newToolCalls
-  }
-
-  function markRequirementConfirmResolved(
-    skipped: boolean,
-    answers?: Record<string, string>,
-  ): void {
-    const found = findRequirementConfirmToolCall()
-    if (!found) return
-
-    const msg = conversationStore.messages[found.msgIndex]
-    if (!msg.toolCalls) return
-
-    const newToolCalls = [...msg.toolCalls]
-    newToolCalls[found.toolIndex] = {
-      ...newToolCalls[found.toolIndex],
-      result: {
-        ...found.result,
-        waitingConfirmation: false,
-        partialAnswers: answers ?? found.result.partialAnswers,
-        ...(skipped ? { skipped: true } : { userAnswers: answers }),
-      },
-    }
-    msg.toolCalls = newToolCalls
-  }
-
-  /** 渐进式提交单条答案：输入框发送或卡片点选 */
-  async function submitRequirementAnswer(
-    rawInput: string,
-    questionId?: string,
-  ): Promise<void> {
-    const ctx = getRequirementConfirmContext()
-    if (!ctx) {
-      message.error('当前没有待确认的需求')
-      return
-    }
-
-    const question = questionId
-      ? ctx.analysis.confirmQuestions.find((q) => q.id === questionId)
-      : ctx.nextQuestion
-
-    if (!question) {
-      if (ctx.allRequiredAnswered) {
-        await confirmRequirement(ctx.partialAnswers)
-        return
-      }
-      message.warning('请先回答上方待确认的问题')
-      return
-    }
-
-    const value = resolveAnswerForQuestion(question, rawInput)
-    if (!value) {
-      message.warning('请输入有效回答')
-      return
-    }
-
-    const mergedAnswers = { ...ctx.partialAnswers, [question.id]: value }
-    syncRequirementPartialAnswers(mergedAnswers)
-
-    conversationStore.messages.push({
-      role: 'user',
-      content: value,
-      timestamp: new Date(),
-      status: 'sent',
-    })
-
-    if (isAllRequiredAnswered(ctx.analysis, mergedAnswers)) {
-      await confirmRequirement(mergedAnswers)
-    }
-  }
-
-  async function answerRequirementOption(questionId: string, option: string): Promise<void> {
-    await submitRequirementAnswer(option, questionId)
-  }
-
-  async function confirmRequirement(answers: Record<string, string>): Promise<void> {
-    const threadId = hitlStore.pendingInterrupt?.threadId
-      ?? conversationStore.currentConversationId
-    if (!threadId) {
-      message.error('会话尚未就绪，请稍候再试')
-      return
-    }
-
-    markRequirementConfirmResolved(false, answers)
-    hitlStore.clearInterrupt()
-
-    await streamStore.executeResume(threadId, { answers }, conversationStore.messages, {
-      onStreamEvent: handleStreamEvent,
-      onDone: (conversationId) => {
-        if (conversationId) conversationStore.loadConversations()
-      },
-      getContext: () => ({
-        currentConversationId: conversationStore.currentConversationId,
-      }),
-    })
-  }
-
-  async function skipRequirement(): Promise<void> {
-    const threadId = hitlStore.pendingInterrupt?.threadId
-      ?? conversationStore.currentConversationId
-    if (!threadId) {
-      message.error('会话尚未就绪，请稍候再试')
-      return
-    }
-
-    markRequirementConfirmResolved(true)
-    hitlStore.clearInterrupt()
-
-    await streamStore.executeResume(threadId, { skipped: true }, conversationStore.messages, {
-      onStreamEvent: handleStreamEvent,
-      onDone: (conversationId) => {
-        if (conversationId) conversationStore.loadConversations()
-      },
-      getContext: () => ({
-        currentConversationId: conversationStore.currentConversationId,
-      }),
-    })
   }
 
   // ---- 搜索 ----
@@ -992,7 +383,7 @@ export const useAiStore = defineStore('ai', () => {
     msg.status = 'streaming'
 
     await streamStore.executeStream(userContent, userMentions, messageIndex, conversationStore.messages, {
-      onStreamEvent: handleStreamEvent,
+      onStreamEvent: handleStreamEventForStore,
       onDone: (conversationId) => {
         if (conversationId) conversationStore.loadConversations()
       },
@@ -1004,6 +395,12 @@ export const useAiStore = defineStore('ai', () => {
         currentConversationId: conversationStore.currentConversationId,
       }),
     })
+  }
+
+  // ---- 需求确认代理方法 ----
+
+  function getRequirementConfirmContext(): RequirementConfirmContext | null {
+    return requirementModule.getRequirementConfirmContext()
   }
 
   return {
@@ -1035,7 +432,7 @@ export const useAiStore = defineStore('ai', () => {
     llmLoading: computed(() => llmStore.llmLoading),
     chatSettings: computed(() => chatSettingsStore.chatSettings),
     selectedAgentWorkflowId: computed(() => chatSettingsStore.chatSettings.agentWorkflowId),
-    pendingWorkflowExecutionId: computed(() => pendingWorkflowExecutionId.value),
+    pendingWorkflowExecutionId: computed(() => workflowModule.state.pendingWorkflowExecutionId.value),
     ragSearchResults: computed(() => ragStore.ragSearchResults),
     ragSearching: computed(() => ragStore.ragSearching),
     ragContext: computed(() => ragStore.ragContext),
@@ -1059,12 +456,8 @@ export const useAiStore = defineStore('ai', () => {
     retryLastMessage,
     retryToolCall,
     stopGeneration: () => {
-      workflowPollAborted = true
       streamStore.stopGeneration()
-      const execId = activeWorkflowExecutionId.value
-      if (execId) {
-        void cancelExecution(execId).catch(() => {})
-      }
+      workflowModule.stopWorkflowGeneration()
     },
     switchAgent,
     clearConversation,
@@ -1091,13 +484,13 @@ export const useAiStore = defineStore('ai', () => {
         settings.agentWorkflowId !== undefined
         && settings.agentWorkflowId !== prevWorkflowId
       ) {
-        resetWorkflowExecutionState()
+        workflowModule.resetWorkflowExecutionState()
       }
     },
     updateAgentWorkflowId: (workflowId: string | null) => {
       if (workflowId !== chatSettingsStore.chatSettings.agentWorkflowId) {
         chatSettingsStore.updateAgentWorkflowId(workflowId)
-        resetWorkflowExecutionState()
+        workflowModule.resetWorkflowExecutionState()
       }
     },
     loadChatSettings: () => chatSettingsStore.chatSettings,
@@ -1111,9 +504,9 @@ export const useAiStore = defineStore('ai', () => {
     respondInterrupt,
     submitFeedback,
     regenerateMessage,
-    confirmRequirement,
-    skipRequirement,
-    submitRequirementAnswer,
-    answerRequirementOption,
+    confirmRequirement: (answers: Record<string, string>) => requirementModule.confirmRequirement(answers, handleStreamEventForStore),
+    skipRequirement: () => requirementModule.skipRequirement(handleStreamEventForStore),
+    submitRequirementAnswer: (rawInput: string, questionId?: string) => requirementModule.submitRequirementAnswer(rawInput, handleStreamEventForStore, questionId),
+    answerRequirementOption: (questionId: string, option: string) => requirementModule.answerRequirementOption(questionId, option, handleStreamEventForStore),
   }
 })

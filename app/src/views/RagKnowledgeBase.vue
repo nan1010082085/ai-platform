@@ -15,6 +15,7 @@ import {
   reindexSingleRag,
   deleteRagEmbedding,
   searchRag,
+  uploadRagDocument,
 } from '@/api/aiApi'
 import type { RagStatusData, RagReindexResult } from '@/api/aiApi'
 import type { RagSearchResult } from '@/types'
@@ -40,6 +41,10 @@ const searchResults = ref<RagSearchResult[]>([])
 const searchPerformed = ref(false)
 
 const indexPage = ref(1)
+
+const uploadDialogVisible = ref(false)
+const uploadFileList = ref<File[]>([])
+const uploadLoading = ref(false)
 
 const healthPercent = computed(() => {
   if (!status.value) return 0
@@ -121,6 +126,31 @@ async function handleBulkDeleteEmbedding(): Promise<void> {
   await loadStatus()
 }
 
+function openUploadDialog(): void {
+  uploadFileList.value = []
+  uploadDialogVisible.value = true
+}
+
+function handleUploadChange(file: { raw: File }): void {
+  uploadFileList.value = [file.raw]
+}
+
+async function handleUploadSubmit(): Promise<void> {
+  if (uploadFileList.value.length === 0) return
+  uploadLoading.value = true
+  try {
+    const result = await uploadRagDocument(uploadFileList.value[0])
+    message.success(`文档 "${result.filename}" 上传并索引成功`)
+    uploadDialogVisible.value = false
+    uploadFileList.value = []
+    await loadStatus()
+  } catch (err) {
+    message.error(err instanceof Error ? err.message : '上传失败')
+  } finally {
+    uploadLoading.value = false
+  }
+}
+
 async function loadStatus(): Promise<void> {
   await withStatusLoading(async () => {
     status.value = await getRagStatus()
@@ -184,6 +214,10 @@ onMounted(() => {
     <div :class="$style.header">
       <h2 :class="$style.title">RAG 知识库</h2>
       <div :class="$style.headerActions">
+        <el-button type="success" size="small" @click="openUploadDialog">
+          <AppIcon name="upload" :size="14" />
+          上传文档
+        </el-button>
         <el-button type="primary" size="small" :loading="reindexing" @click="handleReindexAll">
           <AppIcon name="refresh" :size="14" />
           {{ reindexing ? '索引中...' : '重建索引' }}
@@ -294,6 +328,41 @@ onMounted(() => {
         />
       </div>
     </div>
+
+    <el-dialog
+      v-model="uploadDialogVisible"
+      title="上传文档到知识库"
+      width="480px"
+      :close-on-click-modal="false"
+    >
+      <div :class="$style.uploadContent">
+        <p :class="$style.uploadHint">
+          支持 PDF、Word、Excel、TXT、CSV 格式，最大 10MB
+        </p>
+        <el-upload
+          :auto-upload="false"
+          :limit="1"
+          :on-change="handleUploadChange"
+          :file-list="uploadFileList.map(f => ({ name: f.name, raw: f }))"
+          accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
+          drag
+        >
+          <AppIcon name="upload" :size="40" />
+          <div :class="$style.uploadText">拖拽文件到此处，或<em>点击上传</em></div>
+        </el-upload>
+      </div>
+      <template #footer>
+        <el-button @click="uploadDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="uploadLoading"
+          :disabled="uploadFileList.length === 0"
+          @click="handleUploadSubmit"
+        >
+          上传并索引
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -385,6 +454,27 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 12px;
+}
+
+.uploadContent {
+  text-align: center;
+}
+
+.uploadHint {
+  color: var(--el-text-color-secondary, #909399);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.uploadText {
+  margin-top: 8px;
+  color: var(--el-text-color-secondary, #909399);
+  font-size: 14px;
+}
+
+.uploadText em {
+  color: var(--el-color-primary, #409eff);
+  font-style: normal;
 }
 
 @media (max-width: 900px) {

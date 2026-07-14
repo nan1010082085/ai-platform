@@ -1,5 +1,5 @@
 /**
- * Agent 工作流类型 — 统一从 @schema-platform/ai-shared 导出。
+ * Agent 工作流类型 — 统一从 @schema-platform/platform-shared/ai 导出。
  * 保留此文件作为 app 内 @/types/agentWorkflow 入口，避免全量改 import 路径。
  */
 
@@ -12,6 +12,13 @@ export type {
   AgentNodeRecordStatus,
   AgentWorkflowNodeData,
   ImageGenerateNodeData,
+  TaskPlanStep,
+  IntentRouterNodeData,
+  SummarizerNodeData,
+  RequirementAnalyzerNodeData,
+  TaskPlannerNodeData,
+  TaskChainNodeData,
+  CollaborationRouterNodeData,
   AgentWorkflowNode,
   AgentWorkflowEdge,
   AgentWorkflowGraph,
@@ -26,10 +33,11 @@ export type {
   AgentWorkflowTemplateId,
   AgentWorkflowTemplateMeta,
   AgentConversationTurn,
-} from '@schema-platform/ai-shared'
+} from '@schema-platform/platform-shared/ai'
 
 export {
   createDefaultAgentWorkflowGraph,
+  createDefaultNodeData,
   createDocumentSummaryWorkflowGraph,
   createDocImageRecognitionWorkflowGraph,
   createIntelligentAssistantWorkflowGraph,
@@ -37,4 +45,4 @@ export {
   layoutAgentWorkflowGraph,
   validateAgentWorkflowGraph,
   AGENT_WORKFLOW_TEMPLATES,
-} from '@schema-platform/ai-shared'
+} from '@schema-platform/platform-shared/ai'

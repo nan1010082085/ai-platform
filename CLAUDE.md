@@ -1,12 +1,11 @@
 # ai
 
-AI 助手模块，包含三个子包：app（前端）、sdk（Agent SDK）、shared（共享类型）。
+AI 助手模块，包含两个子包：app（前端）、shared（共享类型）。
 
 ## 项目规则
 
 ### 子包结构
 - `app/` — `@ai-app` — AI 对话界面，通过 iframe 嵌入 editor/flow
-- `sdk/` — `@ai-sdk` — Agent SDK
 - `shared/` — `@schema-platform/ai-shared` — AI 元数据、promptBuilder、widgetCatalogue
 
 ### 技术栈
@@ -24,7 +23,6 @@ AI 助手模块，包含三个子包：app（前端）、sdk（Agent SDK）、sh
 2. app 公共逻辑 → 组合式 API
 3. app API 接口 → `app/src/api/`
 4. 共享类型/逻辑 → `shared/`
-5. Agent SDK → `sdk/`
 
 ### 公共包规则
 - **同仓开发**：`package.json` 用 `file:` 指向 sibling 公共包；Vite 通过 `scripts/vite-shared-source.mjs` alias 到源码，改公共包后 dev/build 即时生效，无需 npm 发版。

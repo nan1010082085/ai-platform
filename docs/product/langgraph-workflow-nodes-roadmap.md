@@ -247,13 +247,13 @@ task-chain 节点启动
 
 ### 总览
 
-| 阶段 | 主题 | 优先级 | 预估 | 交付物 |
-|------|------|--------|------|--------|
-| **J-0** | 共享运行时抽取 | P0 | 3d | `server/src/ai/runtime/*` + Chat 回归 |
-| **J-1** | 高价值单节点 | P0 | 4d | `intent-router`、`summarizer` |
-| **J-2** | 需求分析链路 | P1 | 5d | `requirement-analyzer` + `hitl` 增强 |
-| **J-3** | 任务链闭环 | P1 | 8d | `task-planner`、`task-chain`、`collaboration-router` |
-| **J-4** | 模板与文档 | P1 | 3d | 官方模板 + 术语表更新 |
+| 阶段 | 主题 | 优先级 | 预估 | 交付物 | 状态 |
+|------|------|--------|------|--------|------|
+| **J-0** | 共享运行时抽取 | P0 | 3d | `server/src/ai/runtime/*` + Chat 回归 | 🔄 进行中 |
+| **J-1** | 高价值单节点 | P0 | 4d | `intent-router`、`summarizer` | ⬜ |
+| **J-2** | 需求分析链路 | P1 | 5d | `requirement-analyzer` + `hitl` 增强 | ⬜ |
+| **J-3** | 任务链闭环 | P1 | 8d | `task-planner`、`task-chain`、`collaboration-router` | ⬜ |
+| **J-4** | 模板与文档 | P1 | 3d | 官方模板 + 术语表更新 | ⬜ |
 
 ---
 

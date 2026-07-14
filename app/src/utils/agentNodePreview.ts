@@ -1,5 +1,5 @@
 import type { AgentNodeRecord, AgentNodeType, AgentWorkflowNodeData } from '@/types/agentWorkflow'
-import { getToolDisplayLabel } from '@schema-platform/ai-shared/toolNames'
+import { getToolDisplayLabel } from '@schema-platform/platform-shared/ai/toolNames'
 import { getToolNodeCategoryLabel } from '@/constants/toolNodeTypes'
 
 export type PreviewTone = 'default' | 'muted' | 'primary' | 'success' | 'warning' | 'danger'

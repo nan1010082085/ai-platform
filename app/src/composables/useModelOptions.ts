@@ -1,10 +1,16 @@
 /**
  * useModelOptions -- from configured Providers dynamically get model list
  *
- * Replaces CHAT_MODEL_OPTIONS hardcoding, gets available models from /api/model-configs.
- * Supports unified use across Chat / Workflow.
+ * Primary source: GET /api/providers + /api/models (via listProvidersWithModels).
+ * Fallback: GET /api/model-configs (legacy).
+ * Supports grouped-by-provider structure alongside flat model list.
  */
-import { ref, readonly, onMounted } from 'vue'
+import { ref, readonly, computed, onMounted } from 'vue'
+import {
+  listProvidersWithModels,
+  type ProviderWithModels,
+  type Model,
+} from '@/api/providerApi'
 import { getModelConfigs, type ModelConfigItem, type ModelProvider } from '@/api/modelConfigApi'
 import { checkAIHealth } from '@/api/aiApi'
 
@@ -16,21 +22,73 @@ export interface ModelOption {
   model: string
   isDefault: boolean
   configId: string
-  source: 'db' | 'env'
+  source: 'db' | 'env' | 'provider'
+}
+
+/** 按供应商分组的模型结构 */
+export interface ProviderGroup {
+  providerId: string
+  providerName: string
+  providerType: string
+  models: ModelOption[]
 }
 
 // Module-level shared state (singleton across the app)
 const modelOptions = ref<ModelOption[]>([])
+const providerGroups = ref<ProviderGroup[]>([])
 const loading = ref(false)
 const loaded = ref(false)
 const defaultModel = ref<string>('')
+const dataSource = ref<'providers' | 'model-configs' | 'env'>('providers')
 
 const HEALTH_PROVIDER_MAP: Record<string, ModelProvider> = {
   deepseek: 'deepseek',
   mimo: 'mimo',
 }
 
-function toOptions(items: ModelConfigItem[]): ModelOption[] {
+/** 从 ProviderWithModels 构建 flat options + grouped 结构 */
+function fromProviders(providers: ProviderWithModels[]): {
+  flat: ModelOption[]
+  groups: ProviderGroup[]
+} {
+  const flat: ModelOption[] = []
+  const groups: ProviderGroup[] = []
+
+  for (const p of providers) {
+    if (!p.isActive) continue
+
+    const groupModels: ModelOption[] = []
+    for (const m of p.models) {
+      if (!m.isActive) continue
+      const option: ModelOption = {
+        value: m.model,
+        label: `${p.name} · ${m.model}`,
+        shortLabel: p.name,
+        provider: p.type,
+        model: m.model,
+        isDefault: m.isDefault,
+        configId: m.id,
+        source: 'provider',
+      }
+      flat.push(option)
+      groupModels.push(option)
+    }
+
+    if (groupModels.length > 0) {
+      groups.push({
+        providerId: p.id,
+        providerName: p.name,
+        providerType: p.type,
+        models: groupModels,
+      })
+    }
+  }
+
+  return { flat, groups }
+}
+
+/** 从旧 model-configs 构建 flat options（无分组） */
+function fromLegacyConfigs(items: ModelConfigItem[]): ModelOption[] {
   return items.map((item) => ({
     value: item.model,
     label: `${item.name} · ${item.model}`,
@@ -69,12 +127,34 @@ export function useModelOptions() {
     if (loading.value) return
     loading.value = true
     try {
+      // 优先：providers + models API
+      try {
+        const providers = await listProvidersWithModels()
+        const { flat, groups } = fromProviders(providers)
+        if (flat.length > 0) {
+          modelOptions.value = flat
+          providerGroups.value = groups
+          const defaultItem = flat.find((o) => o.isDefault) ?? flat[0]
+          defaultModel.value = defaultItem?.model ?? ''
+          dataSource.value = 'providers'
+          loaded.value = true
+          return
+        }
+      } catch {
+        // providers API 失败，继续 fallback
+      }
+
+      // Fallback：旧 model-configs API
       const res = await getModelConfigs({ pageSize: 100 })
       let items = res.items
       if (items.length === 0) {
         items = await loadEnvModelOptions()
+        dataSource.value = 'env'
+      } else {
+        dataSource.value = 'model-configs'
       }
-      modelOptions.value = toOptions(items)
+      modelOptions.value = fromLegacyConfigs(items)
+      providerGroups.value = []
       const defaultItem = items.find((item) => item.isDefault)
       defaultModel.value = defaultItem?.model ?? res.items[0]?.model ?? items[0]?.model ?? ''
       loaded.value = true
@@ -82,9 +162,11 @@ export function useModelOptions() {
       try {
         const envItems = await loadEnvModelOptions()
         if (envItems.length > 0) {
-          modelOptions.value = toOptions(envItems)
+          modelOptions.value = fromLegacyConfigs(envItems)
+          providerGroups.value = []
           const defaultItem = envItems.find((item) => item.isDefault) ?? envItems[0]
           defaultModel.value = defaultItem?.model ?? ''
+          dataSource.value = 'env'
           loaded.value = true
         }
       } catch {
@@ -95,6 +177,9 @@ export function useModelOptions() {
     }
   }
 
+  /** 是否有按供应商分组的数据（providers API 成功时才有） */
+  const hasGroupedData = computed(() => providerGroups.value.length > 0)
+
   onMounted(() => {
     if (!loaded.value) {
       void loadModelOptions()
@@ -103,9 +188,12 @@ export function useModelOptions() {
 
   return {
     modelOptions: readonly(modelOptions),
+    providerGroups: readonly(providerGroups),
+    hasGroupedData,
     loading: readonly(loading),
     loaded: readonly(loaded),
     defaultModel: readonly(defaultModel),
+    dataSource: readonly(dataSource),
     loadModelOptions,
   }
 }
@@ -115,7 +203,9 @@ export function useModelOptions() {
  */
 export function _resetModelOptionsState(): void {
   modelOptions.value = []
+  providerGroups.value = []
   loading.value = false
   loaded.value = false
   defaultModel.value = ''
+  dataSource.value = 'providers'
 }

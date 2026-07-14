@@ -142,7 +142,24 @@ HTTP 外部触发，发布时自动生成 `webhookSecret`。
 
 工具名权威定义见 `ai/shared/toolNames.ts`。Palette 工具列表来自插件 Registry。
 
-### 2.5 逻辑控制节点
+### 2.5 对话智能节点（Phase J）
+
+> 详细规格见 [langgraph-workflow-nodes-roadmap.md](./product/langgraph-workflow-nodes-roadmap.md)
+
+将 Chat LangGraph 黑盒中的对话智能层映射为白盒 Workflow 节点，共享 `server/src/ai/runtime/*` 运行时。
+
+| 节点类型 | Palette 分类 | 对标 LangGraph | 说明 |
+|----------|-------------|----------------|------|
+| `intent-router` | `logic` | `routerNode` + `resolveRoutedExpert` | 意图识别与专家路由，支持多意图链预建 |
+| `requirement-analyzer` | `ai` | `requirementAnalyzer` | 需求分析（RAG + 工具），输出 completeness + confirmQuestions |
+| `task-planner` | `ai` | `taskPlanner` | 任务拆解为多步链（`TaskPlanStep[]`） |
+| `task-chain` | `logic` | `taskChainNode` | 节点内循环推进动态步骤，子步骤事件推送 |
+| `collaboration-router` | `logic` | `afterToolsNode` + `afterToolsRoute` | 检测协作请求，决定继续/下一步/总结 |
+| `summarizer` | `ai` | `summarizerNode` | 多步结果汇总，支持流式推送 |
+
+`hitl` 节点同步增强：新增 `questionSource: upstream` 配置，自动从上游 `requirement-analyzer` 输出取 `confirmQuestions`。
+
+### 2.6 逻辑控制节点
 
 #### `if`
 
@@ -240,8 +257,10 @@ AI PPT 生成节点。
 | `image-text-generation` | 图文生成 | 手动 | LLM 大纲 → LLM 文案 |
 | `ppt-generation` | PPT 生成 | 手动 | 记忆 → LLM 大纲 → LLM 详情 |
 | `image-analysis` | 图片智能分析 | 手动 | Phase1 小图提取 → Phase2 大图情感文案 |
+| `chat-parity-assistant` | 智能助手 v2 | 手动 | 意图路由 → 需求分析 → 人工确认 → 任务规划 → 多专家协作 → 摘要输出 |
+| `requirement-gated-build` | 需求门控构建 | 手动 | 需求分析 → 人工确认 → 任务规划 → 编辑器专家 → 流程专家 → 摘要输出 |
 
-元数据列表：`AGENT_WORKFLOW_TEMPLATES`（14 个）。
+元数据列表：`AGENT_WORKFLOW_TEMPLATES`（16 个）。
 
 创建 API：`POST /api/ai/workflows` body `{ "templateId": "document-summary", "name": "..." }`
 

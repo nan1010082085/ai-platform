@@ -1,4 +1,4 @@
-import { DOCUMENT_UPLOAD_ACCEPT } from '@schema-platform/ai-shared'
+import { DOCUMENT_UPLOAD_ACCEPT } from '@schema-platform/platform-shared/ai'
 
 export interface WorkflowFileStreamInput {
   filename: string
