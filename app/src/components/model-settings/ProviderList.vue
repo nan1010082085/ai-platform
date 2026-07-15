@@ -34,10 +34,10 @@ function getProviderTypeLabel(type: string): string {
 function getProviderTypeIcon(type: string): string {
   const map: Record<string, string> = {
     deepseek: 'chat-dot-round',
-    openai: 'chat-round',
+    openai: 'chat-line-round',
     ollama: 'monitor',
     mimo: 'magic-stick',
-    azure: 'cloudy',
+    azure: 'connection',
     custom: 'setting',
   }
   return map[type] ?? 'setting'

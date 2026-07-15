@@ -16,6 +16,7 @@ import ProviderDialog from '@/components/model-settings/ProviderDialog.vue'
 import ModelList from '@/components/model-settings/ModelList.vue'
 import ModelDialog from '@/components/model-settings/ModelDialog.vue'
 import type { ProviderPreset } from '@/components/model-settings/types'
+import { PROVIDER_PRESETS } from '@/components/model-settings/providerPresets'
 import type { ModelFormState } from '@/components/model-settings/ModelDialog.vue'
 import {
   listProviders,
@@ -23,15 +24,10 @@ import {
   updateProvider,
   deleteProvider,
   testProvider,
-  getEmbeddingConfig,
-  updateEmbeddingConfig,
   type Provider,
   type CreateProviderPayload,
   type UpdateProviderPayload,
   type TestConnectionResult as ProviderTestResult,
-  type EmbeddingConfig,
-  type EmbeddingProvider,
-  type UpdateEmbeddingConfigPayload,
 } from '@/api/providerApi'
 import {
   listModels,
@@ -45,44 +41,6 @@ import {
   type TestConnectionResult as ModelTestResult,
 } from '@/api/modelApi'
 import styles from './ModelSettingsView.module.scss'
-
-// ---- Provider presets for quick-add ----
-
-const PROVIDER_PRESETS: ProviderPreset[] = [
-  {
-    type: 'deepseek',
-    label: 'DeepSeek',
-    icon: 'chat-dot-round',
-    color: '#4D6BFE',
-    defaultBaseUrl: 'https://api.deepseek.com/v1',
-    website: 'https://platform.deepseek.com',
-    description: 'DeepSeek V4，中文能力强，高性价比',
-    placeholderApiKey: 'sk-...',
-    defaultModels: ['deepseek-chat', 'deepseek-reasoner'],
-  },
-{
-    type: 'mimo',
-    label: 'Mimo',
-    icon: 'magic-stick',
-    color: '#FF6B35',
-    defaultBaseUrl: 'https://api.xiaomimimo.com/v1',
-    website: 'https://mimo.xiaomi.com',
-    description: '小米 Mimo，OpenAI 兼容接口',
-    placeholderApiKey: 'tp-...',
-    defaultModels: ['mimo-v2.5'],
-  },
-  {
-    type: 'openai',
-    label: 'OpenAI',
-    icon: 'chat-round',
-    color: '#10A37F',
-    defaultBaseUrl: 'https://api.openai.com/v1',
-    website: 'https://platform.openai.com',
-    description: 'GPT-4o / GPT-4 系列',
-    placeholderApiKey: 'sk-...',
-    defaultModels: ['gpt-4o', 'gpt-4o-mini'],
-  },
-]
 
 // ---- State: Providers ----
 
@@ -134,10 +92,6 @@ const modelInitialForm = ref<ModelFormState>({
   isActive: true,
 })
 
-// Ollama dynamic model list
-const ollamaModels = ref<string[]>([])
-const ollamaModelsLoading = ref(false)
-
 // ---- State: Test result dialog ----
 
 const showTestDialog = ref(false)
@@ -145,26 +99,6 @@ const testDialogTitle = ref('')
 const testDialogLoading = ref(false)
 const testResult = ref<ProviderTestResult | ModelTestResult | null>(null)
 const testError = ref('')
-
-// ---- State: Embedding config ----
-
-const embeddingConfig = ref<EmbeddingConfig | null>(null)
-const embeddingLoading = ref(false)
-const showEmbeddingDialog = ref(false)
-const embeddingFormSubmitting = ref(false)
-const embeddingForm = ref<{
-  provider: EmbeddingProvider
-  model: string
-  baseUrl: string
-  apiKey: string
-  dimensions: number
-}>({
-  provider: 'siliconflow',
-  model: '',
-  baseUrl: '',
-  apiKey: '',
-  dimensions: 1536,
-})
 
 // ---- Load providers ----
 
@@ -203,33 +137,9 @@ async function loadModels(): Promise<void> {
   }
 }
 
-/** For Ollama: fetch /api/tags to get available models */
-async function fetchOllamaModels(): Promise<void> {
-  if (!selectedProvider.value || selectedProvider.value.type !== 'ollama') return
-  ollamaModelsLoading.value = true
-  try {
-    const baseUrl = selectedProvider.value.baseUrl || 'http://localhost:11434'
-    const tagsUrl = baseUrl.replace(/\/v1\/?$/, '') + '/api/tags'
-    const res = await fetch(tagsUrl)
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
-    const data = (await res.json()) as { models?: Array<{ name: string }> }
-    ollamaModels.value = (data.models ?? []).map((m) => m.name)
-  } catch (e) {
-    ollamaModels.value = []
-    console.warn('Failed to fetch Ollama models:', e)
-  } finally {
-    ollamaModelsLoading.value = false
-  }
-}
-
 // Watch provider selection
 watch(selectedProviderId, () => {
   void loadModels()
-  if (selectedProvider.value?.type === 'ollama') {
-    void fetchOllamaModels()
-  } else {
-    ollamaModels.value = []
-  }
 })
 
 // ---- Provider CRUD ----
@@ -276,8 +186,14 @@ async function handleProviderSubmit(formData: CreateProviderPayload): Promise<vo
       await updateProvider(editingProviderId.value, payload)
       ElMessage.success('供应商已更新')
     } else {
-      await createProvider(formData)
-      ElMessage.success('供应商已创建')
+      const created = await createProvider(formData)
+      await ensurePresetModels(created.id, formData.type)
+      ElMessage.success('供应商已创建，已自动添加预设模型')
+      showProviderDialog.value = false
+      await loadProviders()
+      selectedProviderId.value = created.id
+      await loadModels()
+      return
     }
     showProviderDialog.value = false
     await loadProviders()
@@ -327,19 +243,35 @@ async function handleTestProviderConn(provider: Provider): Promise<void> {
   }
 }
 
-/** Quick-add preset: create provider directly */
+/** Quick-add preset: 打开创建表单并填入正确 baseUrl，保存时自动添加预设模型 */
 async function handleQuickAdd(preset: ProviderPreset): Promise<void> {
-  try {
-    await createProvider({
-      name: preset.label,
-      type: preset.type,
-      baseUrl: preset.defaultBaseUrl,
+  isEditingProvider.value = false
+  editingProviderId.value = ''
+  providerInitialForm.value = {
+    name: preset.label,
+    type: preset.type,
+    baseUrl: preset.defaultBaseUrl,
+    apiKey: '',
+    isActive: true,
+  }
+  showProviderDialog.value = true
+}
+
+async function ensurePresetModels(providerId: string, type: string): Promise<void> {
+  const preset = PROVIDER_PRESETS.find((p) => p.type === type)
+  if (!preset?.defaultModels.length) return
+  const existing = await listModels(providerId)
+  const existingIds = new Set(existing.map((m) => m.model))
+  for (const modelId of preset.defaultModels) {
+    if (existingIds.has(modelId)) continue
+    await createModel({
+      name: modelId,
+      providerId,
+      model: modelId,
+      parameters: { temperature: 0.7, maxTokens: 4096 },
+      isDefault: false,
       isActive: true,
     })
-    ElMessage.success(`已添加 ${preset.label}`)
-    await loadProviders()
-  } catch (e) {
-    ElMessage.error((e as Error).message || '添加失败')
   }
 }
 
@@ -360,11 +292,6 @@ function openCreateModelDialog(): void {
     isActive: true,
   }
   showModelDialog.value = true
-
-  // For Ollama, fetch available models
-  if (selectedProvider.value?.type === 'ollama') {
-    void fetchOllamaModels()
-  }
 }
 
 function openEditModelDialog(model: Model): void {
@@ -483,121 +410,15 @@ async function handleTestModel(model: Model): Promise<void> {
 
 // ---- Helpers ----
 
-function getEmbeddingProviderLabel(provider: string): string {
-  const map: Record<string, string> = {
-    siliconflow: 'SiliconFlow',
-    openai: 'OpenAI',
-    custom: '自定义',
-  }
-  return map[provider] ?? provider
-}
-
-// ---- Refresh all ----
-
 async function handleRefreshAll(): Promise<void> {
   await loadProviders()
   await loadModels()
-  void loadEmbeddingConfig()
-}
-
-// ---- Embedding Config ----
-
-const EMBEDDING_PROVIDER_PRESETS: Array<{
-  value: EmbeddingProvider
-  label: string
-  defaultBaseUrl: string
-  defaultModel: string
-  defaultDimensions: number
-  description: string
-}> = [
-  {
-    value: 'siliconflow',
-    label: 'SiliconFlow',
-    defaultBaseUrl: 'https://api.siliconflow.cn/v1',
-    defaultModel: 'BAAI/bge-m3',
-    defaultDimensions: 1024,
-    description: 'SiliconFlow 托管 BGE-M3，中文效果最佳',
-  },
-  {
-    value: 'openai',
-    label: 'OpenAI',
-    defaultBaseUrl: 'https://api.openai.com/v1',
-    defaultModel: 'text-embedding-3-small',
-    defaultDimensions: 1536,
-    description: 'OpenAI text-embedding-3-small',
-  },
-  {
-    value: 'custom',
-    label: '自定义',
-    defaultBaseUrl: '',
-    defaultModel: '',
-    defaultDimensions: 1536,
-    description: 'OpenAI 兼容接口',
-  },
-]
-
-async function loadEmbeddingConfig(): Promise<void> {
-  embeddingLoading.value = true
-  try {
-    embeddingConfig.value = await getEmbeddingConfig()
-  } catch (e) {
-    ElMessage.error((e as Error).message || '加载嵌入模型配置失败')
-  } finally {
-    embeddingLoading.value = false
-  }
-}
-
-function openEmbeddingDialog(): void {
-  if (embeddingConfig.value) {
-    embeddingForm.value = {
-      provider: embeddingConfig.value.provider,
-      model: embeddingConfig.value.model,
-      baseUrl: embeddingConfig.value.baseUrl,
-      apiKey: '',
-      dimensions: embeddingConfig.value.dimensions,
-    }
-  }
-  showEmbeddingDialog.value = true
-}
-
-function applyEmbeddingPreset(preset: typeof EMBEDDING_PROVIDER_PRESETS[number]): void {
-  embeddingForm.value.provider = preset.value
-  embeddingForm.value.baseUrl = preset.defaultBaseUrl
-  embeddingForm.value.model = preset.defaultModel
-  embeddingForm.value.dimensions = preset.defaultDimensions
-}
-
-async function handleEmbeddingSubmit(): Promise<void> {
-  if (!embeddingForm.value.model.trim()) {
-    ElMessage.warning('请输入模型标识')
-    return
-  }
-  embeddingFormSubmitting.value = true
-  try {
-    const payload: UpdateEmbeddingConfigPayload = {
-      provider: embeddingForm.value.provider,
-      model: embeddingForm.value.model,
-      baseUrl: embeddingForm.value.baseUrl,
-      dimensions: embeddingForm.value.dimensions,
-    }
-    if (embeddingForm.value.apiKey) {
-      payload.apiKey = embeddingForm.value.apiKey
-    }
-    embeddingConfig.value = await updateEmbeddingConfig(payload)
-    showEmbeddingDialog.value = false
-    ElMessage.success('嵌入模型配置已更新')
-  } catch (e) {
-    ElMessage.error((e as Error).message || '更新失败')
-  } finally {
-    embeddingFormSubmitting.value = false
-  }
 }
 
 // ---- Init ----
 
 onMounted(() => {
   void loadProviders()
-  void loadEmbeddingConfig()
 })
 </script>
 
@@ -681,47 +502,6 @@ onMounted(() => {
             </div>
           </div>
         </div>
-
-        <!-- Embedding model config card -->
-        <div :class="styles.embeddingSection">
-          <div :class="styles.embeddingHeader">
-            <div :class="styles.embeddingTitle">
-              <AppIcon name="connection" :size="16" />
-              <h3>嵌入模型</h3>
-            </div>
-            <el-button size="small" type="primary" plain @click="openEmbeddingDialog">
-              <AppIcon name="edit" :size="14" style="margin-right: 4px" />
-              编辑配置
-            </el-button>
-          </div>
-          <div v-if="embeddingLoading" :class="styles.embeddingLoading">
-            <AppIcon name="loading" :size="20" />
-          </div>
-          <div v-else-if="embeddingConfig" :class="styles.embeddingBody">
-            <div :class="styles.embeddingRow">
-              <div :class="styles.embeddingField">
-                <span :class="styles.embeddingLabel">供应商</span>
-                <span :class="styles.embeddingValue">{{ getEmbeddingProviderLabel(embeddingConfig.provider) }}</span>
-              </div>
-              <div :class="styles.embeddingField">
-                <span :class="styles.embeddingLabel">模型</span>
-                <span :class="[styles.embeddingValue, styles.embeddingMono]">{{ embeddingConfig.model }}</span>
-              </div>
-              <div :class="styles.embeddingField">
-                <span :class="styles.embeddingLabel">Base URL</span>
-                <span :class="[styles.embeddingValue, styles.embeddingMono]">{{ embeddingConfig.baseUrl }}</span>
-              </div>
-              <div :class="styles.embeddingField">
-                <span :class="styles.embeddingLabel">API Key</span>
-                <span :class="[styles.embeddingValue, styles.embeddingMono]">{{ embeddingConfig.apiKey || '(未配置)' }}</span>
-              </div>
-              <div :class="styles.embeddingField">
-                <span :class="styles.embeddingLabel">维度</span>
-                <span :class="styles.embeddingValue">{{ embeddingConfig.dimensions }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -741,8 +521,7 @@ onMounted(() => {
       :initial-form="modelInitialForm"
       :submitting="modelFormSubmitting"
       :selected-provider="selectedProvider"
-      :ollama-models="ollamaModels"
-      :ollama-models-loading="ollamaModelsLoading"
+      :existing-model-ids="models.map((m) => m.model)"
       @submit="handleModelSubmit"
     />
 
@@ -774,82 +553,6 @@ onMounted(() => {
       </template>
       <template #footer>
         <el-button type="primary" @click="showTestDialog = false">关闭</el-button>
-      </template>
-    </AppDialog>
-
-    <!-- Embedding config edit dialog -->
-    <AppDialog
-      v-model="showEmbeddingDialog"
-      title="编辑嵌入模型配置"
-      width="680px"
-      :loading="embeddingFormSubmitting"
-      @confirm="handleEmbeddingSubmit"
-    >
-      <div :class="styles.presetSection">
-        <div :class="styles.presetLabel">快速选择预设：</div>
-        <div :class="styles.presetGrid">
-          <button
-            v-for="preset in EMBEDDING_PROVIDER_PRESETS"
-            :key="preset.value"
-            :class="styles.presetCard"
-            @click="applyEmbeddingPreset(preset)"
-          >
-            <div :class="styles.presetInfo">
-              <div :class="styles.presetName">{{ preset.label }}</div>
-              <div :class="styles.presetDesc">{{ preset.description }}</div>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      <el-form label-position="top">
-        <el-form-item label="供应商">
-          <el-select v-model="embeddingForm.provider" style="width: 100%">
-            <el-option
-              v-for="preset in EMBEDDING_PROVIDER_PRESETS"
-              :key="preset.value"
-              :label="preset.label"
-              :value="preset.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="模型标识" required>
-          <el-input
-            v-model="embeddingForm.model"
-            placeholder="例如：BAAI/bge-m3 / text-embedding-3-small"
-            maxlength="200"
-          />
-        </el-form-item>
-        <el-form-item label="Base URL">
-          <el-input
-            v-model="embeddingForm.baseUrl"
-            placeholder="例如：https://api.siliconflow.cn/v1"
-            maxlength="500"
-          />
-        </el-form-item>
-        <el-form-item label="API Key">
-          <el-input
-            v-model="embeddingForm.apiKey"
-            placeholder="留空则不更新"
-            maxlength="500"
-            show-password
-          />
-        </el-form-item>
-        <el-form-item label="向量维度">
-          <el-input-number
-            v-model="embeddingForm.dimensions"
-            :min="1"
-            :max="10000"
-            :step="1"
-            style="width: 100%"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showEmbeddingDialog = false">取消</el-button>
-        <el-button type="primary" :loading="embeddingFormSubmitting" @click="handleEmbeddingSubmit">
-          保存
-        </el-button>
       </template>
     </AppDialog>
   </div>

@@ -59,7 +59,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (response.status === 401) {
       onUnauthorized?.()
       redirectToLogin()
-      throw new ModelApiError('Authentication required', 401)
+      throw new ModelApiError('登录已过期，请重新登录', 401)
     }
     const body = await response.json().catch(() => null)
     const msg = body?.error?.message ?? `${response.status} ${response.statusText}`
@@ -68,7 +68,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   const body = (await response.json()) as ApiResponse<T>
   if (!body.success) {
-    throw new ModelApiError(body.error?.message ?? 'Request failed', response.status)
+    throw new ModelApiError(body.error?.message ?? '请求失败', response.status)
   }
   return body.data
 }

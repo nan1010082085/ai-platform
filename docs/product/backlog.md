@@ -27,7 +27,8 @@
 | Phase I — 可选技术债 | **100%** |
 | **Phase J** — LangGraph 对话节点白盒化 | **100%** |
 | **Phase K** — Provider/Model 两级结构 | **100%** |
-| **Phase L** — 消息组件化重构 | **进行中** |
+| **Phase L** — 消息组件化重构 | **100%**（L-5 模板已瘦身，脚本保留类型定义） |
+| **Phase P** — 节点能力细化与体验修补 | **33%**（P-1 待做，P-2 ✅，P-3 ✅） |
 
 ---
 
@@ -70,15 +71,15 @@
 
 ---
 
-## Phase L — 消息组件化重构 🔄
+## Phase L — 消息组件化重构 ✅
 
 | ID | 任务 | 状态 |
 |----|------|------|
-| L-1 | RendererRegistry.ts 渲染器注册表 | 🔄 |
-| L-2 | 独立渲染器（Text/Code/Thinking/ToolCall/Image/Requirement/Document） | 🔄 |
-| L-3 | AiMessageContent.vue 调度器 | 🔄 |
-| L-4 | AiMessageActionBar.vue 操作栏 | 🔄 |
-| L-5 | AiMessage.vue 主组件瘦身 | 🔄 |
+| L-1 | RendererRegistry.ts 渲染器注册表 | ✅ |
+| L-2 | 独立渲染器（15个已注册） | ✅ |
+| L-3 | AiMessageContent.vue 调度器 | ✅ |
+| L-4 | AiMessageActionBar.vue 操作栏 | ✅ |
+| L-5 | AiMessage.vue 主组件瘦身 | ⚠️ 模板已瘦身，脚本保留类型定义（383行） |
 
 **目标**：新增预览类型只需新建 Renderer + 注册，不改主组件
 
@@ -96,6 +97,33 @@
 - PdfPreviewCard.vue
 - ExcelPreviewCard.vue
 - DocumentAttachmentCard.vue 图片内联增强
+
+---
+
+## Phase P — 节点能力细化与体验修补 ⬜
+
+> **2026-07-15** 新增 · 仅产品路线图，无代码
+
+| ID | 功能 | 说明 | 优先级 | 状态 |
+|----|------|------|--------|------|
+| P-1 | 文档解析/OCR 可配模型 | `document-parse` 节点当前无模型选择，`vision-analyze` 已有。需补齐 OCR/文档解析模型选择（ModelOptionSelect），对齐 Provider/Model 两级结构 | P1 | ⬜ |
+| P-2 | 「智能助手 v2」预览无模板 | `AgentFlowNode.vue` 只渲染单一 source handle，`intent-router` 和 `collaboration-router` 的三路出边无法连接。已为这两个节点类型添加自定义 handle（Top/Right/Bottom 三位置） | P1 | ✅ |
+| P-3 | LangGraph→Workflow 节点 | Phase J 已 100% 完成：6 个新节点（intent-router / requirement-analyzer / task-planner / task-chain / collaboration-router / summarizer）+ 2 个官方模板 + 5 个 runtime 模块。**无需额外工作** | — | ✅ |
+
+**P-1 详细说明**：
+
+- 当前 `document-parse` 面板（`DocumentParseNodePanel.vue`）仅配置数据源（`DocumentSourceFields`），无模型选择
+- `vision-analyze` 面板（`VisionAnalyzeNodePanel.vue`）已通过 `ModelOptionSelect` + `useModelOptions` 实现按供应商分组的模型选择
+- 需求：document-parse 面板增加「解析模型」字段，复用 `ModelOptionSelect` 组件；后端 executor 解析时读取 `node.data.model` 参数
+- 关联：`AgentWorkflowNodeData` 类型已有 `model?: string` 字段，仅需前端面板 + 后端读取
+
+**P-2 详细说明**：
+
+- 模板工厂 `createChatParityAssistantWorkflowGraph()` 定义了 10 节点 + 12 边的复杂 DAG
+- 边使用自定义 `sourceHandle`（`needsAnalysis` / `matched` / `continue` / `nextStep` / `summarize`）
+- 预览画布 `AgentWorkflowCanvas`（`canvas-id="agent-workflow-template-preview"`）为只读模式
+- 可能原因：Vue Flow 在只读模式下未注册自定义 handle 渲染器，导致多出边节点无法正确连线
+- 修复方案：确认 `AgentNode.vue` 中的 handle 定义在 preview canvas 实例中是否生效；或预览模式切换为标准连线
 
 ---
 
@@ -169,6 +197,38 @@
 ---
 
 ## 迭代日志
+
+### 2026-07-15
+
+**Phase P 立项** — 节点能力细化与体验修补
+- P-1: 文档解析/OCR 可配模型（document-parse 面板补齐 ModelOptionSelect）
+- P-2: 智能助手 v2 预览无模板 ✅ 已修复
+  - 根因：`AgentFlowNode.vue` 只渲染单一 source handle，`intent-router` 和 `collaboration-router` 的三路出边无法连接
+  - 修复：为 `intent-router` 添加 needsAnalysis/matched/general 三路 handle（Top/Right/Bottom），为 `collaboration-router` 添加 continue/nextStep/summarize 三路 handle
+- P-3: LangGraph→Workflow 节点（Phase J 已完成，标记归档）
+
+**代码审查修复** — Critical + High 级别问题
+- **CRITICAL #1**: 对话用户隔离 — AIConversation schema 新增 `userId` 字段，所有对话路由（list/get/delete/search/rollback）强制按 userId 过滤，createConversation 必须传入 userId
+- **CRITICAL #2**: widget mention 全表扫描 — 改用 MongoDB aggregation 管道（$match + $unwind + $limit），避免加载全量 Schema 到内存
+- **CRITICAL #3**: executeStream 重试逻辑无效 — 添加 `attempts++` 递增、错误事件处理、30s 超时机制，仅可重试错误（非 Auth/Permission）触发重试
+- **HIGH #4**: 硬编码 SiliconFlow API key — 改为 `SILICONFLOW_API_KEY` / `SILICONFLOW_BASE_URL` / `SILICONFLOW_EMBEDDING_MODEL` 环境变量配置
+- **HIGH #5**: 静默吞错 — `ai.ts` feedback 提交和 `useModelOptions` fallback 链添加 `console.warn/error` + 用户提示
+
+**种子系统分析** — 24 个种子文件审查
+- `seedMicroApps.ts` 用 `$set` 而非 `$setOnInsert`（每次覆写用户自定义）
+- `seedRoles.ts` 每次覆写 admin 权限数组
+- `seedFlowTemplates.ts` 每次覆写内置模板图数据
+- 业务种子在已有数据库时完全跳过（userCount > 0 门控）
+- 建议：核心种子改用 `$setOnInsert`，新增 `SEED_SKIP` 环境变量
+
+**UI 审查修复** — 全面代码审查
+- 修复 AiMessageActionBar 点踩图标（star → star + CSS 翻转）
+- 修复 3 个文件废弃的 `theme="primary"` → `type="primary"`
+- 修复 PluginCenterView 4 个英文列标题（argsHint/Transport/Builtin/Namespace → 中文）
+- 修复 `Model 标识` → `模型标识` 统一（ModelDialog.vue、ModelList.vue）
+- 修复 PluginCenterView subtitle 暴露技术细节
+- Phase L 状态更新为 ✅（L-5 模板已瘦身，脚本保留类型定义）
+- Phase P 状态更新为 33%（P-2 ✅）
 
 ### 2026-07-14
 

@@ -5,43 +5,8 @@ import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import type { CreateProviderPayload } from '@/api/providerApi'
 import type { ProviderPreset } from './types'
+import { PROVIDER_PRESETS } from './providerPresets'
 import styles from '@/views/ModelSettingsView.module.scss'
-
-const PROVIDER_PRESETS: ProviderPreset[] = [
-  {
-    type: 'deepseek',
-    label: 'DeepSeek',
-    icon: 'chat-dot-round',
-    color: '#4D6BFE',
-    defaultBaseUrl: 'https://api.deepseek.com/v1',
-    website: 'https://platform.deepseek.com',
-    description: 'DeepSeek V4，中文能力强，高性价比',
-    placeholderApiKey: 'sk-...',
-    defaultModels: ['deepseek-chat', 'deepseek-reasoner'],
-  },
-{
-    type: 'mimo',
-    label: 'Mimo',
-    icon: 'magic-stick',
-    color: '#FF6B35',
-    defaultBaseUrl: 'https://api.xiaomimimo.com/v1',
-    website: 'https://mimo.xiaomi.com',
-    description: '小米 Mimo，OpenAI 兼容接口',
-    placeholderApiKey: 'tp-...',
-    defaultModels: ['mimo-v2.5'],
-  },
-  {
-    type: 'openai',
-    label: 'OpenAI',
-    icon: 'chat-round',
-    color: '#10A37F',
-    defaultBaseUrl: 'https://api.openai.com/v1',
-    website: 'https://platform.openai.com',
-    description: 'GPT-4o / GPT-4 系列',
-    placeholderApiKey: 'sk-...',
-    defaultModels: ['gpt-4o', 'gpt-4o-mini'],
-  },
-]
 
 const modelValue = defineModel<boolean>({ default: false })
 
@@ -99,10 +64,10 @@ function getProviderTypeLabel(type: string): string {
 function getProviderTypeIcon(type: string): string {
   const map: Record<string, string> = {
     deepseek: 'chat-dot-round',
-    openai: 'chat-round',
+    openai: 'chat-line-round',
     ollama: 'monitor',
     mimo: 'magic-stick',
-    azure: 'cloudy',
+    azure: 'connection',
     custom: 'setting',
   }
   return map[type] ?? 'setting'
@@ -120,6 +85,10 @@ function applyPresetToForm(preset: ProviderPreset): void {
 function handleSubmit(): void {
   if (!form.value.name.trim()) {
     ElMessage.warning('请输入供应商名称')
+    return
+  }
+  if (!form.value.baseUrl.trim()) {
+    ElMessage.warning('请输入 Base URL')
     return
   }
   emit('submit', { ...form.value })
@@ -195,7 +164,8 @@ function handleSubmit(): void {
           maxlength="500"
         />
         <div style="font-size: 11px; color: var(--text-color-placeholder); margin-top: 4px">
-          OpenAI 兼容接口地址，以 <code>/v1</code> 结尾（不含 <code>/chat/completions</code>）
+          OpenAI 兼容根地址（不含 <code>/chat/completions</code>）。DeepSeek 官方为
+          <code>https://api.deepseek.com</code>；Mimo / OpenAI 含 <code>/v1</code>。
         </div>
       </el-form-item>
       <el-form-item label="官方网站">

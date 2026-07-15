@@ -12,6 +12,7 @@ vi.mock('@/api/aiApi', () => ({
   reindexSingleRag: vi.fn(),
   deleteRagEmbedding: vi.fn(),
   searchRag: vi.fn(),
+  uploadRagDocument: vi.fn(),
 }))
 
 import {
@@ -48,6 +49,11 @@ const globalStubs = {
   'el-table': ElTableStub,
   'el-table-column': ElTableColumnStub,
   'el-pagination': ElPaginationStub,
+  'el-dialog': { template: '<div><slot /><slot name="footer" /></div>', props: ['modelValue', 'title', 'width'] },
+  'el-upload': { template: '<div><slot /></div>' },
+  'el-checkbox': { template: '<input type="checkbox" />' },
+  'router-link': { template: '<a><slot /></a>', props: ['to'] },
+  AppIcon: { template: '<span />', props: ['name', 'size'] },
 }
 
 function createStatus(overrides: Record<string, unknown> = {}) {
@@ -98,11 +104,11 @@ describe('RagKnowledgeBase', () => {
     const wrapper = mountComponent()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Schema 总数')
-    expect(wrapper.text()).toContain('已索引')
+    expect(wrapper.text()).toContain('Schema')
+    expect(wrapper.text()).toContain('流程')
     expect(wrapper.text()).toContain('待索引')
     expect(wrapper.text()).toContain('覆盖率')
-    expect(wrapper.text()).toContain('覆盖率')
+    expect(wrapper.text()).toContain('知识库健康度')
   })
 
   it('triggers batch reindex when button is clicked', async () => {
@@ -133,7 +139,7 @@ describe('RagKnowledgeBase', () => {
     await reindexBtn!.trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('上次批量索引')
+    expect(wrapper.text()).toContain('上次批量索引结果')
     expect(wrapper.text()).toContain('新建 3')
     expect(wrapper.text()).toContain('更新 2')
     expect(wrapper.text()).toContain('跳过 4')
@@ -143,7 +149,7 @@ describe('RagKnowledgeBase', () => {
   it('shows empty hint before search', async () => {
     const wrapper = mountComponent()
     await flushPromises()
-    expect(wrapper.text()).toContain('测试 RAG 语义搜索效果')
+    expect(wrapper.text()).toContain('验证召回质量')
   })
 
   it('performs semantic search and renders results', async () => {
@@ -189,7 +195,7 @@ describe('RagKnowledgeBase', () => {
     await searchBtn!.trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('未找到匹配的 Schema')
+    expect(wrapper.text()).toContain('未找到匹配结果')
   })
 
   it('renders widget type tags in search results', async () => {

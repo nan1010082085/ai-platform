@@ -15,7 +15,7 @@ import type { AgentNodePanelProps, AgentNodePanelEmits } from '../types'
 
 const props = defineProps<AgentNodePanelProps>()
 const emit = defineEmits<AgentNodePanelEmits>()
-const { modelOptions, defaultModel, loading: modelsLoading } = useModelOptions()
+const { modelOptions, providerGroups, defaultModel, loading: modelsLoading } = useModelOptions()
 
 function update(key: string, value: unknown) {
   emit('updateNodeData', key, value)
@@ -55,10 +55,11 @@ const stream = computed({
       <el-switch v-model="stream" />
     </FieldRow>
 
-    <FieldRow label="模型" hint="选择用于总结的大模型">
+    <FieldRow label="模型" hint="按供应商分组，可筛选或直接输入 model id">
       <ModelOptionSelect
         :model-value="String(props.node.data?.model ?? 'default')"
         :options="modelOptions"
+        :groups="providerGroups"
         :loading="modelsLoading"
         show-default-option
         :default-label="`默认模型 (${defaultModel || '未配置'})`"

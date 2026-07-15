@@ -6,6 +6,7 @@
  */
 
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { message, confirmDanger } from '@schema-platform/platform-shared/utils/message'
 import { useDataLoading } from '@schema-platform/platform-shared/utils/useDataLoading'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
@@ -24,6 +25,7 @@ import RagSearchPanel from '@/components/rag/RagSearchPanel.vue'
 import RagIndexOverview from '@/components/rag/RagIndexOverview.vue'
 
 const INDEX_PAGE_SIZE = 20
+const router = useRouter()
 
 const { loading, withLoading: withStatusLoading } = useDataLoading({ timeout: 15000 })
 const { loading: reindexing, withLoading: withReindexLoading } = useDataLoading({ timeout: 600_000 })
@@ -212,8 +214,35 @@ onMounted(() => {
 <template>
   <div :class="$style.dashboard" v-loading="loading">
     <div :class="$style.header">
-      <h2 :class="$style.title">RAG 知识库</h2>
+      <div>
+        <h2 :class="$style.title">RAG 知识库</h2>
+        <p :class="$style.subtitle">
+          管理 Schema / 流程向量索引，验证语义召回，保障对话上下文质量
+        </p>
+      </div>
       <div :class="$style.headerActions">
+        <el-tooltip
+          v-if="status"
+          :content="status.embeddingConfigured
+            ? '嵌入模型已就绪，语义检索可用'
+            : '嵌入模型未配置，点击前往设置'"
+          placement="bottom"
+        >
+          <button
+            type="button"
+            :class="[
+              $style.embeddingStatus,
+              status.embeddingConfigured ? $style.embeddingReady : $style.embeddingMissing,
+            ]"
+            :aria-label="status.embeddingConfigured ? '嵌入已就绪' : '去配置嵌入模型'"
+            @click="router.push('/settings/embedding')"
+          >
+            <AppIcon
+              :name="status.embeddingConfigured ? 'circle-check-filled' : 'warning'"
+              :size="18"
+            />
+          </button>
+        </el-tooltip>
         <el-button type="success" size="small" @click="openUploadDialog">
           <AppIcon name="upload" :size="14" />
           上传文档
@@ -227,6 +256,18 @@ onMounted(() => {
           刷新
         </el-button>
       </div>
+    </div>
+
+    <div
+      v-if="status && !status.embeddingConfigured"
+      :class="$style.banner"
+    >
+      <AppIcon name="warning" :size="16" />
+      <span>
+        嵌入模型未配置，RAG 只做关键词兜底。前往
+        <router-link to="/settings/embedding">嵌入模型设置</router-link>
+        后，可启用向量索引与语义召回。
+      </span>
     </div>
 
     <RagSummary
@@ -385,14 +426,60 @@ onMounted(() => {
 .title {
   margin: 0;
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 650;
   color: var(--el-text-color-primary, #303133);
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary, #909399);
 }
 
 .headerActions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.embeddingStatus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.embeddingStatus:hover {
+  background: var(--el-fill-color-light);
+}
+
+.embeddingReady {
+  color: var(--el-color-success);
+}
+
+.embeddingMissing {
+  color: var(--el-color-danger);
+}
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--el-color-warning-light-9);
+  color: var(--el-color-warning-dark-2);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .summaryRow {
@@ -401,10 +488,10 @@ onMounted(() => {
 
 .panelRow {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.15fr 0.85fr;
   gap: 16px;
   margin-bottom: 16px;
-  height: 360px;
+  height: 420px;
 }
 
 .panelRow > * {
@@ -413,7 +500,7 @@ onMounted(() => {
 
 .section {
   background: var(--el-bg-color, #fff);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 16px;
   border: 1px solid var(--el-border-color-lighter, #e4e7ed);
 }

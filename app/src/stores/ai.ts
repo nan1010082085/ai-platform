@@ -37,6 +37,7 @@ import {
   mentionSearch,
   submitMessageFeedback,
 } from '@/api/aiApi'
+import { message } from '@schema-platform/platform-shared/utils/message'
 import { handleStreamEvent } from './ai/events'
 import { createWorkflowModule } from './ai/workflow'
 import { createRequirementModule } from './ai/requirement'
@@ -349,8 +350,11 @@ export const useAiStore = defineStore('ai', () => {
 
     try {
       await submitMessageFeedback(messageId, type)
-    } catch {
+    } catch (err) {
       msg.feedback = msg.feedback === type ? null : type
+      const errorMsg = err instanceof Error ? err.message : String(err)
+      console.error('[ai:feedback] 提交反馈失败:', errorMsg)
+      message.error('反馈提交失败，请稍后重试')
     }
   }
 

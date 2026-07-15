@@ -3,10 +3,13 @@ import SectionToggle from '../SectionToggle.vue'
 import FieldRow from '../FieldRow.vue'
 import VariableReferencePanel from './VariableReferencePanel.vue'
 import DocumentSourceFields from './DocumentSourceFields.vue'
+import ModelOptionSelect from '@/components/ModelOptionSelect.vue'
+import { useModelOptions } from '@/composables/useModelOptions'
 import type { AgentNodePanelEmits, AgentNodePanelProps } from '../types'
 
 const props = defineProps<AgentNodePanelProps>()
 const emit = defineEmits<AgentNodePanelEmits>()
+const { modelOptions, providerGroups, defaultModel, loading: modelsLoading } = useModelOptions()
 
 function update(key: string, value: unknown) {
   emit('updateNodeData', key, value)
@@ -14,8 +17,19 @@ function update(key: string, value: unknown) {
 </script>
 
 <template>
-  <SectionToggle title="图片视觉分析" :count="6">
+  <SectionToggle title="图片视觉分析" :count="7">
     <DocumentSourceFields :node="props.node" @update-node-data="update" />
+    <FieldRow label="视觉模型" hint="按供应商分组；可筛选或直接输入 model id">
+      <ModelOptionSelect
+        :model-value="String(props.node.data?.model ?? 'default')"
+        :options="modelOptions"
+        :groups="providerGroups"
+        :loading="modelsLoading"
+        show-default-option
+        :default-label="`默认模型 (${defaultModel || '未配置'})`"
+        @update:model-value="update('model', $event)"
+      />
+    </FieldRow>
     <FieldRow label="视觉 Prompt" textarea hint="留空使用默认：场景/UI/布局语义描述">
       <el-input
         type="textarea"

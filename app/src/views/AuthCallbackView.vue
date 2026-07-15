@@ -1,24 +1,25 @@
 <template>
   <div :class="$style.callback">
-    <el-icon :class="$style.spinner" :size="32"><Loading /></el-icon>
-    <p :class="$style.text">正在完成登录...</p>
+    <AppIcon name="loading" :class="$style.spinner" :size="32" />
+    <p :class="$style.text">{{ statusText }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Loading } from '@element-plus/icons-vue'
-import { SSOClient } from '@schema-platform/platform-shared/utils/sso'
+import { SSOClient, SSOError, resolveSsoRedirectUri } from '@schema-platform/platform-shared/utils/sso'
 import {
   persistSSOClientId,
   startTokenRefreshSchedule,
   bootstrapAuthSession,
 } from '@schema-platform/platform-shared/utils/authSession'
 import { useAuthStore } from '@schema-platform/platform-shared/utils/stores/authStore'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 const router = useRouter()
 const route = useRoute()
+const statusText = ref('正在完成登录...')
 
 onMounted(async () => {
   const origin = window.location.origin
@@ -26,7 +27,7 @@ onMounted(async () => {
   persistSSOClientId(clientId)
   const client = new SSOClient({
     clientId,
-    redirectUri: `${origin}/schema-platform/ai/auth/callback`,
+    redirectUri: resolveSsoRedirectUri(origin),
     ssoBaseUrl: origin,
   })
 
@@ -34,14 +35,14 @@ onMounted(async () => {
     const tokens = await client.handleCallback()
     const authStore = useAuthStore()
     authStore.setTokens(tokens.accessToken, tokens.refreshToken)
-    // Fetch user info after getting tokens
     await bootstrapAuthSession()
     startTokenRefreshSchedule(tokens.expiresIn)
 
     const redirect = route.query.redirect as string | undefined
     await router.replace(redirect || '/')
-  } catch {
-    await router.replace({ name: 'chat' })
+  } catch (err) {
+    statusText.value =
+      err instanceof SSOError ? `登录失败：${err.message}` : '登录失败，请重试'
   }
 })
 </script>

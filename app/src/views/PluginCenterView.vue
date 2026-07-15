@@ -7,6 +7,7 @@
 import { ref, computed, onMounted } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
+import CardTable from '@/components/common/CardTable.vue'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
 import { getExpertLegacyBadge, type ExpertAgentKind } from '@/constants/expertNodeTypes'
 import { getToolDisplayLabel } from '@schema-platform/platform-shared/ai/toolNames'
@@ -90,7 +91,7 @@ onMounted(() => {
           <div>
             <h1>插件中心</h1>
             <p :class="styles.subtitle">
-              按 config/plugins 四层类型浏览 Registry（只读）。配置变更走 Git，或 server 目录执行 plugin:pack / plugin:install。
+              浏览已注册的专家、工具、MCP 服务器和技能
             </p>
           </div>
           <div :class="styles.headerActions">
@@ -142,7 +143,7 @@ onMounted(() => {
           <FilterTabs v-model="activeToolKind" :options="toolKindTabs" />
         </div>
 
-        <div v-show="activeLayer === 'experts'" :class="styles.tableWrap">
+        <CardTable v-show="activeLayer === 'experts'">
           <el-table :data="filteredExperts" stripe>
             <el-table-column prop="label" label="名称" min-width="140" />
             <el-table-column prop="id" label="ID" min-width="160">
@@ -174,9 +175,9 @@ onMounted(() => {
             </el-table-column>
             <el-table-column prop="description" label="说明" min-width="200" show-overflow-tooltip />
           </el-table>
-        </div>
+        </CardTable>
 
-        <div v-show="activeLayer === 'tools'" :class="styles.tableWrap">
+        <CardTable v-show="activeLayer === 'tools'">
           <el-table :data="filteredTools" stripe>
             <el-table-column label="显示名" min-width="140">
               <template #default="{ row }">
@@ -191,28 +192,28 @@ onMounted(() => {
             <el-table-column prop="kind" label="类型" width="90" />
             <el-table-column prop="source" label="来源" min-width="140" />
             <el-table-column prop="description" label="说明" min-width="180" show-overflow-tooltip />
-            <el-table-column prop="argsHint" label="argsHint" min-width="200" show-overflow-tooltip>
+            <el-table-column prop="argsHint" label="参数提示" min-width="200" show-overflow-tooltip>
               <template #default="{ row }">
                 <span :class="styles.mono">{{ row.argsHint || '—' }}</span>
               </template>
             </el-table-column>
           </el-table>
-        </div>
+        </CardTable>
 
-        <div v-show="activeLayer === 'mcp'" :class="styles.tableWrap">
+        <CardTable v-show="activeLayer === 'mcp'">
           <el-table :data="filteredMcp" stripe>
             <el-table-column prop="id" label="ID" min-width="160">
               <template #default="{ row }">
                 <span :class="styles.mono">{{ row.id }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="transport" label="Transport" width="110" />
-            <el-table-column prop="builtin" label="Builtin" width="120" />
-            <el-table-column prop="namespace" label="Namespace" min-width="120" />
+            <el-table-column prop="transport" label="传输方式" width="110" />
+            <el-table-column prop="builtin" label="内置" width="120" />
+            <el-table-column prop="namespace" label="命名空间" min-width="120" />
           </el-table>
-        </div>
+        </CardTable>
 
-        <div v-show="activeLayer === 'skills'" :class="styles.tableWrap">
+        <CardTable v-show="activeLayer === 'skills'">
           <el-table :data="filteredSkills" stripe>
             <el-table-column prop="label" label="名称" min-width="140" />
             <el-table-column prop="id" label="ID" min-width="160">
@@ -229,7 +230,7 @@ onMounted(() => {
             </el-table-column>
           </el-table>
           <p v-if="!filteredSkills.length && !loading" :class="styles.hint">暂无 Skill 声明（可在 config/plugins/skills/ 添加）</p>
-        </div>
+        </CardTable>
 
         <p :class="styles.hint">
           热重载：开发态改 <code>plugins/local/</code> 后 SIGHUP，或设 <code>AI_PLUGIN_WATCH=1</code> 自动监听。

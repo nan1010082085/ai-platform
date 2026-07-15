@@ -341,7 +341,7 @@ function handleApplySelected() {
 
     <!-- Actions -->
     <div v-if="hasDiffs" :class="$style.actions">
-      <el-button :class="$style.btnPrimary" theme="primary" @click="handleApplyAll">
+      <el-button :class="$style.btnPrimary" type="primary" @click="handleApplyAll">
         应用全部变更
       </el-button>
       <el-button :class="$style.btnGhost" @click="handleApplySelected">

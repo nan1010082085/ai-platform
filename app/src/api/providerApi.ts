@@ -60,7 +60,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (response.status === 401) {
       onUnauthorized?.()
       redirectToLogin()
-      throw new ProviderApiError('Authentication required', 401)
+      throw new ProviderApiError('登录已过期，请重新登录', 401)
     }
     const body = await response.json().catch(() => null)
     const msg = body?.error?.message ?? `${response.status} ${response.statusText}`
@@ -69,7 +69,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   const body = (await response.json()) as ApiResponse<T>
   if (!body.success) {
-    throw new ProviderApiError(body.error?.message ?? 'Request failed', response.status)
+    throw new ProviderApiError(body.error?.message ?? '请求失败', response.status)
   }
   return body.data
 }
@@ -116,6 +116,18 @@ export interface TestConnectionResult {
   tokens: number
   provider: string
   baseUrl: string
+  model?: string
+}
+
+export interface RemoteModelItem {
+  id: string
+  name: string
+}
+
+export interface SyncModelsResult {
+  remote: number
+  created: number
+  skipped: number
 }
 
 export interface ModelParameters {
@@ -182,6 +194,20 @@ export async function testProvider(id: string, message?: string): Promise<TestCo
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: message ?? 'Hello, respond with OK' }),
+  })
+}
+
+/** 拉取上游模型列表 */
+export async function listRemoteModels(id: string): Promise<RemoteModelItem[]> {
+  return request<RemoteModelItem[]>(`/providers/${encodeURIComponent(id)}/remote-models`)
+}
+
+/** 同步上游模型到本地（可选指定 modelIds，默认全量） */
+export async function syncProviderModels(id: string, modelIds?: string[]): Promise<SyncModelsResult> {
+  return request<SyncModelsResult>(`/providers/${encodeURIComponent(id)}/sync-models`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ modelIds }),
   })
 }
 

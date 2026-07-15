@@ -10,6 +10,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
+import CardTable from '@/components/common/CardTable.vue'
 import {
   createApiKey,
   getApiKeys,
@@ -167,7 +168,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div :class="styles.tableWrap" v-loading="loading">
+        <CardTable :loading="loading">
           <el-table :data="keys" stripe>
             <el-table-column prop="name" label="名称" min-width="140" />
             <el-table-column label="密钥" min-width="220">
@@ -227,7 +228,7 @@ onMounted(() => {
               创建第一个密钥
             </el-button>
           </div>
-        </div>
+        </CardTable>
 
         <div v-if="total > pageSize" :class="styles.pagination">
           <el-pagination

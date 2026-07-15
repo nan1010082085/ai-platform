@@ -38,6 +38,8 @@ export const useStreamStore = defineStore('stream', () => {
   const error = ref<string | null>(null)
 
   const MAX_AUTO_RETRIES = 3
+  /** 流超时时间（ms）：超过此时间未收到任何事件则视为超时 */
+  const STREAM_TIMEOUT_MS = 30_000
 
   /** WebSocket 事件取消订阅函数 */
   let unsubscribeChatEvent: (() => void) | null = null
@@ -124,6 +126,7 @@ export const useStreamStore = defineStore('stream', () => {
       })
 
       // 监听 chat events
+      let streamError: string | null = null
       unsubscribeChatEvent = onChatEvent((chatEvent) => {
         if (doneEventReceived) return
 
@@ -143,7 +146,16 @@ export const useStreamStore = defineStore('stream', () => {
           doneEventReceived = true
           doneResolve?.()
         }
-        handlers.onStreamEvent(event, assistantIndex)
+        if (event.type === 'error') {
+          streamError = event.content ?? 'Stream error'
+          doneEventReceived = true
+          doneResolve?.()
+        }
+        try {
+          handlers.onStreamEvent(event, assistantIndex)
+        } catch (err) {
+          console.error('[stream] Event handler error:', err)
+        }
       })
 
       // 获取上下文
@@ -172,10 +184,35 @@ export const useStreamStore = defineStore('stream', () => {
         mentions: mentions && mentions.length > 0 ? mentions : undefined,
       } as Parameters<typeof emitChatSend>[0])
 
-      // 等待 done 事件
-      await donePromise
+      // 等待 done 事件（带超时）
+      const timeoutPromise = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          if (!doneEventReceived) {
+            streamError = 'Stream timeout'
+            doneEventReceived = true
+            resolve()
+          }
+        }, STREAM_TIMEOUT_MS)
+      })
+      await Promise.race([donePromise, timeoutPromise])
 
+      // 清理超时定时器（done 先到时）
       streamStatus.value = 'idle'
+
+      // 如果收到错误事件，判断是否需要重试
+      if (streamError && !streamStopped) {
+        const isRetryable = !streamError.includes('Authentication') &&
+          !streamError.includes('Permission') &&
+          !streamError.includes('not found')
+        if (isRetryable && attempts < MAX_AUTO_RETRIES) {
+          attempts++
+          continue
+        }
+        // 不可重试或超出重试次数，抛出错误
+        error.value = streamError
+        handlers.onDone(ctx.currentConversationId ?? undefined)
+        break
+      }
 
       // 清理事件监听
       if (unsubscribeChatEvent) {
@@ -251,7 +288,11 @@ export const useStreamStore = defineStore('stream', () => {
         doneEventReceived = true
         doneResolve?.()
       }
-      handlers.onStreamEvent(event, assistantIndex)
+      try {
+        handlers.onStreamEvent(event, assistantIndex)
+      } catch (err) {
+        console.error('[stream] Event handler error:', err)
+      }
     })
 
     // 通过 WebSocket 恢复

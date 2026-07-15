@@ -195,3 +195,30 @@
   border: none;
   left: 50%;
 }
+
+.handleTop {
+  width: 10px;
+  height: 10px;
+  background: var(--bg-color);
+  border: 2px solid var(--node-accent, var(--color-primary));
+  top: -5px;
+  left: 30%;
+}
+
+.handleRight {
+  width: 10px;
+  height: 10px;
+  background: var(--bg-color);
+  border: 2px solid var(--node-accent, var(--color-primary));
+  right: -5px;
+  top: 50%;
+}
+
+.handleBottom {
+  width: 10px;
+  height: 10px;
+  background: var(--bg-color);
+  border: 2px solid var(--node-accent, var(--color-primary));
+  bottom: -5px;
+  left: 70%;
+}

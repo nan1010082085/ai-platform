@@ -12,10 +12,13 @@ import SectionToggle from '../SectionToggle.vue'
 import FieldRow from '../FieldRow.vue'
 import VariableReferencePanel from './VariableReferencePanel.vue'
 import ImagePreviewCard from '@/components/ImagePreviewCard.vue'
+import ModelOptionSelect from '@/components/ModelOptionSelect.vue'
+import { useModelOptions } from '@/composables/useModelOptions'
 import type { AgentNodePanelProps, AgentNodePanelEmits } from '../types'
 
 const props = defineProps<AgentNodePanelProps>()
 const emit = defineEmits<AgentNodePanelEmits>()
+const { modelOptions, providerGroups, loading: modelsLoading } = useModelOptions()
 
 function update(key: string, value: unknown) {
   emit('updateNodeData', key, value)
@@ -77,12 +80,14 @@ function handleRegenerate() {
       />
     </FieldRow>
 
-    <FieldRow label="图片模型">
-      <el-select v-model="imageModel" style="width: 100%">
-        <el-option label="DALL-E 3" value="dall-e-3" />
-        <el-option label="DALL-E 2" value="dall-e-2" />
-        <el-option label="Mimo Image" value="mimo-image" />
-      </el-select>
+    <FieldRow label="图片模型" hint="来自模型中心；可筛选或直接输入 model id">
+      <ModelOptionSelect
+        v-model="imageModel"
+        :options="modelOptions"
+        :groups="providerGroups"
+        :loading="modelsLoading"
+        placeholder="选择或输入图片模型"
+      />
     </FieldRow>
 
     <FieldRow label="图片尺寸">

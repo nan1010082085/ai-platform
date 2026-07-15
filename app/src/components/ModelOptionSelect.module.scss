@@ -12,6 +12,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.optionModelId {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  font-family: var(--el-font-family);
 }
 
 .optionTags {

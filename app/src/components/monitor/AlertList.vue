@@ -3,30 +3,43 @@
     <div :class="$style.header">
       <h3 :class="$style.title">
         告警
-        <el-badge v-if="alerts.length > 0" :value="alerts.length" :class="$style.badge" />
+        <el-badge v-if="total > 0" :value="total" :class="$style.badge" />
       </h3>
+      <div :class="$style.filters">
+        <button
+          v-for="opt in filterOptions"
+          :key="opt.value"
+          type="button"
+          :class="[$style.filterBtn, activeFilter === opt.value ? $style.filterActive : '']"
+          @click="activeFilter = opt.value"
+        >
+          {{ opt.label }}
+        </button>
+      </div>
     </div>
 
-    <div v-if="alerts.length === 0" :class="$style.empty">
-      <el-icon :size="24"><CircleCheck /></el-icon>
-      <span>暂无告警</span>
+    <div v-if="visibleAlerts.length === 0" :class="$style.empty">
+      <AppIcon name="circle-check" :size="24" />
+      <span>{{ total === 0 ? '暂无告警' : '当前筛选下无告警' }}</span>
     </div>
 
     <div v-else :class="$style.list">
       <div
-        v-for="alert in alerts"
+        v-for="alert in visibleAlerts"
         :key="alert.id"
         :class="[$style.item, $style[alert.alertType]]"
       >
         <div :class="$style.icon">
-          <el-icon v-if="alert.alertType === 'failure'" :size="16"><CircleClose /></el-icon>
-          <el-icon v-else-if="alert.alertType === 'slow'" :size="16"><Warning /></el-icon>
-          <el-icon v-else :size="16"><InfoFilled /></el-icon>
+          <AppIcon
+            :name="alert.alertType === 'failure' ? 'circle-close-filled' : alert.alertType === 'slow' ? 'warning' : 'info-filled'"
+            :size="16"
+          />
         </div>
         <div :class="$style.content">
           <div :class="$style.messageHead">
-            <span :class="$style.agent">{{ alert.agentName }}</span>
+            <el-tag size="small" effect="plain">{{ alert.agentName }}</el-tag>
             <span :class="$style.operation">{{ alert.operation }}</span>
+            <el-tag size="small" :type="typeTag(alert.alertType)">{{ typeLabel(alert.alertType) }}</el-tag>
           </div>
           <div :class="$style.detail">
             <template v-if="alert.alertType === 'failure'">
@@ -59,11 +72,12 @@
 </template>
 
 <script setup lang="ts">
-import { CircleCheck, CircleClose, Warning, InfoFilled } from '@element-plus/icons-vue'
+import { computed, ref } from 'vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import type { AgentAlert } from '@/types'
 import { formatMonitorTime, formatMonitorDuration } from '@/utils/monitorFormat'
 
-defineProps<{
+const props = defineProps<{
   alerts: AgentAlert[]
   total: number
   currentPage: number
@@ -74,17 +88,43 @@ const emit = defineEmits<{
   pageChange: [page: number]
 }>()
 
+type Filter = 'all' | 'failure' | 'slow' | 'high_token'
+const activeFilter = ref<Filter>('all')
+
+const filterOptions: Array<{ label: string; value: Filter }> = [
+  { label: '全部', value: 'all' },
+  { label: '失败', value: 'failure' },
+  { label: '慢调用', value: 'slow' },
+  { label: '高 Token', value: 'high_token' },
+]
+
+const visibleAlerts = computed(() => {
+  if (activeFilter.value === 'all') return props.alerts
+  return props.alerts.filter((a) => a.alertType === activeFilter.value)
+})
+
 function handlePageChange(page: number): void {
   emit('pageChange', page)
 }
 
+function typeLabel(type: AgentAlert['alertType']): string {
+  if (type === 'failure') return '失败'
+  if (type === 'slow') return '慢调用'
+  return '高 Token'
+}
+
+function typeTag(type: AgentAlert['alertType']): 'danger' | 'warning' | 'info' {
+  if (type === 'failure') return 'danger'
+  if (type === 'slow') return 'warning'
+  return 'info'
+}
 </script>
 
 <style module>
 .container {
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 16px;
   height: 100%;
   display: flex;
@@ -96,8 +136,10 @@ function handlePageChange(page: number): void {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   margin-bottom: 12px;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .title {
@@ -110,8 +152,28 @@ function handlePageChange(page: number): void {
   gap: 8px;
 }
 
-.badge {
-  margin-left: 4px;
+.badge { margin-left: 4px; }
+
+.filters {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  border: 1px solid var(--el-border-color-lighter);
+  background: transparent;
+  color: var(--el-text-color-secondary);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.filterActive {
+  border-color: var(--el-color-primary);
+  color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
 }
 
 .empty {
@@ -119,7 +181,7 @@ function handlePageChange(page: number): void {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 12px;
+  padding: 24px 12px;
   color: var(--el-text-color-secondary);
 }
 
@@ -135,7 +197,7 @@ function handlePageChange(page: number): void {
   display: flex;
   gap: 12px;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   border-left: 3px solid;
   width: 100%;
   box-sizing: border-box;
@@ -159,20 +221,13 @@ function handlePageChange(page: number): void {
 .icon {
   flex-shrink: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  padding-top: 2px;
 }
 
-.failure .icon {
-  color: var(--el-color-danger);
-}
-
-.slow .icon {
-  color: var(--el-color-warning);
-}
-
-.high_token .icon {
-  color: var(--el-color-info);
-}
+.failure .icon { color: var(--el-color-danger); }
+.slow .icon { color: var(--el-color-warning); }
+.high_token .icon { color: var(--el-color-info); }
 
 .content {
   flex: 1;
@@ -184,12 +239,7 @@ function handlePageChange(page: number): void {
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
-}
-
-.agent {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
+  flex-wrap: wrap;
 }
 
 .operation {

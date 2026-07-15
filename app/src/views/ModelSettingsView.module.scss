@@ -92,6 +92,7 @@
 .presetCard {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 10px;
   padding: 12px 14px;
   border: 1px solid var(--el-border-color-lighter, #e4e7ed);
@@ -100,6 +101,9 @@
   cursor: pointer;
   transition: all 0.2s;
   min-width: 0;
+  width: 100%;
+  text-align: left;
+  line-height: 1.4;
 
   &:hover {
     border-color: var(--el-color-primary, #409eff);
@@ -114,11 +118,18 @@
 
 .presetCardIcon {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
 }
 
 .presetCardInfo {
   min-width: 0;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .presetCardName {
@@ -126,12 +137,15 @@
   font-weight: 600;
   color: var(--el-text-color-primary, #303133);
   white-space: nowrap;
+  line-height: 1.3;
 }
 
 .presetCardDesc {
   font-size: 11px;
   color: var(--el-text-color-secondary, #909399);
   white-space: nowrap;
+  line-height: 1.3;
+  margin-top: 2px;
 }
 
 .presetCardAdd {
@@ -289,13 +303,6 @@
 .modelPanelActions {
   display: flex;
   gap: 8px;
-}
-
-.modelTableWrap {
-  background: var(--bg-color);
-  border: 1px solid var(--border-color-lighter);
-  border-radius: 10px;
-  padding: 4px 0;
 }
 
 .defaultBadge {
@@ -484,10 +491,18 @@
 
 .presetIcon {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
 }
 
 .presetInfo {
   min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .presetName {
@@ -497,6 +512,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
 }
 
 .presetDesc {
@@ -505,6 +521,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
+  margin-top: 2px;
 }
 
 /* ---- Provider card actions (hover visible) ---- */
@@ -545,74 +563,34 @@
   color: var(--text-color-primary);
 }
 
-/* ---- Embedding config section ---- */
-
-.embeddingSection {
-  margin-top: 20px;
-  padding: 20px;
-  background: var(--bg-color);
-  border: 1px solid var(--border-color-lighter);
-  border-radius: 10px;
-}
-
-.embeddingHeader {
+.modelIdLabel {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  width: 100%;
+  gap: 8px;
 }
 
-.embeddingTitle {
+.remoteModelOption {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-
-  h3 {
-    font-size: 15px;
-    font-weight: 600;
-    margin: 0;
-    color: var(--text-color-primary);
-  }
+  width: 100%;
 }
 
-.embeddingLoading {
-  display: flex;
-  justify-content: center;
-  padding: 24px;
+.remoteModelHint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--text-color-secondary);
 }
 
-.embeddingBody {
-  padding: 0;
-}
-
-.embeddingRow {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.embeddingField {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.embeddingLabel {
+.remoteModelHintError {
+  margin-top: 6px;
   font-size: 12px;
-  color: var(--text-color-secondary);
-}
-
-.embeddingValue {
-  font-size: 13px;
-  color: var(--text-color-primary);
-  font-weight: 500;
-}
-
-.embeddingMono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
-  word-break: break-all;
+  line-height: 1.4;
+  color: var(--el-color-danger);
 }
 
 .paginationWrap {

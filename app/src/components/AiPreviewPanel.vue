@@ -738,7 +738,7 @@ function getNodeStatusColor(nodeId: string): string | undefined {
       v-if="(activeTab === 'schema' && schemaData) || (activeTab === 'flow' && flowData)"
       :class="$style.actions"
     >
-      <el-button :class="$style.btnPrimary" theme="primary" @click="emit('primary-action')">
+      <el-button :class="$style.btnPrimary" type="primary" @click="emit('primary-action')">
         {{ primaryAction }}
       </el-button>
       <el-button :class="$style.btnApply" @click="handleApplyToEditor">

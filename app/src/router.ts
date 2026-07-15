@@ -62,6 +62,11 @@ const routes = [
         name: 'model-settings',
         component: () => import('./views/ModelSettingsView.vue'),
       },
+      {
+        path: 'settings/embedding',
+        name: 'embedding-settings',
+        component: () => import('./views/EmbeddingSettingsView.vue'),
+      },
     ],
   },
   {

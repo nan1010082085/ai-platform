@@ -92,7 +92,7 @@ function formatDate(iso: string | undefined): string {
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="model" label="Model 标识" min-width="160">
+      <el-table-column prop="model" label="模型标识" min-width="160">
         <template #default="{ row }">
           <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px">
             {{ row.model }}

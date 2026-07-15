@@ -126,7 +126,7 @@ function toneClass(tone?: PreviewTone): string {
       </div>
     </div>
 
-    <Handle v-if="!isEnd" type="source" :position="Position.Right" :class="styles.handle" />
+    <Handle v-if="!isEnd && nodeType !== 'intent-router' && nodeType !== 'collaboration-router'" type="source" :position="Position.Right" :class="styles.handle" />
     <Handle
       v-if="nodeType === 'if'"
       id="false"
@@ -134,5 +134,17 @@ function toneClass(tone?: PreviewTone): string {
       :position="Position.Bottom"
       :class="styles.handleFalse"
     />
+    <!-- intent-router: 三路出边 (needsAnalysis / matched / general) -->
+    <template v-if="nodeType === 'intent-router'">
+      <Handle id="needsAnalysis" type="source" :position="Position.Top" :class="styles.handleTop" />
+      <Handle id="matched" type="source" :position="Position.Right" :class="styles.handleRight" />
+      <Handle id="general" type="source" :position="Position.Bottom" :class="styles.handleBottom" />
+    </template>
+    <!-- collaboration-router: 三路出边 (continue / nextStep / summarize) -->
+    <template v-if="nodeType === 'collaboration-router'">
+      <Handle id="continue" type="source" :position="Position.Top" :class="styles.handleTop" />
+      <Handle id="nextStep" type="source" :position="Position.Right" :class="styles.handleRight" />
+      <Handle id="summarize" type="source" :position="Position.Bottom" :class="styles.handleBottom" />
+    </template>
   </div>
 </template>

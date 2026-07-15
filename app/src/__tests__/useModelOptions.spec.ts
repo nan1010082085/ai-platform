@@ -161,12 +161,14 @@ describe('useModelOptions', () => {
     await flushPromises()
     const opts = result.modelOptions.value
     expect(opts[0].value).toBe('deepseek-v4-flash')
-    expect(opts[0].label).toBe('DeepSeek · deepseek-v4-flash')
+    expect(opts[0].label).toBe('DeepSeek · DeepSeek V4 Flash')
+    expect(opts[0].shortLabel).toBe('DeepSeek V4 Flash')
     expect(opts[0].provider).toBe('deepseek')
     expect(opts[0].isDefault).toBe(true)
     expect(opts[0].source).toBe('provider')
     expect(opts[1].value).toBe('gpt-4o')
-    expect(opts[1].label).toBe('OpenAI · gpt-4o')
+    expect(opts[1].label).toBe('OpenAI · GPT-4o')
+    expect(opts[1].shortLabel).toBe('GPT-4o')
   })
 
   it('populates providerGroups from providers API', async () => {
@@ -216,8 +218,8 @@ describe('useModelOptions', () => {
     expect(mockGetModelConfigs).toHaveBeenCalledWith({ pageSize: 100 })
     expect(result.modelOptions.value).toHaveLength(2)
     expect(result.dataSource.value).toBe('model-configs')
-    expect(result.providerGroups.value).toHaveLength(0)
-    expect(result.hasGroupedData.value).toBe(false)
+    expect(result.providerGroups.value.length).toBeGreaterThan(0)
+    expect(result.hasGroupedData.value).toBe(true)
   })
 
   it('falls back to model-configs when providers returns empty active models', async () => {

@@ -21,7 +21,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
-const { modelOptions, loading: modelsLoading, loadModelOptions } = useModelOptions()
+const { modelOptions, providerGroups, loading: modelsLoading, loadModelOptions } = useModelOptions()
 
 const localSettings = ref<ChatSettings>(JSON.parse(JSON.stringify(props.settings)))
 const healthData = ref<AIHealthResponse | null>(null)
@@ -97,12 +97,13 @@ function handleSave(): void {
       </SectionToggle>
 
       <SectionToggle title="模型" :count="1">
-        <FieldRow label="对话模型" hint="选择 Chat 对话使用的大模型">
+        <FieldRow label="对话模型" hint="按供应商分组；可筛选或直接输入 model id">
           <ModelOptionSelect
             v-model="localSettings.model"
             :options="modelOptions"
+            :groups="providerGroups"
             :loading="modelsLoading"
-            placeholder="选择对话模型"
+            placeholder="选择或输入对话模型"
           />
         </FieldRow>
       </SectionToggle>

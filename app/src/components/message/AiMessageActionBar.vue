@@ -111,7 +111,7 @@ function handleFeedback(type: 'positive' | 'negative'): void {
         :class="[$style.actionBtn, { [$style.actionBtnActive]: currentFeedback === 'negative' }]"
         @click="handleFeedback('negative')"
       >
-        <AppIcon name="star" :size="14" />
+        <span :class="$style.thumbsDown"><AppIcon name="star" :size="14" /></span>
       </button>
     </el-tooltip>
   </div>
@@ -168,5 +168,10 @@ function handleFeedback(type: 'positive' | 'negative'): void {
 .actionBtnActive:hover {
   color: var(--color-primary-hover, #4581E9);
   background: var(--color-primary-lighter, #EEF5FF);
+}
+
+.thumbsDown {
+  display: inline-flex;
+  transform: scaleY(-1);
 }
 </style>

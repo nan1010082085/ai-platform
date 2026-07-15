@@ -23,6 +23,7 @@ const navItems = [
   { path: '/plugins', label: '插件中心', icon: 'box' },
   { path: '/monitor', label: '性能监控', icon: 'data-line' },
   { path: '/settings/models', label: '模型与连接', icon: 'connection' },
+  { path: '/settings/embedding', label: '嵌入模型', icon: 'collection' },
   { path: '/settings/keys', label: '集成密钥', icon: 'key' },
 ]
 
@@ -30,6 +31,7 @@ const activeNav = computed(() => {
   if (route.path === '/') return '/'
   if (route.path.startsWith('/workflows') || route.path.startsWith('/executions')) return '/workflows'
   if (route.path.startsWith('/settings/models')) return '/settings/models'
+  if (route.path.startsWith('/settings/embedding')) return '/settings/embedding'
   if (route.path.startsWith('/settings')) return '/settings/keys'
   return route.path
 })

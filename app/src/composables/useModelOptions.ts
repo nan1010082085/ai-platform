@@ -59,10 +59,11 @@ function fromProviders(providers: ProviderWithModels[]): {
     const groupModels: ModelOption[] = []
     for (const m of p.models) {
       if (!m.isActive) continue
+      const displayName = m.name?.trim() || m.model
       const option: ModelOption = {
         value: m.model,
-        label: `${p.name} · ${m.model}`,
-        shortLabel: p.name,
+        label: `${p.name} · ${displayName}`,
+        shortLabel: displayName,
         provider: p.type,
         model: m.model,
         isDefault: m.isDefault,
@@ -86,9 +87,12 @@ function fromProviders(providers: ProviderWithModels[]): {
   return { flat, groups }
 }
 
-/** 从旧 model-configs 构建 flat options（无分组） */
-function fromLegacyConfigs(items: ModelConfigItem[]): ModelOption[] {
-  return items.map((item) => ({
+/** 从旧 model-configs 构建 flat options + 按 provider 分组 */
+function fromLegacyConfigs(items: ModelConfigItem[]): {
+  flat: ModelOption[]
+  groups: ProviderGroup[]
+} {
+  const flat = items.map((item) => ({
     value: item.model,
     label: `${item.name} · ${item.model}`,
     shortLabel: item.name,
@@ -96,8 +100,33 @@ function fromLegacyConfigs(items: ModelConfigItem[]): ModelOption[] {
     model: item.model,
     isDefault: item.isDefault,
     configId: item.id,
-    source: item.id.startsWith('env:') ? 'env' : 'db',
+    source: (item.id.startsWith('env:') ? 'env' : 'db') as ModelOption['source'],
   }))
+
+  const map = new Map<string, ProviderGroup>()
+  for (const option of flat) {
+    const key = option.provider || 'other'
+    let group = map.get(key)
+    if (!group) {
+      const metaLabel =
+        key === 'deepseek' ? 'DeepSeek'
+        : key === 'mimo' ? 'Mimo'
+        : key === 'openai' ? 'OpenAI'
+        : key === 'anthropic' ? 'Anthropic'
+        : key === 'ollama' ? 'Ollama'
+        : key
+      group = {
+        providerId: `legacy:${key}`,
+        providerName: metaLabel,
+        providerType: key,
+        models: [],
+      }
+      map.set(key, group)
+    }
+    group.models.push(option)
+  }
+
+  return { flat, groups: [...map.values()] }
 }
 
 async function loadEnvModelOptions(): Promise<ModelConfigItem[]> {
@@ -139,8 +168,9 @@ export function useModelOptions() {
           loaded.value = true
           return
         }
-      } catch {
+      } catch (err) {
         // providers API 失败，继续 fallback
+        console.warn('[useModelOptions] providers API failed, falling back:', err instanceof Error ? err.message : err)
       }
 
       // Fallback：旧 model-configs API
@@ -152,24 +182,27 @@ export function useModelOptions() {
       } else {
         dataSource.value = 'model-configs'
       }
-      modelOptions.value = fromLegacyConfigs(items)
-      providerGroups.value = []
+      const legacy = fromLegacyConfigs(items)
+      modelOptions.value = legacy.flat
+      providerGroups.value = legacy.groups
       const defaultItem = items.find((item) => item.isDefault)
       defaultModel.value = defaultItem?.model ?? res.items[0]?.model ?? items[0]?.model ?? ''
       loaded.value = true
-    } catch {
+    } catch (err) {
+      console.warn('[useModelOptions] model-configs API failed, trying env fallback:', err instanceof Error ? err.message : err)
       try {
         const envItems = await loadEnvModelOptions()
         if (envItems.length > 0) {
-          modelOptions.value = fromLegacyConfigs(envItems)
-          providerGroups.value = []
+          const { flat, groups } = fromLegacyConfigs(envItems)
+          modelOptions.value = flat
+          providerGroups.value = groups
           const defaultItem = envItems.find((item) => item.isDefault) ?? envItems[0]
           defaultModel.value = defaultItem?.model ?? ''
           dataSource.value = 'env'
           loaded.value = true
         }
-      } catch {
-        // Keep existing data on failure
+      } catch (envErr) {
+        console.error('[useModelOptions] All model loading failed:', envErr instanceof Error ? envErr.message : envErr)
       }
     } finally {
       loading.value = false
