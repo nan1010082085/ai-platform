@@ -17,9 +17,6 @@ importers:
       '@iconify/vue':
         specifier: ^5.0.1
         version: 5.0.1(vue@3.5.39(typescript@5.7.3))
-      '@schema-platform/ai-shared':
-        specifier: file:../shared
-        version: file:../shared
       '@schema-platform/platform-shared':
         specifier: file:../../shared/platform-shared
         version: file:../../shared/platform-shared(element-plus@2.14.2(vue@3.5.39(typescript@5.7.3)))(typescript@5.7.3)(vue@3.5.39(typescript@5.7.3))
@@ -661,12 +658,6 @@ packages:
     resolution: {integrity: sha512-BfzEnDJOt9T8M989/lA37EcJgat01wLRnoi5dQf3QzOH7jzpqTAzdDbVfRljVr5r+jzKqpbHeyOfAaXxAd0PAA==}
     cpu: [x64]
     os: [win32]
-
-  '@schema-platform/ai-shared@file:../shared':
-    resolution: {directory: ../shared, type: directory}
-
-  '@schema-platform/flow-shared@file:../../flow-shared':
-    resolution: {directory: ../../flow-shared, type: directory}
 
   '@schema-platform/platform-shared@file:../../shared/platform-shared':
     resolution: {directory: ../../shared/platform-shared, type: directory}
@@ -2343,12 +2334,6 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.62.2':
     optional: true
-
-  '@schema-platform/ai-shared@file:../shared':
-    dependencies:
-      '@schema-platform/flow-shared': file:../../flow-shared
-
-  '@schema-platform/flow-shared@file:../../flow-shared': {}
 
   '@schema-platform/platform-shared@file:../../shared/platform-shared(element-plus@2.14.2(vue@3.5.39(typescript@5.7.3)))(typescript@5.7.3)(vue@3.5.39(typescript@5.7.3))':
     dependencies:

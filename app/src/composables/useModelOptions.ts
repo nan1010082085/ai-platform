@@ -9,7 +9,6 @@ import { ref, readonly, computed, onMounted } from 'vue'
 import {
   listProvidersWithModels,
   type ProviderWithModels,
-  type Model,
 } from '@/api/providerApi'
 import { getModelConfigs, type ModelConfigItem, type ModelProvider } from '@/api/modelConfigApi'
 import { checkAIHealth } from '@/api/aiApi'

@@ -200,10 +200,6 @@ async function stopExecution() {
   }
 }
 
-function stopPoll() {
-  stopWorkflowWatch()
-}
-
 async function loadExecutionGraph(exec: AgentWorkflowExecution) {
   try {
     const snap = await api.getWorkflowVersion(exec.workflowId, exec.version)

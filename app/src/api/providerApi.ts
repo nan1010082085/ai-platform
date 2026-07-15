@@ -98,6 +98,7 @@ export interface CreateProviderPayload {
   name: string
   type: ProviderType
   baseUrl: string
+  website?: string
   apiKey?: string
   isActive?: boolean
 }

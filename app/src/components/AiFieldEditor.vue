@@ -91,7 +91,7 @@ function handleCancel() {
   <t-dialog
     :visible="visible"
     header="编辑属性"
-    width="400px"
+    width="520px"
     :close-on-overlay-click="false"
     @close="handleClose"
   >

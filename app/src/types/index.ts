@@ -501,6 +501,8 @@ export interface StepData {
   imageGenerateData?: ImageGenerateResult
   /** PPT 生成数据（ppt_generate 类型） */
   pptGenerateData?: PptGenerateResult
+  /** 工作流执行数据（workflow_execution 类型） */
+  workflowExecution?: unknown
 }
 
 // ---- Requirement Analysis ----

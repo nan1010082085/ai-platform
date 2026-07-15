@@ -332,7 +332,7 @@ onMounted(() => {
     <el-dialog
       v-model="uploadDialogVisible"
       title="上传文档到知识库"
-      width="480px"
+      width="600px"
       :close-on-click-modal="false"
     >
       <div :class="$style.uploadContent">

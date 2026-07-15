@@ -269,7 +269,7 @@ onMounted(() => {
     <AppDialog
       v-model="showKeyDialog"
       title="密钥已创建"
-      width="520px"
+      width="680px"
       :show-fullscreen-btn="false"
     >
       <div :class="styles.keyNotice">

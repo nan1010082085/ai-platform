@@ -13,30 +13,33 @@ const PROVIDER_PRESETS: ProviderPreset[] = [
     label: 'DeepSeek',
     icon: 'chat-dot-round',
     color: '#4D6BFE',
-    defaultBaseUrl: 'https://api.deepseek.com',
+    defaultBaseUrl: 'https://api.deepseek.com/v1',
+    website: 'https://platform.deepseek.com',
     description: 'DeepSeek V4，中文能力强，高性价比',
     placeholderApiKey: 'sk-...',
     defaultModels: ['deepseek-chat', 'deepseek-reasoner'],
   },
-  {
-    type: 'ollama',
-    label: 'Ollama',
-    icon: 'monitor',
-    color: '#2080F0',
-    defaultBaseUrl: 'http://localhost:11434/v1',
-    description: '本地 Ollama，无需 API Key',
-    placeholderApiKey: '',
-    defaultModels: [],
-  },
-  {
+{
     type: 'mimo',
     label: 'Mimo',
     icon: 'magic-stick',
     color: '#FF6B35',
-    defaultBaseUrl: 'https://token-plan-cn.xiaomimimo.com/v1',
+    defaultBaseUrl: 'https://api.xiaomimimo.com/v1',
+    website: 'https://mimo.xiaomi.com',
     description: '小米 Mimo，OpenAI 兼容接口',
     placeholderApiKey: 'tp-...',
     defaultModels: ['mimo-v2.5'],
+  },
+  {
+    type: 'openai',
+    label: 'OpenAI',
+    icon: 'chat-round',
+    color: '#10A37F',
+    defaultBaseUrl: 'https://api.openai.com/v1',
+    website: 'https://platform.openai.com',
+    description: 'GPT-4o / GPT-4 系列',
+    placeholderApiKey: 'sk-...',
+    defaultModels: ['gpt-4o', 'gpt-4o-mini'],
   },
 ]
 
@@ -56,6 +59,7 @@ const form = ref<CreateProviderPayload>({
   name: '',
   type: 'deepseek',
   baseUrl: '',
+  website: '',
   apiKey: '',
   isActive: true,
 })
@@ -107,6 +111,7 @@ function getProviderTypeIcon(type: string): string {
 function applyPresetToForm(preset: ProviderPreset): void {
   form.value.type = preset.type
   form.value.baseUrl = preset.defaultBaseUrl
+  form.value.website = preset.website
   if (!form.value.name) {
     form.value.name = preset.label
   }
@@ -125,7 +130,7 @@ function handleSubmit(): void {
   <AppDialog
     v-model="modelValue"
     :title="isEditing ? '编辑供应商' : '添加供应商'"
-    width="520px"
+    width="680px"
     :loading="submitting"
     @confirm="handleSubmit"
   >
@@ -189,6 +194,20 @@ function handleSubmit(): void {
           :placeholder="baseUrlPlaceholder"
           maxlength="500"
         />
+        <div style="font-size: 11px; color: var(--text-color-placeholder); margin-top: 4px">
+          OpenAI 兼容接口地址，以 <code>/v1</code> 结尾（不含 <code>/chat/completions</code>）
+        </div>
+      </el-form-item>
+      <el-form-item label="官方网站">
+        <el-input
+          v-model="form.website"
+          :placeholder="currentPreset?.website || 'https://...'"
+          maxlength="500"
+        >
+          <template #prefix>
+            <AppIcon name="link" :size="14" />
+          </template>
+        </el-input>
       </el-form-item>
       <el-form-item label="API Key">
         <el-input

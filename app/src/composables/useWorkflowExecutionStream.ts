@@ -29,7 +29,7 @@ export function subscribeWorkflowExecution(
 
   const offEvent = onWorkflowEvent((event) => {
     if (event.executionId !== executionId) return
-    onUpdate(event.execution as AgentWorkflowExecution)
+    onUpdate(event.execution as unknown as AgentWorkflowExecution)
   })
 
   const offError = onWorkflowError((err) => {
@@ -126,7 +126,7 @@ export function waitForWorkflowExecution(
 
     const offEvent = onWorkflowEvent((event) => {
       if (event.executionId !== executionId) return
-      const execution = event.execution as AgentWorkflowExecution
+      const execution = event.execution as unknown as AgentWorkflowExecution
       onProgress?.(execution)
       if (TERMINAL_STATUSES.has(execution.status)) {
         finish(execution)

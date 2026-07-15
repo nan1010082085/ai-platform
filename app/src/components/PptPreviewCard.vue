@@ -5,7 +5,7 @@
  * 显示 AI 生成的 PPT 概览，支持下载 .pptx 文件。
  */
 
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 export interface PptSlide {
@@ -73,58 +73,58 @@ function handleDownload() {
 </script>
 
 <template>
-  <div :class="$styles.card">
-    <div :class="$styles.header">
-      <div :class="$styles.titleRow">
+  <div :class="$style.card">
+    <div :class="$style.header">
+      <div :class="$style.titleRow">
         <AppIcon name="data-board" :size="16" :style="{ color: '#67C23A' }" />
-        <span :class="$styles.title">{{ metadata?.title ?? 'AI PPT 生成' }}</span>
+        <span :class="$style.title">{{ metadata?.title ?? 'AI PPT 生成' }}</span>
       </div>
-      <div v-if="metadata" :class="$styles.metaBadges">
-        <span :class="$styles.badge">{{ templateLabels[metadata.template] ?? metadata.template }}</span>
-        <span :class="$styles.badge">{{ metadata.totalSlides }} 页</span>
+      <div v-if="metadata" :class="$style.metaBadges">
+        <span :class="$style.badge">{{ templateLabels[metadata.template] ?? metadata.template }}</span>
+        <span :class="$style.badge">{{ metadata.totalSlides }} 页</span>
       </div>
     </div>
 
-    <div v-if="loading" :class="$styles.loadingState">
-      <div :class="$styles.spinner" />
+    <div v-if="loading" :class="$style.loadingState">
+      <div :class="$style.spinner" />
       <span>正在生成 PPT...</span>
     </div>
 
-    <div v-else-if="error" :class="$styles.errorState">
+    <div v-else-if="error" :class="$style.errorState">
       <AppIcon name="warning" :size="24" />
       <span>{{ error }}</span>
     </div>
 
-    <div v-else-if="previewSlides.length" :class="$styles.previewGrid">
+    <div v-else-if="previewSlides.length" :class="$style.previewGrid">
       <div
         v-for="slide in previewSlides"
         :key="slide.index"
-        :class="$styles.slideThumb"
+        :class="$style.slideThumb"
       >
-        <div :class="$styles.slideHeader">
+        <div :class="$style.slideHeader">
           <AppIcon :name="typeIcons[slide.type] ?? 'document'" :size="12" />
           <span>{{ slide.heading }}</span>
         </div>
-        <div :class="$styles.slideBody">
-          <div v-if="slide.content?.length" :class="$styles.slideContent">
-            <div v-for="(point, i) in slide.content.slice(0, 3)" :key="i" :class="$styles.slidePoint">
+        <div :class="$style.slideBody">
+          <div v-if="slide.content?.length" :class="$style.slideContent">
+            <div v-for="(point, i) in slide.content.slice(0, 3)" :key="i" :class="$style.slidePoint">
               {{ point }}
             </div>
-            <div v-if="slide.content.length > 3" :class="$styles.slideMore">
+            <div v-if="slide.content.length > 3" :class="$style.slideMore">
               +{{ slide.content.length - 3 }} 更多
             </div>
           </div>
-          <div v-else :class="$styles.slideEmpty">暂无内容</div>
+          <div v-else :class="$style.slideEmpty">暂无内容</div>
         </div>
-        <div :class="$styles.slideIndex">{{ slide.index }}</div>
+        <div :class="$style.slideIndex">{{ slide.index }}</div>
       </div>
 
-      <div v-if="(slides?.length ?? 0) > 4" :class="$styles.moreSlides">
+      <div v-if="(slides?.length ?? 0) > 4" :class="$style.moreSlides">
         <span>+{{ (slides?.length ?? 0) - 4 }} 页</span>
       </div>
     </div>
 
-    <div v-if="metadata" :class="$styles.meta">
+    <div v-if="metadata" :class="$style.meta">
       <span v-if="metadata.style">
         <AppIcon name="brush" :size="12" />
         {{ styleLabels[metadata.style] ?? metadata.style }}
@@ -135,8 +135,8 @@ function handleDownload() {
       </span>
     </div>
 
-    <div v-if="!loading && slides?.length" :class="$styles.actions">
-      <button :class="$styles.downloadBtn" @click="handleDownload">
+    <div v-if="!loading && slides?.length" :class="$style.actions">
+      <button :class="$style.downloadBtn" @click="handleDownload">
         <AppIcon name="download" :size="14" />
         下载 PPT
       </button>

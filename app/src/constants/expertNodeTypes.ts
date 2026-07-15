@@ -2,7 +2,7 @@
  * 专家 Agent 节点 — 意图识别 + 插件专家。
  */
 
-import type { AgentNodeType, AgentWorkflowNodeData } from '@/types/agentWorkflow'
+import type { AgentNodeType } from '@/types/agentWorkflow'
 
 export type ExpertAgentKind = 'editor' | 'flow' | 'page' | 'general'
 

@@ -72,22 +72,22 @@ function handleKeydown(event: KeyboardEvent): void {
 <template>
   <div
     :class="[
-      $styles.card,
-      accepted && $styles.accepted,
-      dismissed && $styles.dismissed,
+      $style.card,
+      accepted && $style.accepted,
+      dismissed && $style.dismissed,
     ]"
     :tabindex="isActionable ? 0 : -1"
     role="article"
     :aria-label="`建议: ${suggestion.title}`"
     @keydown="handleKeydown"
   >
-    <div :class="$styles.header">
-      <div :class="$styles.typeBadge" :style="{ color: currentType.color }">
+    <div :class="$style.header">
+      <div :class="$style.typeBadge" :style="{ color: currentType.color }">
         <AppIcon :name="currentType.icon" :size="14" />
         <span>{{ currentType.label }}</span>
       </div>
       <div
-        :class="$styles.priorityBadge"
+        :class="$style.priorityBadge"
         :style="{
           color: currentPriority.color,
           background: currentPriority.bgColor,
@@ -97,18 +97,18 @@ function handleKeydown(event: KeyboardEvent): void {
       </div>
     </div>
 
-    <div :class="$styles.body">
-      <div :class="$styles.title">{{ suggestion.title }}</div>
-      <div :class="$styles.description">{{ suggestion.description }}</div>
-      <div v-if="suggestion.targetName" :class="$styles.target">
+    <div :class="$style.body">
+      <div :class="$style.title">{{ suggestion.title }}</div>
+      <div :class="$style.description">{{ suggestion.description }}</div>
+      <div v-if="suggestion.targetName" :class="$style.target">
         <AppIcon name="connection" :size="12" />
         <span>{{ suggestion.targetName }}</span>
       </div>
     </div>
 
-    <div v-if="isActionable" :class="$styles.actions">
+    <div v-if="isActionable" :class="$style.actions">
       <button
-        :class="$styles.acceptBtn"
+        :class="$style.acceptBtn"
         type="button"
         @click="handleAccept"
       >
@@ -116,7 +116,7 @@ function handleKeydown(event: KeyboardEvent): void {
         采纳
       </button>
       <button
-        :class="$styles.dismissBtn"
+        :class="$style.dismissBtn"
         type="button"
         @click="handleDismiss"
       >
@@ -125,11 +125,11 @@ function handleKeydown(event: KeyboardEvent): void {
       </button>
     </div>
 
-    <div v-if="accepted" :class="$styles.statusBadge">
+    <div v-if="accepted" :class="$style.statusBadge">
       <AppIcon name="check" :size="14" />
       已采纳
     </div>
-    <div v-if="dismissed" :class="[$styles.statusBadge, $styles.statusDismissed]">
+    <div v-if="dismissed" :class="[$style.statusBadge, $style.statusDismissed]">
       <AppIcon name="close" :size="14" />
       已忽略
     </div>

@@ -50,6 +50,8 @@ const TEMPLATE_DEFAULT_NAMES: Record<AgentWorkflowTemplateId, string> = {
   'image-text-generation': '图文生成',
   'ppt-generation': 'PPT 生成',
   'image-analysis': '图片智能分析',
+  'chat-parity-assistant': '聊天对等助手',
+  'requirement-gated-build': '需求门控构建',
 }
 
 type ListTab = 'all' | 'draft' | 'published' | 'templates'
@@ -76,6 +78,8 @@ const TEMPLATE_ICONS: Record<AgentWorkflowTemplateId, string> = {
   'image-text-generation': 'picture-outline',
   'ppt-generation': 'data-board',
   'image-analysis': 'view',
+  'chat-parity-assistant': 'chat-line-round',
+  'requirement-gated-build': 'key',
 }
 
 const TEMPLATE_CATEGORY_LABELS: Record<AgentWorkflowTemplateMeta['category'], string> = {

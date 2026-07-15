@@ -6,6 +6,7 @@ export interface ProviderPreset {
   icon: string
   color: string
   defaultBaseUrl: string
+  website: string
   description: string
   placeholderApiKey: string
   defaultModels: string[]

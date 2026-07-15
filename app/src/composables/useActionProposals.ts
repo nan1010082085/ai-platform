@@ -5,7 +5,7 @@
  * 支持单项选择、全部选择、部分审批、行内编辑。
  */
 
-import { ref, computed, type Ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { ActionItem, ActionProposal, ProposalStatus } from '@/types'
 
 /** 单个方案的内部状态 */

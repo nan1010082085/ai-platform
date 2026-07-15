@@ -4,7 +4,7 @@ import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import type { Provider } from '@/api/providerApi'
-import type { ModelParameters, CreateModelPayload } from '@/api/modelApi'
+import type { ModelParameters } from '@/api/modelApi'
 import styles from '@/views/ModelSettingsView.module.scss'
 
 export interface ModelFormState {
@@ -84,7 +84,7 @@ function handleSubmit(): void {
   <AppDialog
     v-model="modelValue"
     :title="isEditing ? '编辑模型' : '添加模型'"
-    width="520px"
+    width="680px"
     :loading="submitting"
     @confirm="handleSubmit"
   >

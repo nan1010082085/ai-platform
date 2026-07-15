@@ -99,8 +99,7 @@
   background: var(--el-bg-color, #fff);
   cursor: pointer;
   transition: all 0.2s;
-  flex-shrink: 0;
-  min-width: 180px;
+  min-width: 0;
 
   &:hover {
     border-color: var(--el-color-primary, #409eff);
@@ -479,8 +478,8 @@
 
 .presetGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 }
 
 .presetIcon {
@@ -614,4 +613,10 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   word-break: break-all;
+}
+
+.paginationWrap {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 0;
 }

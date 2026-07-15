@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 模型与连接 — 供应商 + 模型两级管理
+ * 模型中心 — 供应商 + 模型两级管理
  *
  * 左侧面板：供应商列表（CRUD + 测试连接）
  * 右侧面板：选中供应商的模型列表（CRUD + 设为默认 + 启用/禁用）
@@ -54,30 +54,33 @@ const PROVIDER_PRESETS: ProviderPreset[] = [
     label: 'DeepSeek',
     icon: 'chat-dot-round',
     color: '#4D6BFE',
-    defaultBaseUrl: 'https://api.deepseek.com',
+    defaultBaseUrl: 'https://api.deepseek.com/v1',
+    website: 'https://platform.deepseek.com',
     description: 'DeepSeek V4，中文能力强，高性价比',
     placeholderApiKey: 'sk-...',
     defaultModels: ['deepseek-chat', 'deepseek-reasoner'],
   },
-  {
-    type: 'ollama',
-    label: 'Ollama',
-    icon: 'monitor',
-    color: '#2080F0',
-    defaultBaseUrl: 'http://localhost:11434/v1',
-    description: '本地 Ollama，无需 API Key',
-    placeholderApiKey: '',
-    defaultModels: [],
-  },
-  {
+{
     type: 'mimo',
     label: 'Mimo',
     icon: 'magic-stick',
     color: '#FF6B35',
-    defaultBaseUrl: 'https://token-plan-cn.xiaomimimo.com/v1',
+    defaultBaseUrl: 'https://api.xiaomimimo.com/v1',
+    website: 'https://mimo.xiaomi.com',
     description: '小米 Mimo，OpenAI 兼容接口',
     placeholderApiKey: 'tp-...',
     defaultModels: ['mimo-v2.5'],
+  },
+  {
+    type: 'openai',
+    label: 'OpenAI',
+    icon: 'chat-round',
+    color: '#10A37F',
+    defaultBaseUrl: 'https://api.openai.com/v1',
+    website: 'https://platform.openai.com',
+    description: 'GPT-4o / GPT-4 系列',
+    placeholderApiKey: 'sk-...',
+    defaultModels: ['gpt-4o', 'gpt-4o-mini'],
   },
 ]
 
@@ -238,19 +241,6 @@ function openCreateProviderDialog(): void {
     name: '',
     type: 'deepseek',
     baseUrl: '',
-    apiKey: '',
-    isActive: true,
-  }
-  showProviderDialog.value = true
-}
-
-function openCreateProviderDialogWithPreset(preset: ProviderPreset): void {
-  isEditingProvider.value = false
-  editingProviderId.value = ''
-  providerInitialForm.value = {
-    name: preset.label,
-    type: preset.type,
-    baseUrl: preset.defaultBaseUrl,
     apiKey: '',
     isActive: true,
   }
@@ -618,7 +608,7 @@ onMounted(() => {
       <header :class="styles.header">
         <div :class="styles.titleRow">
           <div>
-            <h1>模型与连接</h1>
+            <h1>模型中心</h1>
             <p :class="styles.subtitle">
               管理 LLM 供应商与模型配置，测试连通性，设置默认模型。
             </p>
@@ -760,7 +750,7 @@ onMounted(() => {
     <AppDialog
       v-model="showTestDialog"
       :title="testDialogTitle"
-      width="480px"
+      width="600px"
       :show-fullscreen-btn="false"
     >
       <div v-if="testDialogLoading" style="text-align: center; padding: 20px">
@@ -791,7 +781,7 @@ onMounted(() => {
     <AppDialog
       v-model="showEmbeddingDialog"
       title="编辑嵌入模型配置"
-      width="520px"
+      width="680px"
       :loading="embeddingFormSubmitting"
       @confirm="handleEmbeddingSubmit"
     >

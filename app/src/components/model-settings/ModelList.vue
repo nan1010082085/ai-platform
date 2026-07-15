@@ -1,14 +1,23 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import type { Provider } from '@/api/providerApi'
 import type { Model, ModelParameters } from '@/api/modelApi'
 import styles from '@/views/ModelSettingsView.module.scss'
 
-defineProps<{
+const props = defineProps<{
   models: Model[]
   modelsLoading: boolean
   selectedProvider: Provider
 }>()
+
+// Pagination
+const currentPage = ref(1)
+const pageSize = ref(10)
+const paginatedModels = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return props.models.slice(start, start + pageSize.value)
+})
 
 const emit = defineEmits<{
   testConnection: [provider: Provider]
@@ -68,7 +77,7 @@ function formatDate(iso: string | undefined): string {
   </div>
 
   <div :class="styles.modelTableWrap" v-loading="modelsLoading">
-    <el-table :data="models" stripe>
+    <el-table :data="paginatedModels" stripe>
       <el-table-column prop="name" label="名称" min-width="140">
         <template #default="{ row }">
           <span>{{ row.name }}</span>
@@ -177,6 +186,17 @@ function formatDate(iso: string | undefined): string {
       <el-button type="primary" plain size="small" @click="emit('create')">
         添加第一个模型
       </el-button>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="models.length > pageSize" :class="styles.paginationWrap">
+      <el-pagination
+        v-model:current-page="currentPage"
+        :page-size="pageSize"
+        :total="models.length"
+        layout="total, prev, pager, next"
+        small
+      />
     </div>
   </div>
 </template>

@@ -81,6 +81,9 @@ renderWithQiankun({
       router = null
     }
   },
+  update() {
+    aiLog.lifecycle('update')
+  },
 })
 
 // Standalone mode detection:

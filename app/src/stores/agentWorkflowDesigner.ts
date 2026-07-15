@@ -16,7 +16,7 @@ function graphToVueFlow(graph: AgentWorkflowGraph): { nodes: Node[]; edges: Edge
       id: n.id,
       type: n.type,
       position: n.position,
-      data: stripRuntimeFields((n.data ?? { label: n.id }) as Record<string, unknown>),
+      data: stripRuntimeFields((n.data ?? { label: n.id }) as unknown as Record<string, unknown>),
     })),
     edges: graph.edges.map((e) => ({
       id: e.id,
@@ -49,7 +49,7 @@ function clearEdgeRuntimeVisual(edge: Edge): Edge {
 
 function stripRuntimeFields(data: Record<string, unknown>): AgentWorkflowNodeData {
   const { runtimeRecord: _runtime, ...rest } = data
-  return rest as AgentWorkflowNodeData
+  return rest as unknown as AgentWorkflowNodeData
 }
 
 function vueFlowToGraph(nodes: Node[], edges: Edge[], entryNodeId: string): AgentWorkflowGraph {
@@ -59,7 +59,7 @@ function vueFlowToGraph(nodes: Node[], edges: Edge[], entryNodeId: string): Agen
       id: n.id,
       type: n.type as AgentNodeType,
       position: n.position,
-      data: stripRuntimeFields((n.data ?? { label: n.id }) as Record<string, unknown>),
+      data: stripRuntimeFields((n.data ?? { label: n.id }) as unknown as Record<string, unknown>),
     })),
     edges: edges.map((e) => ({
       id: e.id,
@@ -230,7 +230,7 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
 
   function applyExecutionHighlight(
     activeNodeIds: string[],
-    completedNodeIds: string[],
+    _completedNodeIds: string[],
     records: AgentNodeRecord[] = [],
   ) {
     const activeSet = new Set(activeNodeIds)
