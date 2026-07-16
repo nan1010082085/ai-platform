@@ -1,5 +1,7 @@
 import { ref, computed } from 'vue'
 import { fetchPluginRegistry, type PluginExpertSummary, type PluginToolSummary, type PluginSkillSummary, type PluginMcpServerSummary } from '@/api/pluginApi'
+import { fetchTenants, type TenantInfo } from '@/api/tenantApi'
+import { useAuth } from '@schema-platform/platform-shared/utils/useAuth'
 import type { AgentPaletteItem } from '@/constants/agentNodes'
 import type { AgentNodeType } from '@/types/agentWorkflow'
 import {
@@ -19,6 +21,11 @@ const mcpServers = ref<PluginMcpServerSummary[]>([])
 const loaded = ref(false)
 const loading = ref(false)
 const error = ref<string | null>(null)
+
+// ── 租户隔离 ──
+const tenants = ref<TenantInfo[]>([])
+const tenantsLoading = ref(false)
+const selectedTenantId = ref<string>('')
 
 const LEGACY_EXPERT_ICON: Record<string, string> = {
   editor: 'document',
@@ -104,7 +111,8 @@ export function usePluginRegistry() {
     loading.value = true
     error.value = null
     try {
-      const data = await fetchPluginRegistry()
+      const tenantId = selectedTenantId.value || undefined
+      const data = await fetchPluginRegistry(tenantId)
       experts.value = data.experts
       skills.value = data.skills
       tools.value = data.tools
@@ -115,6 +123,31 @@ export function usePluginRegistry() {
     } finally {
       loading.value = false
     }
+  }
+
+  async function loadTenants() {
+    if (tenantsLoading.value) return
+    tenantsLoading.value = true
+    try {
+      tenants.value = await fetchTenants()
+      // 默认选中当前用户的租户
+      if (!selectedTenantId.value) {
+        const { user } = useAuth()
+        const currentTenantId = user.value?.tenantId
+        if (currentTenantId && tenants.value.some((t) => t.id === currentTenantId)) {
+          selectedTenantId.value = currentTenantId
+        }
+      }
+    } catch {
+      // 租户加载失败不阻塞主流程
+    } finally {
+      tenantsLoading.value = false
+    }
+  }
+
+  function setTenant(tenantId: string) {
+    selectedTenantId.value = tenantId
+    void load()
   }
 
   function expertColor(expertId: string): string {
@@ -152,6 +185,12 @@ export function usePluginRegistry() {
     expertColor,
     getToolsForPanel,
     resolveToolDef,
+    // ── 租户隔离 ──
+    tenants,
+    tenantsLoading,
+    selectedTenantId,
+    loadTenants,
+    setTenant,
   }
 }
 

@@ -35,7 +35,10 @@ const toolKindTabs = [
 const activeLayer = ref<LayerTab>('experts')
 const activeToolKind = ref<ToolKindTab>('all')
 const searchInput = ref('')
-const { experts, skills, tools, mcpServers, loading, error, load } = usePluginRegistry()
+const {
+  experts, skills, tools, mcpServers, loading, error, load,
+  tenants, tenantsLoading, selectedTenantId, loadTenants, setTenant,
+} = usePluginRegistry()
 
 const editorVisible = ref(false)
 const editorTitle = ref('')
@@ -96,6 +99,7 @@ const filteredSkills = computed(() =>
 
 onMounted(() => {
   void load()
+  void loadTenants()
 })
 </script>
 
@@ -157,6 +161,28 @@ onMounted(() => {
 
         <div v-show="activeLayer === 'tools'" :class="styles.subToolbar">
           <FilterTabs v-model="activeToolKind" :options="toolKindTabs" />
+        </div>
+
+        <div v-show="activeLayer === 'mcp'" :class="styles.subToolbar">
+          <div :class="styles.tenantFilter">
+            <span :class="styles.tenantLabel">租户</span>
+            <el-select
+              :model-value="selectedTenantId"
+              :loading="tenantsLoading"
+              placeholder="全部租户"
+              clearable
+              filterable
+              :class="styles.tenantSelect"
+              @update:model-value="(v: string) => setTenant(v || '')"
+            >
+              <el-option
+                v-for="t in tenants"
+                :key="t.id"
+                :label="t.name"
+                :value="t.id"
+              />
+            </el-select>
+          </div>
         </div>
 
         <CardTable v-show="activeLayer === 'experts'">
