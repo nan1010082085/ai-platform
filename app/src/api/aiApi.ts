@@ -15,54 +15,33 @@ import type {
   RagSearchResponse,
 } from '@/types'
 import { redirectToLogin } from '@schema-platform/platform-shared/utils/authPaths'
+import {
+  request as sharedRequest,
+  buildHeaders as sharedBuildHeaders,
+  ApiError,
+} from '@/api/shared/request'
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) ?? '/schema-platform/api'
-const ACCESS_TOKEN_KEY = 'sfp_access_token'
 
-// ---- 错误类型 ----
+// ---- 错误类型 (re-export for backward compat) ----
 
-export class AiApiError extends Error {
-  public readonly status: number
+export class AiApiError extends ApiError {}
 
-  constructor(message: string, status: number) {
-    super(message)
-    this.name = 'AiApiError'
-    this.status = status
-  }
-}
+// ---- Auth helpers (delegate to shared module) ----
 
-// ---- 基础请求 ----
-
-/** Token 提供者，由 main.ts 注入，避免 apiClient 直接耦合微前端框架 */
-let tokenProvider: (() => string | null) | null = null
-let onUnauthorized: (() => void) | null = null
-
+/** @deprecated Use setTokenProvider from @/api/shared/request */
 export function setTokenProvider(provider: () => string | null): void {
-  tokenProvider = provider
+  // Already handled by setupCapabilityAuth via shared module
 }
 
+/** @deprecated Use setUnauthorizedHandler from @/api/shared/request */
 export function setUnauthorizedHandler(handler: () => void): void {
-  onUnauthorized = handler
-}
-
-function resolveToken(): string | null {
-  return tokenProvider?.() || localStorage.getItem(ACCESS_TOKEN_KEY)
-}
-
-interface ApiResponse<T> {
-  success: boolean
-  data: T
-  error?: { message: string }
+  // Already handled by setupCapabilityAuth via shared module
 }
 
 /** 构建请求 headers，自动注入 Authorization */
 export function buildHeaders(extra?: Record<string, string>): Record<string, string> {
-  const headers: Record<string, string> = { ...extra }
-  const token = resolveToken()
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
-  return headers
+  return sharedBuildHeaders(extra)
 }
 
 /**
@@ -71,40 +50,18 @@ export function buildHeaders(extra?: Record<string, string>): Record<string, str
  */
 export async function fetchRaw(url: string, init?: RequestInit): Promise<Response> {
   const mergedInit: RequestInit = { ...init }
-  mergedInit.headers = buildHeaders(init?.headers as Record<string, string>)
+  mergedInit.headers = sharedBuildHeaders(init?.headers as Record<string, string>)
 
   const response = await fetch(url, mergedInit)
   if (response.status === 401) {
-    onUnauthorized?.()
     redirectToLogin()
-    throw new AiApiError('Authentication required', 401)
+    throw new ApiError('Authentication required', 401)
   }
   return response
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const mergedInit: RequestInit = { ...init }
-  mergedInit.headers = buildHeaders(init?.headers as Record<string, string>)
-
-  const response = await fetch(`${BASE_URL}${path}`, mergedInit)
-
-  if (!response.ok) {
-    // 401: 通知调用方认证失败
-    if (response.status === 401) {
-      onUnauthorized?.()
-      redirectToLogin()
-      throw new AiApiError('Authentication required', 401)
-    }
-    const body = await response.json().catch(() => null)
-    const msg = body?.error?.message ?? `${response.status} ${response.statusText}`
-    throw new AiApiError(msg, response.status)
-  }
-
-  const body = (await response.json()) as ApiResponse<T>
-  if (!body.success) {
-    throw new AiApiError(body.error?.message ?? 'Request failed', response.status)
-  }
-  return body.data
+  return sharedRequest<T>(path, init)
 }
 
 // ---- 对话管理 ----

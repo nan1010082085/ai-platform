@@ -2,76 +2,10 @@
  * Model API Client
  *
  * 对接 server /api/models 端点：CRUD + 测试调用。
+ * 使用共享 request 模块，无重复基础设施代码。
  */
 
-import { redirectToLogin } from '@schema-platform/platform-shared/utils/authPaths'
-
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) ?? '/schema-platform/api'
-const ACCESS_TOKEN_KEY = 'sfp_access_token'
-
-// ---- 基础请求模式（复用 providerApi / modelConfigApi 同一模式）----
-
-let tokenProvider: (() => string | null) | null = null
-let onUnauthorized: (() => void) | null = null
-
-export function setModelTokenProvider(provider: () => string | null): void {
-  tokenProvider = provider
-}
-
-export function setModelUnauthorizedHandler(handler: () => void): void {
-  onUnauthorized = handler
-}
-
-function resolveToken(): string | null {
-  return tokenProvider?.() || localStorage.getItem(ACCESS_TOKEN_KEY)
-}
-
-interface ApiResponse<T> {
-  success: boolean
-  data: T
-  error?: { message: string }
-}
-
-function buildHeaders(extra?: Record<string, string>): Record<string, string> {
-  const headers: Record<string, string> = { ...extra }
-  const token = resolveToken()
-  if (token) headers['Authorization'] = `Bearer ${token}`
-  return headers
-}
-
-export class ModelApiError extends Error {
-  public readonly status: number
-
-  constructor(message: string, status: number) {
-    super(message)
-    this.name = 'ModelApiError'
-    this.status = status
-  }
-}
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const mergedInit: RequestInit = { ...init }
-  mergedInit.headers = buildHeaders(init?.headers as Record<string, string>)
-
-  const response = await fetch(`${BASE_URL}${path}`, mergedInit)
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      onUnauthorized?.()
-      redirectToLogin()
-      throw new ModelApiError('登录已过期，请重新登录', 401)
-    }
-    const body = await response.json().catch(() => null)
-    const msg = body?.error?.message ?? `${response.status} ${response.statusText}`
-    throw new ModelApiError(msg, response.status)
-  }
-
-  const body = (await response.json()) as ApiResponse<T>
-  if (!body.success) {
-    throw new ModelApiError(body.error?.message ?? '请求失败', response.status)
-  }
-  return body.data
-}
+import { request, ApiError } from '@/api/shared/request'
 
 // ---- 类型 ----
 
@@ -133,7 +67,7 @@ export async function listModels(providerId?: string): Promise<Model[]> {
 export async function getModel(id: string): Promise<Model> {
   const models = await listModels()
   const found = models.find((m) => m.id === id)
-  if (!found) throw new ModelApiError('Model not found', 404)
+  if (!found) throw new ApiError('Model not found', 404)
   return found
 }
 
@@ -141,8 +75,7 @@ export async function getModel(id: string): Promise<Model> {
 export async function createModel(payload: CreateModelPayload): Promise<Model> {
   return request<Model>('/models', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: payload,
   })
 }
 
@@ -150,8 +83,7 @@ export async function createModel(payload: CreateModelPayload): Promise<Model> {
 export async function updateModel(id: string, payload: UpdateModelPayload): Promise<Model> {
   return request<Model>(`/models/${encodeURIComponent(id)}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: payload,
   })
 }
 
@@ -166,8 +98,7 @@ export async function deleteModel(id: string): Promise<void> {
 export async function testModel(id: string, message?: string): Promise<TestConnectionResult> {
   return request<TestConnectionResult>(`/models/${encodeURIComponent(id)}/test`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: message ?? 'Hello, respond with OK' }),
+    body: { message: message ?? 'Hello, respond with OK' },
   })
 }
 

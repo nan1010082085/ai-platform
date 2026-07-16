@@ -3,76 +3,10 @@
  *
  * 对接 server /api/keys 端点：创建、列表、禁用/启用、删除。
  * 创建时返回完整 sk-...，列表仅返回脱敏前缀。
+ * 使用共享 request 模块，无重复基础设施代码。
  */
 
-import { redirectToLogin } from '@schema-platform/platform-shared/utils/authPaths'
-
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) ?? '/schema-platform/api'
-const ACCESS_TOKEN_KEY = 'sfp_access_token'
-
-// ---- 复用 aiApi 的基础请求模式 ----
-
-let tokenProvider: (() => string | null) | null = null
-let onUnauthorized: (() => void) | null = null
-
-export function setApiKeyTokenProvider(provider: () => string | null): void {
-  tokenProvider = provider
-}
-
-export function setApiKeyUnauthorizedHandler(handler: () => void): void {
-  onUnauthorized = handler
-}
-
-function resolveToken(): string | null {
-  return tokenProvider?.() || localStorage.getItem(ACCESS_TOKEN_KEY)
-}
-
-interface ApiResponse<T> {
-  success: boolean
-  data: T
-  error?: { message: string }
-}
-
-function buildHeaders(extra?: Record<string, string>): Record<string, string> {
-  const headers: Record<string, string> = { ...extra }
-  const token = resolveToken()
-  if (token) headers['Authorization'] = `Bearer ${token}`
-  return headers
-}
-
-export class ApiKeyApiError extends Error {
-  public readonly status: number
-
-  constructor(message: string, status: number) {
-    super(message)
-    this.name = 'ApiKeyApiError'
-    this.status = status
-  }
-}
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const mergedInit: RequestInit = { ...init }
-  mergedInit.headers = buildHeaders(init?.headers as Record<string, string>)
-
-  const response = await fetch(`${BASE_URL}${path}`, mergedInit)
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      onUnauthorized?.()
-      redirectToLogin()
-      throw new ApiKeyApiError('Authentication required', 401)
-    }
-    const body = await response.json().catch(() => null)
-    const msg = body?.error?.message ?? `${response.status} ${response.statusText}`
-    throw new ApiKeyApiError(msg, response.status)
-  }
-
-  const body = (await response.json()) as ApiResponse<T>
-  if (!body.success) {
-    throw new ApiKeyApiError(body.error?.message ?? 'Request failed', response.status)
-  }
-  return body.data
-}
+import { request } from '@/api/shared/request'
 
 // ---- 类型 ----
 
@@ -112,8 +46,7 @@ export interface CreateApiKeyPayload {
 export async function createApiKey(payload: CreateApiKeyPayload): Promise<ApiKeyItem> {
   return request<ApiKeyItem>('/keys', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: payload,
   })
 }
 
@@ -138,8 +71,7 @@ export async function updateApiKeyStatus(
 ): Promise<ApiKeyItem> {
   return request<ApiKeyItem>(`/keys/${encodeURIComponent(id)}/status`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status }),
+    body: { status },
   })
 }
 

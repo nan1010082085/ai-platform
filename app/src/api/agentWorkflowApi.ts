@@ -1,5 +1,6 @@
 /**
  * Agent 工作流编排 API
+ * 使用共享 request 模块，无重复基础设施代码。
  */
 
 import type {
@@ -13,57 +14,7 @@ import type {
   AgentWorkflowVersionEntry,
 } from '@/types/agentWorkflow'
 
-import { redirectToLogin } from '@schema-platform/platform-shared/utils/authPaths'
-
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) ?? '/schema-platform/api'
-const ACCESS_TOKEN_KEY = 'sfp_access_token'
-
-let tokenProvider: (() => string | null) | null = null
-let onUnauthorized: (() => void) | null = null
-
-export function setAgentWorkflowTokenProvider(provider: () => string | null): void {
-  tokenProvider = provider
-}
-
-export function setAgentWorkflowUnauthorizedHandler(handler: () => void): void {
-  onUnauthorized = handler
-}
-
-function resolveToken(): string | null {
-  return tokenProvider?.() || localStorage.getItem(ACCESS_TOKEN_KEY)
-}
-
-interface ApiResponse<T> {
-  success: boolean
-  data: T
-  error?: { message: string }
-}
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(init?.headers as Record<string, string>),
-  }
-  const token = resolveToken()
-  if (token) headers.Authorization = `Bearer ${token}`
-
-  const response = await fetch(`${BASE_URL}${path}`, { ...init, headers })
-  let body: ApiResponse<T>
-  try {
-    body = (await response.json()) as ApiResponse<T>
-  } catch {
-    throw new Error(response.ok ? '响应解析失败' : `请求失败 (${response.status})，请确认 server 已启动`)
-  }
-  if (response.status === 401) {
-    onUnauthorized?.()
-    redirectToLogin()
-    throw new Error('Authentication required')
-  }
-  if (!response.ok || !body.success) {
-    throw new Error(body.error?.message ?? `请求失败 (${response.status})`)
-  }
-  return body.data
-}
+import { request } from '@/api/shared/request'
 
 export function listWorkflows(): Promise<AgentWorkflowSummary[]> {
   return request('/ai/workflows')
@@ -76,7 +27,7 @@ export function createWorkflow(
 ): Promise<AgentWorkflowSummary> {
   return request('/ai/workflows', {
     method: 'POST',
-    body: JSON.stringify({ name, description, templateId }),
+    body: { name, description, templateId },
   })
 }
 
@@ -96,7 +47,7 @@ export function updateWorkflow(
 ): Promise<AgentWorkflowDetail> {
   return request(`/ai/workflows/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(patch),
+    body: patch,
   })
 }
 
@@ -134,7 +85,7 @@ export function executeWorkflow(
 ): Promise<AgentWorkflowExecution> {
   return request(`/ai/workflows/${id}/execute`, {
     method: 'POST',
-    body: JSON.stringify({ input, trigger: opts?.trigger }),
+    body: { input, trigger: opts?.trigger },
   })
 }
 
@@ -161,7 +112,7 @@ export function continueExecution(
 ): Promise<AgentWorkflowExecution> {
   return request(`/ai/workflow-executions/${id}/continue`, {
     method: 'POST',
-    body: JSON.stringify({ input }),
+    body: { input },
   })
 }
 
@@ -171,7 +122,7 @@ export function resumeExecution(
 ): Promise<AgentWorkflowExecution> {
   return request(`/ai/workflow-executions/${id}/resume`, {
     method: 'POST',
-    body: JSON.stringify({ input }),
+    body: { input },
   })
 }
 
@@ -181,6 +132,6 @@ export function cancelExecution(
 ): Promise<AgentWorkflowExecution> {
   return request(`/ai/workflow-executions/${id}/cancel`, {
     method: 'POST',
-    body: JSON.stringify(reason ? { reason } : {}),
+    body: reason ? { reason } : {},
   })
 }
