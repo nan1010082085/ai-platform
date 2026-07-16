@@ -67,6 +67,11 @@ const routes = [
         name: 'embedding-settings',
         component: () => import('./views/EmbeddingSettingsView.vue'),
       },
+      {
+        path: 'debug/routing',
+        name: 'routing-debug',
+        component: () => import('./views/RoutingDebugView.vue'),
+      },
     ],
   },
   {

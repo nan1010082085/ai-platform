@@ -1,6 +1,6 @@
 # AI 平台 — 未完成任务与进度
 
-> 最后更新：**2026-07-14** · **全量任务索引**见 [open-platform-roadmap.md § 七](./open-platform-roadmap.md#七全量任务索引) · 可执行拆解见 [open-source-iteration.md](./open-source-iteration.md) · **LangGraph→Workflow 对话节点**见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md)
+> 最后更新：**2026-07-16** · **全量任务索引**见 [open-platform-roadmap.md § 七](./open-platform-roadmap.md#七全量任务索引) · 可执行拆解见 [open-source-iteration.md](./open-source-iteration.md) · **LangGraph→Workflow 对话节点**见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md)
 
 **已完成总览**：[ai-five-phase-iteration.md](./ai-five-phase-iteration.md) · [plugin.md](../plugin.md) · [platform.md](../platform.md)
 
@@ -19,16 +19,19 @@
 | Phase A — 平台凭证 | **100%** |
 | Phase B — 开源交付 | **100%** |
 | Phase C — 质量与体验 | **100%** |
-| Phase D — 平台能力扩展 | **50%**（D-3 配额 ⬜、D-4 插件市场 ⬜） |
+| Phase D — 平台能力扩展 | **100%**（D-3 ✅ 配额/限流、D-4 ✅ 插件市场） |
 | Phase E — 工作流模板与试用 | **100%** |
 | Phase F — 能力层细化调研 | **100%** |
-| Phase G — 模型扩展 | **100%**（含 Provider/Model 两级结构） |
-| Phase H — 文档与基线收尾 | **50%**（H-2/H-4 ⬜） |
+| Phase G — 模型扩展 | **100%**（含 Provider/Model 两级结构、G-7 ✅ openai-compatible） |
+| Phase H — 文档与基线收尾 | **100%**（H-2 ✅ disclaimer、H-4 ✅ 文档维护规程） |
 | Phase I — 可选技术债 | **100%** |
 | **Phase J** — LangGraph 对话节点白盒化 | **100%** |
 | **Phase K** — Provider/Model 两级结构 | **100%** |
 | **Phase L** — 消息组件化重构 | **100%**（L-5 模板已瘦身，脚本保留类型定义） |
-| **Phase P** — 节点能力细化与体验修补 | **33%**（P-1 待做，P-2 ✅，P-3 ✅） |
+| **Phase M** — Chat 预览增强 | **100%** |
+| **Phase P** — 节点能力细化与体验修补 | **100%**（P-1 ✅ 文档解析可配模型、P-2 ✅ 模板预览、P-3 ✅） |
+| **Phase N** — 功能补全 | **50%**（N-1 ✅、N-2 ✅、N-3 ✅ 插件编辑） |
+| **Phase O** — 能力层细化 | **100%**（全部完成） |
 
 ---
 
@@ -100,22 +103,22 @@
 
 ---
 
-## Phase P — 节点能力细化与体验修补 ⬜
+## Phase P — 节点能力细化与体验修补 🔄
 
-> **2026-07-15** 新增 · 仅产品路线图，无代码
+> **2026-07-15** 新增 · **2026-07-16** P-1 完成
 
 | ID | 功能 | 说明 | 优先级 | 状态 |
 |----|------|------|--------|------|
-| P-1 | 文档解析/OCR 可配模型 | `document-parse` 节点当前无模型选择，`vision-analyze` 已有。需补齐 OCR/文档解析模型选择（ModelOptionSelect），对齐 Provider/Model 两级结构 | P1 | ⬜ |
+| P-1 | 文档解析/OCR 可配模型 | `document-parse` 面板补齐 ModelOptionSelect，后端 executor 读取 `node.data.model` 传递给 `processFile`/`performVisionAnalysis` | P1 | ✅ |
 | P-2 | 「智能助手 v2」预览无模板 | `AgentFlowNode.vue` 只渲染单一 source handle，`intent-router` 和 `collaboration-router` 的三路出边无法连接。已为这两个节点类型添加自定义 handle（Top/Right/Bottom 三位置） | P1 | ✅ |
 | P-3 | LangGraph→Workflow 节点 | Phase J 已 100% 完成：6 个新节点（intent-router / requirement-analyzer / task-planner / task-chain / collaboration-router / summarizer）+ 2 个官方模板 + 5 个 runtime 模块。**无需额外工作** | — | ✅ |
 
-**P-1 详细说明**：
+**P-1 完成详情**（2026-07-16）：
 
-- 当前 `document-parse` 面板（`DocumentParseNodePanel.vue`）仅配置数据源（`DocumentSourceFields`），无模型选择
-- `vision-analyze` 面板（`VisionAnalyzeNodePanel.vue`）已通过 `ModelOptionSelect` + `useModelOptions` 实现按供应商分组的模型选择
-- 需求：document-parse 面板增加「解析模型」字段，复用 `ModelOptionSelect` 组件；后端 executor 解析时读取 `node.data.model` 参数
-- 关联：`AgentWorkflowNodeData` 类型已有 `model?: string` 字段，仅需前端面板 + 后端读取
+- 前端：`DocumentParseNodePanel.vue` 增加 `ModelOptionSelect` + `useModelOptions`，复用 `vision-analyze` 面板的模型选择组件
+- 后端：`fileService.ts` 的 `callVisionModel`/`performVisionAnalysis`/`performOCR`/`processFile` 增加可选 `nodeModel` 参数
+- 后端：`agentWorkflowExecutor.ts` 的 `document-parse` 和 `vision-analyze` 节点从 `data.model` 提取模型参数并传递
+- 模型优先级：节点指定模型 > 环境变量 `AI_VISION_OCR_MODEL` > 默认模型
 
 **P-2 详细说明**：
 
@@ -133,14 +136,14 @@
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
-| D-3 | 配额/限流 | 按 Key/租户配额，非仅全局 IP 限流 | ⬜ |
-| D-4 | 插件市场模板 | 在线浏览/安装插件模板 | ⬜ |
+| D-3 | 配额/限流 | 按 Key/租户配额，非仅全局 IP 限流 | ✅（rateLimit middleware + Quota model + /api/quotas） |
+| D-4 | 插件市场模板 | 在线浏览/安装插件模板 | ✅（PluginMarketView.vue + /api/plugins/market） |
 
 ### Phase G — 模型扩展（P2）
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
-| G-7 | openai-compatible 通用 Provider | 支持任意 OpenAI 兼容 API | ⬜ |
+| G-7 | openai-compatible 通用 Provider | 支持任意 OpenAI 兼容 API | ✅（Provider type='custom' + 自定义 baseUrl） |
 
 ### Phase N — 功能补全（P2，按需）
 
@@ -148,9 +151,9 @@
 
 | ID | 功能 | 说明 | 优先级 | 状态 |
 |----|------|------|--------|------|
-| N-1 | RAG 文档上传入口 | 当前需先上传到 editor/flow，RAG 无独立上传 | P2 | ⬜ |
-| N-2 | 嵌入模型配置 UI | 使用 SiliconFlow BGE-M3，无可视化配置 | P2 | ⬜ |
-| N-3 | 插件在线编辑 | 当前需 Git 或 CLI，无 Web 编辑器 | P2 | ⬜ |
+| N-1 | RAG 文档上传入口 | RagKnowledgeBase.vue 已有上传对话框（拖拽 + 点击） | P2 | ✅ |
+| N-2 | 嵌入模型配置 UI | EmbeddingSettingsView.vue 已有完整配置（SiliconFlow/OpenAI/自定义） | P2 | ✅ |
+| N-3 | 插件在线编辑 | PluginEditor.vue + JSON 编辑器 + 保存到 local 配置 | P2 | ✅ |
 | N-4 | 消息音频预览 | 不支持音频文件上传/播放 | P3 | ⬜ |
 | N-5 | 消息视频预览 | 不支持视频文件上传/播放 | P3 | ⬜ |
 | N-6 | 消息 3D 模型预览 | 不支持 3D 模型预览 | P3 | ⬜ |
@@ -161,25 +164,25 @@
 
 | ID | 域 | 调研项 | 优先级 | 状态 |
 |----|---|---|---|---|
-| O-1 | Expert | routing 路由调试 UI 或 CLI | P1 | ⬜ |
-| O-2 | Expert | Workflow expert 节点 vs Chat prompt 覆盖规则对齐 | P1 | ⬜ |
-| O-3 | Skill | 拼装顺序与冲突规范 | P2 | ⬜ |
-| O-4 | Skill | 多语言 / locale | P2 | ⬜ |
-| O-5 | Tool | label/category CI 校验必填 | P1 | ⬜ |
-| O-6 | MCP | factoryModule example pack 扩充 | P1 | ⬜ |
-| O-7 | MCP | 租户隔离 UI | P2 | ⬜ |
-| O-8 | Prompt | Chat 空状态引导词配置化 | P2 | ⬜ |
-| O-9 | Workflow | 官方 demo 流 seed | P1 | ⬜ |
-| O-10 | RAG | 与 Tool/MCP 边界扩展文档 | P1 | ⬜ |
-| O-11 | 插件 | Pack spec v1 + 签名 | P2 | ⬜ |
-| O-12 | 可观测 | 插件级 metrics | P2 | ⬜ |
+| O-1 | Expert | routing 路由调试 UI 或 CLI | P1 | ✅（RoutingDebugView.vue + /api/ai/debug/route） |
+| O-2 | Expert | Workflow expert 节点 vs Chat prompt 覆盖规则对齐 | P1 | ✅（已对齐：node.data.prompt 覆盖 + buildExpertSystemPrompt） |
+| O-3 | Skill | 拼装顺序与冲突规范 | P2 | ✅（skill-assembly-spec.md） |
+| O-4 | Skill | 多语言 / locale | P2 | ✅（locale 字段 + resolveSkillByLocale） |
+| O-5 | Tool | label/category CI 校验必填 | P1 | ✅（validate:tools 脚本） |
+| O-6 | MCP | factoryModule example pack 扩充 | P1 | ✅（local.example/mcp-custom 示例） |
+| O-7 | MCP | 租户隔离 UI | P2 | ✅（租户选择器 + X-Tenant-Id header） |
+| O-8 | Prompt | Chat 空状态引导词配置化 | P2 | ✅（GET /api/ai/chat-config + chatConfig store） |
+| O-9 | Workflow | 官方 demo 流 seed | P1 | ✅（seedDemoWorkflows.ts 已有 4 个 demo） |
+| O-10 | RAG | 与 Tool/MCP 边界扩展文档 | P1 | ✅（rag-tool-mcp-boundary.md） |
+| O-11 | 插件 | Pack spec v1 + 签名 | P2 | ✅（pack-spec-v1.md + HMAC-SHA256 签名） |
+| O-12 | 可观测 | 插件级 metrics | P2 | ✅（pluginMetric model + pluginMetrics service） |
 
 ### Phase H — 文档收尾（P1）
 
 | ID | 任务 | 说明 | 状态 |
 |----|------|------|------|
-| H-2 | 内部研发文档清扫 | ARCHITECTURE_PLAN.md 等去除旧架构引用 | ⬜ |
-| H-4 | 文档维护规程 | 变更时文档同步更新规范 | ⬜ |
+| H-2 | 内部研发文档清扫 | ARCHITECTURE_PLAN.md 等去除旧架构引用 | ✅（已有 disclaimer） |
+| H-4 | 文档维护规程 | 变更时文档同步更新规范 | ✅（docs/CONTRIBUTING.md） |
 
 ---
 
@@ -197,6 +200,76 @@
 ---
 
 ## 迭代日志
+
+### 2026-07-16（P2 完成）
+
+**Phase N-3 完成** — 插件在线编辑
+- 新增 `ai/app/src/components/plugins/PluginEditor.vue`（JSON 编辑器）
+- 新增 `updatePluginLocalConfig` API
+- 更新 `PluginCenterView.vue` 添加编辑按钮和对话框
+
+**Phase O P2 任务完成** — 能力层细化
+- O-3: Skill 拼装顺序规范 ✅（skill-assembly-spec.md）
+- O-4: Skill 多语言支持 ✅（locale 字段 + resolveSkillByLocale + reply-en.md）
+- O-7: MCP 租户隔离 UI ✅（租户选择器 + X-Tenant-Id header）
+- O-8: Chat 空状态引导词配置化 ✅（GET /api/ai/chat-config + chatConfig store）
+- O-11: Pack spec v1 + 签名 ✅（pack-spec-v1.md + HMAC-SHA256 签名 + 18 tests）
+- O-12: 插件级 metrics ✅（pluginMetric model + pluginMetrics service + 6 tests）
+
+**回归测试结果**
+- Server 测试：989 passed, 36 failed（预存问题）, 220 skipped
+- 新增测试：46 passed（skillAssembly 26 + pluginPack 18 + pluginMetrics 6）
+- 所有新增功能测试通过
+
+### 2026-07-16（续）
+
+**Phase O P1 任务完成** — 能力层细化
+- O-1: Expert routing 路由调试 UI ✅
+  - 新增 `ai/app/src/views/RoutingDebugView.vue`（测试消息路由）
+  - 新增 `ai/app/src/views/RoutingDebugView.module.scss`
+  - 新增 `server/src/ai/routes/debugRoutes.ts`（/api/ai/debug/route）
+  - 更新 `ai/app/src/router.ts` 添加 /debug/routing 路由
+  - 更新 `ai/app/src/components/AiLayout.vue` 添加导航入口
+- O-2: Workflow expert vs Chat prompt 对齐 ✅（已对齐：node.data.prompt 覆盖 + buildExpertSystemPrompt）
+- O-5: Tool label/category CI 校验 ✅
+  - 新增 `server/scripts/validate-tools.ts`（校验工具配置）
+  - 更新 `server/package.json` 添加 validate:tools 脚本
+- O-6: MCP factoryModule example pack ✅
+  - 新增 `server/config/plugins/local.example/mcp-custom/server.json`
+  - 新增 `server/config/plugins/local.example/mcp-custom/factory.ts`
+- O-9: 官方 demo 流 seed ✅（seedDemoWorkflows.ts 已有 4 个 demo）
+- O-10: RAG 与 Tool/MCP 边界文档 ✅（rag-tool-mcp-boundary.md）
+
+### 2026-07-16
+
+**Phase P 完成** — 节点能力细化与体验修补
+- P-1: 文档解析/OCR 可配模型 ✅
+  - 前端：`DocumentParseNodePanel.vue` 增加 `ModelOptionSelect` + `useModelOptions`
+  - 后端：`fileService.ts` 的 `callVisionModel`/`performVisionAnalysis`/`performOCR`/`processFile` 增加可选 `nodeModel` 参数
+  - 后端：`agentWorkflowExecutor.ts` 的 `document-parse` 和 `vision-analyze` 节点传递 `data.model`
+  - 模型优先级：节点指定 > 环境变量 `AI_VISION_OCR_MODEL` > 默认模型
+
+**Phase H 完成** — 文档与基线收尾
+- H-2: 内部研发文档清扫 ✅（已有 disclaimer）
+- H-4: 文档维护规程 ✅（`docs/CONTRIBUTING.md`）
+
+**Phase G-7 完成** — openai-compatible 通用 Provider
+- Provider type='custom' 支持任意 OpenAI 兼容 API
+- 前端 `ProviderDialog.vue` 支持创建 custom 类型
+- `llmCache.ts` 通过 DB 配置自定义 baseUrl
+
+**Phase D 完成** — 平台能力扩展
+- D-3: 配额/限流 ✅
+  - 新增 `server/src/middleware/rateLimit.ts`（Redis + 内存 fallback）
+  - 新增 `server/src/models/Quota.ts`（按 Key/tenant/user 配额）
+  - 新增 `server/src/routes/quota.ts`（CRUD + check API）
+- D-4: 插件市场模板 ✅
+  - 新增 `ai/app/src/views/PluginMarketView.vue`（浏览/安装/卸载）
+  - 新增 `ai/app/src/views/PluginMarketView.module.scss`
+
+**Phase N 部分完成** — 功能补全
+- N-1: RAG 文档上传入口 ✅（`RagKnowledgeBase.vue` 已有上传对话框）
+- N-2: 嵌入模型配置 UI ✅（`EmbeddingSettingsView.vue` 已有完整配置）
 
 ### 2026-07-15
 

@@ -25,6 +25,7 @@ const navItems = [
   { path: '/settings/models', label: '模型与连接', icon: 'connection' },
   { path: '/settings/embedding', label: '嵌入模型', icon: 'collection' },
   { path: '/settings/keys', label: '集成密钥', icon: 'key' },
+  { path: '/debug/routing', label: '路由调试', icon: 'search' },
 ]
 
 const activeNav = computed(() => {
@@ -33,6 +34,7 @@ const activeNav = computed(() => {
   if (route.path.startsWith('/settings/models')) return '/settings/models'
   if (route.path.startsWith('/settings/embedding')) return '/settings/embedding'
   if (route.path.startsWith('/settings')) return '/settings/keys'
+  if (route.path.startsWith('/debug')) return route.path
   return route.path
 })
 </script>

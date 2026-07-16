@@ -13,12 +13,18 @@ import {
   getMonitorStats,
   getMonitorRecent,
   getMonitorAlerts,
+  getPluginMetricStats,
+  getPluginMetricRecent,
+  getPluginMetricSummary,
 } from '@/api/aiApi'
 import type {
   MonitorSummary,
   AgentMetricStats,
   AgentMetric,
   AgentAlert,
+  PluginMetricStats,
+  PluginMetric,
+  PluginMetricSummary,
 } from '@/types'
 import MonitorSummaryCard from '@/components/monitor/MonitorSummary.vue'
 import AgentDistribution from '@/components/monitor/AgentDistribution.vue'
@@ -42,8 +48,17 @@ const alertsPageSize = 20
 const autoRefreshOn = ref(true)
 const lastRefreshedAt = ref<Date | null>(null)
 
+// Plugin metrics
+const pluginSummary = ref<PluginMetricSummary | null>(null)
+const pluginStats = ref<PluginMetricStats[]>([])
+const pluginRecentMetrics = ref<PluginMetric[]>([])
+const pluginRecentTotal = ref(0)
+const pluginRecentPage = ref(1)
+const pluginRecentPageSize = 20
+
 const selectedAgent = ref<string>('')
 const selectedOperation = ref<string>('')
+const selectedPluginType = ref<string>('')
 
 const timeRangeOptions = [
   { label: '1 小时', value: '1' },
@@ -118,6 +133,25 @@ const topTokenOps = computed(() => {
     .slice(0, 5)
 })
 
+const pluginTypes = computed(() => {
+  const types = new Set(pluginStats.value.map((s) => s.pluginType))
+  return Array.from(types).sort()
+})
+
+const filteredPluginStats = computed(() => {
+  return pluginStats.value.filter((s) => {
+    if (selectedPluginType.value && s.pluginType !== selectedPluginType.value) return false
+    return true
+  })
+})
+
+const filteredPluginRecent = computed(() => {
+  return pluginRecentMetrics.value.filter((m) => {
+    if (selectedPluginType.value && m.pluginType !== selectedPluginType.value) return false
+    return true
+  })
+})
+
 const refreshedLabel = computed(() => {
   if (!lastRefreshedAt.value) return '尚未刷新'
   return `上次刷新 ${lastRefreshedAt.value.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
@@ -162,6 +196,26 @@ function getOperationLabel(operation: string): string {
   return labels[operation] ?? operation
 }
 
+function getPluginTypeLabel(pluginType: string): string {
+  const labels: Record<string, string> = {
+    expert: '专家',
+    tool: '工具',
+    mcp: 'MCP',
+    skill: '技能',
+  }
+  return labels[pluginType] ?? pluginType
+}
+
+function getPluginTypeTagType(pluginType: string): '' | 'success' | 'warning' | 'danger' {
+  const map: Record<string, '' | 'success' | 'warning' | 'danger'> = {
+    expert: '',
+    tool: 'success',
+    mcp: 'warning',
+    skill: 'danger',
+  }
+  return map[pluginType] ?? ''
+}
+
 async function loadAlerts(page = alertsPage.value): Promise<void> {
   const data = await getMonitorAlerts({ page, pageSize: alertsPageSize })
   alerts.value = data.items.map(normalizeAlert)
@@ -172,11 +226,14 @@ async function loadAlerts(page = alertsPage.value): Promise<void> {
 async function loadData(): Promise<void> {
   loading.value = true
   try {
-    const [summaryData, statsData, recentData, alertsData] = await Promise.all([
+    const [summaryData, statsData, recentData, alertsData, pluginSummaryData, pluginStatsData, pluginRecentData] = await Promise.all([
       getMonitorSummary(selectedHours.value),
       getMonitorStats(),
       getMonitorRecent({ limit: 100 }),
       getMonitorAlerts({ page: 1, pageSize: alertsPageSize }),
+      getPluginMetricSummary(selectedHours.value),
+      getPluginMetricStats(),
+      getPluginMetricRecent({ page: 1, pageSize: pluginRecentPageSize }),
     ])
 
     summary.value = summaryData
@@ -185,6 +242,13 @@ async function loadData(): Promise<void> {
     alerts.value = alertsData.items.map(normalizeAlert)
     alertsTotal.value = alertsData.total
     alertsPage.value = alertsData.page
+
+    pluginSummary.value = pluginSummaryData
+    pluginStats.value = pluginStatsData
+    pluginRecentMetrics.value = pluginRecentData.items
+    pluginRecentTotal.value = pluginRecentData.total
+    pluginRecentPage.value = pluginRecentData.page
+
     lastRefreshedAt.value = new Date()
   } catch (err) {
     message.error('加载监控数据失败')
@@ -327,6 +391,125 @@ onUnmounted(() => {
             :class="$style.tokenFill"
             :style="{ width: `${Math.min(100, Math.round((item.totalTokens / (topTokenOps[0].totalTokens || 1)) * 100))}%` }"
           />
+        </div>
+      </div>
+    </div>
+
+    <div :class="$style.tableRow">
+      <div :class="$style.section">
+        <div :class="$style.sectionHeader">
+          <h3 :class="$style.sectionTitle">插件统计</h3>
+          <div :class="$style.sectionActions">
+            <el-select
+              v-model="selectedPluginType"
+              placeholder="所有类型"
+              clearable
+              size="small"
+              :class="$style.filterSelect"
+            >
+              <el-option
+                v-for="t in pluginTypes"
+                :key="t"
+                :label="getPluginTypeLabel(t)"
+                :value="t"
+              />
+            </el-select>
+            <span :class="$style.sectionHint">{{ filteredPluginStats.length }} 个插件</span>
+          </div>
+        </div>
+        <div :class="$style.tableBody">
+          <el-table
+            :data="filteredPluginStats"
+            stripe
+            size="small"
+            height="100%"
+            :class="$style.table"
+          >
+            <el-table-column label="插件" min-width="120">
+              <template #default="{ row }">
+                <div :class="$style.pluginNameCell">
+                  <el-tag
+                    size="small"
+                    :type="getPluginTypeTagType(row.pluginType)"
+                  >
+                    {{ getPluginTypeLabel(row.pluginType) }}
+                  </el-tag>
+                  <span :class="$style.pluginName">{{ row.pluginName || row.pluginId }}</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="调用" prop="totalCalls" min-width="64" sortable />
+            <el-table-column label="成功率" min-width="72" sortable>
+              <template #default="{ row }">
+                <span :class="row.successRate >= 95 ? 'text-success' : 'text-warning'">
+                  {{ row.successRate }}%
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column label="平均" min-width="72" sortable>
+              <template #default="{ row }">
+                {{ formatMonitorDuration(row.avgDuration) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="P95" min-width="72" sortable>
+              <template #default="{ row }">
+                {{ formatMonitorDuration(row.p95Duration) }}
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+
+      <div :class="$style.section">
+        <div :class="$style.sectionHeader">
+          <h3 :class="$style.sectionTitle">最近插件调用</h3>
+          <span :class="$style.sectionHint">最近 {{ filteredPluginRecent.length }} 条</span>
+        </div>
+        <div :class="$style.tableBody">
+          <el-table
+            :data="filteredPluginRecent"
+            stripe
+            size="small"
+            height="100%"
+            :class="$style.table"
+          >
+            <el-table-column label="时间" min-width="88">
+              <template #default="{ row }">
+                {{ formatMonitorTime(row.createdAt) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="插件" min-width="120">
+              <template #default="{ row }">
+                <el-tag
+                  size="small"
+                  :type="getPluginTypeTagType(row.pluginType)"
+                >
+                  {{ getPluginTypeLabel(row.pluginType) }}
+                </el-tag>
+                {{ row.pluginName || row.pluginId }}
+              </template>
+            </el-table-column>
+            <el-table-column label="耗时" min-width="68" sortable>
+              <template #default="{ row }">
+                <span :class="row.duration > 3000 ? 'text-warning' : ''">
+                  {{ formatMonitorDuration(row.duration) }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column label="状态" min-width="64">
+              <template #default="{ row }">
+                <el-tag :type="row.success ? 'success' : 'danger'" size="small">
+                  {{ row.success ? '成功' : '失败' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="错误" min-width="100" show-overflow-tooltip>
+              <template #default="{ row }">
+                <span v-if="row.error" class="text-danger">{{ row.error }}</span>
+                <span v-else class="text-secondary">-</span>
+              </template>
+            </el-table-column>
+          </el-table>
         </div>
       </div>
     </div>
@@ -588,6 +771,24 @@ onUnmounted(() => {
   align-items: center;
   margin-bottom: 12px;
   flex-shrink: 0;
+}
+
+.sectionActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pluginNameCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pluginName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sectionTitle {
