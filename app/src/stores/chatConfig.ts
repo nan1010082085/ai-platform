@@ -7,7 +7,7 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { request } from '@schema-platform/platform-shared/api/request'
+import { apiClient } from '@schema-platform/platform-shared/utils/apiClient'
 
 export interface StarterPrompt {
   icon: string
@@ -27,7 +27,7 @@ export const useChatConfigStore = defineStore('chatConfig', () => {
 
   async function fetchConfig(): Promise<void> {
     try {
-      const data = await request<{ starterPrompts: StarterPrompt[] }>('/ai/chat-config')
+      const data = await apiClient.get<{ starterPrompts: StarterPrompt[] }>('/ai/chat-config')
       if (Array.isArray(data.starterPrompts) && data.starterPrompts.length > 0) {
         starterPrompts.value = data.starterPrompts
       }
