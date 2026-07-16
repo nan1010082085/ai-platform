@@ -38,7 +38,16 @@ onMounted(async () => {
     await bootstrapAuthSession()
     startTokenRefreshSchedule(tokens.expiresIn)
 
-    const redirect = route.query.redirect as string | undefined
+    let redirect = route.query.redirect as string | undefined
+
+    // 避免路径重复：如果 redirect 以 router base 开头，去掉 base 前缀
+    if (redirect) {
+      const base = import.meta.env.BASE_URL || '/'
+      if (base !== '/' && redirect.startsWith(base)) {
+        redirect = '/' + redirect.slice(base.length)
+      }
+    }
+
     await router.replace(redirect || '/')
   } catch (err) {
     statusText.value =

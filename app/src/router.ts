@@ -126,7 +126,12 @@ export function createAiRouter(routeBase?: string) {
       if (to.name === 'login' && !isQiankun()) {
         const authStore = useAuthStore()
         if (authStore.accessToken && authStore.user) {
-          return { path: (to.query.redirect as string) || '/' }
+          let redirect = (to.query.redirect as string) || '/'
+          const base = import.meta.env.BASE_URL || '/'
+          if (base !== '/' && redirect.startsWith(base)) {
+            redirect = '/' + redirect.slice(base.length)
+          }
+          return { path: redirect }
         }
       }
       return true
