@@ -189,7 +189,7 @@ async function onTryTemplate(templateId: AgentWorkflowTemplateId) {
     const tpl = workflowTemplates.find((t) => t.id === templateId)
     const name = `试用-${TEMPLATE_DEFAULT_NAMES[templateId]}`
     const wf = await api.createWorkflow(name, tpl?.description ?? '', templateId)
-    // 导航到对话页面并设置 workflowId
+    await api.publishWorkflow(wf.id)
     router.push({ name: 'chat', query: { workflowId: wf.id } })
   } catch (e) {
     message.error(e instanceof Error ? e.message : '创建试用工作流失败')
