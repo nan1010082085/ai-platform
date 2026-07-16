@@ -8,9 +8,11 @@ import { ref, computed, onMounted } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import CardTable from '@/components/common/CardTable.vue'
+import PluginEditor from '@/components/plugins/PluginEditor.vue'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
 import { getExpertLegacyBadge, type ExpertAgentKind } from '@/constants/expertNodeTypes'
 import { getToolDisplayLabel } from '@schema-platform/platform-shared/ai/toolNames'
+import type { PluginLocalLayer } from '@/api/pluginApi'
 import styles from './PluginCenterView.module.scss'
 
 type LayerTab = 'experts' | 'tools' | 'mcp' | 'skills'
@@ -34,6 +36,20 @@ const activeLayer = ref<LayerTab>('experts')
 const activeToolKind = ref<ToolKindTab>('all')
 const searchInput = ref('')
 const { experts, skills, tools, mcpServers, loading, error, load } = usePluginRegistry()
+
+const editorVisible = ref(false)
+const editorTitle = ref('')
+const editorLayer = ref<PluginLocalLayer>('experts')
+const editorFileId = ref('')
+const editorData = ref<unknown>({})
+
+function openEditor(layer: PluginLocalLayer, fileId: string, label: string, data: unknown): void {
+  editorLayer.value = layer
+  editorFileId.value = fileId
+  editorTitle.value = `编辑 ${label}`
+  editorData.value = data
+  editorVisible.value = true
+}
 
 function legacyBadge(key: string) {
   return getExpertLegacyBadge(key as ExpertAgentKind)
@@ -174,6 +190,13 @@ onMounted(() => {
               </template>
             </el-table-column>
             <el-table-column prop="description" label="说明" min-width="200" show-overflow-tooltip />
+            <el-table-column label="操作" width="80" fixed="right">
+              <template #default="{ row }">
+                <el-button text size="small" @click="openEditor('experts', row.id, row.label, row)">
+                  <AppIcon name="edit" :size="14" />
+                </el-button>
+              </template>
+            </el-table-column>
           </el-table>
         </CardTable>
 
@@ -197,6 +220,13 @@ onMounted(() => {
                 <span :class="styles.mono">{{ row.argsHint || '—' }}</span>
               </template>
             </el-table-column>
+            <el-table-column label="操作" width="80" fixed="right">
+              <template #default="{ row }">
+                <el-button text size="small" @click="openEditor('tools', row.name, row.label || row.name, row)">
+                  <AppIcon name="edit" :size="14" />
+                </el-button>
+              </template>
+            </el-table-column>
           </el-table>
         </CardTable>
 
@@ -210,6 +240,13 @@ onMounted(() => {
             <el-table-column prop="transport" label="传输方式" width="110" />
             <el-table-column prop="builtin" label="内置" width="120" />
             <el-table-column prop="namespace" label="命名空间" min-width="120" />
+            <el-table-column label="操作" width="80" fixed="right">
+              <template #default="{ row }">
+                <el-button text size="small" @click="openEditor('mcp', row.id, row.id, row)">
+                  <AppIcon name="edit" :size="14" />
+                </el-button>
+              </template>
+            </el-table-column>
           </el-table>
         </CardTable>
 
@@ -228,6 +265,13 @@ onMounted(() => {
                 </div>
               </template>
             </el-table-column>
+            <el-table-column label="操作" width="80" fixed="right">
+              <template #default="{ row }">
+                <el-button text size="small" @click="openEditor('skills', row.id, row.label, row)">
+                  <AppIcon name="edit" :size="14" />
+                </el-button>
+              </template>
+            </el-table-column>
           </el-table>
           <p v-if="!filteredSkills.length && !loading" :class="styles.hint">暂无 Skill 声明（可在 config/plugins/skills/ 添加）</p>
         </CardTable>
@@ -238,5 +282,14 @@ onMounted(() => {
         </p>
       </div>
     </div>
+
+    <PluginEditor
+      v-model:visible="editorVisible"
+      :title="editorTitle"
+      :layer="editorLayer"
+      :file-id="editorFileId"
+      :data="editorData"
+      @saved="load"
+    />
   </div>
 </template>

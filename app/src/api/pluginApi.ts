@@ -54,3 +54,18 @@ export interface PluginRegistrySnapshot {
 export async function fetchPluginRegistry(): Promise<PluginRegistrySnapshot> {
   return apiClient.get<PluginRegistrySnapshot>('/ai/plugins')
 }
+
+export type PluginLocalLayer = 'mcp' | 'tools' | 'experts' | 'skills'
+
+export interface PluginLocalWriteResult {
+  path: string
+  reloaded: boolean
+}
+
+export async function updatePluginLocalConfig(
+  layer: PluginLocalLayer,
+  file: string,
+  payload: unknown,
+): Promise<PluginLocalWriteResult> {
+  return apiClient.put<PluginLocalWriteResult>(`/ai/plugins/local/${layer}/${file}`, payload)
+}
