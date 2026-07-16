@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, computed, onMounted, shallowRef } from 'vue'
+import { ref, nextTick, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
@@ -15,8 +15,8 @@ import { useAiStore } from '@/stores/ai'
 import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
 import { useShellEmbed } from '@/composables/useShellEmbed'
 import { useSmartSuggestions } from '@/composables/useSmartSuggestions'
-import { uploadFile, getStarterPrompts } from '@/api/aiApi'
-import type { StarterPrompt } from '@/api/aiApi'
+import { uploadFile } from '@/api/aiApi'
+import type { StarterPrompt } from '@/stores/chatConfig'
 import {
   DOCUMENT_UPLOAD_ACCEPT,
   DOCUMENT_FORMAT_LABEL,
@@ -48,6 +48,8 @@ export interface AiChatPanelProps {
   ragContext?: RagSearchResult[]
   /** 需求确认等待时的输入框占位提示 */
   requirementInputPlaceholder?: string
+  /** 空状态引导 prompts */
+  starterPrompts?: StarterPrompt[]
 }
 
 const props = withDefaults(defineProps<AiChatPanelProps>(), {
@@ -63,6 +65,7 @@ const props = withDefaults(defineProps<AiChatPanelProps>(), {
   ragSearching: false,
   ragContext: () => [],
   requirementInputPlaceholder: '',
+  starterPrompts: () => [],
 })
 
 const emit = defineEmits<{
@@ -235,26 +238,6 @@ function removeAttachment(index: number): void {
   pendingAttachments.value.splice(index, 1)
 }
 
-/** F3: 空状态引导 prompt 列表（从 API 获取，硬编码兜底） */
-const DEFAULT_STARTER_PROMPTS: StarterPrompt[] = [
-  { icon: 'edit', text: '帮我生成一个用户注册表单', agent: 'editor' },
-  { icon: 'list', text: '创建一个订单审批流程', agent: 'flow' },
-  { icon: 'search', text: '搜索已有的表单模板', agent: 'auto' },
-  { icon: 'setting', text: '设计一个系统配置页面', agent: 'editor' },
-]
-
-const starterPrompts = shallowRef<StarterPrompt[]>(DEFAULT_STARTER_PROMPTS)
-
-onMounted(async () => {
-  try {
-    const remote = await getStarterPrompts()
-    if (Array.isArray(remote) && remote.length > 0) {
-      starterPrompts.value = remote
-    }
-  } catch {
-    // API 失败时保留硬编码默认值
-  }
-})
 
 /** Transform store AIMessage into display-oriented props for AiMessage component */
 function getDisplayCards(msg: AIMessage): MessageEmbeddedCard[] | undefined {
@@ -458,7 +441,7 @@ function handleCardAction(
         <div :class="$style.emptySub">描述你想生成的表单、页面或流程</div>
         <div :class="$style.promptGrid">
           <el-button
-            v-for="(prompt, idx) in starterPrompts"
+            v-for="(prompt, idx) in props.starterPrompts"
             :key="idx"
             :class="$style.promptCard"
             @click="selectedAgent = prompt.agent as AgentType; emit('send', prompt.text, prompt.agent as AgentType)"

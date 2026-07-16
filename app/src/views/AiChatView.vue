@@ -9,6 +9,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAiStore } from '@/stores/ai'
+import { useChatConfigStore } from '@/stores/chatConfig'
 import { bridge } from '@/utils/bridge'
 import type { AgentType, ChatSettings, MentionReference, RagSearchResult } from '@/types'
 import { storeToRefs } from 'pinia'
@@ -22,10 +23,12 @@ import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkf
 import { usePublishedAgentWorkflowsStore } from '@/stores/publishedAgentWorkflows'
 
 const store = useAiStore()
+const chatConfigStore = useChatConfigStore()
 const route = useRoute()
 const { loadPublishedWorkflows } = usePublishedAgentWorkflows()
 const { messages, loading, currentSchema, currentFlow, activeAgent, conversations, currentConversationId, taskChain, taskChainIndex, streamStatus, retryCount, MAX_AUTO_RETRIES, chatSettings, ragSearchResults, ragSearching, ragContext, requirementInputPlaceholder } =
   storeToRefs(store)
+const { starterPrompts } = storeToRefs(chatConfigStore)
 
 // ---- WebSocket 连接状态 ----
 const wsConnected = ref(isConnected())
@@ -214,6 +217,7 @@ function handleMessageFeedback(messageIndex: number, type: 'positive' | 'negativ
 
 onMounted(async () => {
   store.loadConversations()
+  chatConfigStore.fetchConfig()
   connectSocket()
   startStatusCheck()
   await loadPublishedWorkflows()
@@ -287,6 +291,7 @@ onUnmounted(() => {
         :rag-searching="ragSearching"
         :rag-context="ragContext"
         :requirement-input-placeholder="requirementInputPlaceholder"
+        :starter-prompts="starterPrompts"
         @send="handleSend"
         @stop="handleStop"
         @retry="handleRetry"
