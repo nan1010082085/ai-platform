@@ -36,7 +36,7 @@ export function workflowGraphNeedsUploadStream(graph: {
   nodes: Array<{ type?: string; data?: { documentSource?: string } }>
 }): boolean {
   return graph.nodes.some((node) => {
-    if (node.type !== 'document-parse' && node.type !== 'vision-analyze') return false
+    if (node.type !== 'document-parse' && node.type !== 'vision-analyze' && node.type !== 'audio-transcribe' && node.type !== 'video-analyze') return false
     const source = node.data?.documentSource ?? 'stream'
     return source === 'stream'
   })

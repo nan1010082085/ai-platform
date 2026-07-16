@@ -150,6 +150,45 @@ export function getAgentNodePreviewSections(
         })
       }
       break
+    case 'audio-transcribe':
+      config.push(
+        { key: 'call', label: '调用', value: '音频转录', tone: 'primary' },
+        {
+          key: 'source',
+          label: '来源',
+          value: documentSourcePreviewLabel(data),
+          tone: 'muted',
+        },
+      )
+      {
+        const lang = data.language ?? 'zh'
+        const langLabel = lang === 'zh' ? '中文' : lang === 'en' ? '英文' : lang === 'auto' ? '自动' : lang
+        config.push({ key: 'language', label: '语言', value: langLabel, tone: 'default' })
+      }
+      break
+    case 'video-analyze':
+      config.push(
+        { key: 'call', label: '调用', value: '视频分析', tone: 'primary' },
+        {
+          key: 'source',
+          label: '来源',
+          value: documentSourcePreviewLabel(data),
+          tone: 'muted',
+        },
+      )
+      if (data.visionPrompt?.trim()) {
+        config.push({
+          key: 'visionPrompt',
+          label: 'Prompt',
+          value: formatPreviewValue(data.visionPrompt),
+          tone: 'default',
+        })
+      }
+      {
+        const frames = data.maxFrames ?? 10
+        config.push({ key: 'maxFrames', label: '最大帧数', value: String(frames), tone: 'default' })
+      }
+      break
     case 'conversation-memory':
       config.push(
         { key: 'call', label: '调用', value: '对话记忆', tone: 'primary' },

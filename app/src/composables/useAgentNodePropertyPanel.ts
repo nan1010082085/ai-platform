@@ -12,6 +12,8 @@ import IfNodePanel from '@/components/agent-workflow/property-panel/panels/IfNod
 import HitlNodePanel from '@/components/agent-workflow/property-panel/panels/HitlNodePanel.vue'
 import DocumentParseNodePanel from '@/components/agent-workflow/property-panel/panels/DocumentParseNodePanel.vue'
 import VisionAnalyzeNodePanel from '@/components/agent-workflow/property-panel/panels/VisionAnalyzeNodePanel.vue'
+import AudioTranscribeNodePanel from '@/components/agent-workflow/property-panel/panels/AudioTranscribeNodePanel.vue'
+import VideoAnalyzeNodePanel from '@/components/agent-workflow/property-panel/panels/VideoAnalyzeNodePanel.vue'
 import ConversationMemoryNodePanel from '@/components/agent-workflow/property-panel/panels/ConversationMemoryNodePanel.vue'
 import ExpertPluginNodePanel from '@/components/agent-workflow/property-panel/panels/ExpertPluginNodePanel.vue'
 import ImageGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/ImageGenerateNodePanel.vue'
@@ -33,6 +35,8 @@ const registry = new Map<AgentNodeType, Component>([
   ['webhook-trigger', markRaw(WebhookTriggerNodePanel)],
   ['document-parse', markRaw(DocumentParseNodePanel)],
   ['vision-analyze', markRaw(VisionAnalyzeNodePanel)],
+  ['audio-transcribe', markRaw(AudioTranscribeNodePanel)],
+  ['video-analyze', markRaw(VideoAnalyzeNodePanel)],
   ['conversation-memory', markRaw(ConversationMemoryNodePanel)],
   ['llm', markRaw(LlmNodePanel)],
   ['agent-intent', agentPanel],
@@ -56,6 +60,8 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   'webhook-trigger': 'Webhook 触发',
   'document-parse': '文档解析',
   'vision-analyze': '图片视觉分析',
+  'audio-transcribe': '音频转录',
+  'video-analyze': '视频分析',
   'conversation-memory': '对话记忆',
   llm: 'LLM',
   'agent-intent': getExpertNodeTypeLabel('agent-intent') ?? '意图识别',
