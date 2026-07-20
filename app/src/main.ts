@@ -8,6 +8,7 @@ import './styles/graphEdgeStates.scss'
 import { createApp, type App } from 'vue'
 import { createPinia } from 'pinia'
 import { renderWithQiankun, qiankunWindow } from 'vite-plugin-qiankun/dist/helper'
+import { createI18n } from '@schema-platform/platform-shared'
 import { setupElementPlus } from '@schema-platform/platform-shared/config/element'
 import { initQiankunProps, initQiankunShellProps, installSubAppRouteSync } from '@schema-platform/platform-shared/qiankun'
 import { aiLog } from '@schema-platform/platform-shared/utils/logger'
@@ -15,6 +16,10 @@ import AppRoot from './App.vue'
 import { createAiRouter } from './router'
 import { initCapabilityPlatformAuth } from '@schema-platform/platform-shared/utils/authSession'
 import { registerAiApiTokenProvider } from './setupCapabilityAuth'
+import { readStoredLocale } from './composables/useAiLocale'
+import { disposeAiTelemetry, initAiTelemetry } from './utils/telemetry'
+import zhCN from './locales/zh-CN'
+import enUS from './locales/en-US'
 
 let app: App | null = null
 let router: ReturnType<typeof createAiRouter> | null = null
@@ -27,9 +32,14 @@ function render() {
   const pinia = createPinia()
   app = createApp(AppRoot)
   app.use(pinia)
+  app.use(createI18n({
+    locale: readStoredLocale(),
+    messages: { 'zh-CN': zhCN, 'en-US': enUS },
+  }))
   app.use(router)
   initCapabilityPlatformAuth({ registerTokenProvider: registerAiApiTokenProvider })
   setupElementPlus(app)
+  initAiTelemetry()
 
   const mountEl = document.getElementById('ai-app')
   if (!mountEl) throw new Error('[ai] #ai-app not found')
@@ -76,6 +86,7 @@ renderWithQiankun({
     aiLog.lifecycle('unmount')
     disposeRouteSync?.()
     disposeRouteSync = null
+    disposeAiTelemetry()
     if (app) {
       app.unmount()
       app = null

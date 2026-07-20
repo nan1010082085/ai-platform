@@ -62,6 +62,16 @@ describe('AiChatPanel', () => {
     AiMentionInput: AiMentionInputStub,
     AppIcon: { template: '<span />', props: ['name', 'size'] },
     AgentWorkflowPicker: { template: '<div />', props: ['modelValue', 'showLabel'] },
+    DynamicScroller: {
+      name: 'DynamicScroller',
+      template: '<div class="dyn-scroller"><slot v-for="(item, index) in items" :item="item" :index="index" :active="true" /></div>',
+      props: ['items', 'minItemSize', 'keyField'],
+    },
+    DynamicScrollerItem: {
+      name: 'DynamicScrollerItem',
+      template: '<div><slot /></div>',
+      props: ['item', 'active', 'sizeDependencies', 'dataIndex'],
+    },
     ElPopover: { template: '<div><slot /><slot name="reference" /></div>', props: ['visible', 'width'] },
     ElTooltip: { template: '<div><slot /></div>', props: ['content'] },
   }
@@ -83,9 +93,16 @@ describe('AiChatPanel', () => {
   })
 
   describe('F3: Empty state starter prompts', () => {
-    it('shows prompt cards from API when messages is empty', async () => {
+    const defaultStarterPrompts = [
+      { icon: 'edit', text: '帮我生成一个用户注册表单', agent: 'editor' as const },
+      { icon: 'list', text: '创建一个订单审批流程', agent: 'flow' as const },
+      { icon: 'search', text: '搜索已有的表单模板', agent: 'auto' as const },
+      { icon: 'setting', text: '设计一个系统配置页面', agent: 'editor' as const },
+    ]
+
+    it('shows prompt cards when starterPrompts prop is provided', async () => {
       const wrapper = mount(AiChatPanel, {
-        props: defaultProps,
+        props: { ...defaultProps, starterPrompts: defaultStarterPrompts },
         global: { stubs },
       })
       await flushPromises()
@@ -101,29 +118,12 @@ describe('AiChatPanel', () => {
       expect(wrapper.text()).toContain('设计一个系统配置页面')
     })
 
-    it('falls back to hardcoded prompts when API fails', async () => {
-      const { getStarterPrompts } = await import('@/api/aiApi')
-      vi.mocked(getStarterPrompts).mockRejectedValueOnce(new Error('network error'))
-
+    it('renders custom starter prompts from props', async () => {
       const wrapper = mount(AiChatPanel, {
-        props: defaultProps,
-        global: { stubs },
-      })
-      await flushPromises()
-
-      const promptCards = wrapper.findAll('[class*="promptCard"]')
-      expect(promptCards).toHaveLength(4)
-      expect(wrapper.text()).toContain('帮我生成一个用户注册表单')
-    })
-
-    it('uses API prompts when they differ from defaults', async () => {
-      const { getStarterPrompts } = await import('@/api/aiApi')
-      vi.mocked(getStarterPrompts).mockResolvedValueOnce([
-        { icon: 'star', text: '自定义提示词', agent: 'auto' },
-      ])
-
-      const wrapper = mount(AiChatPanel, {
-        props: defaultProps,
+        props: {
+          ...defaultProps,
+          starterPrompts: [{ icon: 'star', text: '自定义提示词', agent: 'auto' }],
+        },
         global: { stubs },
       })
       await flushPromises()
@@ -133,24 +133,11 @@ describe('AiChatPanel', () => {
       expect(wrapper.text()).toContain('自定义提示词')
     })
 
-    it('falls back to hardcoded prompts when API returns empty array', async () => {
-      const { getStarterPrompts } = await import('@/api/aiApi')
-      vi.mocked(getStarterPrompts).mockResolvedValueOnce([])
-
-      const wrapper = mount(AiChatPanel, {
-        props: defaultProps,
-        global: { stubs },
-      })
-      await flushPromises()
-
-      const promptCards = wrapper.findAll('[class*="promptCard"]')
-      expect(promptCards).toHaveLength(4)
-    })
-
     it('hides prompt cards when messages exist', async () => {
       const wrapper = mount(AiChatPanel, {
         props: {
           ...defaultProps,
+          starterPrompts: defaultStarterPrompts,
           messages: [
             { role: 'user', content: 'hi', timestamp: new Date() },
           ],
@@ -165,7 +152,7 @@ describe('AiChatPanel', () => {
 
     it('emits send event with correct agent when prompt card is clicked', async () => {
       const wrapper = mount(AiChatPanel, {
-        props: defaultProps,
+        props: { ...defaultProps, starterPrompts: defaultStarterPrompts },
         global: { stubs },
       })
       await flushPromises()

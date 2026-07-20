@@ -10,7 +10,7 @@
 
 | # | 来源 | 代码位置 | 运行时注入点 | 可扩展性 |
 |---|------|----------|-------------|----------|
-| 1 | **Domain promptBuilder** | `ai/shared/promptBuilder.ts` → `buildEditorSystemPrompt` / `buildFlowSystemPrompt` / `buildPageSystemPrompt` | `resolveExpertPrompt.ts`：当 Expert 声明 `dynamicPrompt: "editor"` 等时调用 | 改代码发版；不适合纯第三方 |
+| 1 | **Domain promptBuilder** | `shared/platform-shared/ai/promptBuilder.ts` → `buildEditorSystemPrompt` / `buildFlowSystemPrompt` / `buildPageSystemPrompt` | `resolveExpertPrompt.ts`：当 Expert 声明 `dynamicPrompt: "editor"` 等时调用 | 改代码发版；不适合纯第三方 |
 | 2 | **Expert `dynamicPrompt`** | `server/config/plugins/experts/*.json` 的 `dynamicPrompt` 字段 | 同上，switch 分发到 promptBuilder | 仅平台内置四类（editor/flow/page/general） |
 | 3 | **Expert `systemPrompt` + Skill** | Expert JSON 的 `systemPrompt` 字段 + `skills[]` 引用 Skill JSON | `resolveExpertPrompt.ts`：`systemPrompt` 为底座，Skill 内容拼接末尾 | **第三方主路径**：pack / local / tenants |
 | 4 | **节点级 prompt** | Workflow `llm` 节点 `data.prompt` / `data.systemPrompt`；`expert` 节点 `data.expertId` | `agentWorkflowExecutor`：LLM 节点直接用节点 prompt；Expert 节点走 Registry 解析 | 设计器可编辑；节点级覆盖 |
@@ -175,7 +175,7 @@ Plugin Center 当前 4 个 Tab：
 
 ### 现状分析
 
-Workflow 模板定义在 `ai/shared/agentWorkflow.ts` 的 `AGENT_WORKFLOW_TEMPLATES`，当前 4 个：
+Workflow 模板定义在 `shared/platform-shared/ai/agentWorkflow.ts` 的 `AGENT_WORKFLOW_TEMPLATES`，当前 4 个：
 
 | 模板 | 节点类型 | Expert 引用 |
 |------|----------|------------|

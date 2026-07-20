@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => {
           platformShared: true,
         }),
       ],
-      dedupe: ['vue', 'vue-router', 'pinia', 'element-plus'],
+      dedupe: ['vue', 'vue-router', 'pinia', 'element-plus', 'vue-i18n'],
     },
     optimizeDeps: {
       exclude: sharedOptimizeDepsExclude({ platformShared: true }),

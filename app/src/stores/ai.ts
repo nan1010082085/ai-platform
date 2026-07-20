@@ -2,19 +2,6 @@
  * AI 对话状态管理（主 Orchestrator Store）
  *
  * 组合子 store 和子模块，暴露统一接口。
- * 子模块：
- * - ai/events.ts — 流式事件处理
- * - ai/workflow.ts — 工作流执行
- * - ai/requirement.ts — 需求确认流程
- *
- * 子 store（独立 Pinia store）：
- * - conversation.ts — 对话管理
- * - stream.ts — 流式连接
- * - schema.ts — Schema 状态
- * - llm.ts — LLM Provider
- * - rag.ts — RAG 搜索
- * - chatSettings.ts — 聊天设置
- * - hitl.ts — HITL 中断
  */
 
 import { defineStore } from 'pinia'
@@ -26,21 +13,10 @@ import type {
   FlowGraph,
   MentionReference,
 } from '@/types'
-import type {
-  SearchResult,
-  MentionType,
-  MentionSearchResult,
-  FeedbackType,
-} from '@/api/aiApi'
-import {
-  searchConversations,
-  mentionSearch,
-  submitMessageFeedback,
-} from '@/api/aiApi'
-import { message } from '@schema-platform/platform-shared/utils/message'
 import { handleStreamEvent } from './ai/events'
 import { createWorkflowModule } from './ai/workflow'
 import { createRequirementModule } from './ai/requirement'
+import { createAiActions } from './ai/actions'
 
 import { useConversationStore } from './conversation'
 import { useStreamStore } from './stream'
@@ -53,7 +29,6 @@ import { getInputPlaceholder } from '@/utils/requirementConfirmFlow'
 import type { RequirementConfirmContext } from '@/utils/requirementConfirmFlow'
 
 export const useAiStore = defineStore('ai', () => {
-  // ---- 内部 store 引用 ----
   const conversationStore = useConversationStore()
   const streamStore = useStreamStore()
   const schemaStore = useSchemaStore()
@@ -62,13 +37,10 @@ export const useAiStore = defineStore('ai', () => {
   const chatSettingsStore = useChatSettingsStore()
   const hitlStore = useHITLStore()
 
-  // ---- 本地状态 ----
   const activeAgent = ref<AgentType>('auto')
   const context = ref<ChatContext>({ source: 'standalone' })
   const taskChain = ref<import('@/types').TaskChainStep[]>([])
   const taskChainIndex = ref(0)
-
-  // ---- 子模块初始化 ----
 
   const workflowModule = createWorkflowModule({
     lastWorkflowExecutionId: ref<string | null>(null),
@@ -82,8 +54,6 @@ export const useAiStore = defineStore('ai', () => {
     hitlStore,
     streamStore,
   })
-
-  // ---- 流式事件处理适配 ----
 
   function handleStreamEventForStore(
     event: import('@/types').StreamEvent,
@@ -99,157 +69,25 @@ export const useAiStore = defineStore('ai', () => {
     })
   }
 
-  // ---- Actions ----
+  const actions = createAiActions({
+    stores: {
+      conversationStore,
+      streamStore,
+      schemaStore,
+      ragStore,
+      chatSettingsStore,
+      hitlStore,
+    },
+    activeAgent,
+    context,
+    handleStreamEvent: handleStreamEventForStore,
+    workflowModule,
+    requirementModule,
+  })
 
   function switchAgent(agent: AgentType): void {
     activeAgent.value = agent
     context.value.source = agent === 'auto' ? 'standalone' : (agent as 'editor' | 'flow')
-  }
-
-  async function sendMessage(
-    content: string,
-    mentions?: MentionReference[],
-    attachments?: import('@/types').MessageDocumentAttachment[],
-  ): Promise<void> {
-    if (chatSettingsStore.chatSettings.agentWorkflowId) {
-      await workflowModule.sendWorkflowMessage(content, {
-        chatSettingsStore,
-        streamStore,
-        ragStore,
-        conversationStore,
-      }, attachments)
-      return
-    }
-
-    // 需求确认等待中：输入框发送 = 渐进式作答，不开启新对话轮次
-    if (hitlStore.pendingInterrupt?.type === 'requirement_confirm') {
-      const trimmed = content.trim()
-      if (!trimmed) return
-      if (/^(跳过|skip)$/i.test(trimmed)) {
-        await requirementModule.skipRequirement(handleStreamEventForStore)
-        return
-      }
-      await requirementModule.submitRequirementAnswer(trimmed, handleStreamEventForStore)
-      return
-    }
-
-    streamStore.cancelCurrent()
-    streamStore.lastMessagePayload = { content, mentions, attachments }
-    streamStore.retryCount = 0
-    streamStore.loading = true
-    streamStore.error = null
-
-    // 将 RAG context 注入消息内容
-    const ragPrefix = ragStore.getRagContextContent()
-    const enrichedContent = ragPrefix + content
-
-    // 追加用户消息
-    conversationStore.messages.push({
-      role: 'user',
-      content: enrichedContent,
-      attachments,
-      timestamp: new Date(),
-      status: 'sent',
-    })
-
-    // 准备 assistant 消息占位
-    const assistantIndex = conversationStore.messages.length
-    conversationStore.messages.push({
-      role: 'assistant',
-      content: '',
-      timestamp: new Date(),
-      status: 'streaming',
-    })
-
-    await streamStore.executeStream(enrichedContent, mentions, assistantIndex, conversationStore.messages, {
-      onStreamEvent: handleStreamEventForStore,
-      onDone: (conversationId) => {
-        if (conversationId) conversationStore.loadConversations()
-      },
-      getContext: () => ({
-        context: context.value,
-        chatSettings: chatSettingsStore.chatSettings,
-        currentSchema: schemaStore.currentSchema,
-        currentFlow: schemaStore.currentFlow,
-        currentConversationId: conversationStore.currentConversationId,
-      }),
-      documentAttachments: attachments,
-    })
-  }
-
-  async function retryLastMessage(): Promise<void> {
-    if (!streamStore.lastMessagePayload) return
-
-    streamStore.cancelCurrent()
-    streamStore.retryCount = 0
-    streamStore.loading = true
-    streamStore.error = null
-
-    const lastIdx = conversationStore.messages.length - 1
-    if (lastIdx >= 0 && conversationStore.messages[lastIdx].role === 'assistant') {
-      conversationStore.messages[lastIdx].content = ''
-      conversationStore.messages[lastIdx].status = 'streaming'
-      await streamStore.executeStream(
-        streamStore.lastMessagePayload.content,
-        streamStore.lastMessagePayload.mentions,
-        lastIdx,
-        conversationStore.messages,
-        {
-          onStreamEvent: handleStreamEventForStore,
-          onDone: (conversationId) => {
-            if (conversationId) conversationStore.loadConversations()
-          },
-          getContext: () => ({
-            context: context.value,
-            chatSettings: chatSettingsStore.chatSettings,
-            currentSchema: schemaStore.currentSchema,
-            currentFlow: schemaStore.currentFlow,
-            currentConversationId: conversationStore.currentConversationId,
-          }),
-          documentAttachments: streamStore.lastMessagePayload.attachments,
-        },
-      )
-    }
-  }
-
-  async function retryToolCall(messageIndex: number, toolCallIndex: number): Promise<void> {
-    const msg = conversationStore.messages[messageIndex]
-    if (!msg || msg.role !== 'assistant' || !msg.toolCalls) return
-
-    const toolCall = msg.toolCalls[toolCallIndex]
-    if (!toolCall || !toolCall.error) return
-
-    toolCall.error = undefined
-    toolCall.result = undefined
-
-    let userContent = ''
-    let userMentions: MentionReference[] | undefined
-    for (let i = messageIndex - 1; i >= 0; i--) {
-      if (conversationStore.messages[i].role === 'user') {
-        userContent = conversationStore.messages[i].content
-        break
-      }
-    }
-    if (!userContent) return
-
-    streamStore.cancelCurrent()
-    streamStore.loading = true
-    streamStore.error = null
-    msg.status = 'streaming'
-
-    await streamStore.executeStream(userContent, userMentions, messageIndex, conversationStore.messages, {
-      onStreamEvent: handleStreamEventForStore,
-      onDone: (conversationId) => {
-        if (conversationId) conversationStore.loadConversations()
-      },
-      getContext: () => ({
-        context: context.value,
-        chatSettings: chatSettingsStore.chatSettings,
-        currentSchema: schemaStore.currentSchema,
-        currentFlow: schemaStore.currentFlow,
-        currentConversationId: conversationStore.currentConversationId,
-      }),
-    })
   }
 
   async function respondInterrupt(confirmed: boolean): Promise<void> {
@@ -319,95 +157,11 @@ export const useAiStore = defineStore('ai', () => {
     context.value = { ...context.value, ...ctx }
   }
 
-  // ---- 搜索 ----
-
-  async function searchConversationsAction(
-    params: string | import('@/api/aiApi').SearchConversationsParams,
-  ): Promise<SearchResult> {
-    const normalized = typeof params === 'string' ? { keyword: params } : params
-    return searchConversations(normalized)
-  }
-
-  async function mentionSearchAction(
-    query: string,
-    type: MentionType,
-    limit = 10,
-  ): Promise<MentionSearchResult[]> {
-    return mentionSearch(query, type, limit)
-  }
-
-  // ---- 消息操作 ----
-
-  async function submitFeedback(messageIndex: number, type: FeedbackType): Promise<void> {
-    const msg = conversationStore.messages[messageIndex]
-    if (!msg) return
-
-    const messageId = msg.id
-    if (!messageId) return
-
-    const newFeedback = msg.feedback === type ? null : type
-    msg.feedback = newFeedback
-
-    try {
-      await submitMessageFeedback(messageId, type)
-    } catch (err) {
-      msg.feedback = msg.feedback === type ? null : type
-      const errorMsg = err instanceof Error ? err.message : String(err)
-      console.error('[ai:feedback] 提交反馈失败:', errorMsg)
-      message.error('反馈提交失败，请稍后重试')
-    }
-  }
-
-  async function regenerateMessage(messageIndex: number): Promise<void> {
-    const msg = conversationStore.messages[messageIndex]
-    if (!msg || msg.role !== 'assistant') return
-
-    let userContent = ''
-    let userMentions: MentionReference[] | undefined
-    for (let i = messageIndex - 1; i >= 0; i--) {
-      if (conversationStore.messages[i].role === 'user') {
-        userContent = conversationStore.messages[i].content
-        break
-      }
-    }
-    if (!userContent) return
-
-    streamStore.cancelCurrent()
-    streamStore.loading = true
-    streamStore.error = null
-
-    msg.content = ''
-    msg.thinking = undefined
-    msg.tip = undefined
-    msg.toolCalls = undefined
-    msg.schema = undefined
-    msg.flow = undefined
-    msg.feedback = null
-    msg.status = 'streaming'
-
-    await streamStore.executeStream(userContent, userMentions, messageIndex, conversationStore.messages, {
-      onStreamEvent: handleStreamEventForStore,
-      onDone: (conversationId) => {
-        if (conversationId) conversationStore.loadConversations()
-      },
-      getContext: () => ({
-        context: context.value,
-        chatSettings: chatSettingsStore.chatSettings,
-        currentSchema: schemaStore.currentSchema,
-        currentFlow: schemaStore.currentFlow,
-        currentConversationId: conversationStore.currentConversationId,
-      }),
-    })
-  }
-
-  // ---- 需求确认代理方法 ----
-
   function getRequirementConfirmContext(): RequirementConfirmContext | null {
     return requirementModule.getRequirementConfirmContext()
   }
 
   return {
-    // state（从子 store 代理）
     conversations: computed(() => conversationStore.conversations),
     currentConversationId: computed(() => conversationStore.currentConversationId),
     messages: computed(() => conversationStore.messages),
@@ -448,16 +202,14 @@ export const useAiStore = defineStore('ai', () => {
       () => hitlStore.pendingInterrupt?.type === 'requirement_confirm',
     ),
 
-    // getters
     currentConversation: computed(() => conversationStore.currentConversation),
     hasPreview: computed(() => schemaStore.hasPreview),
     canUndoSchema: computed(() => schemaStore.canUndoSchema),
     MAX_AUTO_RETRIES: computed(() => streamStore.MAX_AUTO_RETRIES),
 
-    // actions
-    sendMessage,
-    retryLastMessage,
-    retryToolCall,
+    sendMessage: actions.sendMessage,
+    retryLastMessage: actions.retryLastMessage,
+    retryToolCall: actions.retryToolCall,
     stopGeneration: () => {
       streamStore.stopGeneration()
       workflowModule.stopWorkflowGeneration()
@@ -501,12 +253,12 @@ export const useAiStore = defineStore('ai', () => {
     addRagContext: (item: any) => ragStore.addRagContext(item),
     removeRagContext: (id: string) => ragStore.removeRagContext(id),
     clearRagContext: () => ragStore.clearRagContext(),
-    searchConversationsAction,
-    mentionSearchAction,
+    searchConversationsAction: actions.searchConversationsAction,
+    mentionSearchAction: actions.mentionSearchAction,
     clearInterrupt: () => hitlStore.clearInterrupt(),
     respondInterrupt,
-    submitFeedback,
-    regenerateMessage,
+    submitFeedback: actions.submitFeedback,
+    regenerateMessage: actions.regenerateMessage,
     confirmRequirement: (answers: Record<string, string>) => requirementModule.confirmRequirement(answers, handleStreamEventForStore),
     skipRequirement: () => requirementModule.skipRequirement(handleStreamEventForStore),
     submitRequirementAnswer: (rawInput: string, questionId?: string) => requirementModule.submitRequirementAnswer(rawInput, handleStreamEventForStore, questionId),

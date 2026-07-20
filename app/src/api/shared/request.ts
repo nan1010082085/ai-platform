@@ -63,6 +63,11 @@ export function setUnauthorizedHandler(handler: () => void): void {
   _unauthorizedHandler = handler
 }
 
+/** Invoke the registered 401 handler (session cleanup). Used by blobRequest and request. */
+export function notifyUnauthorized(): void {
+  _unauthorizedHandler?.()
+}
+
 // ---- Internal helpers ----
 
 function resolveToken(): string | null {

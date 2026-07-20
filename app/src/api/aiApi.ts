@@ -20,12 +20,18 @@ import {
   buildHeaders as sharedBuildHeaders,
   ApiError,
 } from '@/api/shared/request'
+import { requestBlob, uploadBlob, triggerBlobDownload } from '@/api/shared/blobRequest'
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) ?? '/schema-platform/api'
 
 // ---- 错误类型 (re-export for backward compat) ----
 
-export class AiApiError extends ApiError {}
+export class AiApiError extends ApiError {
+  constructor(message: string, status: number) {
+    super(message, status)
+    this.name = 'AiApiError'
+  }
+}
 
 // ---- Auth helpers (delegate to shared module) ----
 
@@ -109,21 +115,7 @@ export interface UploadResult {
 export async function uploadFile(file: File): Promise<UploadResult> {
   const form = new FormData()
   form.append('file', file)
-  const response = await fetch(`${BASE_URL}/ai/documents/upload`, {
-    method: 'POST',
-    headers: buildHeaders(),
-    body: form,
-  })
-  if (!response.ok) {
-    const body = await response.json().catch(() => null)
-    const msg = body?.error?.message ?? `${response.status} ${response.statusText}`
-    throw new AiApiError(msg, response.status)
-  }
-  const body = (await response.json()) as ApiResponse<UploadResult>
-  if (!body.success) {
-    throw new AiApiError(body.error?.message ?? 'Upload failed', response.status)
-  }
-  return body.data
+  return uploadBlob<UploadResult>('/ai/documents/upload', form)
 }
 
 export interface DocumentPreviewResult {
@@ -174,21 +166,8 @@ export function getDocumentFileUrl(documentId: string): string {
 }
 
 export async function downloadDocumentFile(documentId: string, filename: string): Promise<void> {
-  const response = await fetch(getDocumentFileUrl(documentId), {
-    headers: buildHeaders(),
-  })
-  if (!response.ok) {
-    const body = await response.json().catch(() => null)
-    const msg = body?.error?.message ?? `${response.status} ${response.statusText}`
-    throw new AiApiError(msg, response.status)
-  }
-  const blob = await response.blob()
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+  const blob = await requestBlob(`/ai/documents/${encodeURIComponent(documentId)}/file`)
+  triggerBlobDownload(blob, filename)
 }
 
 export async function reparseDocument(documentId: string): Promise<UploadResult> {
@@ -218,21 +197,10 @@ export async function analyzeImage(base64Image: string): Promise<AnalyzeImageRes
 export type ExportFormat = 'json' | 'markdown' | 'html'
 
 export async function downloadConversation(id: string, format: ExportFormat): Promise<void> {
-  const response = await fetch(`${BASE_URL}/ai/conversations/${encodeURIComponent(id)}/export?format=${format}`, {
-    headers: buildHeaders(),
-  })
-  if (!response.ok) {
-    const body = await response.json().catch(() => null)
-    const msg = body?.error?.message ?? `${response.status} ${response.statusText}`
-    throw new AiApiError(msg, response.status)
-  }
-  const blob = await response.blob()
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `conversation-${id}.${format === 'markdown' ? 'md' : format}`
-  a.click()
-  URL.revokeObjectURL(url)
+  const blob = await requestBlob(
+    `/ai/conversations/${encodeURIComponent(id)}/export?format=${format}`,
+  )
+  triggerBlobDownload(blob, `conversation-${id}.${format === 'markdown' ? 'md' : format}`)
 }
 
 // ---- 监控 ----
@@ -531,21 +499,7 @@ export interface RagUploadResult {
 export async function uploadRagDocument(file: File): Promise<RagUploadResult> {
   const form = new FormData()
   form.append('file', file)
-  const response = await fetch(`${BASE_URL}/ai/rag/upload`, {
-    method: 'POST',
-    headers: buildHeaders(),
-    body: form,
-  })
-  if (!response.ok) {
-    const body = await response.json().catch(() => null)
-    const msg = body?.error?.message ?? `${response.status} ${response.statusText}`
-    throw new AiApiError(msg, response.status)
-  }
-  const body = (await response.json()) as ApiResponse<RagUploadResult>
-  if (!body.success) {
-    throw new AiApiError(body.error?.message ?? 'Upload failed', response.status)
-  }
-  return body.data
+  return uploadBlob<RagUploadResult>('/ai/rag/upload', form)
 }
 
 // ---- LLM Provider Management ----

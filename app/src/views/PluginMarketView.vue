@@ -9,6 +9,7 @@ import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import CardTable from '@/components/common/CardTable.vue'
 import { request } from '@/api/shared/request'
+import { trackAi, AI_TELEMETRY_EVENTS } from '@/utils/telemetry'
 import styles from './PluginMarketView.module.scss'
 
 interface PluginTemplate {
@@ -39,6 +40,8 @@ const activeCategory = ref<CategoryTab>('all')
 const searchInput = ref('')
 const loading = ref(false)
 const plugins = ref<PluginTemplate[]>([])
+const externalUrl = ref('')
+const installingExternal = ref(false)
 
 const q = computed(() => searchInput.value.trim().toLowerCase())
 
@@ -76,6 +79,7 @@ async function installPlugin(plugin: PluginTemplate) {
 
     await request(`/plugins/market/${plugin.id}/install`, { method: 'POST' })
     plugin.installed = true
+    trackAi(AI_TELEMETRY_EVENTS.PLUGIN_ENABLE, { pluginId: plugin.id, source: 'market' })
     ElMessage.success(`已安装 ${plugin.name}`)
   } catch (err) {
     if (err !== 'cancel') {
@@ -101,6 +105,52 @@ async function uninstallPlugin(plugin: PluginTemplate) {
       console.error('Failed to uninstall plugin:', err)
       ElMessage.error('卸载失败')
     }
+  }
+}
+
+/** 从外部源安装插件包（URL 指向 expert.json / 插件清单） */
+async function installFromExternalUrl(): Promise<void> {
+  const url = externalUrl.value.trim()
+  if (!url) {
+    ElMessage.warning('请输入插件包 URL')
+    return
+  }
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    ElMessage.error('URL 格式无效')
+    return
+  }
+  if (!['https:', 'http:'].includes(parsed.protocol)) {
+    ElMessage.error('仅支持 http(s) 来源')
+    return
+  }
+
+  installingExternal.value = true
+  try {
+    await ElMessageBox.confirm(
+      `将从外部源安装插件：\n${url}\n\n仅应安装来自信任源或已审核白名单的包。`,
+      '安装外部插件',
+      { confirmButtonText: '继续安装', cancelButtonText: '取消', type: 'warning' },
+    )
+    await request('/plugins/market/install-from-url', {
+      method: 'POST',
+      body: { url },
+    })
+    trackAi(AI_TELEMETRY_EVENTS.PLUGIN_ENABLE, {
+      source: 'external_url',
+      host: parsed.hostname,
+    })
+    ElMessage.success('外部插件已提交安装')
+    externalUrl.value = ''
+    await loadPlugins()
+  } catch (err) {
+    if (err !== 'cancel') {
+      ElMessage.error(err instanceof Error ? err.message : '外部插件安装失败')
+    }
+  } finally {
+    installingExternal.value = false
   }
 }
 
@@ -162,6 +212,22 @@ onMounted(() => {
               <AppIcon name="search" :size="14" />
             </template>
           </el-input>
+        </div>
+
+        <div :class="styles.externalInstall">
+          <el-input
+            v-model="externalUrl"
+            placeholder="从外部源安装：粘贴 https://…/expert.json"
+            clearable
+          />
+          <el-button
+            type="primary"
+            plain
+            :loading="installingExternal"
+            @click="installFromExternalUrl"
+          >
+            安装外部包
+          </el-button>
         </div>
       </header>
 

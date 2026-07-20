@@ -7,7 +7,22 @@
  * @deprecated 此模块对接旧版 ModelConfig 表，请使用 providerApi + modelApi。
  */
 
-import { request } from '@/api/shared/request'
+import { request, setTokenProvider } from '@/api/shared/request'
+
+/** @deprecated Use setTokenProvider from @/api/shared/request */
+export function setModelConfigTokenProvider(provider: () => string | null): void {
+  setTokenProvider(provider)
+}
+
+export class ModelConfigApiError extends Error {
+  public readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'ModelConfigApiError'
+    this.status = status
+  }
+}
 
 // ---- 类型 ----
 

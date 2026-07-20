@@ -24,6 +24,7 @@ import {
   emitChatResume,
   onChatEvent,
 } from '@schema-platform/platform-shared/socket'
+import { trackAi, reportAiError, AI_TELEMETRY_EVENTS } from '@/utils/telemetry'
 
 export const useStreamStore = defineStore('stream', () => {
   // ---- State ----
@@ -105,7 +106,12 @@ export const useStreamStore = defineStore('stream', () => {
     let attempts = 0
 
     while (attempts <= MAX_AUTO_RETRIES) {
-      streamStatus.value = attempts === 0 ? 'connecting' : 'reconnecting'
+      if (attempts === 0) {
+        streamStatus.value = 'connecting'
+      } else {
+        streamStatus.value = 'reconnecting'
+        trackAi(AI_TELEMETRY_EVENTS.WS_DISCONNECT, { attempts })
+      }
       retryCount.value = attempts
       streamStopped = false
 
@@ -210,6 +216,11 @@ export const useStreamStore = defineStore('stream', () => {
         }
         // 不可重试或超出重试次数，抛出错误
         error.value = streamError
+        trackAi(AI_TELEMETRY_EVENTS.WS_RETRY_FAIL, {
+          attempts,
+          error: streamError,
+        })
+        void reportAiError(streamError, { source: 'ws.retry_fail', attempts })
         handlers.onDone(ctx.currentConversationId ?? undefined)
         break
       }

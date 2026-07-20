@@ -8,6 +8,7 @@
 
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from '@schema-platform/platform-shared'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import CardTable from '@/components/common/CardTable.vue'
@@ -20,6 +21,8 @@ import {
   type ApiKeyStatus,
 } from '@/api/apiKeyApi'
 import styles from './ApiKeyManagerView.module.scss'
+
+const { t, locale } = useI18n()
 
 const keys = ref<ApiKeyItem[]>([])
 const total = ref(0)
@@ -43,7 +46,7 @@ async function loadKeys(): Promise<void> {
     keys.value = res.items
     total.value = res.total
   } catch (e) {
-    ElMessage.error((e as Error).message || '加载失败')
+    ElMessage.error((e as Error).message || t('common.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -62,7 +65,7 @@ function openCreateDialog(): void {
 async function handleCreate(): Promise<void> {
   const name = newName.value.trim()
   if (!name) {
-    ElMessage.warning('请输入名称')
+    ElMessage.warning(t('apiKey.nameRequired'))
     return
   }
   creating.value = true
@@ -71,10 +74,10 @@ async function handleCreate(): Promise<void> {
     createdFullKey.value = item.key
     showCreateDialog.value = false
     showKeyDialog.value = true
-    ElMessage.success('密钥创建成功')
+    ElMessage.success(t('apiKey.createSuccess'))
     void loadKeys()
   } catch (e) {
-    ElMessage.error((e as Error).message || '创建失败')
+    ElMessage.error((e as Error).message || t('common.createFailed'))
   } finally {
     creating.value = false
   }
@@ -82,43 +85,50 @@ async function handleCreate(): Promise<void> {
 
 function copyKey(): void {
   navigator.clipboard.writeText(createdFullKey.value).then(() => {
-    ElMessage.success('已复制到剪贴板')
+    ElMessage.success(t('apiKey.copied'))
   }).catch(() => {
-    ElMessage.warning('复制失败，请手动复制')
+    ElMessage.warning(t('apiKey.copyFailed'))
   })
 }
 
 async function handleToggleStatus(item: ApiKeyItem): Promise<void> {
   const newStatus: ApiKeyStatus = item.status === 'active' ? 'disabled' : 'active'
-  const label = newStatus === 'active' ? '启用' : '禁用'
   try {
     await updateApiKeyStatus(item.id, newStatus)
-    ElMessage.success(`已${label}`)
+    ElMessage.success(newStatus === 'active' ? t('apiKey.enabledMsg') : t('apiKey.disabledMsg'))
     void loadKeys()
   } catch (e) {
-    ElMessage.error((e as Error).message || `${label}失败`)
+    ElMessage.error(
+      (e as Error).message
+      || (newStatus === 'active' ? t('apiKey.enableFailed') : t('apiKey.disableFailed')),
+    )
   }
 }
 
 async function handleDelete(item: ApiKeyItem): Promise<void> {
   try {
     await ElMessageBox.confirm(
-      `确定删除密钥「${item.name}」？删除后使用该密钥的调用将立即失效。`,
-      '删除确认',
-      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' },
+      t('apiKey.deleteConfirm', { name: item.name }),
+      t('apiKey.deleteTitle'),
+      {
+        confirmButtonText: t('common.delete'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning',
+      },
     )
     await deleteApiKey(item.id)
-    ElMessage.success('已删除')
+    ElMessage.success(t('apiKey.deleted'))
     void loadKeys()
   } catch (e) {
     if (e === 'cancel') return
-    ElMessage.error((e as Error).message || '删除失败')
+    ElMessage.error((e as Error).message || t('common.deleteFailed'))
   }
 }
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleString('zh-CN', {
+  const dateLocale = locale.value === 'en-US' ? 'en-US' : 'zh-CN'
+  return new Date(iso).toLocaleString(dateLocale, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -138,19 +148,19 @@ onMounted(() => {
       <header :class="styles.header">
         <div :class="styles.titleRow">
           <div>
-            <h1>我的集成密钥</h1>
+            <h1>{{ t('apiKey.title') }}</h1>
             <p :class="styles.subtitle">
-              创建和管理 API 密钥，用于第三方系统集成调用。密钥仅在创建时展示一次，请妥善保存。
+              {{ t('apiKey.subtitle') }}
             </p>
           </div>
           <div :class="styles.headerActions">
             <el-button :loading="loading" @click="loadKeys">
               <AppIcon name="refresh" :size="14" style="margin-right: 4px" />
-              刷新
+              {{ t('common.refresh') }}
             </el-button>
             <el-button type="primary" @click="openCreateDialog">
               <AppIcon name="plus" :size="14" style="margin-right: 4px" />
-              创建密钥
+              {{ t('apiKey.create') }}
             </el-button>
           </div>
         </div>
@@ -159,41 +169,41 @@ onMounted(() => {
       <div :class="styles.content">
         <div :class="styles.summary">
           <div :class="styles.summaryCard">
-            <div :class="styles.summaryLabel">总计</div>
+            <div :class="styles.summaryLabel">{{ t('apiKey.total') }}</div>
             <div :class="styles.summaryValue">{{ total }}</div>
           </div>
           <div :class="styles.summaryCard">
-            <div :class="styles.summaryLabel">启用中</div>
+            <div :class="styles.summaryLabel">{{ t('apiKey.activeCount') }}</div>
             <div :class="styles.summaryValue">{{ keys.filter((k) => k.status === 'active').length }}</div>
           </div>
         </div>
 
         <CardTable :loading="loading">
           <el-table :data="keys" stripe>
-            <el-table-column prop="name" label="名称" min-width="140" />
-            <el-table-column label="密钥" min-width="220">
+            <el-table-column prop="name" :label="t('apiKey.name')" min-width="140" />
+            <el-table-column :label="t('apiKey.key')" min-width="220">
               <template #default="{ row }">
                 <span :class="styles.mono">{{ row.key }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="状态" width="100">
+            <el-table-column :label="t('apiKey.status')" width="100">
               <template #default="{ row }">
                 <el-tag :type="row.status === 'active' ? 'success' : 'info'" size="small">
-                  {{ row.status === 'active' ? '启用' : '禁用' }}
+                  {{ row.status === 'active' ? t('common.enable') : t('common.disable') }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="创建时间" width="170">
+            <el-table-column :label="t('apiKey.createdAt')" width="170">
               <template #default="{ row }">
                 {{ formatDate(row.createdAt) }}
               </template>
             </el-table-column>
-            <el-table-column label="最后使用" width="170">
+            <el-table-column :label="t('apiKey.lastUsed')" width="170">
               <template #default="{ row }">
                 {{ formatDate(row.lastUsedAt) }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="180" fixed="right">
+            <el-table-column :label="t('apiKey.actions')" width="180" fixed="right">
               <template #default="{ row }">
                 <el-button
                   link
@@ -206,7 +216,7 @@ onMounted(() => {
                     :size="14"
                     style="margin-right: 2px"
                   />
-                  {{ row.status === 'active' ? '禁用' : '启用' }}
+                  {{ row.status === 'active' ? t('common.disable') : t('common.enable') }}
                 </el-button>
                 <el-button
                   link
@@ -215,7 +225,7 @@ onMounted(() => {
                   @click="handleDelete(row)"
                 >
                   <AppIcon name="delete" :size="14" style="margin-right: 2px" />
-                  删除
+                  {{ t('common.delete') }}
                 </el-button>
               </template>
             </el-table-column>
@@ -223,9 +233,9 @@ onMounted(() => {
 
           <div v-if="keys.length === 0 && !loading" :class="styles.empty">
             <AppIcon name="key" :size="40" :class="styles.emptyIcon" />
-            <p>暂无集成密钥</p>
+            <p>{{ t('apiKey.empty') }}</p>
             <el-button type="primary" plain size="small" @click="openCreateDialog">
-              创建第一个密钥
+              {{ t('apiKey.createFirst') }}
             </el-button>
           </div>
         </CardTable>
@@ -245,15 +255,15 @@ onMounted(() => {
     <!-- 创建密钥对话框 -->
     <AppDialog
       v-model="showCreateDialog"
-      title="创建集成密钥"
+      :title="t('apiKey.createDialogTitle')"
       width="420px"
       :loading="creating"
     >
       <el-form label-position="top">
-        <el-form-item label="密钥名称" required>
+        <el-form-item :label="t('apiKey.nameLabel')" required>
           <el-input
             v-model="newName"
-            placeholder="例如：生产环境 / 测试用"
+            :placeholder="t('apiKey.namePlaceholder')"
             maxlength="100"
             show-word-limit
             @keyup.enter="handleCreate"
@@ -261,31 +271,31 @@ onMounted(() => {
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" :loading="creating" @click="handleCreate">创建</el-button>
+        <el-button @click="showCreateDialog = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="creating" @click="handleCreate">{{ t('common.create') }}</el-button>
       </template>
     </AppDialog>
 
     <!-- 创建成功后展示完整 Key -->
     <AppDialog
       v-model="showKeyDialog"
-      title="密钥已创建"
+      :title="t('apiKey.createdTitle')"
       width="680px"
       :show-fullscreen-btn="false"
     >
       <div :class="styles.keyNotice">
         <AppIcon name="warning" :size="18" :class="styles.keyNoticeIcon" />
-        <span>此密钥仅展示一次，请立即复制并妥善保存。关闭后无法再次查看完整密钥。</span>
+        <span>{{ t('apiKey.createdNotice') }}</span>
       </div>
       <div :class="styles.keyDisplay">
         <code :class="styles.keyCode">{{ createdFullKey }}</code>
         <el-button size="small" @click="copyKey">
           <AppIcon name="copy-document" :size="14" style="margin-right: 4px" />
-          复制
+          {{ t('common.copy') }}
         </el-button>
       </div>
       <template #footer>
-        <el-button type="primary" @click="showKeyDialog = false">我已保存，关闭</el-button>
+        <el-button type="primary" @click="showKeyDialog = false">{{ t('apiKey.savedClose') }}</el-button>
       </template>
     </AppDialog>
   </div>

@@ -38,7 +38,7 @@
 
 | 层 | 路径 | 职责 |
 |----|------|------|
-| 类型与模板 | `ai/shared/agentWorkflow.ts` | 节点类型、图结构、内置模板、校验 |
+| 类型与模板 | `shared/platform-shared/ai/agentWorkflow.ts` | 节点类型、图结构、内置模板、校验 |
 | 前端设计器 | `ai/app/src/views/AgentWorkflowDesignerView.vue` | Vue Flow 画布、属性面板 |
 | 状态管理 | `ai/app/src/stores/agentWorkflowDesigner.ts` | 节点/边、脏标记、执行高亮 |
 | API 客户端 | `ai/app/src/api/agentWorkflowApi.ts` | REST 封装 |
@@ -140,7 +140,7 @@ HTTP 外部触发，发布时自动生成 `webhookSecret`。
 |----------|------|------|
 | `tool` | `toolName` | Registry 工具名（MCP `schema__search` 或 LangGraph 专有 `update_schema` 等） |
 
-工具名权威定义见 `ai/shared/toolNames.ts`。Palette 工具列表来自插件 Registry。
+工具名权威定义见 `shared/platform-shared/ai/toolNames.ts`。Palette 工具列表来自插件 Registry。
 
 ### 2.5 对话智能节点（Phase J）
 
@@ -239,7 +239,7 @@ AI PPT 生成节点。
 
 ## 四、内置模板
 
-定义在 `ai/shared/agentWorkflow.ts`，通过 `createAgentWorkflowGraphByTemplate(id)` 创建。
+定义在 `shared/platform-shared/ai/agentWorkflow.ts`，通过 `createAgentWorkflowGraphByTemplate(id)` 创建。
 
 | ID | 名称 | 触发 | 场景 |
 |----|------|------|------|
@@ -471,7 +471,7 @@ HITL 场景：前端展示确认卡片，用户回答后 `POST .../resume`。
 
 ### 新增节点类型
 
-1. 在 `ai/shared/agentWorkflow.ts` 的 `AgentNodeType` 联合类型中添加
+1. 在 `shared/platform-shared/ai/agentWorkflow.ts` 的 `AgentNodeType` 联合类型中添加
 2. 在 `AgentWorkflowNodeData` 中添加配置字段
 3. 前端：`constants/agentNodes.ts` 面板项 + 属性面板组件
 4. 服务端：`agentWorkflowExecutor.ts` 添加 `case` 分支

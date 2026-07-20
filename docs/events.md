@@ -2,7 +2,7 @@
 
 > AI 流式通信的事件类型和数据格式（基于 WebSocket / Socket.IO）
 
-**权威定义**：`ai/shared/events.ts`
+**权威定义**：`shared/platform-shared/ai/events.ts`
 
 ## 版本说明
 
@@ -11,8 +11,8 @@
 | v1 | 文本流、Schema/Flow、工具、任务链、HITL、done/error | ✅ 已实现 |
 | v2 需求分析 | `requirement_analysis_*`、`requirement_confirm_*` | ✅ 已实现 |
 | v2 任务规划 | `task_plan_*` | ✅ 已实现 |
-| v2 思考推理 | `thinker_*` | ⚠️ 类型已定义，图节点未实现，不发射 |
-| v2 质量检查 | `quality_check_*` | ⚠️ 类型已定义，图节点未实现，不发射 |
+| v2 思考推理 | `thinker_*` | ✅ 对话流已实现（`chatStreamRunner` 发射，前端写入 thinking） |
+| v2 质量检查 | `quality_check_*` | ✅ 对话流已实现；工作流图节点仍见 [reserved-events-decision.md](./product/reserved-events-decision.md) |
 
 > **Chat LangGraph**：`chat:event`（WebSocket）。  
 > **Chat × Workflow**：REST 启动执行 + `workflow:event`（WebSocket 推送，见 §二）。
@@ -102,7 +102,7 @@ type AgentEventType =
   // v2: 任务规划
   | 'task_plan_start'
   | 'task_plan_complete'
-  // v2: 预留（未实现）
+  // v2: 对话流已实现（chatStreamRunner）；工作流图节点另见 reserved-events-decision
   | 'thinker_start'
   | 'thinker_complete'
   | 'quality_check_start'
@@ -785,7 +785,7 @@ function handleStreamEvent(event: StreamEvent, assistantIndex: number) {
 
 ### 12.1 共享类型
 
-`packages/ai/shared/events.ts` 定义了所有事件类型：
+`packages/shared/platform-shared/ai/events.ts` 定义了所有事件类型：
 
 ```typescript
 export type StreamEvent =

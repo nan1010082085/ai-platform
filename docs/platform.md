@@ -83,7 +83,7 @@ Bridge 事件（`ai/app/src/utils/bridge.ts`）：
 │    谁：每个登录用户 **自己创建**（非管理员专属）                  │
 │    用：脚本 / 外部系统 **代替在代码里塞 JWT**                   │
 │    范围：该用户身份下，租户内 **所有其有权限的已发布工作流**       │
-│    管理：AI 应用「我的集成密钥」（待建 UI；后端 /api/keys 已有）   │
+│    管理：AI 应用「我的集成密钥」（`ApiKeyManagerView`；后端 `/api/keys`）   │
 ├─────────────────────────────────────────────────────────────┤
 │ 3. 工作流 Key（wf-...）                                       │
 │    谁：**发布工作流时自动生成**（非手动创建）                    │
@@ -132,7 +132,7 @@ WebSocket chat:* / workflow:*
 | 平台 Key 权限 | 创建时勾选能力（如 `workflow:execute`）；执行时代表 **创建者用户身份** |
 | 角色权限 | `apikey:*` 不应仅绑在「管理员」；普通登录用户应能管理 **自己的** Key |
 
-当前实现差距见 [backlog](./product/backlog.md)（集成密钥 UI、invoke 认 `X-API-Key`、按 `createdBy` 过滤列表）。
+当前实现差距见 [backlog](./product/backlog.md)（invoke 认 `X-API-Key`、按 `createdBy` 过滤列表）。集成密钥 UI 与工作流 Key 轮换已落地（`ApiKeyManagerView`、`WorkflowInvokeInfo`）。
 
 ---
 
@@ -180,5 +180,5 @@ WebSocket chat:* / workflow:*
 
 1. **文档**：以本文为准，统一 JWT / 双 Key 叙事（取代「非开放平台、仅 Workflow Key」等过时表述）。
 2. **invoke 路由**：同时接受 `X-API-Key`（用户平台 Key）与 `X-Workflow-Key`。
-3. **AI 应用 UI**：「我的集成密钥」— 每用户 CRUD 自己的 `sk-...`（不做在 shell）。
+3. **AI 应用 UI**：「我的集成密钥」— 已落地（`ApiKeyManagerView` CRUD `sk-...`；`WorkflowInvokeInfo` 管理 `wf-...`）。
 4. **后端**：`GET/DELETE/PATCH /api/keys` 默认按 `createdBy` 过滤；普通角色具备 `apikey:*`（仅自己的）。

@@ -2,8 +2,8 @@
 
 > AI 跨端共享包：类型、事件、Prompt、工作流域模型、工具名权威定义
 
-**包路径**：`ai/shared/`  
-**NPM 名**：`@schema-platform/ai-shared`  
+**包路径**：`shared/platform-shared/ai/`  
+**NPM 名**：`@schema-platform/platform-shared/ai`  
 **消费者**：`@ai-app`（前端）、`@server`（后端，通过仓库根 `ai-shared` symlink）
 
 ---
@@ -244,7 +244,7 @@ class RuntimeAgent {
 ## 三、构建与发布
 
 ```bash
-cd ai/shared && pnpm build   # tsc → dist/
+cd shared/platform-shared && pnpm build   # tsc → dist/（含 ai/ 子路径）
 ```
 
 同仓开发通常不需要 build（Vite alias 直连源码）。跨仓消费时才需 semver 发布到 GitHub Packages。

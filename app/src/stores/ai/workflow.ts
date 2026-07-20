@@ -11,6 +11,7 @@ import { buildWorkflowMessageExecution } from '@/utils/workflowMessageExecution'
 import { runWorkflowChatTurn } from '@/composables/useWorkflowChatExecution'
 import { connect, isConnected } from '@schema-platform/platform-shared/socket'
 import { cancelExecution } from '@/api/agentWorkflowApi'
+import { trackAi, AI_TELEMETRY_EVENTS, reportAiError } from '@/utils/telemetry'
 
 /** 工作流执行状态（ref 对象） */
 export interface WorkflowExecutionState {
@@ -121,6 +122,14 @@ export function createWorkflowModule(state: WorkflowExecutionState) {
       conversationStore.messages[assistantIndex].status = 'received'
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '工作流执行失败'
+      trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_EXECUTE_FAIL, {
+        workflowId,
+        source: 'chat',
+      })
+      void reportAiError(err instanceof Error ? err : String(err), {
+        workflowId,
+        source: 'chat',
+      })
       streamStore.error = errorMessage
       conversationStore.messages[assistantIndex].content = errorMessage
       conversationStore.messages[assistantIndex].status = 'error'

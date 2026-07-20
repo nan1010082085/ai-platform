@@ -20,10 +20,8 @@ Thank you for your interest in contributing. This guide covers development setup
 git clone https://github.com/<your-username>/schema-platform.git
 cd schema-platform
 
-# 2. Install shared packages
-cd flow-shared && pnpm install && pnpm build && cd ..
-cd platform-shared && pnpm install && pnpm build && cd ..
-cd ai/shared && pnpm install && pnpm build && cd ../..
+# 2. Install shared package (includes AI types/events under platform-shared/ai/)
+cd shared/platform-shared && pnpm install && pnpm build && cd ../..
 
 # 3. Install server and AI app
 cd server && pnpm install && cd ..
@@ -45,8 +43,7 @@ cd ai/app && pnpm dev
 
 ```bash
 cd ai/app && pnpm test
-cd ai/sdk && pnpm test
-cd ai/shared && pnpm test
+cd ai/app && pnpm test:coverage
 cd server && pnpm test
 ```
 
@@ -57,11 +54,10 @@ cd server && pnpm test
 ```
 ai/
   app/               Vue 3 frontend (Chat, Workflows, RAG, Plugins)
-  shared/            Cross-package types, events, promptBuilder
   docs/              Documentation
+shared/
+  platform-shared/   Platform-wide shared components, utilities, and AI types (ai/)
 server/              Koa.js + MongoDB backend
-flow-shared/         Flow engine shared types
-platform-shared/     Platform-wide shared components and utilities
 ```
 
 ---
@@ -123,9 +119,19 @@ platform-shared/     Platform-wide shared components and utilities
    - Screenshots (for UI changes)
 6. Request review from a maintainer
 
+### Documentation
+
+**Code changes that move, rename, or delete paths must update docs in the same PR.**
+
+- Keep README / CONTRIBUTING / `docs/` path references in sync with the real tree
+- AI domain types live in `shared/platform-shared/ai/` (import `@schema-platform/platform-shared/ai`). Do not reintroduce removed package directories under `ai/`.
+- Before opening a PR, run: `node scripts/check-doc-paths.mjs`
+
 ### Before Submitting
 
 - [ ] Tests pass (`pnpm test` in affected packages)
+- [ ] Coverage passes (`pnpm test:coverage` in `ai/app`)
+- [ ] Doc path check passes (`node scripts/check-doc-paths.mjs`)
 - [ ] No TypeScript errors (`pnpm build` in affected packages)
 - [ ] No cross-project modifications (check `git diff` only touches expected files)
 - [ ] New icons registered in `iconRegistry.ts` if applicable

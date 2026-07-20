@@ -88,16 +88,16 @@ function handleCancel() {
 </script>
 
 <template>
-  <t-dialog
-    :visible="visible"
-    header="编辑属性"
+  <el-dialog
+    :model-value="visible"
+    title="编辑属性"
     width="520px"
-    :close-on-overlay-click="false"
+    :close-on-click-modal="false"
     @close="handleClose"
   >
     <div v-if="context" :class="$style.editor">
-      <t-form label-align="top" size="medium">
-        <t-form-item
+      <el-form label-position="top" size="default">
+        <el-form-item
           v-for="field in formFields"
           :key="field.key"
           :label="field.label"
@@ -105,26 +105,32 @@ function handleCancel() {
           <!-- Input -->
           <el-input
             v-if="field.type === 'input'"
-            v-model:value="formData[field.key]"
+            v-model="formData[field.key]"
             :placeholder="field.placeholder"
           />
 
           <!-- Select -->
           <el-select
             v-else-if="field.type === 'select'"
-            v-model:value="formData[field.key]"
+            v-model="formData[field.key]"
             placeholder="请选择"
             style="width: 100%"
-            :options="field.options"
-          />
+          >
+            <el-option
+              v-for="opt in field.options"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
 
           <!-- Switch -->
-          <t-switch
+          <el-switch
             v-else-if="field.type === 'switch'"
-            v-model:value="formData[field.key]"
+            v-model="formData[field.key]"
           />
-        </t-form-item>
-      </t-form>
+        </el-form-item>
+      </el-form>
 
       <!-- 类型信息 -->
       <div :class="$style.typeInfo">
@@ -139,7 +145,7 @@ function handleCancel() {
         <el-button type="primary" @click="handleSave">保存</el-button>
       </div>
     </template>
-  </t-dialog>
+  </el-dialog>
 </template>
 
 <style module>

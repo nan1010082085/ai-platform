@@ -5,6 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
+import { trackAi, AI_TELEMETRY_EVENTS, reportAiError } from '@/utils/telemetry'
 import type {
   AgentWorkflowSummary,
   AgentWorkflowTemplateId,
@@ -52,6 +53,9 @@ const TEMPLATE_DEFAULT_NAMES: Record<AgentWorkflowTemplateId, string> = {
   'image-analysis': '图片智能分析',
   'chat-parity-assistant': '聊天对等助手',
   'requirement-gated-build': '需求门控构建',
+  'cs-ticket-triage': '客服工单智能分流',
+  'cs-kb-reply': '客服知识库回复',
+  'cs-sentiment-escalate': '情绪检测与升级',
 }
 
 type ListTab = 'all' | 'draft' | 'published' | 'templates'
@@ -80,6 +84,9 @@ const TEMPLATE_ICONS: Record<AgentWorkflowTemplateId, string> = {
   'image-analysis': 'view',
   'chat-parity-assistant': 'chat-line-round',
   'requirement-gated-build': 'key',
+  'cs-ticket-triage': 'message',
+  'cs-kb-reply': 'chat-dot-round',
+  'cs-sentiment-escalate': 'warning',
 }
 
 const TEMPLATE_CATEGORY_LABELS: Record<AgentWorkflowTemplateMeta['category'], string> = {
@@ -88,6 +95,7 @@ const TEMPLATE_CATEGORY_LABELS: Record<AgentWorkflowTemplateMeta['category'], st
   assistant: '助手',
   integration: '集成',
   batch: '批处理',
+  'customer-service': '客服',
 }
 
 const sortOptions = [
@@ -164,6 +172,7 @@ async function onCreate() {
 }
 
 function onTemplateSelect(id: AgentWorkflowTemplateId) {
+  trackAi(AI_TELEMETRY_EVENTS.TEMPLATE_SELECT, { templateId: id })
   selectedTemplateId.value = id
   createName.value = TEMPLATE_DEFAULT_NAMES[id]
 }
@@ -237,9 +246,11 @@ async function onPublish(id: string) {
   publishingId.value = id
   try {
     const res = await api.publishWorkflow(id)
+    trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_PUBLISH, { workflowId: id, version: res.version })
     ElMessage.success(`已发布 v${res.version}`)
     await load()
   } catch (e) {
+    void reportAiError(e instanceof Error ? e : String(e), { workflowId: id, phase: 'publish' })
     message.error(e instanceof Error ? e.message : '发布失败')
   } finally {
     publishingId.value = null

@@ -318,5 +318,5 @@ PluginRegistry.getSkill(id)
 | `server/src/ai/plugins/registry.ts` | Skill 注册表（Map 存储、按 id 查找） |
 | `server/src/ai/plugins/loadPluginConfig.ts` | 配置加载、分层合并、热重载 |
 | `server/src/ai/plugins/types.ts` | `SkillDeclaration` 类型定义 |
-| `ai/shared/promptBuilder.ts` | base prompt 动态生成（editor/flow/page） |
+| `shared/platform-shared/ai/promptBuilder.ts` | base prompt 动态生成（editor/flow/page） |
 | `server/config/plugins/skills/` | 生产 Skill 配置文件 |

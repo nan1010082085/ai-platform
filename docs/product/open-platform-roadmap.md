@@ -60,7 +60,7 @@ Agent 编排 /workflows
         └── [使用] → createWorkflow(templateId) → 设计器草稿
 ```
 
-- 模板定义：`ai/shared/agentWorkflow.ts` → `AGENT_WORKFLOW_TEMPLATES` + `createAgentWorkflowGraphByTemplate`
+- 模板定义：`shared/platform-shared/ai/agentWorkflow.ts` → `AGENT_WORKFLOW_TEMPLATES` + `createAgentWorkflowGraphByTemplate`
 - 当前内置：**4**（blank + document-summary + doc-image-recognition + intelligent-assistant）
 
 ### E.3 目标体验
@@ -202,7 +202,7 @@ Agent 编排 /workflows
 
 | 来源 | 位置 | 用于 | 可扩展性 |
 |------|------|------|----------|
-| **Domain promptBuilder** | `ai/shared/promptBuilder.ts` | Editor/Flow/Page 专家 **底座**（绑平台元数据） | 改代码发版；**不适合**纯第三方 |
+| **Domain promptBuilder** | `shared/platform-shared/ai/promptBuilder.ts` | Editor/Flow/Page 专家 **底座**（绑平台元数据） | 改代码发版；**不适合**纯第三方 |
 | **Expert `dynamicPrompt`** | plugins/experts/*.json | 指向 promptBuilder 类型 | 仅平台内置四类 |
 | **Expert `systemPrompt` + Skill** | plugins + resolveExpertPrompt | **第三方主路径** | ✅ pack / local |
 | **节点级 prompt** | Workflow LLM/Expert 节点 data | 单次执行覆盖 | ✅ 设计器 |
@@ -385,7 +385,7 @@ Expert 的 `tools` / `skills` 不替代 Model；Workflow `llm` 节点应引用 *
 | E-2 | seed `demo-*` 已发布工作流 | E |
 | E-3 | 设计器 `?try=1&sample=...` 深链 | E |
 | E-4 | Chat `/?workflowId=demo-*` 深链 | E |
-| E-5 | 扩 3～5 个模板图工厂（`ai/shared/agentWorkflow.ts` 5 个新模板） | E |
+| E-5 | 扩 3～5 个模板图工厂（`shared/platform-shared/ai/agentWorkflow.ts` 5 个新模板） | E |
 | E-6 | agent-workflow 文档 | E |
 | E-T1～E-T5 | 五类新模板（见 §二 E.6）：contract-extract / kb-faq / http-notify / rag-ingest-qa / multi-doc-batch | E |
 | F-1～F-5 | 调研执行步骤（§三 F.4），产出 `f-1-registry-survey.md` | F |

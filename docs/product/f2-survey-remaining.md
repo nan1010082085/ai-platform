@@ -182,7 +182,7 @@
 ### 7. Workflow 模板注册 RFC（插件 pack 带模板）
 
 **现状分析**：
-- 模板定义：`ai/shared/agentWorkflow.ts` → `AGENT_WORKFLOW_TEMPLATES` + `createAgentWorkflowGraphByTemplate`
+- 模板定义：`shared/platform-shared/ai/agentWorkflow.ts` → `AGENT_WORKFLOW_TEMPLATES` + `createAgentWorkflowGraphByTemplate`
 - 当前 4 个内置模板，全部硬编码在 ai-shared
 - 模板创建：`POST /api/ai/workflows` body `{ "templateId": "..." }`
 - pack 格式：支持 `experts`、`skills`、`tools`、`mcp` 四层，无 `templates` 层

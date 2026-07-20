@@ -21,10 +21,8 @@ Get a standalone AI platform running with **server + ai frontend** -- two termin
 git clone https://github.com/schema-platform/schema-platform.git
 cd schema-platform
 
-# Build shared packages (required)
-cd flow-shared && pnpm install && pnpm build && cd ..
-cd platform-shared && pnpm install && pnpm build && cd ..
-cd ai/shared && pnpm install && pnpm build && cd ../..
+# Build shared package (required; includes AI types/events under platform-shared/ai/)
+cd shared/platform-shared && pnpm install && pnpm build && cd ../..
 
 # Install server
 cd server && pnpm install && cd ..
@@ -125,7 +123,7 @@ ai/
 | Package | Description |
 |---------|-------------|
 | `@ai-app` | Full AI application: Chat, workflow designer, execution monitor, RAG, plugin center |
-| `@schema-platform/ai-shared` | Shared types, event protocol, prompt builder, workflow domain model |
+| `@schema-platform/platform-shared/ai` | Shared types, event protocol, prompt builder, workflow domain model |
 
 ---
 
@@ -249,13 +247,13 @@ curl -X POST http://localhost:3001/api/ai/workflows/invoke/your-workflow-slug \
 ```bash
 # Run tests
 cd ai/app && pnpm test
-cd ai/sdk && pnpm test
-cd ai/shared && pnpm test
+
+# Coverage (stores/api thresholds enforced)
+cd ai/app && pnpm test:coverage
 
 # Build
 cd ai/app && pnpm build
-cd ai/sdk && pnpm build
-cd ai/shared && pnpm build
+cd shared/platform-shared && pnpm build
 ```
 
 ---

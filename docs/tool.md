@@ -2,7 +2,7 @@
 
 > AI 工具的定义、注册、执行和扩展
 
-**权威工具名**：`ai/shared/toolNames.ts`
+**权威工具名**：`shared/platform-shared/ai/toolNames.ts`
 
 ## 命名规范
 
@@ -12,7 +12,7 @@
 | LangGraph 专有 | 无前缀 | `update_schema`、`generate_schema` |
 | 工作流内置 | 无前缀 | `http_request`（仅 Workflow Executor） |
 
-工具名使用 MCP 规范：`{domain}__{action}`（如 `schema__search`）。权威定义见 `ai/shared/toolNames.ts`。
+工具名使用 MCP 规范：`{domain}__{action}`（如 `schema__search`）。权威定义见 `shared/platform-shared/ai/toolNames.ts`。
 
 ## 一、工具概述
 

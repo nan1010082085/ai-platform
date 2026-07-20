@@ -7,17 +7,29 @@ import AiFieldEditor from '@/components/AiFieldEditor.vue'
 import type { EditContext } from '@/composables/usePreviewInteraction'
 
 // Stub Element Plus components
+const ElDialogStub = {
+  name: 'ElDialog',
+  template: '<div v-if="modelValue"><div>{{ title }}</div><slot /><slot name="footer" /></div>',
+  props: ['modelValue', 'title', 'width', 'closeOnClickModal'],
+  emits: ['close', 'update:modelValue'],
+}
+const ElFormStub = { template: '<form><slot /></form>', props: ['labelPosition', 'size'] }
+const ElFormItemStub = { template: '<div class="el-form-item"><label>{{ label }}</label><slot /></div>', props: ['label'] }
 const ElInputStub = { template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />', props: ['modelValue', 'placeholder'], emits: ['update:modelValue'] }
 const ElSelectStub = { template: '<select><slot /></select>', props: ['modelValue', 'placeholder'], emits: ['update:modelValue'] }
 const ElOptionStub = { template: '<option />', props: ['label', 'value'] }
+const ElSwitchStub = { template: '<input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" />', props: ['modelValue'], emits: ['update:modelValue'] }
 const ElButtonStub = { template: '<button><slot /></button>', props: ['type'] }
 
 const globalStubs = {
+  ElDialog: ElDialogStub,
+  ElForm: ElFormStub,
+  ElFormItem: ElFormItemStub,
   ElInput: ElInputStub,
   ElSelect: ElSelectStub,
   ElOption: ElOptionStub,
+  ElSwitch: ElSwitchStub,
   ElButton: ElButtonStub,
-  // t-dialog, t-form, t-form-item, t-switch are stubbed globally in setup.ts
 }
 
 describe('AiFieldEditor', () => {
@@ -64,7 +76,7 @@ describe('AiFieldEditor', () => {
       global: { stubs: globalStubs },
     })
 
-    // t-dialog stub uses v-if="visible", so content should not render
+    // ElDialog stub uses v-if="modelValue", so content should not render
     expect(wrapper.text()).not.toContain('编辑属性')
   })
 
@@ -151,10 +163,10 @@ describe('AiFieldEditor', () => {
       global: { stubs: globalStubs },
     })
 
-    // Find the t-dialog component and trigger close event
-    const tDialog = wrapper.findComponent({ name: 't-dialog' })
-    expect(tDialog.exists()).toBe(true)
-    await tDialog.vm.$emit('close')
+    // Find the el-dialog component and trigger close event
+    const elDialog = wrapper.findComponent({ name: 'ElDialog' })
+    expect(elDialog.exists()).toBe(true)
+    await elDialog.vm.$emit('close')
 
     expect(wrapper.emitted('update:visible')).toBeTruthy()
     expect(wrapper.emitted('update:visible')![0]).toEqual([false])

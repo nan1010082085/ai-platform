@@ -261,7 +261,7 @@ function getStatusLabel(status: string): string {
     </div>
 
     <!-- Diff table -->
-    <t-scrollbar :class="$style.scrollbar">
+    <div :class="$style.scrollbar">
       <div v-if="!hasDiffs" :class="$style.noDiff" data-testid="no-diff">
         <span>两个版本完全相同</span>
       </div>
@@ -322,7 +322,7 @@ function getStatusLabel(status: string): string {
           </template>
         </tbody>
       </table>
-    </t-scrollbar>
+    </div>
   </div>
 </template>
 

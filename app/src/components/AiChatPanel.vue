@@ -1,98 +1,35 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { message } from '@schema-platform/platform-shared/utils/message'
+import { useI18n } from '@schema-platform/platform-shared'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import AiMessage from './AiMessage.vue'
 import TaskChainBar from './TaskChainBar.vue'
 import AiRagSearch from './AiRagSearch.vue'
 import AiMentionInput from './AiMentionInput.vue'
 import SmartSuggestionCard from './SmartSuggestionCard.vue'
-import DocumentPreviewPanel from './document/DocumentPreviewPanel.vue'
 import DocumentPreviewDrawer from './document/DocumentPreviewDrawer.vue'
+import ChatMessageList from './chat/ChatMessageList.vue'
 import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
 import { useAiStore } from '@/stores/ai'
 import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
 import { useShellEmbed } from '@/composables/useShellEmbed'
 import { useSmartSuggestions } from '@/composables/useSmartSuggestions'
-import { uploadFile } from '@/api/aiApi'
-import type { StarterPrompt } from '@/stores/chatConfig'
+import { useChatAttachments } from '@/composables/useChatAttachments'
+import { DOCUMENT_UPLOAD_ACCEPT, DOCUMENT_FORMAT_LABEL } from '@schema-platform/platform-shared/ai'
 import {
-  DOCUMENT_UPLOAD_ACCEPT,
-  DOCUMENT_FORMAT_LABEL,
-  isAllowedDocumentUpload,
-} from '@schema-platform/platform-shared/ai'
-import type { AIMessage, AgentType, Attachment, TaskChainStep, StreamConnectionStatus, MentionReference, RagSearchResult, MessageDocumentAttachment } from '@/types'
-import type { MessageEmbeddedCard } from './AiMessage.vue'
+  AI_CHAT_PANEL_DEFAULTS,
+  type AiChatPanelProps,
+  type AiChatPanelEmits,
+} from './chat/chatPanelTypes'
+import type { AgentType, MentionReference } from '@/types'
 
-export interface AiChatPanelProps {
-  title: string
-  agent: AgentType
-  messages: AIMessage[]
-  loading?: boolean
-  disabled?: boolean
-  agentOptions?: Array<{ value: AgentType; label: string }>
-  taskChain?: TaskChainStep[]
-  taskChainIndex?: number
-  /** 流式连接状态 */
-  streamStatus?: StreamConnectionStatus
-  /** 当前自动重试次数 */
-  retryCount?: number
-  /** 最大自动重试次数 */
-  maxRetries?: number
-  /** RAG 搜索结果 */
-  ragSearchResults?: RagSearchResult[]
-  /** RAG 搜索中 */
-  ragSearching?: boolean
-  /** 已选中的 RAG context */
-  ragContext?: RagSearchResult[]
-  /** 需求确认等待时的输入框占位提示 */
-  requirementInputPlaceholder?: string
-  /** 空状态引导 prompts */
-  starterPrompts?: StarterPrompt[]
-}
+export type { AiChatPanelProps }
 
-const props = withDefaults(defineProps<AiChatPanelProps>(), {
-  agentOptions: () => [
-    { value: 'auto', label: 'Auto' },
-    { value: 'editor', label: 'Editor' },
-    { value: 'flow', label: 'Flow' },
-  ],
-  streamStatus: 'idle',
-  retryCount: 0,
-  maxRetries: 3,
-  ragSearchResults: () => [],
-  ragSearching: false,
-  ragContext: () => [],
-  requirementInputPlaceholder: '',
-  starterPrompts: () => [],
-})
+const props = withDefaults(defineProps<AiChatPanelProps>(), AI_CHAT_PANEL_DEFAULTS)
+const emit = defineEmits<AiChatPanelEmits>()
 
-const emit = defineEmits<{
-  send: [message: string, agent: AgentType, mentions?: MentionReference[], attachments?: MessageDocumentAttachment[]]
-  stop: []
-  retry: []
-  'clear-messages': []
-  'card-primary-action': [messageIndex: number, cardIndex: number]
-  'card-secondary-action': [messageIndex: number, cardIndex: number]
-  'open-settings': []
-  'rag-search': [query: string]
-  'rag-select': [item: RagSearchResult]
-  'rag-remove': [id: string]
-  'open-json-drawer': []
-  'retry-tool': [messageIndex: number, toolCallIndex: number]
-  'copy-message': [messageIndex: number]
-  'regenerate-message': [messageIndex: number]
-  'message-feedback': [messageIndex: number, type: 'positive' | 'negative']
-  'requirement-confirm': [answers: Record<string, string>]
-  'requirement-answer': [questionId: string, value: string]
-  'requirement-skip': []
-  'suggestion-accept': [id: string]
-  'suggestion-dismiss': [id: string]
-}>()
-
+const { t } = useI18n()
 const selectedAgent = ref<AgentType>(props.agent)
-const messagesRef = ref<HTMLElement>()
 const mentionInputRef = ref<InstanceType<typeof AiMentionInput>>()
 const ragVisible = ref(false)
 const workflowPickerVisible = ref(false)
@@ -101,7 +38,6 @@ const router = useRouter()
 const { shouldHideSubAppMenu } = useShellEmbed()
 const { loadPublishedWorkflows, getWorkflowName } = usePublishedAgentWorkflows()
 
-// ---- Smart Suggestions ----
 const {
   suggestions: allSuggestions,
   acceptedIds: suggestionAcceptedIds,
@@ -113,18 +49,13 @@ const {
   currentSchema: computed(() => store.currentSchema),
   currentFlow: computed(() => store.currentFlow),
 })
-
 const visibleSuggestions = computed(() =>
-  allSuggestions.value.filter(
-    (s) => !suggestionAcceptedIds.value.has(s.id) && !suggestionDismissedIds.value.has(s.id),
-  ),
+  allSuggestions.value.filter((s) => !suggestionAcceptedIds.value.has(s.id) && !suggestionDismissedIds.value.has(s.id)),
 )
-
 function handleSuggestionAccept(id: string): void {
   acceptSuggestion(id)
   emit('suggestion-accept', id)
 }
-
 function handleSuggestionDismiss(id: string): void {
   dismissSuggestion(id)
   emit('suggestion-dismiss', id)
@@ -156,223 +87,77 @@ const currentStreamStatus = computed(() => props.streamStatus ?? 'idle')
 
 const selectedAgentLabel = computed(() => {
   if (selectedWorkflowId.value) {
-    return selectedWorkflowName.value ?? '已选编排'
+    return selectedWorkflowName.value ?? t('chat.selectedWorkflow')
   }
   return props.agentOptions.find((opt) => opt.value === selectedAgent.value)?.label ?? 'AI'
 })
+
+const inputPlaceholder = computed(() =>
+  props.requirementInputPlaceholder
+  || (props.messages.length === 0 ? t('chat.placeholderEmpty') : t('chat.placeholderContinue')),
+)
 
 watch(() => props.agent, (agent) => {
   selectedAgent.value = agent
 })
 
-// ---- 多模态输入 ----
-const fileInputRef = ref<HTMLInputElement>()
-const fileUploading = ref(0)
-const pendingAttachments = ref<Attachment[]>([])
-const previewDrawerVisible = ref(false)
-const previewDocumentId = ref<string | null>(null)
-
-function triggerFileUpload(): void {
-  fileInputRef.value?.click()
-}
-
-function handleFileChange(event: Event): void {
-  const input = event.target as HTMLInputElement
-  const files = input.files
-  if (files?.length) {
-    for (const file of Array.from(files)) {
-      void processFile(file)
-    }
-  }
-  input.value = ''
-}
-
-async function processFile(file: File): Promise<void> {
-  if (!isAllowedDocumentUpload(file.name, file.type)) {
-    message.error(`支持的格式：${DOCUMENT_FORMAT_LABEL}`)
-    return
-  }
-
-  if (file.size > 10 * 1024 * 1024) {
-    message.error('文件大小不能超过 10MB')
-    return
-  }
-
-  const attachment: Attachment = {
-    filename: file.name,
-    mimetype: file.type,
-    size: file.size,
-    text: '',
-    status: 'uploading',
-  }
-  pendingAttachments.value.push(attachment)
-  const index = pendingAttachments.value.length - 1
-  fileUploading.value += 1
-
-  try {
-    const result = await uploadFile(file)
-    pendingAttachments.value[index] = {
-      documentId: result.id,
-      filename: result.filename,
-      mimetype: result.mimetype,
-      size: result.size,
-      text: result.text,
-      excerpt: result.text.slice(0, 120),
-      status: 'done',
-    }
-    message.success(`"${file.name}" 上传成功`)
-  } catch (err) {
-    pendingAttachments.value[index] = {
-      ...attachment,
-      status: 'error',
-      error: err instanceof Error ? err.message : '上传失败',
-    }
-    message.error(`上传失败: ${err instanceof Error ? err.message : '未知错误'}`)
-  } finally {
-    fileUploading.value -= 1
-    nextTick(() => mentionInputRef.value?.focus())
-  }
-}
-
-function removeAttachment(index: number): void {
-  pendingAttachments.value.splice(index, 1)
-}
-
-
-/** Transform store AIMessage into display-oriented props for AiMessage component */
-function getDisplayCards(msg: AIMessage): MessageEmbeddedCard[] | undefined {
-  if (msg.schema) {
-    return [{
-      type: 'schema',
-      title: '表单预览',
-      fields: msg.schema.map((w) => ({
-        icon: 'T',
-        name: w.label ?? w.field ?? w.type,
-        type: w.type,
-        required: false,
-      })),
-      primaryAction: '确认发布',
-      secondaryAction: '在编辑器中打开',
-    }]
-  }
-  if (msg.flow) {
-    return [{
-      type: 'flow' as const,
-      title: '流程预览',
-      nodes: msg.flow.nodes.map((n) => ({
-        label: n.data.label ?? n.data.bpmnType ?? n.id,
-        type: (n.data.bpmnType === 'startEvent' ? 'start' : n.data.bpmnType === 'endEvent' ? 'end' : 'task') as 'start' | 'task' | 'end',
-      })),
-      graph: msg.flow,
-      primaryAction: '确认发布',
-      secondaryAction: '在编辑器中打开',
-    }]
-  }
-  return undefined
-}
-
-function getLabel(msg: AIMessage): string {
-  if (msg.role === 'user') return 'You'
-  if (msg.agent) {
-    const labels: Record<string, string> = {
-      editor: 'Editor',
-      flow: 'Flow',
-      general: 'AI',
-    }
-    return labels[msg.agent] ?? 'AI'
-  }
-  if (props.agent === 'auto') return 'AI'
-  return props.agent === 'editor' ? 'Editor' : 'Flow'
-}
-
-function scrollToBottom() {
-  nextTick(() => {
-    if (messagesRef.value) {
-      messagesRef.value.scrollTop = messagesRef.value.scrollHeight
-    }
-  })
-}
-
-// 监听消息数量变化（新消息）和最后一条消息内容长度变化（流式响应）
-watch(
-  () => {
-    const last = props.messages[props.messages.length - 1]
-    return `${props.messages.length}:${last?.content?.length ?? 0}:${last?.workflowExecution?.nodeRecords?.length ?? 0}`
-  },
-  scrollToBottom,
-)
-
-function openAttachmentPreview(att: Attachment): void {
-  if (!att.documentId) return
-  previewDocumentId.value = att.documentId
-  previewDrawerVisible.value = true
-}
-
-function openMessageDocumentPreview(documentId: string): void {
-  previewDocumentId.value = documentId
-  previewDrawerVisible.value = true
-}
+const {
+  fileInputRef,
+  fileUploading,
+  pendingAttachments,
+  previewDrawerVisible,
+  previewDocumentId,
+  triggerFileUpload,
+  handleFileChange,
+  removeAttachment,
+  openAttachmentPreview,
+  openMessageDocumentPreview,
+  takeDoneAttachments,
+} = useChatAttachments(() => mentionInputRef.value?.focus())
 
 function handleMentionSend(text: string, mentions?: MentionReference[]): void {
   if ((!text && pendingAttachments.value.length === 0) || props.disabled) return
-
-  const attachmentMeta = pendingAttachments.value
-    .filter((a) => a.status === 'done' && a.documentId)
-    .map((a) => ({
-      documentId: a.documentId!,
-      filename: a.filename,
-      mimetype: a.mimetype,
-      size: a.size,
-      excerpt: a.excerpt ?? a.text.slice(0, 120),
-    }))
-
+  const attachmentMeta = takeDoneAttachments()
   emit('send', text, selectedAgent.value, mentions, attachmentMeta.length > 0 ? attachmentMeta : undefined)
-  pendingAttachments.value = []
 }
 
-function handleCardAction(
-  type: 'primary' | 'secondary',
-  msgIdx: number,
-  cardIdx: number,
-) {
-  if (type === 'primary') {
-    emit('card-primary-action', msgIdx, cardIdx)
-  } else {
-    emit('card-secondary-action', msgIdx, cardIdx)
-  }
+function handleStarterSend(text: string, agent: AgentType): void {
+  emit('send', text, agent)
+}
+
+function handleSelectStarterAgent(agent: AgentType): void {
+  selectedAgent.value = agent
 }
 </script>
 
 <template>
   <div :class="$style.chat">
-    <!-- Header -->
     <div :class="$style.header">
       <div :class="$style.headerLeft">
         <span :class="$style.title">{{ title }}</span>
         <span :class="[$style.roleBadge, selectedWorkflowId ? $style.workflow : $style[selectedAgent]]">
           {{ selectedAgentLabel }}
         </span>
-        <!-- 流式连接状态指示器 -->
         <span
           v-if="currentStreamStatus === 'connecting'"
           :class="[$style.connStatus, $style.connConnecting]"
         >
           <span :class="$style.connDot" />
-          连接中
+          {{ t('chat.connecting') }}
         </span>
         <span
           v-else-if="currentStreamStatus === 'reconnecting'"
           :class="[$style.connStatus, $style.connReconnecting]"
         >
           <span :class="$style.connDot" />
-          重连中 {{ retryCount }}/{{ maxRetries }}
+          {{ t('chat.reconnecting', { current: retryCount, max: maxRetries }) }}
         </span>
         <span
           v-else-if="currentStreamStatus === 'disconnected'"
           :class="[$style.connStatus, $style.connDisconnected]"
         >
           <span :class="$style.connDot" />
-          已断开
+          {{ t('chat.disconnected') }}
         </span>
       </div>
       <div :class="$style.headerActions">
@@ -385,7 +170,7 @@ function handleCardAction(
           :offset="4"
         >
           <template #reference>
-            <el-tooltip content="Agent 编排" placement="bottom" :show-after="300">
+            <el-tooltip :content="t('chat.agentWorkflow')" placement="bottom" :show-after="300">
               <button
                 type="button"
                 :class="[$style.actionBtn, { [$style.actionBtnActive]: !!selectedWorkflowId }]"
@@ -402,94 +187,53 @@ function handleCardAction(
           <div :class="$style.workflowPickerFooter">
             <button type="button" :class="$style.workflowPickerLink" @click="openWorkflowList">
               <AppIcon name="connection" :size="12" />
-              {{ shouldHideSubAppMenu ? '打开 Agent 编排' : '管理工作流' }}
+              {{ shouldHideSubAppMenu ? t('chat.openWorkflows') : t('chat.manageWorkflows') }}
             </button>
           </div>
         </el-popover>
-        <el-tooltip content="对话设置" placement="bottom" :show-after="300">
+        <el-tooltip :content="t('chat.chatSettings')" placement="bottom" :show-after="300">
           <button :class="$style.actionBtn" @click="emit('open-settings')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
+            <AppIcon name="setting" :size="14" />
           </button>
         </el-tooltip>
-        <el-tooltip content="清空对话" placement="bottom" :show-after="300">
+        <el-tooltip :content="t('chat.clearChat')" placement="bottom" :show-after="300">
           <button :class="$style.actionBtn" @click="emit('clear-messages')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
+            <AppIcon name="delete" :size="14" />
           </button>
         </el-tooltip>
       </div>
     </div>
 
-    <!-- Task Chain Bar -->
     <TaskChainBar
       v-if="taskChain && taskChain.length > 1"
       :steps="taskChain"
       :current-index="taskChainIndex ?? 0"
     />
 
-    <!-- Messages -->
-    <div ref="messagesRef" :class="$style.messages">
-      <!-- Empty state with starter prompts -->
-      <div v-if="messages.length === 0 && !loading" :class="$style.emptyState">
-        <div :class="$style.emptyIcon">&#x2726;</div>
-        <div :class="$style.emptyTitle">开始一段新对话</div>
-        <div :class="$style.emptySub">描述你想生成的表单、页面或流程</div>
-        <div :class="$style.promptGrid">
-          <el-button
-            v-for="(prompt, idx) in props.starterPrompts"
-            :key="idx"
-            :class="$style.promptCard"
-            @click="selectedAgent = prompt.agent as AgentType; emit('send', prompt.text, prompt.agent as AgentType)"
-          >
-            <AppIcon :name="prompt.icon" :size="16" :class="$style.promptIcon" />
-            <span :class="$style.promptText">{{ prompt.text }}</span>
-          </el-button>
-        </div>
-      </div>
+    <ChatMessageList
+      :messages="messages"
+      :agent="agent"
+      :loading="loading"
+      :starter-prompts="starterPrompts"
+      @send="handleStarterSend"
+      @select-starter-agent="handleSelectStarterAgent"
+      @preview-document="openMessageDocumentPreview"
+      @card-primary-action="(mi, ci) => emit('card-primary-action', mi, ci)"
+      @card-secondary-action="(mi, ci) => emit('card-secondary-action', mi, ci)"
+      @open-json-drawer="emit('open-json-drawer')"
+      @retry-tool="(mi, tci) => emit('retry-tool', mi, tci)"
+      @copy-message="(mi) => emit('copy-message', mi)"
+      @regenerate-message="(mi) => emit('regenerate-message', mi)"
+      @message-feedback="(mi, type) => emit('message-feedback', mi, type)"
+      @requirement-confirm="(answers) => emit('requirement-confirm', answers)"
+      @requirement-answer="(qid, val) => emit('requirement-answer', qid, val)"
+      @requirement-skip="emit('requirement-skip')"
+    />
 
-      <!-- Message list -->
-      <AiMessage
-        v-for="(msg, idx) in messages"
-        :key="idx"
-        :role="msg.role === 'system' ? 'assistant' : msg.role"
-        :label="getLabel(msg)"
-        :agent="agent"
-        :content="msg.content"
-        :thinking="msg.thinking"
-        :tip="msg.tip"
-        :tool-calls="msg.toolCalls"
-        :loading="loading && msg.role === 'assistant' && !msg.content && !msg.workflowExecution?.nodeRecords?.length && idx === messages.length - 1"
-        :cards="getDisplayCards(msg)"
-        :schema-widgets="msg.schema"
-        :message-id="msg.id"
-        :feedback="msg.feedback"
-        :attachments="msg.attachments"
-        :document-summaries="msg.documentSummaries"
-        :workflow-execution="msg.workflowExecution"
-        @preview-document="openMessageDocumentPreview"
-        @card-primary-action="(ci) => handleCardAction('primary', idx, ci)"
-        @card-secondary-action="(ci) => handleCardAction('secondary', idx, ci)"
-        @open-json-drawer="emit('open-json-drawer')"
-        @retry-tool="(tci) => emit('retry-tool', idx, tci)"
-        @copy="emit('copy-message', idx)"
-        @regenerate="emit('regenerate-message', idx)"
-        @feedback="(type) => emit('message-feedback', idx, type)"
-        @requirement-confirm="(answers) => emit('requirement-confirm', answers)"
-        @requirement-answer="(qid, val) => emit('requirement-answer', qid, val)"
-        @requirement-skip="emit('requirement-skip')"
-      />
-    </div>
-
-    <!-- Smart Suggestions -->
     <div v-if="visibleSuggestions.length > 0 && !loading" :class="$style.suggestionsArea">
       <div :class="$style.suggestionsHeader">
         <AppIcon name="magic-stick" :size="14" :class="$style.suggestionsIcon" />
-        <span :class="$style.suggestionsTitle">智能建议</span>
+        <span :class="$style.suggestionsTitle">{{ t('chat.suggestions') }}</span>
       </div>
       <div :class="$style.suggestionsList">
         <SmartSuggestionCard
@@ -504,21 +248,15 @@ function handleCardAction(
       </div>
     </div>
 
-    <!-- Retry Banner (Stream disconnected) -->
     <div v-if="currentStreamStatus === 'disconnected'" :class="$style.retryBanner">
-      <span :class="$style.retryBannerText">连接已断开，请重新发送</span>
+      <span :class="$style.retryBannerText">{{ t('chat.retryBanner') }}</span>
       <el-button :class="$style.retryBannerBtn" @click="emit('retry')">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="23 4 23 10 17 10" />
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-        </svg>
-        重试
+        <AppIcon name="refresh-right" :size="12" />
+        {{ t('common.retry') }}
       </el-button>
     </div>
 
-    <!-- Floating Input Panel -->
     <div :class="$style.inputArea">
-      <!-- RAG Search Panel -->
       <AiRagSearch
         v-if="ragVisible"
         :search-results="ragSearchResults"
@@ -530,7 +268,6 @@ function handleCardAction(
         @close="ragVisible = false"
       />
       <div :class="[$style.inputBox, { [$style.inputDisabled]: disabled }]">
-        <!-- 附件预览 -->
         <div v-if="pendingAttachments.length > 0" :class="$style.attachmentList">
           <DocumentPreviewPanel
             v-for="(att, idx) in pendingAttachments"
@@ -545,7 +282,7 @@ function handleCardAction(
           ref="mentionInputRef"
           :disabled="disabled"
           :loading="loading"
-          :placeholder="requirementInputPlaceholder || (messages.length === 0 ? '描述你想要生成的内容...' : '继续描述...')"
+          :placeholder="inputPlaceholder"
           @send="handleMentionSend"
         />
         <div :class="$style.inputFooter">
@@ -555,41 +292,32 @@ function handleCardAction(
                 <span :class="$style.runningDot"></span>
                 <span :class="$style.runningDot"></span>
                 <span :class="$style.runningDot"></span>
-                运行中...
+                {{ t('chat.running') }}
               </span>
             </template>
             <template v-else>
-              <kbd>Enter</kbd>&nbsp;发送&nbsp;&middot;&nbsp;<kbd>Shift+Enter</kbd>&nbsp;换行
+              <kbd>Enter</kbd>&nbsp;{{ t('chat.sendHint') }}&nbsp;&middot;&nbsp;<kbd>Shift+Enter</kbd>&nbsp;{{ t('chat.newlineHint') }}
             </template>
           </div>
           <div :class="$style.inputActions">
-            <!-- RAG context indicator -->
             <span
               v-if="ragContext.length > 0"
               :class="$style.ragIndicator"
-              :title="`已引用 ${ragContext.length} 个 Schema`"
+              :title="t('chat.ragCited', { count: ragContext.length })"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
-              </svg>
+              <AppIcon name="collection" :size="14" />
               <span :class="$style.ragCount">{{ ragContext.length }}</span>
             </span>
-            <!-- RAG search toggle button -->
-            <el-tooltip content="引用 Schema（智能匹配）" placement="top" :show-after="300">
+            <el-tooltip :content="t('chat.ragTooltip')" placement="top" :show-after="300">
               <button
                 type="button"
                 :class="[$style.ragBtn, { [$style.ragBtnActive]: ragVisible }]"
                 :disabled="disabled || loading"
                 @click="ragVisible = !ragVisible"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
+                <AppIcon name="box" :size="14" />
               </button>
             </el-tooltip>
-            <!-- Hidden file input -->
             <input
               ref="fileInputRef"
               type="file"
@@ -598,17 +326,14 @@ function handleCardAction(
               :class="$style.hiddenInput"
               @change="handleFileChange"
             />
-            <!-- File upload button -->
-            <el-tooltip :content="`上传文件（${DOCUMENT_FORMAT_LABEL}）`" placement="top" :show-after="300">
+            <el-tooltip :content="t('chat.uploadTooltip', { formats: DOCUMENT_FORMAT_LABEL })" placement="top" :show-after="300">
               <button
                 type="button"
                 :class="$style.fileBtn"
                 :disabled="disabled || loading || fileUploading > 0"
                 @click="triggerFileUpload"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
-                </svg>
+                <AppIcon name="link" :size="14" />
               </button>
             </el-tooltip>
             <el-select
@@ -625,11 +350,9 @@ function handleCardAction(
                 :value="opt.value"
               />
             </el-select>
-            <el-tooltip v-if="loading" content="停止生成" placement="top" :show-after="300">
+            <el-tooltip v-if="loading" :content="t('chat.stopGenerate')" placement="top" :show-after="300">
               <button type="button" :class="$style.stopBtn" @click="emit('stop')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="6" width="12" height="12" rx="2" />
-                </svg>
+                <AppIcon name="video-pause" :size="14" />
               </button>
             </el-tooltip>
           </div>

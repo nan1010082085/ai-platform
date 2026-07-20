@@ -47,6 +47,13 @@
   width: 280px;
 }
 
+.externalInstall {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
 .content {
   min-height: 400px;
 }

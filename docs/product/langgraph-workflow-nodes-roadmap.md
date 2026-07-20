@@ -33,7 +33,7 @@
 | 用 Workflow **完全替代** Chat LangGraph 默认路径 | Chat 仍需零配置开箱即用；白盒是可选增强 |
 | 在画布上 1:1 还原 LangGraph **条件边**（`afterAgent` / `afterToolsRoute`） | 用「协作路由」节点 + `if` + 连线表达，不暴露图编译细节 |
 | Workflow 内嵌完整 LangGraph StateGraph 子图 | 违背 DAG 心智；采用「节点内闭环 + 结构化 I/O」 |
-| 修改 `server/` 以外项目实现本路线图 | 遵守项目隔离；前端仅改 `ai/app` + `ai/shared` |
+| 修改 `server/` 以外项目实现本路线图 | 遵守项目隔离；前端仅改 `ai/app` + `shared/platform-shared/ai` |
 
 ---
 
@@ -73,14 +73,14 @@ server/src/ai/runtime/
 
 - Chat `graph.ts` 节点实现改为薄包装，调用 `runtime/*`。
 - `agentWorkflowExecutor.ts` 新增 `case` 时只调 `runtime/*`，不复制 Prompt。
-- 类型定义优先放入 `@schema-platform/ai-shared`（节点 data、输出 schema、事件名）。
+- 类型定义优先放入 `@schema-platform/platform-shared/ai`（节点 data、输出 schema、事件名）。
 
 ### 3.2 Workflow 执行上下文扩展
 
 任务链类节点需要在**单次 execution** 上持久化状态：
 
 ```typescript
-// ai/shared/agentWorkflow.ts（示意）
+// shared/platform-shared/ai/agentWorkflow.ts（示意）
 interface AgentWorkflowExecutionContext {
   taskChain?: {
     steps: TaskPlanStep[]
@@ -264,7 +264,7 @@ task-chain 节点启动
 | J-0-1 | 新建 `runtime/intentRouter.ts`，迁移 router 逻辑 | `server/src/ai/runtime/` |
 | J-0-2 | 迁移 `requirementAnalyzer`、`taskPlanner`、`summarizer` | 同上 |
 | J-0-3 | `graph.ts` 改为调用 runtime；`server` vitest 全绿 | `graph/*.ts` |
-| J-0-4 | 导出 `RequirementAnalysis`、`TaskPlanStep` 到 `ai-shared` | `ai/shared/` |
+| J-0-4 | 导出 `RequirementAnalysis`、`TaskPlanStep` 到 `ai-shared` | `shared/platform-shared/ai/` |
 
 **完成标准**：Chat 行为零回归；runtime 函数可被 executor 单独 import。
 
@@ -274,7 +274,7 @@ task-chain 节点启动
 
 | ID | 任务 | 文件 |
 |----|------|------|
-| J-1-1 | `AgentNodeType` 增加 `intent-router`、`summarizer` | `ai/shared/agentWorkflow.ts` |
+| J-1-1 | `AgentNodeType` 增加 `intent-router`、`summarizer` | `shared/platform-shared/ai/agentWorkflow.ts` |
 | J-1-2 | Palette + 属性面板 | `agentNodes.ts`、`*NodePanel.vue` |
 | J-1-3 | Executor `case` + 单测 | `agentWorkflowExecutor.ts` |
 | J-1-4 | `workflow:event` 增加 `route_decided`、`summary_stream` | `ai-shared` events |
@@ -355,7 +355,7 @@ webhook-trigger → intent-router → expert → summarizer → end
 
 | 模块 | 改动 |
 |------|------|
-| `ai/shared/agentWorkflow.ts` | 新 `AgentNodeType`、节点 data 接口、校验规则 |
+| `shared/platform-shared/ai/agentWorkflow.ts` | 新 `AgentNodeType`、节点 data 接口、校验规则 |
 | `ai/app/src/constants/agentNodes.ts` | Palette 6 项 + 分类 `conversation`（新分类，可选） |
 | `ai/app/src/components/workflow/panels/` | `IntentRouterNodePanel.vue` 等 6 个 |
 | `ai/app/src/components/workflow/nodes/` | 画布节点样式与图标 |

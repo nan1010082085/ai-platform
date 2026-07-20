@@ -15,6 +15,7 @@ import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas
 import AgentWorkflowPropertyPanel from '@/components/agent-workflow/AgentWorkflowPropertyPanel.vue'
 import * as api from '@/api/agentWorkflowApi'
 import { useAiStore } from '@/stores/ai'
+import { trackAi, AI_TELEMETRY_EVENTS, reportAiError } from '@/utils/telemetry'
 import {
   fileToWorkflowPayload,
   pickWorkflowTestFile,
@@ -146,6 +147,14 @@ async function onExecute() {
     const exec = await api.executeWorkflow(workflowId(), input)
     router.push({ name: 'agent-execution-detail', params: { id: exec.id } })
   } catch (e) {
+    trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_EXECUTE_FAIL, {
+      workflowId: workflowId(),
+      source: 'designer',
+    })
+    void reportAiError(e instanceof Error ? e : String(e), {
+      workflowId: workflowId(),
+      source: 'designer',
+    })
     message.error(e instanceof Error ? e.message : '执行失败')
   } finally {
     executing.value = false

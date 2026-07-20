@@ -177,7 +177,7 @@ describe('ModelSettingsView', () => {
     const wrapper = mountView()
     await flushPromises()
     expect(mockListProviders).toHaveBeenCalled()
-    expect(wrapper.text()).toContain('模型与连接')
+    expect(wrapper.text()).toContain('模型中心')
     expect(wrapper.text()).toContain('管理 LLM 供应商与模型配置')
     wrapper.unmount()
   })
@@ -206,7 +206,7 @@ describe('ModelSettingsView', () => {
 
     const wrapper = mountView()
     await flushPromises()
-    expect(wrapper.text()).toContain('模型与连接')
+    expect(wrapper.text()).toContain('模型中心')
     wrapper.unmount()
   })
 
@@ -246,7 +246,7 @@ describe('ModelSettingsView', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('快速添加供应商')
     expect(wrapper.text()).toContain('DeepSeek')
-    expect(wrapper.text()).toContain('Ollama')
+    expect(wrapper.text()).toContain('OpenAI')
     expect(wrapper.text()).toContain('Mimo')
     wrapper.unmount()
   })
@@ -280,7 +280,7 @@ describe('ModelSettingsView', () => {
 
     // With providers, first one is auto-selected, so we should see model panel
     // If we unselect, we'd see the "请从左侧选择一个供应商" message
-    expect(wrapper.text()).toContain('模型与连接')
+    expect(wrapper.text()).toContain('模型中心')
     wrapper.unmount()
   })
 

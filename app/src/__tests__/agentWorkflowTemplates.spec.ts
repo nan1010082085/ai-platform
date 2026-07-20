@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest'
 import {
   AGENT_WORKFLOW_TEMPLATES,
   createAgentWorkflowGraphByTemplate,
+  createCsKbReplyWorkflowGraph,
+  createCsSentimentEscalateWorkflowGraph,
+  createCsTicketTriageWorkflowGraph,
   createDocImageRecognitionWorkflowGraph,
   createDocumentSummaryWorkflowGraph,
   createIntelligentAssistantWorkflowGraph,
@@ -55,6 +58,41 @@ describe('agent workflow templates', () => {
       const graph = createAgentWorkflowGraphByTemplate(tpl.id)
       expect(graph.nodes.length).toBeGreaterThan(0)
     }
+  })
+
+  it('includes customer-service industry templates', () => {
+    const cs = AGENT_WORKFLOW_TEMPLATES.filter((t) => t.category === 'customer-service')
+    expect(cs.map((t) => t.id).sort()).toEqual([
+      'cs-kb-reply',
+      'cs-sentiment-escalate',
+      'cs-ticket-triage',
+    ])
+    for (const tpl of cs) {
+      const graph = createAgentWorkflowGraphByTemplate(tpl.id)
+      expect(validateAgentWorkflowGraph(graph).every((i) => i.level !== 'error')).toBe(true)
+    }
+  })
+
+  it('cs-ticket-triage classifies then branches', () => {
+    const graph = createCsTicketTriageWorkflowGraph()
+    expect(graph.entryNodeId).toBe('webhook-1')
+    expect(graph.nodes.some((n) => n.type === 'llm')).toBe(true)
+    expect(graph.nodes.some((n) => n.type === 'if')).toBe(true)
+    expect(graph.edges.filter((e) => e.data?.branch).length).toBe(2)
+  })
+
+  it('cs-kb-reply uses RAG then LLM', () => {
+    const graph = createCsKbReplyWorkflowGraph()
+    const rag = graph.nodes.find((n) => n.id === 'rag-1')
+    expect(rag?.type).toBe('tool')
+    expect(rag?.data?.toolName).toBe('rag__search')
+    expect(graph.nodes.some((n) => n.type === 'llm')).toBe(true)
+  })
+
+  it('cs-sentiment-escalate escalates negative via HITL', () => {
+    const graph = createCsSentimentEscalateWorkflowGraph()
+    expect(graph.nodes.some((n) => n.type === 'hitl')).toBe(true)
+    expect(graph.edges.some((e) => e.target === 'hitl-1' && e.data?.branch === 'true')).toBe(true)
   })
 
   it('layout keeps sequential template nodes separated horizontally', () => {

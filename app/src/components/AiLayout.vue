@@ -11,22 +11,28 @@ import { useRoute, useRouter } from 'vue-router'
 import { HomeFilled } from '@element-plus/icons-vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import { useShellEmbed } from '@/composables/useShellEmbed'
+import { useAiLocale } from '@/composables/useAiLocale'
 
 const route = useRoute()
 const router = useRouter()
 const { isShellEmbedded, shouldHideSubAppMenu, goToShellHome } = useShellEmbed()
+const { t, locale, toggleLocale } = useAiLocale()
 
-const navItems = [
-  { path: '/', label: 'AI 对话', icon: 'chat-dot-round' },
-  { path: '/workflows', label: 'Agent 编排', icon: 'connection' },
-  { path: '/rag', label: 'RAG 知识库', icon: 'notebook' },
-  { path: '/plugins', label: '插件中心', icon: 'box' },
-  { path: '/monitor', label: '性能监控', icon: 'data-line' },
-  { path: '/settings/models', label: '模型与连接', icon: 'connection' },
-  { path: '/settings/embedding', label: '嵌入模型', icon: 'collection' },
-  { path: '/settings/keys', label: '集成密钥', icon: 'key' },
-  { path: '/debug/routing', label: '路由调试', icon: 'search' },
-]
+const navItems = computed(() => [
+  { path: '/', label: t('layout.nav.chat'), icon: 'chat-dot-round' },
+  { path: '/workflows', label: t('layout.nav.workflows'), icon: 'connection' },
+  { path: '/rag', label: t('layout.nav.rag'), icon: 'notebook' },
+  { path: '/plugins', label: t('layout.nav.plugins'), icon: 'box' },
+  { path: '/monitor', label: t('layout.nav.monitor'), icon: 'data-line' },
+  { path: '/settings/models', label: t('layout.nav.models'), icon: 'connection' },
+  { path: '/settings/embedding', label: t('layout.nav.embedding'), icon: 'collection' },
+  { path: '/settings/keys', label: t('layout.nav.keys'), icon: 'key' },
+  { path: '/debug/routing', label: t('layout.nav.routingDebug'), icon: 'search' },
+])
+
+const languageLabel = computed(() =>
+  locale.value === 'zh-CN' ? t('layout.switchToEn') : t('layout.switchToZh'),
+)
 
 const activeNav = computed(() => {
   if (route.path === '/') return '/'
@@ -44,8 +50,8 @@ const activeNav = computed(() => {
     <!-- 侧边栏：/app 容器内由 shell 提供菜单，此处隐藏 -->
     <aside v-if="!shouldHideSubAppMenu" :class="$style.sidebar">
       <div v-if="isShellEmbedded" :class="$style.embedBar">
-        <el-tooltip content="返回主应用首页" placement="right">
-          <button :class="$style.homeBtn" title="返回主应用" @click="goToShellHome">
+        <el-tooltip :content="t('layout.homeTooltip')" placement="right">
+          <button :class="$style.homeBtn" :title="t('layout.homeTitle')" @click="goToShellHome">
             <el-icon :size="16"><HomeFilled /></el-icon>
           </button>
         </el-tooltip>
@@ -53,7 +59,7 @@ const activeNav = computed(() => {
 
       <div :class="$style.logo" @click="router.push('/')">
         <div :class="$style.logoIcon">AI</div>
-        <span :class="$style.logoText">智能助手</span>
+        <span :class="$style.logoText">{{ t('layout.logo') }}</span>
       </div>
 
       <nav :class="$style.nav">
@@ -69,12 +75,21 @@ const activeNav = computed(() => {
       </nav>
 
       <div :class="$style.sidebarFooter">
+        <button
+          type="button"
+          :class="[$style.navItem, $style.footerItem, $style.localeBtn]"
+          :title="t('layout.language')"
+          @click="toggleLocale"
+        >
+          <AppIcon name="switch-button" :size="18" />
+          <span>{{ languageLabel }}</span>
+        </button>
         <router-link
           to="/sidebar"
           :class="[$style.navItem, $style.footerItem]"
         >
           <AppIcon name="list" :size="18" />
-          <span>侧边栏模式</span>
+          <span>{{ t('layout.sidebarMode') }}</span>
         </router-link>
       </div>
     </aside>
@@ -197,11 +212,22 @@ const activeNav = computed(() => {
 .sidebarFooter {
   padding: 8px;
   border-top: 1px solid var(--ai-bg-gray, #F5F7FA);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .footerItem {
   color: var(--ai-text-hint, #999999);
   font-size: 12px;
+}
+
+.localeBtn {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: inherit;
 }
 
 .main {
