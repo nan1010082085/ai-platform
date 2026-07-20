@@ -40,6 +40,7 @@ import {
   type UpdateModelPayload,
   type TestConnectionResult as ModelTestResult,
 } from '@/api/modelApi'
+import { resolveErrorText } from '@/constants/errorCodes'
 import styles from './ModelSettingsView.module.scss'
 
 // ---- State: Providers ----
@@ -114,7 +115,7 @@ async function loadProviders(): Promise<void> {
     const allModels = await listModels()
     globalDefaultModel.value = allModels.find((m) => m.isDefault) ?? null
   } catch (e) {
-    ElMessage.error((e as Error).message || '加载供应商列表失败')
+    ElMessage.error(resolveErrorText(e, '加载供应商列表失败'))
   } finally {
     providersLoading.value = false
   }
@@ -131,7 +132,7 @@ async function loadModels(): Promise<void> {
   try {
     models.value = await listModels(selectedProviderId.value)
   } catch (e) {
-    ElMessage.error((e as Error).message || '加载模型列表失败')
+    ElMessage.error(resolveErrorText(e, '加载模型列表失败'))
   } finally {
     modelsLoading.value = false
   }
@@ -198,7 +199,7 @@ async function handleProviderSubmit(formData: CreateProviderPayload): Promise<vo
     showProviderDialog.value = false
     await loadProviders()
   } catch (e) {
-    ElMessage.error((e as Error).message || '操作失败')
+    ElMessage.error(resolveErrorText(e, '操作失败'))
   } finally {
     providerFormSubmitting.value = false
   }
@@ -220,7 +221,7 @@ async function handleDeleteProvider(provider: Provider): Promise<void> {
     await loadProviders()
   } catch (e) {
     if (e === 'cancel') return
-    ElMessage.error((e as Error).message || '删除失败')
+    ElMessage.error(resolveErrorText(e, '删除失败'))
   }
 }
 
@@ -236,7 +237,7 @@ async function handleTestProviderConn(provider: Provider): Promise<void> {
     testResult.value = result
     providerConnStatus.value.set(provider.id, 'ok')
   } catch (e) {
-    testError.value = (e as Error).message || '测试失败'
+    testError.value = resolveErrorText(e, '测试失败')
     providerConnStatus.value.set(provider.id, 'fail')
   } finally {
     testDialogLoading.value = false
@@ -338,7 +339,7 @@ async function handleModelSubmit(formData: ModelFormState): Promise<void> {
     const allModels = await listModels()
     globalDefaultModel.value = allModels.find((m) => m.isDefault) ?? null
   } catch (e) {
-    ElMessage.error((e as Error).message || '操作失败')
+    ElMessage.error(resolveErrorText(e, '操作失败'))
   } finally {
     modelFormSubmitting.value = false
   }
@@ -358,7 +359,7 @@ async function handleDeleteModel(model: Model): Promise<void> {
     globalDefaultModel.value = allModels.find((m) => m.isDefault) ?? null
   } catch (e) {
     if (e === 'cancel') return
-    ElMessage.error((e as Error).message || '删除失败')
+    ElMessage.error(resolveErrorText(e, '删除失败'))
   }
 }
 
@@ -378,7 +379,7 @@ async function handleSetDefault(model: Model): Promise<void> {
     globalDefaultModel.value = allModels.find((m) => m.isDefault) ?? null
   } catch (e) {
     if (e === 'cancel') return
-    ElMessage.error((e as Error).message || '设置失败')
+    ElMessage.error(resolveErrorText(e, '设置失败'))
   }
 }
 
@@ -388,7 +389,7 @@ async function handleToggleActive(model: Model): Promise<void> {
     ElMessage.success(model.isActive ? '已禁用' : '已启用')
     await loadModels()
   } catch (e) {
-    ElMessage.error((e as Error).message || '操作失败')
+    ElMessage.error(resolveErrorText(e, '操作失败'))
   }
 }
 
@@ -402,7 +403,7 @@ async function handleTestModel(model: Model): Promise<void> {
     const result = await testModel(model.id)
     testResult.value = result
   } catch (e) {
-    testError.value = (e as Error).message || '测试失败'
+    testError.value = resolveErrorText(e, '测试失败')
   } finally {
     testDialogLoading.value = false
   }

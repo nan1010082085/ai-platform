@@ -7,6 +7,7 @@ import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import { request } from '@/api/shared/request'
+import { resolveErrorText } from '@/constants/errorCodes'
 import styles from './RoutingDebugView.module.scss'
 
 interface RouteResult {
@@ -51,6 +52,8 @@ async function testRoute() {
         message: message.value.trim(),
         contextSource: contextSource.value || undefined,
       },
+      // /ai/debug/* 返回裸对象，不使用 { success, data } 信封
+      raw: true,
     })
     result.value = data
     history.value.unshift({
@@ -62,7 +65,7 @@ async function testRoute() {
       history.value = history.value.slice(0, 20)
     }
   } catch (err) {
-    ElMessage.error((err as Error).message || '路由测试失败')
+    ElMessage.error(resolveErrorText(err, '路由测试失败'))
   } finally {
     loading.value = false
   }
