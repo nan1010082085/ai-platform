@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import TableRowActions, { type TableRowAction } from '@/components/common/TableRowActions.vue'
 import type { Provider } from '@/api/providerApi'
 import type { Model, ModelParameters } from '@/api/modelApi'
 import styles from '@/views/ModelSettingsView.module.scss'
@@ -28,6 +29,50 @@ const emit = defineEmits<{
   delete: [model: Model]
   create: []
 }>()
+
+function modelActions(model: Model): TableRowAction[] {
+  const actions: TableRowAction[] = [
+    {
+      key: 'test',
+      label: '测试',
+      icon: 'connection',
+      type: 'primary',
+      onClick: () => emit('testModel', model),
+    },
+  ]
+  if (!model.isDefault) {
+    actions.push({
+      key: 'setDefault',
+      label: '设为默认',
+      icon: 'check',
+      type: 'success',
+      onClick: () => emit('setDefault', model),
+    })
+  }
+  actions.push(
+    {
+      key: 'toggleActive',
+      label: model.isActive ? '禁用' : '启用',
+      icon: model.isActive ? 'circle-close-filled' : 'circle-check',
+      onClick: () => emit('toggleActive', model),
+    },
+    {
+      key: 'edit',
+      label: '编辑',
+      icon: 'edit',
+      type: 'primary',
+      onClick: () => emit('edit', model),
+    },
+    {
+      key: 'delete',
+      label: '删除',
+      icon: 'delete',
+      type: 'danger',
+      onClick: () => emit('delete', model),
+    },
+  )
+  return actions
+}
 
 function paramSummary(params: ModelParameters | undefined): string {
   if (!params) return '--'
@@ -124,57 +169,9 @@ function formatDate(iso: string | undefined): string {
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="280" fixed="right">
+      <el-table-column label="操作" width="160" fixed="right">
         <template #default="{ row }">
-          <el-button
-            link
-            type="primary"
-            size="small"
-            @click="emit('testModel', row)"
-          >
-            <AppIcon name="connection" :size="14" style="margin-right: 2px" />
-            测试
-          </el-button>
-          <el-button
-            v-if="!row.isDefault"
-            link
-            type="success"
-            size="small"
-            @click="emit('setDefault', row)"
-          >
-            <AppIcon name="check" :size="14" style="margin-right: 2px" />
-            设为默认
-          </el-button>
-          <el-button
-            link
-            size="small"
-            @click="emit('toggleActive', row)"
-          >
-            <AppIcon
-              :name="row.isActive ? 'circle-close' : 'circle-check'"
-              :size="14"
-              style="margin-right: 2px"
-            />
-            {{ row.isActive ? '禁用' : '启用' }}
-          </el-button>
-          <el-button
-            link
-            type="primary"
-            size="small"
-            @click="emit('edit', row)"
-          >
-            <AppIcon name="edit" :size="14" style="margin-right: 2px" />
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            size="small"
-            @click="emit('delete', row)"
-          >
-            <AppIcon name="delete" :size="14" style="margin-right: 2px" />
-            删除
-          </el-button>
+          <TableRowActions :actions="modelActions(row)" />
         </template>
       </el-table-column>
     </el-table>
