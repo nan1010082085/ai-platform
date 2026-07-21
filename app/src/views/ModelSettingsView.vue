@@ -60,6 +60,8 @@ const providerConnStatus = ref<Map<string, 'ok' | 'fail' | 'testing'>>(new Map()
 
 const models = ref<Model[]>([])
 const modelsLoading = ref(false)
+/** 模型最近一次测试结果，key = model.id；切换供应商时清空 */
+const modelTestStatus = ref<Map<string, 'ok' | 'fail' | 'testing'>>(new Map())
 
 // ---- State: Default model (global) ----
 
@@ -89,6 +91,7 @@ const modelInitialForm = ref<ModelFormState>({
   name: '',
   model: '',
   parameters: { temperature: 0.7, maxTokens: 4096 },
+  capabilities: ['chat'],
   isDefault: false,
   isActive: true,
 })
@@ -100,6 +103,8 @@ const testDialogTitle = ref('')
 const testDialogLoading = ref(false)
 const testResult = ref<ProviderTestResult | ModelTestResult | null>(null)
 const testError = ref('')
+/** 上游真实错误文本（server error.details，如 DeepSeek 返回的 "Authentication Fails..."） */
+const testErrorDetails = ref('')
 
 // ---- Load providers ----
 
@@ -140,6 +145,7 @@ async function loadModels(): Promise<void> {
 
 // Watch provider selection
 watch(selectedProviderId, () => {
+  modelTestStatus.value = new Map()
   void loadModels()
 })
 
@@ -230,6 +236,7 @@ async function handleTestProviderConn(provider: Provider): Promise<void> {
   testDialogLoading.value = true
   testResult.value = null
   testError.value = ''
+  testErrorDetails.value = ''
   showTestDialog.value = true
   providerConnStatus.value.set(provider.id, 'testing')
   try {
@@ -238,6 +245,7 @@ async function handleTestProviderConn(provider: Provider): Promise<void> {
     providerConnStatus.value.set(provider.id, 'ok')
   } catch (e) {
     testError.value = resolveErrorText(e, '测试失败')
+    testErrorDetails.value = extractErrorDetails(e)
     providerConnStatus.value.set(provider.id, 'fail')
   } finally {
     testDialogLoading.value = false
@@ -289,6 +297,7 @@ function openCreateModelDialog(): void {
     name: '',
     model: '',
     parameters: { temperature: 0.7, maxTokens: 4096 },
+    capabilities: ['chat'],
     isDefault: false,
     isActive: true,
   }
@@ -302,6 +311,7 @@ function openEditModelDialog(model: Model): void {
     name: model.name,
     model: model.model,
     parameters: { ...model.parameters },
+    capabilities: [...(model.capabilities ?? ['chat'])],
     isDefault: model.isDefault,
     isActive: model.isActive,
   }
@@ -316,6 +326,7 @@ async function handleModelSubmit(formData: ModelFormState): Promise<void> {
         name: formData.name,
         model: formData.model,
         parameters: formData.parameters,
+        capabilities: formData.capabilities,
         isDefault: formData.isDefault,
         isActive: formData.isActive,
       }
@@ -327,6 +338,7 @@ async function handleModelSubmit(formData: ModelFormState): Promise<void> {
         providerId: selectedProviderId.value,
         model: formData.model,
         parameters: formData.parameters,
+        capabilities: formData.capabilities,
         isDefault: formData.isDefault,
         isActive: formData.isActive,
       }
@@ -398,15 +410,36 @@ async function handleTestModel(model: Model): Promise<void> {
   testDialogLoading.value = true
   testResult.value = null
   testError.value = ''
+  testErrorDetails.value = ''
   showTestDialog.value = true
+  setModelTestStatus(model.id, 'testing')
   try {
     const result = await testModel(model.id)
     testResult.value = result
+    setModelTestStatus(model.id, 'ok')
   } catch (e) {
     testError.value = resolveErrorText(e, '测试失败')
+    testErrorDetails.value = extractErrorDetails(e)
+    setModelTestStatus(model.id, 'fail')
   } finally {
     testDialogLoading.value = false
   }
+}
+
+/** 更新模型测试状态（重新赋值 Map 触发响应式） */
+function setModelTestStatus(modelId: string, status: 'ok' | 'fail' | 'testing'): void {
+  const next = new Map(modelTestStatus.value)
+  next.set(modelId, status)
+  modelTestStatus.value = next
+}
+
+/** 从 ApiError 提取上游真实错误文本（server error.details） */
+function extractErrorDetails(error: unknown): string {
+  if (error && typeof error === 'object' && 'details' in error) {
+    const details = (error as { details?: unknown }).details
+    if (typeof details === 'string' && details.trim()) return details.trim()
+  }
+  return ''
 }
 
 // ---- Helpers ----
@@ -486,6 +519,7 @@ onMounted(() => {
                 :models="models"
                 :models-loading="modelsLoading"
                 :selected-provider="selectedProvider"
+                :model-test-status="modelTestStatus"
                 @test-connection="handleTestProviderConn"
                 @test-model="handleTestModel"
                 @set-default="handleSetDefault"
@@ -550,6 +584,9 @@ onMounted(() => {
         <div v-if="testError" :class="[styles.testResult, styles.testError]">
           <div style="font-weight: 600; margin-bottom: 4px">连接失败</div>
           <div>{{ testError }}</div>
+          <div v-if="testErrorDetails" :class="styles.testReply" style="margin-top: 8px">
+            {{ testErrorDetails }}
+          </div>
         </div>
       </template>
       <template #footer>

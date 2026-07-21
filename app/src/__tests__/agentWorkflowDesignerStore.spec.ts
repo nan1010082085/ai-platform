@@ -180,4 +180,47 @@ describe('agentWorkflowDesignerStore execution runtime', () => {
     store.updateNodeData('n1', { prompt: 'b' })
     expect(store.nodes[0]?.data?.runtimeRecord).toBeUndefined()
   })
+
+  it('selectEdge sets selectedEdgeId and clears selectedNodeId', () => {
+    const store = useAgentWorkflowDesignerStore()
+    store.loadGraph({
+      entryNodeId: 'n1',
+      nodes: [
+        { id: 'n1', type: 'llm', position: { x: 0, y: 0 }, data: { label: 'LLM' } },
+        { id: 'n2', type: 'end', position: { x: 300, y: 0 }, data: { label: 'End' } },
+      ],
+      edges: [{ id: 'e1', source: 'n1', target: 'n2' }],
+    })
+    store.selectedNodeId = 'n1'
+    store.selectEdge('e1')
+    expect(store.selectedEdgeId).toBe('e1')
+    expect(store.selectedNodeId).toBeNull()
+  })
+
+  it('selectEdge with null clears selection', () => {
+    const store = useAgentWorkflowDesignerStore()
+    store.selectedEdgeId = 'e1'
+    store.selectEdge(null)
+    expect(store.selectedEdgeId).toBeNull()
+  })
+
+  it('reset clears all state', () => {
+    const store = useAgentWorkflowDesignerStore()
+    store.loadGraph({
+      entryNodeId: 'n1',
+      nodes: [{ id: 'n1', type: 'llm', position: { x: 0, y: 0 }, data: { label: 'LLM' } }],
+      edges: [],
+    })
+    store.workflowId = 'wf-1'
+    store.workflowName = 'Test'
+    store.dirty = true
+
+    store.reset()
+
+    expect(store.workflowId).toBeNull()
+    expect(store.workflowName).toBe('未命名工作流')
+    expect(store.nodes).toEqual([])
+    expect(store.edges).toEqual([])
+    expect(store.dirty).toBe(false)
+  })
 })

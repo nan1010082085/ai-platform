@@ -228,10 +228,8 @@ export const useAiStore = defineStore('ai', () => {
     loadVersionHistory: (conversationId: string) => schemaStore.loadVersionHistory(conversationId),
     rollbackToVersion: (conversationId: string, versionId: string) => schemaStore.rollbackToVersion(conversationId, versionId),
     loadLLMProviders: () => llmStore.loadLLMProviders(),
-    loadLLMStrategies: () => llmStore.loadLLMStrategies(),
     loadLLMUsage: () => llmStore.loadLLMUsage(),
     switchProvider: (provider: string) => llmStore.switchProvider(provider),
-    switchStrategy: (strategy: string | null) => llmStore.switchStrategy(strategy),
     updateChatSettings: (settings: Parameters<typeof chatSettingsStore.updateChatSettings>[0]) => {
       const prevWorkflowId = chatSettingsStore.chatSettings.agentWorkflowId
       chatSettingsStore.updateChatSettings(settings)

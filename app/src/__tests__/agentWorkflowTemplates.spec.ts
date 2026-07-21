@@ -73,6 +73,49 @@ describe('agent workflow templates', () => {
     }
   })
 
+  it('includes audit templates with HITL branch', () => {
+    const audit = AGENT_WORKFLOW_TEMPLATES.filter((t) => t.category === 'audit')
+    expect(audit.map((t) => t.id).sort()).toEqual([
+      'content-compliance',
+      'contract-risk-tag',
+      'faq-quality-check',
+    ])
+    for (const tpl of audit) {
+      const graph = createAgentWorkflowGraphByTemplate(tpl.id)
+      expect(graph.nodes.some((n) => n.type === 'hitl')).toBe(true)
+      expect(validateAgentWorkflowGraph(graph).every((i) => i.level !== 'error')).toBe(true)
+    }
+  })
+
+  it('includes generic data/integration templates', () => {
+    const ids = AGENT_WORKFLOW_TEMPLATES.map((t) => t.id)
+    expect(ids).toContain('excel-report')
+    expect(ids).toContain('multi-doc-compare')
+    expect(ids).toContain('structured-extract')
+    expect(ids).toContain('webhook-batch-dispatch')
+    const batch = createAgentWorkflowGraphByTemplate('webhook-batch-dispatch')
+    expect(batch.nodes.some((n) => n.type === 'task-planner')).toBe(true)
+    expect(batch.nodes.some((n) => n.type === 'task-chain')).toBe(true)
+    expect(batch.nodes.some((n) => n.type === 'summarizer')).toBe(true)
+    expect(validateAgentWorkflowGraph(batch).every((i) => i.level !== 'error')).toBe(true)
+  })
+
+  it('includes multimodal templates using image/video generate nodes', () => {
+    const ids = AGENT_WORKFLOW_TEMPLATES.map((t) => t.id)
+    expect(ids).toContain('multimodal-image-text')
+    expect(ids).toContain('multimodal-video-promo')
+
+    const imageText = createAgentWorkflowGraphByTemplate('multimodal-image-text')
+    expect(imageText.nodes.some((n) => n.type === 'image-generate')).toBe(true)
+    expect(imageText.nodes.some((n) => n.type === 'llm')).toBe(true)
+    expect(validateAgentWorkflowGraph(imageText).every((i) => i.level !== 'error')).toBe(true)
+
+    const videoPromo = createAgentWorkflowGraphByTemplate('multimodal-video-promo')
+    expect(videoPromo.nodes.some((n) => n.type === 'video-generate')).toBe(true)
+    expect(videoPromo.nodes.some((n) => n.type === 'llm')).toBe(true)
+    expect(validateAgentWorkflowGraph(videoPromo).every((i) => i.level !== 'error')).toBe(true)
+  })
+
   it('cs-ticket-triage classifies then branches', () => {
     const graph = createCsTicketTriageWorkflowGraph()
     expect(graph.entryNodeId).toBe('webhook-1')

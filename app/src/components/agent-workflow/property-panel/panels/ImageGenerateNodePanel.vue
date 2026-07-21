@@ -80,12 +80,13 @@ function handleRegenerate() {
       />
     </FieldRow>
 
-    <FieldRow label="图片模型" hint="来自模型中心；可筛选或直接输入 model id">
+    <FieldRow label="图片模型" hint="来自模型中心；仅显示具备图像生成能力的模型">
       <ModelOptionSelect
         v-model="imageModel"
         :options="modelOptions"
         :groups="providerGroups"
         :loading="modelsLoading"
+        capability="image"
         placeholder="选择或输入图片模型"
       />
     </FieldRow>

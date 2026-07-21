@@ -27,6 +27,16 @@
   border-radius: 8px;
   overflow: hidden;
   background: var(--bg-color-page);
+  position: relative;
+}
+
+.canvasPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 13px;
+  color: var(--text-color-placeholder);
 }
 
 .nodeList {

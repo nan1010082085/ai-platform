@@ -17,6 +17,7 @@ import VideoAnalyzeNodePanel from '@/components/agent-workflow/property-panel/pa
 import ConversationMemoryNodePanel from '@/components/agent-workflow/property-panel/panels/ConversationMemoryNodePanel.vue'
 import ExpertPluginNodePanel from '@/components/agent-workflow/property-panel/panels/ExpertPluginNodePanel.vue'
 import ImageGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/ImageGenerateNodePanel.vue'
+import VideoGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/VideoGenerateNodePanel.vue'
 import PptGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/PptGenerateNodePanel.vue'
 import EndNodePanel from '@/components/agent-workflow/property-panel/panels/EndNodePanel.vue'
 import IntentRouterNodePanel from '@/components/agent-workflow/property-panel/panels/IntentRouterNodePanel.vue'
@@ -46,6 +47,7 @@ const registry = new Map<AgentNodeType, Component>([
   ['hitl', markRaw(HitlNodePanel)],
   ['end', markRaw(EndNodePanel)],
   ['image-generate', markRaw(ImageGenerateNodePanel)],
+  ['video-generate', markRaw(VideoGenerateNodePanel)],
   ['ppt-generate', markRaw(PptGenerateNodePanel)],
   ['intent-router', markRaw(IntentRouterNodePanel)],
   ['summarizer', markRaw(SummarizerNodePanel)],
@@ -71,6 +73,7 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   hitl: '人工确认',
   end: '结束',
   'image-generate': '图片生成',
+  'video-generate': '视频生成',
   'ppt-generate': 'PPT 生成',
   'intent-router': '意图路由',
   summarizer: '多步总结',

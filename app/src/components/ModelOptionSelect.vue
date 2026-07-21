@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ModelOption, ProviderGroup } from '@/composables/useModelOptions'
+import type { ModelCapability } from '@schema-platform/platform-shared/ai'
 import { getModelProviderMeta } from '@/constants/modelProviderMeta'
 import styles from './ModelOptionSelect.module.scss'
 
@@ -15,6 +16,8 @@ const props = withDefaults(defineProps<{
   size?: 'small' | 'default' | 'large'
   /** 允许输入模型中心未录入的自定义 model id */
   allowCreate?: boolean
+  /** 按能力过滤模型（如 'image' 只列具备图像生成能力的模型）。不传则不过滤 */
+  capability?: ModelCapability
 }>(), {
   options: () => [],
   groups: () => [],
@@ -24,21 +27,34 @@ const props = withDefaults(defineProps<{
   placeholder: '选择或输入模型',
   size: 'default',
   allowCreate: true,
+  capability: undefined,
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-/** 优先用传入 groups；为空则按 options.provider 推导分组 */
+/** 按能力过滤后的 options */
+const filteredOptions = computed<readonly ModelOption[]>(() => {
+  if (!props.capability) return props.options
+  return props.options.filter((o) => o.capabilities.includes(props.capability!))
+})
+
+/** 优先用传入 groups；为空则按 options.provider 推导分组（均按 capability 过滤） */
 const resolvedGroups = computed<ProviderGroup[]>(() => {
   if (props.groups.length > 0) {
-    return [...props.groups]
+    if (!props.capability) return [...props.groups]
+    return props.groups
+      .map((g) => ({
+        ...g,
+        models: g.models.filter((o) => o.capabilities.includes(props.capability!)),
+      }))
+      .filter((g) => g.models.length > 0)
   }
-  if (props.options.length === 0) return []
+  if (filteredOptions.value.length === 0) return []
 
   const map = new Map<string, ProviderGroup>()
-  for (const option of props.options) {
+  for (const option of filteredOptions.value) {
     const key = option.provider || 'other'
     let group = map.get(key)
     if (!group) {
@@ -121,7 +137,7 @@ function optionFilterLabel(option: ModelOption): string {
 
     <template v-else>
       <el-option
-        v-for="option in options"
+        v-for="option in filteredOptions"
         :key="option.configId"
         :label="option.label"
         :value="option.value"

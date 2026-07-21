@@ -12,6 +12,7 @@ import {
 } from '@/api/providerApi'
 import { getModelConfigs, type ModelConfigItem, type ModelProvider } from '@/api/modelConfigApi'
 import { checkAIHealth } from '@/api/aiApi'
+import type { ModelCapability } from '@schema-platform/platform-shared/ai'
 
 export interface ModelOption {
   value: string
@@ -19,6 +20,7 @@ export interface ModelOption {
   shortLabel: string
   provider: string
   model: string
+  capabilities: ModelCapability[]
   isDefault: boolean
   configId: string
   source: 'db' | 'env' | 'provider'
@@ -66,6 +68,7 @@ function fromProviders(providers: ProviderWithModels[]): {
         shortLabel: displayName,
         provider: p.type,
         model: m.model,
+        capabilities: m.capabilities ?? ['chat'],
         isDefault: m.isDefault,
         configId: m.id,
         source: 'provider',
@@ -98,6 +101,7 @@ function fromLegacyConfigs(items: ModelConfigItem[]): {
     shortLabel: item.name,
     provider: item.provider,
     model: item.model,
+    capabilities: ['chat'] as ModelCapability[],
     isDefault: item.isDefault,
     configId: item.id,
     source: (item.id.startsWith('env:') ? 'env' : 'db') as ModelOption['source'],
@@ -212,6 +216,23 @@ export function useModelOptions() {
   /** 是否有按供应商分组的数据（providers API 成功时才有） */
   const hasGroupedData = computed(() => providerGroups.value.length > 0)
 
+  /** 按能力过滤 flat options（无 capability 时返回全部） */
+  function getModelOptionsByCapability(capability?: ModelCapability): ModelOption[] {
+    if (!capability) return [...modelOptions.value]
+    return modelOptions.value.filter((o) => o.capabilities.includes(capability))
+  }
+
+  /** 按能力过滤分组（无 capability 时返回全部） */
+  function getProviderGroupsByCapability(capability?: ModelCapability): ProviderGroup[] {
+    if (!capability) return [...providerGroups.value]
+    return providerGroups.value
+      .map((g) => ({
+        ...g,
+        models: g.models.filter((o) => o.capabilities.includes(capability)),
+      }))
+      .filter((g) => g.models.length > 0)
+  }
+
   onMounted(() => {
     if (!loaded.value) {
       void loadModelOptions()
@@ -227,6 +248,8 @@ export function useModelOptions() {
     defaultModel: readonly(defaultModel),
     dataSource: readonly(dataSource),
     loadModelOptions,
+    getModelOptionsByCapability,
+    getProviderGroupsByCapability,
   }
 }
 

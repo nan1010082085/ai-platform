@@ -615,9 +615,93 @@ interface ResumePayload {
 
 ---
 
-## 九、状态事件
+## 九、思考与质检事件
 
-### 9.1 done
+> v2 事件，对话流已实现（`chatStreamRunner` 发射）；工作流图节点中的保留事件另见 [reserved-events-decision.md](./product/reserved-events-decision.md)。
+
+### 9.1 thinker_start
+
+**方向**：Server -> Client
+
+**说明**：路由节点（router）开始思考推理，前端可进入"思考中"状态。
+
+**数据格式**：
+```typescript
+interface ThinkerStartEvent {
+  type: 'thinker_start'
+}
+```
+
+**触发时机**：LangGraph `onChainEnd` 命中 `router` 节点时发射（`chatStreamRunner.ts`）。
+
+### 9.2 thinker_complete
+
+**方向**：Server -> Client
+
+**说明**：路由节点完成推理，给出路由结果与是否进入任务链。
+
+**数据格式**：
+```typescript
+interface ThinkerCompleteEvent {
+  type: 'thinker_complete'
+  agent?: string       // 路由到的目标 agent
+  hasTaskChain: boolean // 是否进入任务链执行
+}
+```
+
+**示例**：
+```json
+{
+  "type": "thinker_complete",
+  "agent": "editor",
+  "hasTaskChain": true
+}
+```
+
+### 9.3 quality_check_start
+
+**方向**：Server -> Client
+
+**说明**：Schema 生成完成后、正式下发 `schema_complete` 前，开始质量检查。
+
+**数据格式**：
+```typescript
+interface QualityCheckStartEvent {
+  type: 'quality_check_start'
+}
+```
+
+**触发时机**：`sendSchemaComplete` 中，质量检查开始时发射。
+
+### 9.4 quality_check_complete
+
+**方向**：Server -> Client
+
+**说明**：质量检查完成，返回是否通过与问题清单。`passed=true` 时 `issues` 为空。
+
+**数据格式**：
+```typescript
+interface QualityCheckCompleteEvent {
+  type: 'quality_check_complete'
+  passed: boolean      // 是否通过（无问题即通过）
+  issues: string[]     // 问题清单（如"组件缺少 label"）
+}
+```
+
+**示例**：
+```json
+{
+  "type": "quality_check_complete",
+  "passed": false,
+  "issues": ["组件缺少 label"]
+}
+```
+
+---
+
+## 十、状态事件
+
+### 10.1 done
 
 **方向**：Server → Client
 
@@ -639,7 +723,7 @@ interface DoneEvent {
 }
 ```
 
-### 9.2 error
+### 10.2 error
 
 **方向**：Server → Client
 
@@ -665,9 +749,9 @@ interface ErrorEvent {
 
 ---
 
-## 十、客户端请求事件
+## 十一、客户端请求事件
 
-### 10.1 chat:send
+### 11.1 chat:send
 
 **方向**：Client → Server
 
@@ -695,7 +779,7 @@ interface ChatSendPayload {
 }
 ```
 
-### 10.2 chat:cancel
+### 11.2 chat:cancel
 
 **方向**：Client → Server
 
@@ -708,7 +792,7 @@ interface ChatCancelPayload {
 }
 ```
 
-### 10.3 chat:resume
+### 11.3 chat:resume
 
 **方向**：Client → Server
 
@@ -724,9 +808,9 @@ interface ChatResumePayload {
 
 ---
 
-## 十一、事件处理
+## 十二、事件处理
 
-### 11.1 服务端发送
+### 12.1 服务端发送
 
 ```typescript
 // chatStreamHandler.ts
@@ -745,7 +829,7 @@ sendEvent({
 })
 ```
 
-### 11.2 客户端接收
+### 12.2 客户端接收
 
 ```typescript
 // stream.ts
@@ -781,9 +865,9 @@ function handleStreamEvent(event: StreamEvent, assistantIndex: number) {
 
 ---
 
-## 十二、事件类型定义
+## 十三、事件类型定义
 
-### 12.1 共享类型
+### 13.1 共享类型
 
 `packages/shared/platform-shared/ai/events.ts` 定义了所有事件类型：
 
@@ -816,7 +900,7 @@ export type StreamEvent =
 export type SSEEvent = StreamEvent
 ```
 
-### 12.2 使用方式
+### 13.2 使用方式
 
 ```typescript
 import type { StreamEvent } from '@schema-platform/ai-shared'

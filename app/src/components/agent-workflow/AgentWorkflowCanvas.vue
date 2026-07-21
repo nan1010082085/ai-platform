@@ -46,21 +46,40 @@ const defaultEdgeOptions = {
   data: { animated: false },
 }
 
-const { onConnect, onNodeClick, onEdgeClick, onPaneClick, onNodesChange, onEdgesChange, screenToFlowCoordinate, addSelectedNodes, removeSelectedNodes, addSelectedEdges, removeSelectedEdges, getNodes, getEdges, fitView } = useVueFlow({
+const { onConnect, onNodeClick, onEdgeClick, onPaneClick, onNodesChange, onEdgesChange, onInit, onNodesInitialized, screenToFlowCoordinate, addSelectedNodes, removeSelectedNodes, addSelectedEdges, removeSelectedEdges, getNodes, getEdges, fitView } = useVueFlow({
   id: props.canvasId,
 })
 
 let fitViewTimer: ReturnType<typeof setTimeout> | null = null
+let fitViewAttempts = 0
+let resizeObserver: ResizeObserver | null = null
+
+function runFitView() {
+  if (!props.readOnly || !props.fitViewOnLoad) return
+  const el = canvasEl.value
+  if (!el || el.clientWidth < 8 || el.clientHeight < 8) return
+  if (!getNodes.value.length) return
+  // Skip until at least one node has measured dimensions (avoids NaN viewport)
+  const measured = getNodes.value.some((n) => (n.dimensions?.width ?? 0) > 0)
+  if (!measured && fitViewAttempts < 12) {
+    fitViewAttempts += 1
+    fitViewTimer = setTimeout(runFitView, 50)
+    return
+  }
+  fitView({ padding: 0.15, duration: 180, maxZoom: 1 })
+}
 
 function scheduleFitView() {
   if (!props.readOnly || !props.fitViewOnLoad) return
   if (fitViewTimer) clearTimeout(fitViewTimer)
+  fitViewAttempts = 0
   fitViewTimer = setTimeout(() => {
-    nextTick(() => {
-      fitView({ padding: 0.12, duration: 200 })
-    })
-  }, 80)
+    nextTick(runFitView)
+  }, 50)
 }
+
+onInit(() => scheduleFitView())
+onNodesInitialized(() => scheduleFitView())
 
 function syncNodeSelection(nodeId: string | null) {
   const selected = getNodes.value.filter((n) => n.selected)
@@ -147,10 +166,16 @@ watch(
 onMounted(() => {
   if (!props.readOnly) window.addEventListener('keydown', onKeyDown)
   scheduleFitView()
+  if (typeof ResizeObserver !== 'undefined' && canvasEl.value) {
+    resizeObserver = new ResizeObserver(() => scheduleFitView())
+    resizeObserver.observe(canvasEl.value)
+  }
 })
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown)
   if (fitViewTimer) clearTimeout(fitViewTimer)
+  resizeObserver?.disconnect()
+  resizeObserver = null
 })
 
 onConnect((params) => {
@@ -239,6 +264,8 @@ function onKeyDown(e: KeyboardEvent) {
       :elements-selectable="true"
       :snap-to-grid="true"
       :snap-grid="[16, 16]"
+      :min-zoom="readOnly ? 0.15 : 0.2"
+      :fit-view-on-init="!!readOnly && fitViewOnLoad"
     >
       <template v-for="item in AGENT_PALETTE_ITEMS" :key="item.type" #[`node-${item.type}`]="nodeProps">
         <AgentFlowNode v-bind="nodeProps" />

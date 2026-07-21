@@ -9,7 +9,15 @@
 
 /** server 已知业务错误码 -> 中文友好文本 */
 export const ERROR_CODE_TEXT: Record<string, string> = {
-  // 鉴权 / API Key
+  // 登录 / 鉴权
+  invalid_credentials: '用户名或密码错误',
+  invalid_tenant: '租户不存在或已禁用',
+  account_disabled: '账户已被禁用，请联系管理员',
+  invalid_refresh_token: '登录已过期，请重新登录',
+  invalid_token_type: '令牌类型错误',
+  token_revoked: '登录已过期，请重新登录',
+  user_not_found: '用户不存在',
+  // API Key
   invalid_api_key: 'API Key 无效或已失效',
   invalid_webhook_auth: 'Webhook 认证失败',
   // 通用资源

@@ -6,10 +6,14 @@ import type { Provider } from '@/api/providerApi'
 import type { Model, ModelParameters } from '@/api/modelApi'
 import styles from '@/views/ModelSettingsView.module.scss'
 
+type ModelTestStatus = 'ok' | 'fail' | 'testing'
+
 const props = defineProps<{
   models: Model[]
   modelsLoading: boolean
   selectedProvider: Provider
+  /** 模型最近一次测试结果，key = model.id */
+  modelTestStatus?: Map<string, ModelTestStatus>
 }>()
 
 // Pagination
@@ -19,6 +23,24 @@ const paginatedModels = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   return props.models.slice(start, start + pageSize.value)
 })
+
+function getTestStatus(modelId: string): ModelTestStatus | undefined {
+  return props.modelTestStatus?.get(modelId)
+}
+
+function testStatusTagType(status: ModelTestStatus | undefined) {
+  if (status === 'ok') return 'success'
+  if (status === 'fail') return 'danger'
+  if (status === 'testing') return 'warning'
+  return 'info'
+}
+
+function testStatusText(status: ModelTestStatus | undefined) {
+  if (status === 'ok') return '正常'
+  if (status === 'fail') return '失败'
+  if (status === 'testing') return '测试中'
+  return '未测试'
+}
 
 const emit = defineEmits<{
   testConnection: [provider: Provider]
@@ -83,6 +105,17 @@ function paramSummary(params: ModelParameters | undefined): string {
   return parts.length > 0 ? parts.join(', ') : '--'
 }
 
+const CAPABILITY_LABELS: Record<string, string> = {
+  chat: '对话',
+  image: '图像',
+  video: '视频',
+  audio: '音频',
+}
+
+function capabilityLabel(cap: string): string {
+  return CAPABILITY_LABELS[cap] ?? cap
+}
+
 function formatDate(iso: string | undefined): string {
   if (!iso) return '--'
   return new Date(iso).toLocaleString('zh-CN', {
@@ -123,7 +156,7 @@ function formatDate(iso: string | undefined): string {
 
   <div :class="styles.modelTableWrap" v-loading="modelsLoading">
     <el-table :data="paginatedModels" stripe>
-      <el-table-column prop="name" label="名称" min-width="140">
+      <el-table-column prop="name" label="名称" min-width="130">
         <template #default="{ row }">
           <span>{{ row.name }}</span>
           <el-tag
@@ -137,21 +170,35 @@ function formatDate(iso: string | undefined): string {
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="model" label="模型标识" min-width="160">
+      <el-table-column prop="model" label="模型标识" min-width="150">
         <template #default="{ row }">
           <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px">
             {{ row.model }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="参数摘要" width="160">
+      <el-table-column label="参数摘要" width="130">
         <template #default="{ row }">
           <span style="font-size: 12px; color: var(--text-color-secondary)">
             {{ paramSummary(row.parameters) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="状态" width="80" align="center">
+      <el-table-column label="能力" width="150">
+        <template #default="{ row }">
+          <el-tag
+            v-for="cap in (row.capabilities ?? ['chat'])"
+            :key="cap"
+            :type="cap === 'chat' ? 'info' : 'warning'"
+            size="small"
+            effect="plain"
+            style="margin-right: 4px"
+          >
+            {{ capabilityLabel(cap) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="状态" width="70" align="center">
         <template #default="{ row }">
           <el-tag
             :type="row.isActive ? 'success' : 'info'"
@@ -162,16 +209,29 @@ function formatDate(iso: string | undefined): string {
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="更新时间" width="130">
+      <el-table-column label="测试状态" width="100" align="center">
+        <template #default="{ row }">
+          <el-tag
+            v-if="getTestStatus(row.id)"
+            :type="testStatusTagType(getTestStatus(row.id))"
+            size="small"
+            effect="plain"
+          >
+            {{ testStatusText(getTestStatus(row.id)) }}
+          </el-tag>
+          <span v-else style="font-size: 12px; color: var(--text-color-placeholder)">未测试</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="更新时间" width="115">
         <template #default="{ row }">
           <span style="font-size: 12px; color: var(--text-color-secondary)">
             {{ formatDate(row.updatedAt) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="160" fixed="right">
+      <el-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
-          <TableRowActions :actions="modelActions(row)" />
+          <TableRowActions :actions="modelActions(row)" :collapse-at="4" />
         </template>
       </el-table-column>
     </el-table>

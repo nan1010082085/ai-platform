@@ -2,6 +2,8 @@
  * LLM Provider 管理 Store
  *
  * 职责：LLM 提供商、策略、用量管理
+ * 策略随 /llm-providers 一并返回（availableStrategies + defaultStrategy），
+ * 不再单独调用不存在的 /llm-strategies、/llm-strategy 端点。
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -13,8 +15,6 @@ import {
   getLLMProviders,
   switchLLMProvider,
   getLLMUsage,
-  getLLMStrategies,
-  switchLLMStrategy,
 } from '@/api/aiApi'
 
 export const useLLMStore = defineStore('llm', () => {
@@ -32,17 +32,12 @@ export const useLLMStore = defineStore('llm', () => {
     try {
       const data = await getLLMProviders()
       llmProviders.value = data.providers
-      llmDefaultProvider.value = data.default
+      llmDefaultProvider.value = data.defaultProvider
       llmDefaultStrategy.value = data.defaultStrategy
+      llmStrategies.value = data.availableStrategies
     } finally {
       llmLoading.value = false
     }
-  }
-
-  async function loadLLMStrategies(): Promise<void> {
-    const data = await getLLMStrategies()
-    llmStrategies.value = data.strategies
-    llmDefaultStrategy.value = data.default
   }
 
   async function loadLLMUsage(): Promise<void> {
@@ -60,11 +55,6 @@ export const useLLMStore = defineStore('llm', () => {
     }))
   }
 
-  async function switchStrategy(strategy: string | null): Promise<void> {
-    await switchLLMStrategy(strategy)
-    llmDefaultStrategy.value = strategy
-  }
-
   return {
     // state
     llmProviders,
@@ -75,9 +65,7 @@ export const useLLMStore = defineStore('llm', () => {
     llmLoading,
     // actions
     loadLLMProviders,
-    loadLLMStrategies,
     loadLLMUsage,
     switchProvider,
-    switchStrategy,
   }
 })

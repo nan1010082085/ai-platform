@@ -6,6 +6,7 @@
  */
 
 import { request, ApiError } from '@/api/shared/request'
+import type { ModelCapability } from '@schema-platform/platform-shared/ai'
 
 // ---- 类型 ----
 
@@ -22,6 +23,7 @@ export interface Model {
   providerId: string | { _id: string; name: string; type: string; baseUrl: string; isActive: boolean }
   model: string
   parameters: ModelParameters
+  capabilities: ModelCapability[]
   isDefault: boolean
   isActive: boolean
   createdAt: string
@@ -33,6 +35,7 @@ export interface CreateModelPayload {
   providerId: string
   model: string
   parameters?: ModelParameters
+  capabilities?: ModelCapability[]
   isDefault?: boolean
   isActive?: boolean
 }
@@ -42,6 +45,7 @@ export interface UpdateModelPayload {
   providerId?: string
   model?: string
   parameters?: ModelParameters
+  capabilities?: ModelCapability[]
   isDefault?: boolean
   isActive?: boolean
 }

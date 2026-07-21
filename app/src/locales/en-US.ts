@@ -19,7 +19,7 @@ export default {
     logo: 'AI Assistant',
     homeTooltip: 'Back to home',
     homeTitle: 'Back to home',
-    sidebarMode: 'Sidebar mode',
+    settings: 'Settings',
     language: 'Language',
     switchToEn: 'English',
     switchToZh: '中文',

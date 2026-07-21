@@ -1,14 +1,13 @@
 /**
  * AI 应用全局布局
  *
- * 侧边栏导航 + 主内容区。
- * 参考 editor 的 AppLayout 实现。
+ * 顶部导航 + 主内容区（独立站模式）。
+ * /app 容器内由 shell 提供菜单，顶导隐藏。
  */
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled } from '@element-plus/icons-vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import { useShellEmbed } from '@/composables/useShellEmbed'
 import { useAiLocale } from '@/composables/useAiLocale'
@@ -18,12 +17,17 @@ const router = useRouter()
 const { isShellEmbedded, shouldHideSubAppMenu, goToShellHome } = useShellEmbed()
 const { t, locale, toggleLocale } = useAiLocale()
 
-const navItems = computed(() => [
+// 功能项：平铺顶导
+const primaryNav = computed(() => [
   { path: '/', label: t('layout.nav.chat'), icon: 'chat-dot-round' },
   { path: '/workflows', label: t('layout.nav.workflows'), icon: 'connection' },
   { path: '/rag', label: t('layout.nav.rag'), icon: 'notebook' },
   { path: '/plugins', label: t('layout.nav.plugins'), icon: 'box' },
   { path: '/monitor', label: t('layout.nav.monitor'), icon: 'data-line' },
+])
+
+// 设置项：收进右上角下拉
+const settingsNav = computed(() => [
   { path: '/settings/models', label: t('layout.nav.models'), icon: 'connection' },
   { path: '/settings/embedding', label: t('layout.nav.embedding'), icon: 'collection' },
   { path: '/settings/keys', label: t('layout.nav.keys'), icon: 'key' },
@@ -43,56 +47,82 @@ const activeNav = computed(() => {
   if (route.path.startsWith('/debug')) return route.path
   return route.path
 })
+
+const settingsActive = computed(() =>
+  settingsNav.value.some((item) => activeNav.value === item.path),
+)
+
+function handleSettingsSelect(path: string) {
+  router.push(path)
+}
 </script>
 
 <template>
-  <div :class="[$style.layout, shouldHideSubAppMenu && $style.layoutEmbedded]">
-    <!-- 侧边栏：/app 容器内由 shell 提供菜单，此处隐藏 -->
-    <aside v-if="!shouldHideSubAppMenu" :class="$style.sidebar">
-      <div v-if="isShellEmbedded" :class="$style.embedBar">
-        <el-tooltip :content="t('layout.homeTooltip')" placement="right">
+  <div :class="$style.layout">
+    <!-- 顶部导航：/app 容器内由 shell 提供菜单，此处隐藏 -->
+    <header v-if="!shouldHideSubAppMenu" :class="$style.topbar">
+      <div :class="$style.topbarLeft">
+        <el-tooltip v-if="isShellEmbedded" :content="t('layout.homeTooltip')" placement="bottom">
           <button :class="$style.homeBtn" :title="t('layout.homeTitle')" @click="goToShellHome">
-            <el-icon :size="16"><HomeFilled /></el-icon>
+            <AppIcon name="home-filled" :size="18" />
           </button>
         </el-tooltip>
+        <div :class="$style.logo" @click="router.push('/')">
+          <div :class="$style.logoIcon">AI</div>
+          <span :class="$style.logoText">{{ t('layout.logo') }}</span>
+        </div>
       </div>
 
-      <div :class="$style.logo" @click="router.push('/')">
-        <div :class="$style.logoIcon">AI</div>
-        <span :class="$style.logoText">{{ t('layout.logo') }}</span>
-      </div>
-
-      <nav :class="$style.nav">
+      <nav :class="$style.primaryNav">
         <router-link
-          v-for="item in navItems"
+          v-for="item in primaryNav"
           :key="item.path"
           :to="item.path"
           :class="[$style.navItem, activeNav === item.path && $style.navItemActive]"
         >
-          <AppIcon :name="item.icon" :size="18" />
+          <AppIcon :name="item.icon" :size="16" />
           <span>{{ item.label }}</span>
         </router-link>
       </nav>
 
-      <div :class="$style.sidebarFooter">
+      <div :class="$style.topbarRight">
+        <el-dropdown trigger="click" @command="handleSettingsSelect">
+          <span
+            :class="[
+              $style.navItem,
+              $style.settingsTrigger,
+              settingsActive && $style.navItemActive,
+            ]"
+          >
+            <AppIcon name="setting" :size="16" />
+            <span>{{ t('layout.settings') }}</span>
+            <AppIcon name="arrow-down" :size="12" />
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item
+                v-for="item in settingsNav"
+                :key="item.path"
+                :command="item.path"
+              >
+                <AppIcon :name="item.icon" :size="16" />
+                <span :class="$style.dropdownLabel">{{ item.label }}</span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+
         <button
           type="button"
-          :class="[$style.navItem, $style.footerItem, $style.localeBtn]"
+          :class="[$style.navItem, $style.localeBtn]"
           :title="t('layout.language')"
           @click="toggleLocale"
         >
-          <AppIcon name="switch-button" :size="18" />
+          <AppIcon name="switch-button" :size="16" />
           <span>{{ languageLabel }}</span>
         </button>
-        <router-link
-          to="/sidebar"
-          :class="[$style.navItem, $style.footerItem]"
-        >
-          <AppIcon name="list" :size="18" />
-          <span>{{ t('layout.sidebarMode') }}</span>
-        </router-link>
       </div>
-    </aside>
+    </header>
 
     <!-- 主内容区 -->
     <main :class="$style.main">
@@ -104,27 +134,26 @@ const activeNav = computed(() => {
 <style module>
 .layout {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   background: var(--ai-bg-gray, #F5F7FA);
 }
 
-.layoutEmbedded {
-  .main {
-    width: 100%;
-  }
-}
-
-.sidebar {
-  width: 200px;
+.topbar {
+  height: 56px;
   background: var(--ai-bg-white, #FFFFFF);
-  border-right: 1px solid var(--ai-border-base, #D5DDE3);
+  border-bottom: 1px solid var(--ai-border-base, #D5DDE3);
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  padding: 0 20px;
+  gap: 24px;
   flex-shrink: 0;
 }
 
-.embedBar {
-  padding: 12px 12px 0;
+.topbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex-shrink: 0;
 }
 
@@ -149,9 +178,7 @@ const activeNav = computed(() => {
 }
 
 .logo {
-  padding: 20px 20px 16px;
   cursor: pointer;
-  border-bottom: 1px solid var(--ai-bg-gray, #F5F7FA);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -177,25 +204,25 @@ const activeNav = computed(() => {
   letter-spacing: -0.5px;
 }
 
-.nav {
+.primaryNav {
   flex: 1;
-  padding: 8px;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 4px;
 }
 
 .navItem {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 6px;
+  padding: 8px 12px;
   border-radius: 8px;
   font-size: 14px;
   color: var(--ai-text-secondary, #666666);
   text-decoration: none;
   transition: all 0.15s;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .navItem:hover {
@@ -209,25 +236,27 @@ const activeNav = computed(() => {
   font-weight: 500;
 }
 
-.sidebarFooter {
-  padding: 8px;
-  border-top: 1px solid var(--ai-bg-gray, #F5F7FA);
+.topbarRight {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-.footerItem {
-  color: var(--ai-text-hint, #999999);
-  font-size: 12px;
+.settingsTrigger {
+  outline: none;
+}
+
+.dropdownLabel {
+  margin-left: 6px;
 }
 
 .localeBtn {
-  width: 100%;
   border: none;
   background: transparent;
-  text-align: left;
   font: inherit;
+  color: var(--ai-text-hint, #999999);
+  font-size: 12px;
 }
 
 .main {

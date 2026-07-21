@@ -151,10 +151,27 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
     defaultData: {
       label: '图片生成',
       imagePrompt: '{{$input.message}}',
-      imageModel: 'dall-e-3',
+      imageModel: '',
       imageSize: '1024x1024',
       imageStyle: 'vivid',
       imageQuality: 'standard',
+      imageCount: 1,
+    },
+  },
+  {
+    type: 'video-generate',
+    label: '视频生成',
+    icon: 'video-play',
+    category: 'ai',
+    description: '调用 AI 生成短视频（6-15s），节点内置轮询直到完成',
+    defaultData: {
+      label: '视频生成',
+      videoPrompt: '{{$input.message}}',
+      videoModel: '',
+      duration: 8,
+      resolution: '720p',
+      pollIntervalMs: 5000,
+      pollTimeoutMs: 300000,
     },
   },
   {

@@ -19,7 +19,7 @@ export default {
     logo: '智能助手',
     homeTooltip: '返回主应用首页',
     homeTitle: '返回主应用',
-    sidebarMode: '侧边栏模式',
+    settings: '设置',
     language: '语言',
     switchToEn: 'English',
     switchToZh: '中文',

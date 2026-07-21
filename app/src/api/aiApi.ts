@@ -198,7 +198,7 @@ export type ExportFormat = 'json' | 'markdown' | 'html'
 
 export async function downloadConversation(id: string, format: ExportFormat): Promise<void> {
   const blob = await requestBlob(
-    `/ai/conversations/${encodeURIComponent(id)}/export?format=${format}`,
+    `/ai/collaboration/conversations/${encodeURIComponent(id)}/export?format=${format}`,
   )
   triggerBlobDownload(blob, `conversation-${id}.${format === 'markdown' ? 'md' : format}`)
 }
@@ -517,8 +517,9 @@ export interface LLMProviderInfo {
 
 export interface LLMProvidersResponse {
   providers: LLMProviderInfo[]
-  default: string
+  defaultProvider: string
   defaultStrategy: string | null
+  availableStrategies: string[]
 }
 
 export async function getLLMProviders(): Promise<LLMProvidersResponse> {
@@ -549,23 +550,6 @@ export interface LLMAggregatedUsage {
 export async function getLLMUsage(provider?: string): Promise<LLMAggregatedUsage | { provider: string; usage: UsageStats }> {
   const query = provider ? `?provider=${encodeURIComponent(provider)}` : ''
   return request(`/ai/llm-usage${query}`)
-}
-
-export interface LLMStrategiesResponse {
-  strategies: string[]
-  default: string | null
-}
-
-export async function getLLMStrategies(): Promise<LLMStrategiesResponse> {
-  return request<LLMStrategiesResponse>('/ai/llm-strategies')
-}
-
-export async function switchLLMStrategy(strategy: string | null): Promise<{ strategy: string | null; message: string }> {
-  return request<{ strategy: string | null; message: string }>('/ai/llm-strategy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ strategy }),
-  })
 }
 
 // ---- 版本历史 ----

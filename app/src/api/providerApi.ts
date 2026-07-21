@@ -7,6 +7,7 @@
  */
 
 import { request } from '@/api/shared/request'
+import type { ModelCapability } from '@schema-platform/platform-shared/ai'
 
 // ---- 类型 ----
 
@@ -77,6 +78,7 @@ export interface Model {
   providerId: string
   model: string
   parameters: ModelParameters
+  capabilities: ModelCapability[]
   isDefault: boolean
   isActive: boolean
   createdAt: string

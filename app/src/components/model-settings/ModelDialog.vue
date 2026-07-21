@@ -9,12 +9,14 @@ import {
   type RemoteModelItem,
 } from '@/api/providerApi'
 import type { ModelParameters } from '@/api/modelApi'
+import type { ModelCapability } from '@schema-platform/platform-shared/ai'
 import styles from '@/views/ModelSettingsView.module.scss'
 
 export interface ModelFormState {
   name: string
   model: string
   parameters: ModelParameters
+  capabilities: ModelCapability[]
   isDefault: boolean
   isActive: boolean
 }
@@ -34,10 +36,18 @@ const emit = defineEmits<{
   submit: [form: ModelFormState & { providerId?: string }]
 }>()
 
+const CAPABILITY_OPTIONS: Array<{ value: ModelCapability; label: string; desc: string }> = [
+  { value: 'chat', label: '对话', desc: '文本对话 / LLM 推理' },
+  { value: 'image', label: '图像生成', desc: '文生图' },
+  { value: 'video', label: '视频生成', desc: '文生视频' },
+  { value: 'audio', label: '音频', desc: '语音 / 转录' },
+]
+
 const form = ref<ModelFormState>({
   name: '',
   model: '',
   parameters: { temperature: 0.7, maxTokens: 4096 },
+  capabilities: ['chat'],
   isDefault: false,
   isActive: true,
 })
@@ -69,6 +79,7 @@ watch(modelValue, (isOpen) => {
     name: props.initialForm.name,
     model: props.initialForm.model,
     parameters: { ...props.initialForm.parameters },
+    capabilities: [...props.initialForm.capabilities],
     isDefault: props.initialForm.isDefault,
     isActive: props.initialForm.isActive,
   }
@@ -135,6 +146,10 @@ function handleSubmit(): void {
   }
   if (!form.value.model.trim()) {
     ElMessage.warning('请输入模型标识')
+    return
+  }
+  if (!form.value.capabilities || form.value.capabilities.length === 0) {
+    ElMessage.warning('请至少选择一项模型能力')
     return
   }
   emit('submit', { ...form.value })
@@ -286,6 +301,24 @@ function handleSubmit(): void {
           style="width: 100%"
           placeholder="可选"
         />
+      </el-form-item>
+      <el-form-item label="模型能力">
+        <el-checkbox-group v-model="form.capabilities">
+          <el-checkbox
+            v-for="opt in CAPABILITY_OPTIONS"
+            :key="opt.value"
+            :value="opt.value"
+            :label="opt.value"
+          >
+            {{ opt.label }}
+            <span style="font-size: 12px; color: var(--text-color-secondary)">
+              （{{ opt.desc }}）
+            </span>
+          </el-checkbox>
+        </el-checkbox-group>
+        <span style="font-size: 12px; color: var(--text-color-secondary)">
+          节点选模型时按能力过滤；至少选一项
+        </span>
       </el-form-item>
       <div :class="styles.formRow">
         <el-form-item label="设为默认">

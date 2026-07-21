@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue'
+import { computed, watch, ref, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas.vue'
@@ -26,6 +26,9 @@ const emit = defineEmits<{
 const store = useAgentWorkflowDesignerStore()
 const { nodes } = storeToRefs(store)
 const savedGraph = ref<AgentWorkflowGraph | null>(null)
+/** Mount canvas only after dialog layout + graph load — avoids blank VueFlow pane. */
+const canvasReady = ref(false)
+const previewEpoch = ref(0)
 
 const nodeSummaries = computed(() =>
   nodes.value.map((node) => {
@@ -40,6 +43,7 @@ const nodeSummaries = computed(() =>
 )
 
 function restoreStoreGraph() {
+  canvasReady.value = false
   if (savedGraph.value) {
     store.loadGraph(savedGraph.value)
   } else {
@@ -58,12 +62,29 @@ function loadPreviewGraph() {
   store.selectNode(null)
 }
 
+async function openPreview() {
+  if (!props.template) return
+  canvasReady.value = false
+  loadPreviewGraph()
+  previewEpoch.value += 1
+  // Wait for el-dialog layout so VueFlow gets non-zero container size
+  await nextTick()
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      setTimeout(resolve, 120)
+    })
+  })
+  if (props.modelValue && props.template) {
+    canvasReady.value = true
+  }
+}
+
 watch(
-  () => props.modelValue,
-  (visible, prevVisible) => {
+  () => [props.modelValue, props.template?.id] as const,
+  ([visible], [wasVisible]) => {
     if (visible && props.template) {
-      loadPreviewGraph()
-    } else if (prevVisible && !visible) {
+      void openPreview()
+    } else if (wasVisible && !visible) {
       restoreStoreGraph()
     }
   },
@@ -93,9 +114,12 @@ function onUse() {
       <div :class="styles.layout">
         <div :class="styles.canvasWrap">
           <AgentWorkflowCanvas
+            v-if="canvasReady"
+            :key="`preview-${template.id}-${previewEpoch}`"
             read-only
             canvas-id="agent-workflow-template-preview"
           />
+          <div v-else :class="styles.canvasPlaceholder">加载预览画布…</div>
         </div>
         <aside :class="styles.nodeList">
           <h4 :class="styles.nodeListTitle">节点清单（{{ nodeSummaries.length }}）</h4>
