@@ -1,0 +1,22 @@
+.nodeInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  border-radius: var(--radius-small);
+  color: var(--color-warning);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.prompt {
+  padding: 12px;
+  margin-bottom: 12px;
+  background: var(--bg-color-page);
+  border-radius: var(--radius-small);
+  font-size: 14px;
+  color: var(--text-color-primary);
+  line-height: 1.6;
+}

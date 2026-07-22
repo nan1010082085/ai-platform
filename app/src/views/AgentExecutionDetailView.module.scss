@@ -183,50 +183,6 @@
   font-size: 12px;
 }
 
-// ---- 节点记录 ----
-.recordItem {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  cursor: pointer;
-  border-bottom: 1px solid var(--border-color-extra-light, #f2f3f5);
-  transition: background 0.15s;
-
-  &:hover {
-    background: var(--bg-color-page);
-  }
-}
-
-.recordItemActive {
-  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
-}
-
-.recordText {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.recordName {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-color-primary);
-}
-
-.recordType {
-  font-size: 11px;
-  color: var(--text-color-secondary);
-}
-
-.recordMs {
-  font-size: 11px;
-  color: var(--text-color-placeholder);
-  font-family: var(--font-family-mono, monospace);
-  flex-shrink: 0;
-}
-
 // ---- 日志 ----
 .logEntry {
   display: flex;
@@ -256,30 +212,6 @@
 .logMsg {
   color: var(--text-color-primary);
   word-break: break-all;
-}
-
-// ---- HITL dialog ----
-.hitlNodeInfo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
-  border-radius: var(--radius-small);
-  color: var(--color-warning);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.hitlPrompt {
-  padding: 12px;
-  margin-bottom: 12px;
-  background: var(--bg-color-page);
-  border-radius: var(--radius-small);
-  font-size: 14px;
-  color: var(--text-color-primary);
-  line-height: 1.6;
 }
 
 // ---- Slide-up transition (global classes for Vue <transition>) ----

@@ -45,6 +45,8 @@ export default {
     manageWorkflows: 'Manage workflows',
     chatSettings: 'Chat settings',
     clearChat: 'Clear chat',
+    newConversation: 'New chat',
+    conversationHistory: 'Conversation history',
     emptyTitle: 'Start a new conversation',
     emptySub: 'Describe the form, page, or workflow you want to generate',
     suggestions: 'Smart suggestions',

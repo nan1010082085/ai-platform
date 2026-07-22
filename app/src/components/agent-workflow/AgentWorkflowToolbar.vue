@@ -106,7 +106,7 @@
       <el-dropdown trigger="click" @command="handleSaveCommand">
         <el-button size="small" :class="styles.saveBtn" :loading="saving">
           <span>{{ saving ? '保存中...' : '保存' }}</span>
-          <el-icon :size="12"><ArrowDown /></el-icon>
+          <AppIcon name="arrow-down" :size="12" />
         </el-button>
         <template #dropdown>
           <el-dropdown-menu>
@@ -130,8 +130,8 @@
       >
         Chat
       </el-button>
-      <el-button size="small" type="primary" plain :loading="executing" @click="$emit('execute')">
-        执行
+      <el-button size="small" type="primary" plain :loading="executing" @click="$emit('debug')">
+        调试
       </el-button>
     </div>
   </div>
@@ -140,7 +140,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowDown } from '@element-plus/icons-vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import { EDGE_LINE_STYLE_OPTIONS, type EdgeLineStyle } from '@/types/edgeLineStyle'
@@ -170,6 +169,7 @@ const emit = defineEmits<{
   save: []
   publish: []
   execute: []
+  debug: []
   'chat-test': []
   validate: []
   executions: []

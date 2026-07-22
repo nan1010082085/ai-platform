@@ -4,6 +4,7 @@
  * 支持 GLTF/GLB/OBJ/STL/FBX 格式，使用 Google model-viewer Web Component。
  */
 import { ref, computed, onMounted } from 'vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 const props = defineProps<{
   url: string
@@ -47,18 +48,18 @@ onMounted(() => {
         @error="error = '加载失败'"
       >
         <div v-if="!loaded && !error" slot="poster" class="loading-hint">
-          <el-icon class="is-loading" :size="24"><loading /></el-icon>
+          <AppIcon name="loading" :size="24" class="spin" />
           <span>加载 3D 模型中...</span>
         </div>
         <div v-if="error" class="error-hint">
-          <el-icon :size="24"><warning-filled /></el-icon>
+          <AppIcon name="warning-filled" :size="24" />
           <span>{{ error }}</span>
         </div>
       </model-viewer>
     </div>
     <div v-if="!error" class="three-preview-actions">
       <el-button size="small" text :href="url" download>
-        <el-icon><download /></el-icon>
+        <AppIcon name="download" :size="14" />
         下载
       </el-button>
     </div>
@@ -110,6 +111,12 @@ onMounted(() => {
 }
 .error-hint {
   color: var(--el-color-danger);
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 .three-preview-actions {
   padding: 4px 12px 8px;

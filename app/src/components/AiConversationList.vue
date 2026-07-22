@@ -2,9 +2,9 @@
 import { message } from '@schema-platform/platform-shared/utils/message'
 import { downloadConversation } from '@/api/aiApi'
 import AiConversationSearch from './AiConversationSearch.vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import type { Conversation } from '@/types'
 import type { ExportFormat } from '@/api/aiApi'
-import { Plus, Download, Delete } from '@element-plus/icons-vue'
 
 export interface AiConversationListProps {
   conversations: Conversation[]
@@ -41,7 +41,9 @@ async function handleExport(command: string, id: string): Promise<void> {
     <div :class="$style.header">
       <span :class="$style.title">对话列表</span>
       <el-tooltip content="新建对话" placement="top">
-        <el-button size="small" :icon="Plus" @click="emit('new-conversation')" />
+        <el-button size="small" @click="emit('new-conversation')">
+          <AppIcon name="plus" :size="14" />
+        </el-button>
       </el-tooltip>
     </div>
 
@@ -64,7 +66,9 @@ async function handleExport(command: string, id: string): Promise<void> {
           <span :class="$style.itemTime">{{ formatTime(conv.updatedAt) }}</span>
           <el-dropdown trigger="click" @command="(cmd: string) => handleExport(cmd, conv.id)" @click.stop>
             <el-tooltip content="导出对话" placement="top">
-              <el-button :icon="Download" size="small" link @click.stop />
+              <el-button size="small" link @click.stop>
+                <AppIcon name="download" :size="14" />
+              </el-button>
             </el-tooltip>
             <template #dropdown>
               <el-dropdown-menu>
@@ -75,7 +79,9 @@ async function handleExport(command: string, id: string): Promise<void> {
             </template>
           </el-dropdown>
           <el-tooltip content="删除对话" placement="top">
-            <el-button :icon="Delete" size="small" link type="danger" @click.stop="emit('delete', conv.id)" />
+            <el-button size="small" link type="danger" @click.stop="emit('delete', conv.id)">
+              <AppIcon name="delete" :size="14" />
+            </el-button>
           </el-tooltip>
         </div>
       </div>

@@ -9,7 +9,7 @@
  */
 
 import { computed } from 'vue'
-import { Loading } from '@element-plus/icons-vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import type { AIVersion } from '@/types'
 
 export interface AiVersionListProps {
@@ -57,7 +57,7 @@ function getTypeColor(type: AIVersion['type']): string {
 
     <!-- Loading state -->
     <div v-if="loading" :class="$style.loading" data-testid="loading">
-      <el-icon :class="$style.loadingIcon"><Loading /></el-icon>
+      <AppIcon name="loading" :size="14" :class="$style.loadingIcon" />
       <span>加载中...</span>
     </div>
 

@@ -1,6 +1,6 @@
 # AI 平台 — 未完成任务与进度
 
-> 最后更新：**2026-07-16** · **全量任务索引**见 [open-platform-roadmap.md § 七](./open-platform-roadmap.md#七全量任务索引) · 可执行拆解见 [open-source-iteration.md](./open-source-iteration.md) · **LangGraph→Workflow 对话节点**见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md)
+> 最后更新：**2026-07-22** · **全量任务索引**见 [open-platform-roadmap.md § 七](./open-platform-roadmap.md#七全量任务索引) · 可执行拆解见 [open-source-iteration.md](./open-source-iteration.md) · **LangGraph→Workflow 对话节点**见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md) · **Workflow-as-Agent 演进**见 [evolution-plan-2026-07-22-workflow-as-agent.md](./evolution-plan-2026-07-22-workflow-as-agent.md)
 
 **已完成总览**：[ai-five-phase-iteration.md](./ai-five-phase-iteration.md) · [plugin.md](../plugin.md) · [platform.md](../platform.md)
 
@@ -27,11 +27,18 @@
 | Phase I — 可选技术债 | **100%** |
 | **Phase J** — LangGraph 对话节点白盒化 | **100%** |
 | **Phase K** — Provider/Model 两级结构 | **100%** |
-| **Phase L** — 消息组件化重构 | **100%**（L-5 模板已瘦身，脚本保留类型定义） |
+| **Phase L** — 消息组件化重构 | **100%** |
 | **Phase M** — Chat 预览增强 | **100%** |
-| **Phase P** — 节点能力细化与体验修补 | **100%**（P-1 ✅ 文档解析可配模型、P-2 ✅ 模板预览、P-3 ✅） |
 | **Phase N** — 功能补全 | **50%**（N-1 ✅、N-2 ✅、N-3 ✅ 插件编辑） |
-| **Phase O** — 能力层细化 | **100%**（全部完成） |
+| **Phase O** — 能力层细化 | **100%** |
+| **Phase P** — 节点能力细化与体验修补 | **100%** |
+| **Phase P2** — UI 规范固化 | **100%**（双层标题 / 操作列 / 图标 / PageHeader） |
+| **Phase Q** — Workflow 调试界面 | **100%**（WorkflowDebugView + NodeTraceList） |
+| **Phase R** — agent-loop 节点 | **100%**（LLM 自主循环 + runAgentLoop + 4 测试） |
+| **Phase S** — workflow 可路由技能 | **100%**（routingKeywords + chat 建议条） |
+| **Phase T** — 复杂文件组件化 | **50%**（T-1/T-3/T-4 ✅；T-2/T-5/T-6 待做） |
+| **Phase U** — 智能体深化 | **0%**（U-1~U-4 待做） |
+| **Phase V** — 智能体自动路由 | **0%**（V-1~V-4 待做） |
 
 ---
 
@@ -200,6 +207,41 @@
 ---
 
 ## 迭代日志
+
+### 2026-07-22 — Phase P2 + Q + R + S + 审查修复
+
+**Phase P2 — UI 规范固化**
+- 双层标题修复：删 AiChatView 冗余顶栏，按钮并入 AiChatPanel header
+- TableRowActions 组件化：行内文字按钮去 icon + gap 12px
+- 图标违规清理：7 文件改用 AppIcon，iconRegistry 新增 filter/warning-filled
+- PageHeader 组件：统一 7 个界面 header
+- 路由调试界面 UI 风格对齐
+
+**Phase Q — Workflow 调试界面**
+- NodeTraceList 组件抽取（AgentExecutionDetailView 节点轨迹逻辑）
+- WorkflowDebugView.vue：独立 workflow 调用测试，草稿可测，节点级轨迹
+- designer 工具栏"调试"入口，下线旧"手动测试执行"
+
+**Phase R — agent-loop 节点（Workflow-as-Agent 核心）**
+- 类型：AgentNodeType 加 'agent-loop'；AgentWorkflowNodeData 加 agentLoop 字段
+- 执行器：agentWorkflowExecutor.ts 加 agent-loop case，LLM bindTools 自主循环
+- 前端面板：AgentLoopNodePanel.vue（模型/迭代/输入来源/系统提示/工具多选）
+- palette + 面板注册 + 校验
+- runAgentLoop 提取为导出函数 + 4 个单元测试
+
+**Phase S — workflow 可路由技能（非侵入式）**
+- AgentWorkflow schema 加 routingKeywords 字段
+- POST /ai/debug/route-workflow 匹配 API
+- designer 属性面板加路由关键词配置
+- useWorkflowSuggestion composable + AiChatPanel 输入区建议条
+
+**审查修复**
+- agent-loop：工具失败时不中途设 finalText；跳过无效 tool_call
+- WorkflowDebugView：routeToExecution 先 unsubscribe；执行后清 pendingFile
+- AiChatPanel：selectedWorkflowId 变化时清 workflow 建议
+- 新增 agentWorkflowAgentLoop.spec.ts（4 测试）
+
+**测试**：ai/app 680 过，server agent-loop 4 + executorNewNodes 26 过，tsc 干净
 
 ### 2026-07-16（P2 完成）
 

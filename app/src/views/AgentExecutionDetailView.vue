@@ -3,11 +3,11 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
-import HitlConfirmQuestions from '@/components/agent-workflow/HitlConfirmQuestions.vue'
 import AgentNodeExecutionDetail from '@/components/agent-workflow/AgentNodeExecutionDetail.vue'
-import type { AgentHitlConfirmQuestion, AgentNodeRecord, AgentWorkflowExecution, AgentWorkflowGraph, AgentWorkflowNodeData } from '@/types/agentWorkflow'
+import NodeTraceList, { NODE_STATUS_TAG_TYPE, NODE_STATUS_LABELS } from '@/components/agent-workflow/NodeTraceList.vue'
+import ExecutionHITLDialog from '@/components/agent-workflow/ExecutionHITLDialog.vue'
+import type { AgentNodeRecord, AgentWorkflowExecution, AgentWorkflowGraph, AgentWorkflowNodeData } from '@/types/agentWorkflow'
 import { useAgentWorkflowDesignerStore } from '@/stores/agentWorkflowDesigner'
 import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas.vue'
 import * as api from '@/api/agentWorkflowApi'
@@ -24,11 +24,7 @@ const activeTab = ref<'records' | 'logs' | 'detail'>('records')
 const panelOpen = ref(true)
 const panelExpanded = ref(false)
 const hitlDialogVisible = ref(false)
-const hitlComment = ref('')
-const hitlAction = ref<'approve' | 'reject'>('approve')
-const hitlSubmitting = ref(false)
-const hitlAnswers = ref<Record<string, string>>({})
-const hitlQuestionsRef = ref<InstanceType<typeof HitlConfirmQuestions> | null>(null)
+const hitlDialog = ref<InstanceType<typeof ExecutionHITLDialog> | null>(null)
 const cancelling = ref(false)
 let unsubscribeWorkflow: (() => void) | null = null
 
@@ -41,34 +37,6 @@ const tabOptions = [
   { label: '日志', value: 'logs' },
   { label: '节点详情', value: 'detail' },
 ]
-
-const statusIcon: Record<string, string> = {
-  running: 'loading',
-  success: 'circle-check',
-  error: 'circle-close',
-  waiting: 'clock',
-  skipped: 'minus',
-  pending: 'more',
-}
-
-type TagType = 'success' | 'info' | 'warning' | 'danger' | 'primary'
-const statusType: Record<string, TagType> = {
-  running: 'primary',
-  success: 'success',
-  error: 'danger',
-  waiting: 'warning',
-  cancelled: 'info',
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: '等待',
-  running: '执行中',
-  success: '成功',
-  error: '失败',
-  skipped: '跳过',
-  waiting: '待确认',
-  cancelled: '已取消',
-}
 
 async function load() {
   const data = await api.getExecution(executionId())
@@ -106,52 +74,14 @@ function onCanvasNodeClick(nodeId: string) {
   }
 }
 
-async function confirmHitl() {
-  if (hitlAction.value === 'approve' && hitlQuestions.value.length > 0) {
-    const canConfirm = hitlQuestionsRef.value?.canConfirm ?? false
-    if (!canConfirm) {
-      ElMessage.warning('请先回答所有必填问题')
-      return
-    }
-  }
-
-  hitlSubmitting.value = true
-  try {
-    const approved = hitlAction.value === 'approve'
-    await api.resumeExecution(executionId(), {
-      approved,
-      comment: hitlComment.value,
-      answers: hitlAnswers.value,
-    })
-    ElMessage.success(approved ? '已确认继续' : '已拒绝')
-    hitlDialogVisible.value = false
-    hitlComment.value = ''
-    hitlAnswers.value = {}
-    await load()
-    startWorkflowWatch()
-  } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : '操作失败')
-  } finally {
-    hitlSubmitting.value = false
-  }
-}
-
 function openHitlDialog(action: 'approve' | 'reject') {
-  hitlAction.value = action
-  initHitlAnswers()
+  hitlDialog.value?.setAction(action)
   hitlDialogVisible.value = true
 }
 
-function initHitlAnswers() {
-  const next: Record<string, string> = {}
-  for (const q of hitlQuestions.value) {
-    next[q.id] = hitlAnswers.value[q.id] ?? ''
-  }
-  hitlAnswers.value = next
-}
-
-async function rejectHitl() {
-  openHitlDialog('reject')
+async function onHitlResolved() {
+  await load()
+  startWorkflowWatch()
 }
 
 function applyExecutionUpdate(data: AgentWorkflowExecution) {
@@ -243,36 +173,6 @@ const waitingRecord = computed(() =>
   execution.value?.nodeRecords.find((r) => r.status === 'waiting') ?? null,
 )
 
-const hitlConfirmMessage = computed(() => {
-  const output = waitingRecord.value?.output as Record<string, unknown> | undefined
-  return (output?.message as string) ?? '请确认是否继续执行'
-})
-
-const hitlQuestions = computed((): AgentHitlConfirmQuestion[] => {
-  const output = waitingRecord.value?.output as Record<string, unknown> | undefined
-  const raw = output?.confirmQuestions
-  if (!Array.isArray(raw)) return []
-  return raw
-    .filter((q): q is Record<string, unknown> => q != null && typeof q === 'object')
-    .map((q, i) => ({
-      id: String(q.id ?? `q${i + 1}`),
-      question: String(q.question ?? ''),
-      options: Array.isArray(q.options) ? q.options.map(String) : undefined,
-      required: q.required !== false,
-    }))
-    .filter((q) => q.question.trim())
-})
-
-const hitlDialogWidth = computed(() => (hitlQuestions.value.length > 0 ? '560px' : '460px'))
-
-const canSubmitHitl = computed(() => {
-  if (hitlAction.value === 'reject') return true
-  if (hitlQuestions.value.length === 0) return true
-  return hitlQuestions.value
-    .filter((q) => q.required !== false)
-    .every((q) => hitlAnswers.value[q.id]?.trim())
-})
-
 watch(
   () => execution.value?.status,
   (status) => {
@@ -314,7 +214,7 @@ const logEntries = computed<LogEntry[]>(() => {
         message:
           r.status === 'error'
             ? `[${r.nodeName}] 执行失败${suffix}${r.error ? '：' + r.error : ''}`
-            : `[${r.nodeName}] ${STATUS_LABELS[r.status] ?? r.status}${suffix}`,
+            : `[${r.nodeName}] ${NODE_STATUS_LABELS[r.status] ?? r.status}${suffix}`,
       })
     }
   }
@@ -369,8 +269,8 @@ function togglePanelExpand() {
             {{ execution.id }} · v{{ execution.version }} · {{ getExecutionTriggerLabel(execution.trigger) }} · {{ durationLabel }}
           </span>
         </div>
-        <el-tag size="small" :type="statusType[execution.status] ?? 'info'">
-          {{ STATUS_LABELS[execution.status] ?? execution.status }}
+        <el-tag size="small" :type="NODE_STATUS_TAG_TYPE[execution.status] ?? 'info'">
+          {{ NODE_STATUS_LABELS[execution.status] ?? execution.status }}
         </el-tag>
       </div>
 
@@ -397,7 +297,7 @@ function togglePanelExpand() {
           停止执行
         </el-button>
         <template v-if="execution.status === 'waiting'">
-          <el-button size="small" type="danger" plain @click="rejectHitl">
+          <el-button size="small" type="danger" plain @click="openHitlDialog('reject')">
             拒绝
           </el-button>
           <el-button type="primary" size="small" @click="openHitlDialog('approve')">
@@ -438,22 +338,11 @@ function togglePanelExpand() {
         <div :class="styles.panelContent">
           <!-- 节点记录 -->
           <template v-if="activeTab === 'records'">
-            <div v-if="!execution.nodeRecords.length" :class="styles.empty">暂无节点记录</div>
-            <div
-              v-for="record in execution.nodeRecords"
-              :key="`${record.nodeId}-${record.startedAt}`"
-              :class="[styles.recordItem, selectedRecord?.nodeId === record.nodeId && styles.recordItemActive]"
-              @click="selectRecord(record)"
-            >
-              <AppIcon :name="statusIcon[record.status] ?? 'connection'" :size="14" />
-              <div :class="styles.recordText">
-                <span :class="styles.recordName">{{ record.nodeName }}</span>
-                <span :class="styles.recordType">{{ record.nodeType }} · {{ STATUS_LABELS[record.status] ?? record.status }}</span>
-              </div>
-              <span v-if="record.durationMs != null" :class="styles.recordMs">
-                {{ record.durationMs < 1000 ? `${record.durationMs}ms` : `${(record.durationMs / 1000).toFixed(2)}s` }}
-              </span>
-            </div>
+            <NodeTraceList
+              :records="execution.nodeRecords"
+              :selected-node-id="selectedRecord?.nodeId"
+              @select="selectRecord"
+            />
           </template>
 
           <!-- 日志 -->
@@ -487,43 +376,13 @@ function togglePanelExpand() {
     </transition>
 
     <!-- HITL 人工确认弹框 -->
-    <AppDialog
-      v-model="hitlDialogVisible"
-      :title="hitlAction === 'approve' ? '人工确认 — 继续' : '人工确认 — 拒绝'"
-      :width="hitlDialogWidth"
-      :show-fullscreen-btn="false"
-      :close-on-click-modal="false"
-    >
-      <div v-if="waitingRecord" :class="styles.hitlNodeInfo">
-        <AppIcon name="bell" :size="16" />
-        <span>{{ waitingRecord.nodeName }}</span>
-      </div>
-      <div :class="styles.hitlPrompt">{{ hitlConfirmMessage }}</div>
-
-      <HitlConfirmQuestions
-        v-if="hitlQuestions.length > 0 && hitlAction === 'approve'"
-        ref="hitlQuestionsRef"
-        v-model:answers="hitlAnswers"
-        :questions="hitlQuestions"
-      />
-
-      <el-input
-        v-model="hitlComment"
-        type="textarea"
-        :rows="3"
-        :placeholder="hitlAction === 'approve' ? '审批备注（可选）' : '拒绝原因（可选）'"
-      />
-      <template #footer>
-        <el-button @click="hitlDialogVisible = false">取消</el-button>
-        <el-button
-          :type="hitlAction === 'approve' ? 'primary' : 'danger'"
-          :loading="hitlSubmitting"
-          :disabled="hitlAction === 'approve' && !canSubmitHitl"
-          @click="confirmHitl"
-        >
-          {{ hitlAction === 'approve' ? '确认继续' : '确认拒绝' }}
-        </el-button>
-      </template>
-    </AppDialog>
+    <ExecutionHITLDialog
+      ref="hitlDialog"
+      v-model:visible="hitlDialogVisible"
+      :waiting-record="waitingRecord"
+      :execution-id="executionId()"
+      @resolved="onHitlResolved"
+    />
   </div>
 </template>
+

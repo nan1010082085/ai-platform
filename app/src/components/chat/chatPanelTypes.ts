@@ -52,6 +52,8 @@ export type AiChatPanelEmits = {
   'card-primary-action': [messageIndex: number, cardIndex: number]
   'card-secondary-action': [messageIndex: number, cardIndex: number]
   'open-settings': []
+  'new-conversation': []
+  'open-conversation-history': []
   'rag-search': [query: string]
   'rag-select': [item: RagSearchResult]
   'rag-remove': [id: string]
@@ -65,4 +67,5 @@ export type AiChatPanelEmits = {
   'requirement-skip': []
   'suggestion-accept': [id: string]
   'suggestion-dismiss': [id: string]
+  'workflow-auto-switched': [name: string]
 }

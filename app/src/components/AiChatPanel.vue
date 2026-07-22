@@ -15,6 +15,7 @@ import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkf
 import { useShellEmbed } from '@/composables/useShellEmbed'
 import { useSmartSuggestions } from '@/composables/useSmartSuggestions'
 import { useChatAttachments } from '@/composables/useChatAttachments'
+import { useWorkflowSuggestion } from '@/composables/useWorkflowSuggestion'
 import { DOCUMENT_UPLOAD_ACCEPT, DOCUMENT_FORMAT_LABEL } from '@schema-platform/platform-shared/ai'
 import {
   AI_CHAT_PANEL_DEFAULTS,
@@ -85,6 +86,10 @@ watch(workflowPickerVisible, (visible) => {
 
 const currentStreamStatus = computed(() => props.streamStatus ?? 'idle')
 
+watch(selectedWorkflowId, (id) => {
+  if (id) workflowSuggestion.clear()
+})
+
 const selectedAgentLabel = computed(() => {
   if (selectedWorkflowId.value) {
     return selectedWorkflowName.value ?? t('chat.selectedWorkflow')
@@ -115,8 +120,40 @@ const {
   takeDoneAttachments,
 } = useChatAttachments(() => mentionInputRef.value?.focus())
 
+const workflowSuggestion = useWorkflowSuggestion()
+
+let autoSwitchedWorkflowId: string | null = null
+
+function onInputChange(text: string): void {
+  if (typeof text !== 'string') return
+  if (selectedWorkflowId.value) {
+    workflowSuggestion.clear()
+    return
+  }
+  workflowSuggestion.checkOnInput(text)
+  // 强匹配（score >= 2）自动切换
+  if (workflowSuggestion.autoSwitchReady.value && workflowSuggestion.suggestedWorkflow.value) {
+    const wf = workflowSuggestion.suggestedWorkflow.value
+    if (autoSwitchedWorkflowId !== wf.id) {
+      autoSwitchedWorkflowId = wf.id
+      selectedWorkflowId.value = wf.id
+      workflowSuggestion.clear()
+      emit('workflow-auto-switched', wf.name)
+    }
+  }
+}
+
+function applySuggestion(): void {
+  const match = workflowSuggestion.suggestedWorkflow.value
+  if (match) {
+    selectedWorkflowId.value = match.id
+    workflowSuggestion.clear()
+  }
+}
+
 function handleMentionSend(text: string, mentions?: MentionReference[]): void {
   if ((!text && pendingAttachments.value.length === 0) || props.disabled) return
+  workflowSuggestion.clear()
   const attachmentMeta = takeDoneAttachments()
   emit('send', text, selectedAgent.value, mentions, attachmentMeta.length > 0 ? attachmentMeta : undefined)
 }
@@ -161,6 +198,11 @@ function handleSelectStarterAgent(agent: AgentType): void {
         </span>
       </div>
       <div :class="$style.headerActions">
+        <el-tooltip :content="t('chat.conversationHistory')" placement="bottom" :show-after="300">
+          <button :class="$style.actionBtn" @click="emit('open-conversation-history')">
+            <AppIcon name="clock" :size="14" />
+          </button>
+        </el-tooltip>
         <el-popover
           v-model:visible="workflowPickerVisible"
           placement="bottom-end"
@@ -199,6 +241,11 @@ function handleSelectStarterAgent(agent: AgentType): void {
         <el-tooltip :content="t('chat.clearChat')" placement="bottom" :show-after="300">
           <button :class="$style.actionBtn" @click="emit('clear-messages')">
             <AppIcon name="delete" :size="14" />
+          </button>
+        </el-tooltip>
+        <el-tooltip :content="t('chat.newConversation')" placement="bottom" :show-after="300">
+          <button :class="[$style.actionBtn, $style.newConversationBtn]" @click="emit('new-conversation')">
+            <AppIcon name="plus" :size="14" />
           </button>
         </el-tooltip>
       </div>
@@ -284,7 +331,17 @@ function handleSelectStarterAgent(agent: AgentType): void {
           :loading="loading"
           :placeholder="inputPlaceholder"
           @send="handleMentionSend"
+          @input="onInputChange"
         />
+        <div
+          v-if="workflowSuggestion.suggestedWorkflow.value && !selectedWorkflowId"
+          :class="$style.workflowSuggestion"
+        >
+          <AppIcon name="set-up" :size="14" />
+          <span>检测到「{{ workflowSuggestion.suggestedWorkflow.value.name }}」工作流可能适用</span>
+          <el-button link type="primary" size="small" @click="applySuggestion">使用</el-button>
+          <el-button link size="small" @click="workflowSuggestion.clear()">忽略</el-button>
+        </div>
         <div :class="$style.inputFooter">
           <div :class="$style.inputHint">
             <template v-if="loading">

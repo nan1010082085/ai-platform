@@ -45,6 +45,8 @@ export default {
     manageWorkflows: '管理工作流',
     chatSettings: '对话设置',
     clearChat: '清空对话',
+    newConversation: '新对话',
+    conversationHistory: '对话历史',
     emptyTitle: '开始一段新对话',
     emptySub: '描述你想生成的表单、页面或流程',
     suggestions: '智能建议',

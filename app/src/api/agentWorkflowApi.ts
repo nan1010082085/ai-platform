@@ -43,6 +43,7 @@ export function updateWorkflow(
     slug?: string
     onCompleteWebhook?: { url: string; secret?: string } | null
     draftGraph?: AgentWorkflowGraph
+    routingKeywords?: string[]
   },
 ): Promise<AgentWorkflowDetail> {
   return request(`/ai/workflows/${id}`, {
@@ -133,5 +134,23 @@ export function cancelExecution(
   return request(`/ai/workflow-executions/${id}/cancel`, {
     method: 'POST',
     body: reason ? { reason } : {},
+  })
+}
+
+export interface WorkflowRouteMatch {
+  id: string
+  name: string
+  slug: string | null
+  description: string
+  score: number
+  matchedKeywords: string[]
+}
+
+/** 按消息匹配已发布工作流的 routingKeywords（chat 意图建议） */
+export function matchWorkflowByMessage(message: string): Promise<{ matched: WorkflowRouteMatch[] }> {
+  return request('/ai/debug/route-workflow', {
+    method: 'POST',
+    body: { message },
+    raw: true,
   })
 }

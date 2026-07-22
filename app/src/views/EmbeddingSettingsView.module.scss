@@ -6,41 +6,11 @@
 .scroll {
   height: 100%;
   overflow: auto;
-}
-
-.header {
-  padding: 28px 24px 0;
-}
-
-.titleRow {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-
-  h1 {
-    font-size: 22px;
-    font-weight: 700;
-    margin: 0 0 4px;
-    color: var(--text-color-primary);
-  }
-}
-
-.subtitle {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-color-secondary);
-}
-
-.headerActions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
+  padding: 0 24px;
 }
 
 .content {
-  padding: 8px 24px 32px;
+  padding: 8px 0 32px;
 }
 
 .card {

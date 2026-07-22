@@ -111,7 +111,7 @@ describe('Template Try Button', () => {
     await wrapper.vm.$nextTick()
 
     // Find the template cards
-    const templateCards = wrapper.findAll('[class*="templateListCard"]')
+    const templateCards = wrapper.findAll('[data-testid="workflow-template-card"]')
     expect(templateCards.length).toBeGreaterThan(0)
 
     // The intelligent-assistant template (category: 'assistant') should have a try button
@@ -134,7 +134,7 @@ describe('Template Try Button', () => {
     await wrapper.vm.$nextTick()
 
     // Find the document-summary template (category: 'document')
-    const templateCards = wrapper.findAll('[class*="templateListCard"]')
+    const templateCards = wrapper.findAll('[data-testid="workflow-template-card"]')
     const docCard = templateCards.find((card) =>
       card.text().includes('文档摘要'),
     )
@@ -160,7 +160,7 @@ describe('Template Try Button', () => {
     await wrapper.vm.$nextTick()
 
     // Find the assistant template card and click the try button (3rd button)
-    const templateCards = wrapper.findAll('[class*="templateListCard"]')
+    const templateCards = wrapper.findAll('[data-testid="workflow-template-card"]')
     const assistantCard = templateCards.find((card) =>
       card.text().includes('智能助手问答'),
     )
@@ -196,7 +196,7 @@ describe('Template Try Button', () => {
     await wrapper.vm.$nextTick()
 
     // Find the assistant template card and click the try button
-    const templateCards = wrapper.findAll('[class*="templateListCard"]')
+    const templateCards = wrapper.findAll('[data-testid="workflow-template-card"]')
     const assistantCard = templateCards.find((card) =>
       card.text().includes('智能助手问答'),
     )

@@ -334,6 +334,47 @@ export function getAgentNodePreviewSections(
         })
       }
       break
+    case 'agent-loop': {
+      const tools = Array.isArray(data.agentLoopTools) ? data.agentLoopTools : []
+      config.push({
+        key: 'loop-model',
+        label: '模型',
+        value: data.model?.trim() || 'default',
+        tone: 'primary',
+      })
+      config.push({
+        key: 'loop-max',
+        label: '最大迭代',
+        value: String(data.agentLoopMaxIterations ?? 8),
+        tone: 'default',
+      })
+      config.push({
+        key: 'loop-tools',
+        label: '可用工具',
+        value: tools.length > 0 ? tools.join(', ') : '未配置',
+        tone: tools.length > 0 ? 'default' : 'warning',
+      })
+      if (record?.output && typeof record.output === 'object') {
+        const out = record.output as Record<string, unknown>
+        if (typeof out.iterations === 'number') {
+          runtime.push({
+            key: 'loop-iterations',
+            label: '实际迭代',
+            value: String(out.iterations),
+            tone: 'primary',
+          })
+        }
+        if (typeof out.toolInvocations === 'number') {
+          runtime.push({
+            key: 'loop-tools-count',
+            label: '工具调用',
+            value: `${out.toolInvocations} 次`,
+            tone: 'muted',
+          })
+        }
+      }
+      break
+    }
     case 'end':
       break
   }

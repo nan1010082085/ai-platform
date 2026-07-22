@@ -8,6 +8,7 @@ import { ref, computed, onMounted } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import CardTable from '@/components/common/CardTable.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import PluginEditor from '@/components/plugins/PluginEditor.vue'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
 import { getExpertLegacyBadge, type ExpertAgentKind } from '@/constants/expertNodeTypes'
@@ -106,36 +107,31 @@ onMounted(() => {
 <template>
   <div :class="styles.page">
     <div :class="styles.scroll">
-      <header :class="styles.header">
-        <div :class="styles.titleRow">
-          <div>
-            <h1>插件中心</h1>
-            <p :class="styles.subtitle">
-              浏览已注册的专家、工具、MCP 服务器和技能
-            </p>
-          </div>
-          <div :class="styles.headerActions">
-            <el-button :loading="loading" @click="load">
-              <AppIcon name="refresh" :size="14" style="margin-right: 4px" />
-              刷新
-            </el-button>
-          </div>
-        </div>
+      <PageHeader
+        title="插件中心"
+        subtitle="浏览已注册的专家、工具、MCP 服务器和技能"
+      >
+        <template #actions>
+          <el-button :loading="loading" @click="load">
+            <AppIcon name="refresh" :size="14" style="margin-right: 4px" />
+            刷新
+          </el-button>
+        </template>
+      </PageHeader>
 
-        <div :class="styles.toolbar">
-          <FilterTabs v-model="activeLayer" :options="layerTabs" />
-          <el-input
-            v-model="searchInput"
-            :class="styles.search"
-            placeholder="搜索 id / 名称 / 工具…"
-            clearable
-          >
-            <template #prefix>
-              <AppIcon name="search" :size="14" />
-            </template>
-          </el-input>
-        </div>
-      </header>
+      <div :class="styles.toolbar">
+        <FilterTabs v-model="activeLayer" :options="layerTabs" />
+        <el-input
+          v-model="searchInput"
+          :class="styles.search"
+          placeholder="搜索 id / 名称 / 工具…"
+          clearable
+        >
+          <template #prefix>
+            <AppIcon name="search" :size="14" />
+          </template>
+        </el-input>
+      </div>
 
       <div v-if="error" :class="styles.error">{{ error }}</div>
 
@@ -218,8 +214,8 @@ onMounted(() => {
             <el-table-column prop="description" label="说明" min-width="200" show-overflow-tooltip />
             <el-table-column label="操作" width="80" fixed="right">
               <template #default="{ row }">
-                <el-button text size="small" @click="openEditor('experts', row.id, row.label, row)">
-                  <AppIcon name="edit" :size="14" />
+                <el-button link type="primary" size="small" @click="openEditor('experts', row.id, row.label, row)">
+                  编辑
                 </el-button>
               </template>
             </el-table-column>
@@ -248,8 +244,8 @@ onMounted(() => {
             </el-table-column>
             <el-table-column label="操作" width="80" fixed="right">
               <template #default="{ row }">
-                <el-button text size="small" @click="openEditor('tools', row.name, row.label || row.name, row)">
-                  <AppIcon name="edit" :size="14" />
+                <el-button link type="primary" size="small" @click="openEditor('tools', row.name, row.label || row.name, row)">
+                  编辑
                 </el-button>
               </template>
             </el-table-column>
@@ -268,8 +264,8 @@ onMounted(() => {
             <el-table-column prop="namespace" label="命名空间" min-width="120" />
             <el-table-column label="操作" width="80" fixed="right">
               <template #default="{ row }">
-                <el-button text size="small" @click="openEditor('mcp', row.id, row.id, row)">
-                  <AppIcon name="edit" :size="14" />
+                <el-button link type="primary" size="small" @click="openEditor('mcp', row.id, row.id, row)">
+                  编辑
                 </el-button>
               </template>
             </el-table-column>
@@ -293,8 +289,8 @@ onMounted(() => {
             </el-table-column>
             <el-table-column label="操作" width="80" fixed="right">
               <template #default="{ row }">
-                <el-button text size="small" @click="openEditor('skills', row.id, row.label, row)">
-                  <AppIcon name="edit" :size="14" />
+                <el-button link type="primary" size="small" @click="openEditor('skills', row.id, row.label, row)">
+                  编辑
                 </el-button>
               </template>
             </el-table-column>

@@ -6,7 +6,7 @@
  * 简洁设计，专注于对话体验。
  */
 
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAiStore } from '@/stores/ai'
 import { useChatConfigStore } from '@/stores/chatConfig'
@@ -14,8 +14,7 @@ import { bridge } from '@/utils/bridge'
 import type { AgentType, ChatSettings, MentionReference, RagSearchResult } from '@/types'
 import { storeToRefs } from 'pinia'
 import { message } from '@schema-platform/platform-shared/utils/message'
-import { Plus, Clock } from '@element-plus/icons-vue'
-import { connect as connectSocket, isConnected, onConnectionChange } from '@schema-platform/platform-shared/socket'
+import { connect as connectSocket } from '@schema-platform/platform-shared/socket'
 import AiChatPanel from '@/components/AiChatPanel.vue'
 import AiChatSettings from '@/components/AiChatSettings.vue'
 import ConversationDrawer from '@/components/ConversationDrawer.vue'
@@ -30,15 +29,8 @@ const { messages, loading, currentSchema, currentFlow, activeAgent, conversation
   storeToRefs(store)
 const { starterPrompts } = storeToRefs(chatConfigStore)
 
-// ---- WebSocket 连接状态 ----
-const wsConnected = ref(isConnected())
-let unsubscribeConnection: (() => void) | null = null
-
-function startStatusCheck(): void {
-  unsubscribeConnection = onConnectionChange((next) => {
-    wsConnected.value = next
-  })
-}
+// ---- WebSocket 连接 ----
+// 连接状态由 AiChatPanel 的 streamStatus 徽章展示，此处只负责建立连接。
 
 // ---- 防止发布按钮重复调用 ----
 const isPublishing = ref(false)
@@ -84,11 +76,6 @@ function handleUpdateSettingsVisible(val: boolean): void {
 function handleSaveSettings(settings: ChatSettings): void {
   store.updateChatSettings(settings)
 }
-
-// ---- 新对话按钮文案 ----
-const newConversationLabel = computed(() => {
-  return '新对话'
-})
 
 // ---- Event handlers ----
 
@@ -219,7 +206,6 @@ onMounted(async () => {
   store.loadConversations()
   chatConfigStore.fetchConfig()
   connectSocket()
-  startStatusCheck()
   await loadPublishedWorkflows()
 
   const workflowId = route.query.workflowId
@@ -241,40 +227,10 @@ onMounted(async () => {
     store.setCurrentSchema(payload)
   })
 })
-
-onUnmounted(() => {
-  unsubscribeConnection?.()
-  unsubscribeConnection = null
-})
 </script>
 
 <template>
   <div :class="$style.page">
-    <!-- 顶栏 -->
-    <div :class="$style.topbar">
-      <div :class="$style.topbarLeft">
-        <div :class="$style.topbarLogo">
-          <div :class="$style.topbarIcon">AI</div>
-          <span :class="$style.topbarBrand">智能助手</span>
-        </div>
-      </div>
-      <div :class="$style.topbarRight">
-        <div :class="[$style.wsStatus, wsConnected ? $style.wsConnected : $style.wsDisconnected]">
-          <span :class="$style.wsDot" />
-          <span>{{ wsConnected ? '已连接' : '未连接' }}</span>
-        </div>
-        <el-tooltip content="对话历史" placement="bottom">
-          <el-button :class="$style.iconBtn" @click="handleOpenConversationDrawer">
-            <el-icon :size="16"><Clock /></el-icon>
-          </el-button>
-        </el-tooltip>
-        <el-button type="primary" size="small" @click="handleNewConversation">
-          <el-icon :size="14"><Plus /></el-icon>
-          {{ newConversationLabel }}
-        </el-button>
-      </div>
-    </div>
-
     <!-- 聊天区 -->
     <div :class="$style.chatContainer">
       <AiChatPanel
@@ -299,6 +255,9 @@ onUnmounted(() => {
         @card-primary-action="handlePrimaryAction"
         @card-secondary-action="handleSecondaryAction"
         @open-settings="handleOpenSettings"
+        @new-conversation="handleNewConversation"
+        @open-conversation-history="handleOpenConversationDrawer"
+        @workflow-auto-switched="(name) => message.success(`已自动切换到「${name}」工作流`)"
         @rag-search="handleRagSearch"
         @rag-select="handleRagSelect"
         @rag-remove="handleRagRemove"

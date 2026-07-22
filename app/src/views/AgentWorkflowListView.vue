@@ -14,6 +14,7 @@ import type {
 import { AGENT_WORKFLOW_TEMPLATES } from '@/types/agentWorkflow'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import AgentWorkflowTemplatePreviewDialog from '@/components/agent-workflow/AgentWorkflowTemplatePreviewDialog.vue'
+import WorkflowTemplateCard from '@/components/agent-workflow/WorkflowTemplateCard.vue'
 import WorkflowInvokeInfo from '@/components/WorkflowInvokeInfo.vue'
 import * as api from '@/api/agentWorkflowApi'
 import styles from './AgentWorkflowListView.module.scss'
@@ -381,53 +382,18 @@ onMounted(load)
           <el-button @click="searchInput = ''">清除搜索</el-button>
         </div>
         <div v-else :class="styles.templateCards">
-          <div
+          <WorkflowTemplateCard
             v-for="(tpl, idx) in filteredTemplates"
             :key="tpl.id"
-            :class="styles.templateListCard"
+            :template="tpl"
+            :icon="TEMPLATE_ICONS[tpl.id]"
+            :category-label="TEMPLATE_CATEGORY_LABELS[tpl.category]"
+            :trying="tryingTemplateId === tpl.id"
             :style="{ animationDelay: `${idx * 0.04}s` }"
-          >
-            <div :class="styles.templateListPreview">
-              <AppIcon :name="TEMPLATE_ICONS[tpl.id]" :size="36" />
-            </div>
-            <div :class="styles.templateListBody">
-              <div :class="styles.templateListHead">
-                <h3 :class="styles.templateListName">{{ tpl.name }}</h3>
-                <el-tag size="small" type="info">
-                  {{ TEMPLATE_CATEGORY_LABELS[tpl.category] }}
-                </el-tag>
-              </div>
-              <p :class="styles.templateListDesc">{{ tpl.description }}</p>
-            </div>
-            <div :class="styles.templateListActions">
-              <el-tooltip content="预览" placement="top" :show-after="300">
-                <el-button size="small" text @click="onPreviewTemplate(tpl)">
-                  <AppIcon name="view" />
-                </el-button>
-              </el-tooltip>
-              <el-tooltip content="使用此模板" placement="top" :show-after="300">
-                <el-button size="small" text type="primary" @click="onUseTemplate(tpl.id)">
-                  <AppIcon name="plus" />
-                </el-button>
-              </el-tooltip>
-              <el-tooltip
-                v-if="tpl.category === 'assistant' || tpl.category === 'document'"
-                :content="tpl.category === 'assistant' ? '试用' : '在对话中体验'"
-                placement="top"
-                :show-after="300"
-              >
-                <el-button
-                  size="small"
-                  text
-                  type="success"
-                  :loading="tryingTemplateId === tpl.id"
-                  @click="onTryTemplate(tpl.id)"
-                >
-                  <AppIcon name="chat-dot-round" />
-                </el-button>
-              </el-tooltip>
-            </div>
-          </div>
+            @preview="onPreviewTemplate(tpl)"
+            @use="onUseTemplate(tpl.id)"
+            @try="onTryTemplate(tpl.id)"
+          />
         </div>
       </div>
 

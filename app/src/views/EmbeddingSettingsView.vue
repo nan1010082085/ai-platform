@@ -9,6 +9,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import {
   getEmbeddingConfig,
   updateEmbeddingConfig,
@@ -144,26 +145,21 @@ onMounted(() => {
 <template>
   <div :class="styles.page">
     <div :class="styles.scroll">
-      <header :class="styles.header">
-        <div :class="styles.titleRow">
-          <div>
-            <h1>嵌入模型</h1>
-            <p :class="styles.subtitle">
-              配置 RAG 检索等场景使用的向量嵌入模型（与对话 LLM 分开管理）。
-            </p>
-          </div>
-          <div :class="styles.headerActions">
-            <el-button :loading="embeddingLoading" @click="loadEmbeddingConfig">
-              <AppIcon name="refresh" :size="14" style="margin-right: 4px" />
-              刷新
-            </el-button>
-            <el-button type="primary" @click="openEmbeddingDialog">
-              <AppIcon name="edit" :size="14" style="margin-right: 4px" />
-              编辑配置
-            </el-button>
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        title="嵌入模型"
+        subtitle="配置 RAG 检索等场景使用的向量嵌入模型（与对话 LLM 分开管理）。"
+      >
+        <template #actions>
+          <el-button :loading="embeddingLoading" @click="loadEmbeddingConfig">
+            <AppIcon name="refresh" :size="14" style="margin-right: 4px" />
+            刷新
+          </el-button>
+          <el-button type="primary" @click="openEmbeddingDialog">
+            <AppIcon name="edit" :size="14" style="margin-right: 4px" />
+            编辑配置
+          </el-button>
+        </template>
+      </PageHeader>
 
       <div :class="styles.content">
         <div :class="styles.card">

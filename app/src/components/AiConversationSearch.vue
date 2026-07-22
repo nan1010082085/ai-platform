@@ -8,7 +8,7 @@ import { ref, watch, computed, onBeforeUnmount } from 'vue'
 import { useAiStore } from '@/stores/ai'
 import type { Conversation } from '@/types'
 import type { SearchConversationsParams } from '@/api/aiApi'
-import { Search, Filter } from '@element-plus/icons-vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
 const emit = defineEmits<{
   select: [id: string]
@@ -99,12 +99,15 @@ onBeforeUnmount(() => { if (searchTimer) clearTimeout(searchTimer) })
   <div :class="$style.searchRow">
     <el-input
       v-model="query"
-      :prefix-icon="Search"
       placeholder="搜索对话..."
       size="small"
       clearable
       @clear="handleClear"
-    />
+    >
+      <template #prefix>
+        <AppIcon name="search" :size="14" />
+      </template>
+    </el-input>
     <el-popover
       :visible="filtersExpanded"
       placement="bottom-end"
@@ -120,7 +123,7 @@ onBeforeUnmount(() => { if (searchTimer) clearTimeout(searchTimer) })
           :link="!hasActiveFilters"
           @click="filtersExpanded = !filtersExpanded"
         >
-          <el-icon><Filter /></el-icon>
+          <AppIcon name="filter" :size="14" />
         </el-button>
       </template>
       <div :class="$style.filterPanel">

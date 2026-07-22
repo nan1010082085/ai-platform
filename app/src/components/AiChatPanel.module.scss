@@ -101,6 +101,16 @@
   color: #673ab7;
 }
 
+.newConversationBtn {
+  background: var(--ai-color-primary, #0060A2);
+  color: #ffffff;
+}
+
+.newConversationBtn:hover {
+  background: var(--ai-color-primary-dark, #004d82);
+  color: #ffffff;
+}
+
 .workflowPickerFooter {
   margin-top: 8px;
   padding-top: 8px;
@@ -241,6 +251,19 @@
   padding: 8px 20px 16px;
   background: var(--ai-bg-page, #F5F6FA);
   flex-shrink: 0;
+}
+
+.workflowSuggestion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--ai-color-primary-bg, #eef5ff);
+  border: 1px solid var(--ai-color-primary, #0060a2);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--ai-text-primary, #303133);
 }
 
 .inputBox {

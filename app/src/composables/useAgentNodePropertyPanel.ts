@@ -26,6 +26,7 @@ import RequirementAnalyzerNodePanel from '@/components/agent-workflow/property-p
 import TaskPlannerNodePanel from '@/components/agent-workflow/property-panel/panels/TaskPlannerNodePanel.vue'
 import TaskChainNodePanel from '@/components/agent-workflow/property-panel/panels/TaskChainNodePanel.vue'
 import CollaborationRouterNodePanel from '@/components/agent-workflow/property-panel/panels/CollaborationRouterNodePanel.vue'
+import AgentLoopNodePanel from '@/components/agent-workflow/property-panel/panels/AgentLoopNodePanel.vue'
 
 const toolPanel = markRaw(ToolNodePanel)
 const agentPanel = markRaw(AgentNodePanel)
@@ -55,6 +56,7 @@ const registry = new Map<AgentNodeType, Component>([
   ['task-planner', markRaw(TaskPlannerNodePanel)],
   ['task-chain', markRaw(TaskChainNodePanel)],
   ['collaboration-router', markRaw(CollaborationRouterNodePanel)],
+  ['agent-loop', markRaw(AgentLoopNodePanel)],
 ])
 
 export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
@@ -81,6 +83,7 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   'task-planner': '任务规划',
   'task-chain': '任务链',
   'collaboration-router': '协作路由',
+  'agent-loop': '智能体循环',
 }
 
 export function useAgentNodePropertyPanel() {

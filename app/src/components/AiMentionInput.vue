@@ -23,6 +23,7 @@ const props = withDefaults(defineProps<AiMentionInputProps>(), {
 
 const emit = defineEmits<{
   send: [message: string, mentions: MentionReference[]]
+  input: [message: string]
 }>()
 
 const store = useAiStore()
@@ -88,6 +89,7 @@ watch([searchQuery, activeTab], ([q, tab]) => {
 // ---- Detect @ trigger ----
 function handleInput(): void {
   const val = inputText.value
+  emit('input', val)
   // Use selectionStart if available; fall back to end of text
   const sel = textareaRef.value?.selectionStart
   const cursor = (sel != null && sel > 0) ? sel : val.length

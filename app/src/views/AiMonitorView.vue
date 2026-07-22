@@ -3,6 +3,7 @@
  * Agent 性能监控面板
  */
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import MonitorSummaryCard from '@/components/monitor/MonitorSummary.vue'
 import AgentDistribution from '@/components/monitor/AgentDistribution.vue'
 import AlertList from '@/components/monitor/AlertList.vue'
@@ -51,12 +52,11 @@ const {
 
 <template>
   <div :class="$style.dashboard" v-loading="loading">
-    <div :class="$style.header">
-      <div>
-        <h2 :class="$style.title">Agent 性能监控</h2>
-        <p :class="$style.subtitle">观察成功率、时延与 Token，快速定位慢调用与失败链路</p>
-      </div>
-      <div :class="$style.headerActions">
+    <PageHeader
+      title="Agent 性能监控"
+      subtitle="观察成功率、时延与 Token，快速定位慢调用与失败链路"
+    >
+      <template #actions>
         <div :class="$style.timeRangeGroup">
           <FilterTabs v-model="timeRangeValue" :options="timeRangeOptions" />
         </div>
@@ -99,8 +99,8 @@ const {
         <el-button type="primary" size="small" :loading="loading" @click="handleRefresh">
           刷新
         </el-button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <MonitorSummaryCard
       :summary="summary"
@@ -278,34 +278,9 @@ const {
 
 <style module>
 .dashboard {
-  padding: 24px;
+  padding: 0 24px 24px;
   min-height: 100%;
   background: var(--el-bg-color-page, #f5f7fa);
-}
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-.title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 650;
-  color: var(--el-text-color-primary, #303133);
-}
-.subtitle {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-.headerActions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
 }
 .refreshHint {
   font-size: 12px;

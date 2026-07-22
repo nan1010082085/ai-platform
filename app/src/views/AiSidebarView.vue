@@ -25,7 +25,6 @@ import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.
 import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
 import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
 import { usePublishedAgentWorkflowsStore } from '@/stores/publishedAgentWorkflows'
-import { Clock } from '@element-plus/icons-vue'
 
 const store = useAiStore()
 const route = useRoute()
@@ -336,7 +335,7 @@ function handleHostData(data: Record<string, unknown>) {
               title="历史记录"
               link
             >
-              <el-icon :size="14"><Clock /></el-icon>
+              <AppIcon name="clock" :size="14" />
             </el-button>
           </template>
           <div :class="$style.historyPopover">

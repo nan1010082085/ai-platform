@@ -290,6 +290,18 @@ async function rotateInvokeKey() {
               @update:model-value="(v) => { store.workflowDescription = v; store.markDirty() }"
             />
           </FieldRow>
+          <FieldRow label="路由关键词" hint="chat 匹配到这些词时建议使用此工作流（发布后生效）">
+            <el-select
+              :model-value="store.workflowRoutingKeywords"
+              multiple
+              filterable
+              allow-create
+              default-first-option
+              size="small"
+              placeholder="输入关键词回车添加，如：请假、报销"
+              @update:model-value="(v) => { store.workflowRoutingKeywords = v as string[]; store.markDirty() }"
+            />
+          </FieldRow>
           <FieldRow label="完成回调 URL">
             <el-input
               :model-value="store.onCompleteWebhookUrl"

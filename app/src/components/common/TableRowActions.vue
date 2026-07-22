@@ -1,6 +1,9 @@
 <script setup lang="ts">
 /**
  * 表格操作列：按钮过多时折叠为「前 N 个 + 更多」下拉，避免换行撑高行高。
+ *
+ * 样式约定：行内文字按钮不带图标（保持简洁、对齐整齐），按钮间留 12px 间距；
+ * 图标仅出现在「更多」下拉菜单项中（菜单项有图标辅助识别）。
  */
 import { computed } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
@@ -8,9 +11,11 @@ import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.
 export interface TableRowAction {
   key: string
   label: string
-  /** AppIcon name */
+  /** AppIcon name（仅在下拉菜单项中渲染，行内按钮不显示图标） */
   icon?: string
   type?: 'primary' | 'success' | 'warning' | 'danger' | 'info'
+  /** 行内按钮的 loading 状态（显示加载中、禁用点击） */
+  loading?: boolean
   onClick: () => void
 }
 
@@ -53,14 +58,9 @@ function onCommand(key: string) {
       link
       :type="action.type ?? 'primary'"
       size="small"
+      :loading="action.loading"
       @click="action.onClick"
     >
-      <AppIcon
-        v-if="action.icon"
-        :name="action.icon"
-        :size="14"
-        style="margin-right: 2px"
-      />
       {{ action.label }}
     </el-button>
 
@@ -100,7 +100,7 @@ function onCommand(key: string) {
   display: inline-flex;
   flex-wrap: nowrap;
   align-items: center;
-  gap: 0;
+  gap: 12px;
   white-space: nowrap;
 }
 </style>

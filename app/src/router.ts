@@ -72,6 +72,11 @@ const routes = [
         name: 'routing-debug',
         component: () => import('./views/RoutingDebugView.vue'),
       },
+      {
+        path: 'debug/workflow/:id',
+        name: 'workflow-debug',
+        component: () => import('./views/WorkflowDebugView.vue'),
+      },
     ],
   },
   {

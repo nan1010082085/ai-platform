@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import TableRowActions, { type TableRowAction } from '@/components/common/TableRowActions.vue'
 import type { AgentWorkflowExecution } from '@/types/agentWorkflow'
 import { getExecutionTriggerLabel } from '@/constants/workflowInvocation'
 import { watchRunningWorkflowExecutions } from '@/composables/useWorkflowExecutionStream'
@@ -127,6 +128,26 @@ async function stopExecution(id: string) {
   }
 }
 
+function rowActions(row: AgentWorkflowExecution): TableRowAction[] {
+  const actions: TableRowAction[] = []
+  if (row.status === 'running') {
+    actions.push({
+      key: 'stop',
+      label: '停止',
+      type: 'danger',
+      loading: cancellingId.value === row.id,
+      onClick: () => stopExecution(row.id),
+    })
+  }
+  actions.push({
+    key: 'detail',
+    label: '详情',
+    type: 'primary',
+    onClick: () => router.push({ name: 'agent-execution-detail', params: { id: row.id } }),
+  })
+  return actions
+}
+
 onMounted(() => {
   load()
 })
@@ -195,20 +216,9 @@ onUnmounted(() => {
           <el-table-column label="节点数" width="80" align="center">
             <template #default="{ row }">{{ row.nodeRecords?.length ?? 0 }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="140" fixed="right">
+          <el-table-column label="操作" width="120" fixed="right">
             <template #default="{ row }">
-              <el-button
-                v-if="row.status === 'running'"
-                link
-                type="danger"
-                :loading="cancellingId === row.id"
-                @click.stop="stopExecution(row.id)"
-              >
-                停止
-              </el-button>
-              <el-button link type="primary" @click="router.push({ name: 'agent-execution-detail', params: { id: row.id } })">
-                详情
-              </el-button>
+              <TableRowActions :actions="rowActions(row)" />
             </template>
           </el-table-column>
           <template #empty>

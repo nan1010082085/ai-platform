@@ -10,6 +10,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import QuickAddPresets from '@/components/model-settings/QuickAddPresets.vue'
 import ProviderList from '@/components/model-settings/ProviderList.vue'
 import ProviderDialog from '@/components/model-settings/ProviderDialog.vue'
@@ -460,33 +461,28 @@ onMounted(() => {
   <div :class="styles.page">
     <div :class="styles.scroll">
       <!-- Header -->
-      <header :class="styles.header">
-        <div :class="styles.titleRow">
-          <div>
-            <h1>模型中心</h1>
-            <p :class="styles.subtitle">
-              管理 LLM 供应商与模型配置，测试连通性，设置默认模型。
-            </p>
-            <div v-if="globalDefaultModel" :class="styles.activeModelHint">
-              <AppIcon name="circle-check-filled" :size="14" />
-              <span>
-                当前默认模型：<strong>{{ globalDefaultModel.name }}</strong>
-                <span :class="styles.hintExtra">（{{ globalDefaultModel.model }}）</span>
-              </span>
-            </div>
-          </div>
-          <div :class="styles.headerActions">
-            <el-button :loading="providersLoading" @click="handleRefreshAll">
-              <AppIcon name="refresh" :size="14" style="margin-right: 4px" />
-              刷新
-            </el-button>
-            <el-button type="primary" @click="openCreateProviderDialog()">
-              <AppIcon name="plus" :size="14" style="margin-right: 4px" />
-              添加供应商
-            </el-button>
-          </div>
+      <PageHeader
+        title="模型中心"
+        subtitle="管理 LLM 供应商与模型配置，测试连通性，设置默认模型。"
+      >
+        <div v-if="globalDefaultModel" :class="styles.activeModelHint">
+          <AppIcon name="circle-check-filled" :size="14" />
+          <span>
+            当前默认模型：<strong>{{ globalDefaultModel.name }}</strong>
+            <span :class="styles.hintExtra">（{{ globalDefaultModel.model }}）</span>
+          </span>
         </div>
-      </header>
+        <template #actions>
+          <el-button :loading="providersLoading" @click="handleRefreshAll">
+            <AppIcon name="refresh" :size="14" style="margin-right: 4px" />
+            刷新
+          </el-button>
+          <el-button type="primary" @click="openCreateProviderDialog()">
+            <AppIcon name="plus" :size="14" style="margin-right: 4px" />
+            添加供应商
+          </el-button>
+        </template>
+      </PageHeader>
 
       <!-- Content: Two-column layout -->
       <div :class="styles.content">

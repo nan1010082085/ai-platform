@@ -77,6 +77,7 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
   const workflowName = ref('未命名工作流')
   const workflowDescription = ref('')
   const workflowSlug = ref('')
+  const workflowRoutingKeywords = ref<string[]>([])
   const onCompleteWebhookUrl = ref('')
   const onCompleteWebhookSecret = ref('')
   const invokeKeyMasked = ref('')
@@ -284,6 +285,7 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
     workflowName.value = '未命名工作流'
     workflowDescription.value = ''
     workflowSlug.value = ''
+    workflowRoutingKeywords.value = []
     onCompleteWebhookUrl.value = ''
     onCompleteWebhookSecret.value = ''
     invokeKeyMasked.value = ''
@@ -299,6 +301,7 @@ export const useAgentWorkflowDesignerStore = defineStore('agentWorkflowDesigner'
     workflowName,
     workflowDescription,
     workflowSlug,
+    workflowRoutingKeywords,
     onCompleteWebhookUrl,
     onCompleteWebhookSecret,
     invokeKeyMasked,

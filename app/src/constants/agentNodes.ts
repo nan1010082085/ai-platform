@@ -268,6 +268,22 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
       maxCollaborationRounds: 3,
     },
   },
+  {
+    type: 'agent-loop',
+    label: '智能体循环',
+    icon: 'magic-stick',
+    category: 'ai',
+    description: 'LLM 自主循环调用工具，让工作流段落具备智能体能力',
+    defaultData: {
+      label: '智能体循环',
+      model: 'default',
+      agentLoopTools: [],
+      agentLoopMaxIterations: 8,
+      agentLoopSystemPrompt: '你是一个自主智能体，根据用户请求调用可用工具完成任务。每次思考后选择一个工具调用，获得结果后继续，直到任务完成时直接给出最终回答（不要调用工具）。',
+      agentLoopInputSource: 'message',
+      agentLoopInputTemplate: '',
+    },
+  },
 ]
 
 export const AGENT_NODE_COLORS: Record<string, string> = {
@@ -293,6 +309,7 @@ export const AGENT_NODE_COLORS: Record<string, string> = {
   'task-planner': '#409EFF',
   'task-chain': '#E6A23C',
   'collaboration-router': '#9B59B6',
+  'agent-loop': '#00D4FF',
 }
 
 export function getPaletteItem(type: AgentNodeType): AgentPaletteItem | undefined {

@@ -10,18 +10,19 @@ import { useRouter } from 'vue-router'
 import { message, confirmDanger } from '@schema-platform/platform-shared/utils/message'
 import { useDataLoading } from '@schema-platform/platform-shared/utils/useDataLoading'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import {
   getRagStatus,
   reindexAllRag,
   reindexSingleRag,
   deleteRagEmbedding,
   searchRag,
-  uploadRagDocument,
 } from '@/api/aiApi'
 import type { RagStatusData, RagReindexResult } from '@/api/aiApi'
 import type { RagSearchResult } from '@/types'
 import RagSummary from '@/components/rag/RagSummary.vue'
 import RagSearchPanel from '@/components/rag/RagSearchPanel.vue'
+import RagUploadDialog from '@/components/rag/RagUploadDialog.vue'
 import RagIndexOverview from '@/components/rag/RagIndexOverview.vue'
 
 const INDEX_PAGE_SIZE = 20
@@ -45,8 +46,6 @@ const searchPerformed = ref(false)
 const indexPage = ref(1)
 
 const uploadDialogVisible = ref(false)
-const uploadFileList = ref<File[]>([])
-const uploadLoading = ref(false)
 
 const healthPercent = computed(() => {
   if (!status.value) return 0
@@ -129,28 +128,7 @@ async function handleBulkDeleteEmbedding(): Promise<void> {
 }
 
 function openUploadDialog(): void {
-  uploadFileList.value = []
   uploadDialogVisible.value = true
-}
-
-function handleUploadChange(file: { raw: File }): void {
-  uploadFileList.value = [file.raw]
-}
-
-async function handleUploadSubmit(): Promise<void> {
-  if (uploadFileList.value.length === 0) return
-  uploadLoading.value = true
-  try {
-    const result = await uploadRagDocument(uploadFileList.value[0])
-    message.success(`文档 "${result.filename}" 上传并索引成功`)
-    uploadDialogVisible.value = false
-    uploadFileList.value = []
-    await loadStatus()
-  } catch (err) {
-    message.error(err instanceof Error ? err.message : '上传失败')
-  } finally {
-    uploadLoading.value = false
-  }
 }
 
 async function loadStatus(): Promise<void> {
@@ -213,14 +191,11 @@ onMounted(() => {
 
 <template>
   <div :class="$style.dashboard" v-loading="loading">
-    <div :class="$style.header">
-      <div>
-        <h2 :class="$style.title">RAG 知识库</h2>
-        <p :class="$style.subtitle">
-          管理 Schema / 流程向量索引，验证语义召回，保障对话上下文质量
-        </p>
-      </div>
-      <div :class="$style.headerActions">
+    <PageHeader
+      title="RAG 知识库"
+      subtitle="管理 Schema / 流程向量索引，验证语义召回，保障对话上下文质量"
+    >
+      <template #actions>
         <el-tooltip
           v-if="status"
           :content="status.embeddingConfigured
@@ -255,8 +230,8 @@ onMounted(() => {
           <AppIcon name="refresh" :size="14" />
           刷新
         </el-button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <div
       v-if="status && !status.embeddingConfigured"
@@ -350,7 +325,6 @@ onMounted(() => {
         <el-table-column label="操作" min-width="120">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleReindexSingle(row.id)">
-              <AppIcon name="refresh" :size="12" />
               建立索引
             </el-button>
           </template>
@@ -370,77 +344,18 @@ onMounted(() => {
       </div>
     </div>
 
-    <el-dialog
-      v-model="uploadDialogVisible"
-      title="上传文档到知识库"
-      width="600px"
-      :close-on-click-modal="false"
-    >
-      <div :class="$style.uploadContent">
-        <p :class="$style.uploadHint">
-          支持 PDF、Word、Excel、TXT、CSV 格式，最大 10MB
-        </p>
-        <el-upload
-          :auto-upload="false"
-          :limit="1"
-          :on-change="handleUploadChange"
-          :file-list="uploadFileList.map(f => ({ name: f.name, raw: f }))"
-          accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
-          drag
-        >
-          <AppIcon name="upload" :size="40" />
-          <div :class="$style.uploadText">拖拽文件到此处，或<em>点击上传</em></div>
-        </el-upload>
-      </div>
-      <template #footer>
-        <el-button @click="uploadDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="uploadLoading"
-          :disabled="uploadFileList.length === 0"
-          @click="handleUploadSubmit"
-        >
-          上传并索引
-        </el-button>
-      </template>
-    </el-dialog>
+    <RagUploadDialog
+      v-model:visible="uploadDialogVisible"
+      @uploaded="loadStatus"
+    />
   </div>
 </template>
 
 <style module>
 .dashboard {
-  padding: 24px;
+  padding: 0 24px 24px;
   min-height: 100%;
   background: var(--el-bg-color-page, #f5f7fa);
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 650;
-  color: var(--el-text-color-primary, #303133);
-}
-
-.subtitle {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--el-text-color-secondary, #909399);
-}
-
-.headerActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
 }
 
 .embeddingStatus {
@@ -541,27 +456,6 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 12px;
-}
-
-.uploadContent {
-  text-align: center;
-}
-
-.uploadHint {
-  color: var(--el-text-color-secondary, #909399);
-  font-size: 13px;
-  margin-bottom: 16px;
-}
-
-.uploadText {
-  margin-top: 8px;
-  color: var(--el-text-color-secondary, #909399);
-  font-size: 14px;
-}
-
-.uploadText em {
-  color: var(--el-color-primary, #409eff);
-  font-style: normal;
 }
 
 @media (max-width: 900px) {

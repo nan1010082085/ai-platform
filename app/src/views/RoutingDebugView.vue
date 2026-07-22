@@ -6,6 +6,7 @@
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import { request } from '@/api/shared/request'
 import { resolveErrorText } from '@/constants/errorCodes'
 import styles from './RoutingDebugView.module.scss'
@@ -94,14 +95,10 @@ const routeReasonColor = computed(() => {
 <template>
   <div :class="styles.page">
     <div :class="styles.scroll">
-      <header :class="styles.header">
-        <div>
-          <h1>路由调试</h1>
-          <p :class="styles.subtitle">
-            测试 Expert routing 匹配规则，查看消息如何路由到不同专家
-          </p>
-        </div>
-      </header>
+      <PageHeader
+        title="路由调试"
+        subtitle="测试 Expert routing 匹配规则，查看消息如何路由到不同专家"
+      />
 
       <div :class="styles.content">
         <div :class="styles.inputSection">

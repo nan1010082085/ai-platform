@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import { useAgentWorkflowDesignerStore } from '@/stores/agentWorkflowDesigner'
 import {
@@ -15,12 +15,6 @@ import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas
 import AgentWorkflowPropertyPanel from '@/components/agent-workflow/AgentWorkflowPropertyPanel.vue'
 import * as api from '@/api/agentWorkflowApi'
 import { useAiStore } from '@/stores/ai'
-import { trackAi, AI_TELEMETRY_EVENTS, reportAiError } from '@/utils/telemetry'
-import {
-  fileToWorkflowPayload,
-  pickWorkflowTestFile,
-  workflowGraphNeedsUploadStream,
-} from '@/utils/workflowFilePayload'
 import styles from './AgentWorkflowDesignerView.module.scss'
 
 const route = useRoute()
@@ -51,6 +45,7 @@ async function load() {
     store.workflowName = data.name
     store.workflowDescription = data.description ?? ''
     store.workflowSlug = data.slug ?? ''
+    store.workflowRoutingKeywords = data.routingKeywords ?? []
     store.onCompleteWebhookUrl = data.onCompleteWebhook?.url ?? ''
     store.onCompleteWebhookSecret = data.onCompleteWebhook?.secret ?? ''
     store.invokeKeyMasked = data.invokeKeyMasked ?? ''
@@ -79,6 +74,7 @@ async function onSave(): Promise<boolean> {
       name: store.workflowName,
       description: store.workflowDescription,
       slug: store.workflowSlug.trim() || undefined,
+      routingKeywords: store.workflowRoutingKeywords,
       onCompleteWebhook: store.onCompleteWebhookUrl.trim()
         ? {
             url: store.onCompleteWebhookUrl.trim(),
@@ -126,36 +122,14 @@ async function onPublish() {
   }
 }
 
-async function onExecute() {
+async function onDebug() {
   executing.value = true
   try {
     const saved = await onSave()
     if (!saved) return
-
-    const graph = store.getGraph()
-    const input: Record<string, unknown> = { message: '手动测试执行' }
-
-    if (workflowGraphNeedsUploadStream(graph)) {
-      const file = await pickWorkflowTestFile()
-      if (!file) {
-        message.warning('该工作流需要上传文件，已取消测试执行')
-        return
-      }
-      input.file = await fileToWorkflowPayload(file)
-    }
-
-    const exec = await api.executeWorkflow(workflowId(), input)
-    router.push({ name: 'agent-execution-detail', params: { id: exec.id } })
+    router.push({ name: 'workflow-debug', params: { id: workflowId() } })
   } catch (e) {
-    trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_EXECUTE_FAIL, {
-      workflowId: workflowId(),
-      source: 'designer',
-    })
-    void reportAiError(e instanceof Error ? e : String(e), {
-      workflowId: workflowId(),
-      source: 'designer',
-    })
-    message.error(e instanceof Error ? e.message : '执行失败')
+    message.error(e instanceof Error ? e.message : '跳转调试失败')
   } finally {
     executing.value = false
   }
@@ -258,7 +232,7 @@ onUnmounted(() => {
       @update:title="onTitleUpdate"
       @save="onSave"
       @publish="onPublish"
-      @execute="onExecute"
+      @debug="onDebug"
       @validate="onValidate"
       @executions="onExecutions"
       @chat-test="onChatTest"
@@ -273,7 +247,7 @@ onUnmounted(() => {
           <div :class="styles.versionHeader">
             <span :class="styles.versionTitle">版本历史</span>
             <el-button size="small" text @click="loadVersions">
-              <el-icon><Refresh /></el-icon>
+              <AppIcon name="refresh" :size="14" />
             </el-button>
           </div>
           <div v-if="versionLoading" :class="styles.versionLoading">加载中...</div>

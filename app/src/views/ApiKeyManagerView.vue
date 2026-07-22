@@ -12,6 +12,7 @@ import { useI18n } from '@schema-platform/platform-shared'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import CardTable from '@/components/common/CardTable.vue'
+import TableRowActions, { type TableRowAction } from '@/components/common/TableRowActions.vue'
 import {
   createApiKey,
   getApiKeys,
@@ -125,6 +126,23 @@ async function handleDelete(item: ApiKeyItem): Promise<void> {
   }
 }
 
+function rowActions(row: ApiKeyItem): TableRowAction[] {
+  return [
+    {
+      key: 'toggle-status',
+      label: row.status === 'active' ? t('common.disable') : t('common.enable'),
+      type: row.status === 'active' ? 'warning' : 'success',
+      onClick: () => handleToggleStatus(row),
+    },
+    {
+      key: 'delete',
+      label: t('common.delete'),
+      type: 'danger',
+      onClick: () => handleDelete(row),
+    },
+  ]
+}
+
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
   const dateLocale = locale.value === 'en-US' ? 'en-US' : 'zh-CN'
@@ -203,30 +221,9 @@ onMounted(() => {
                 {{ formatDate(row.lastUsedAt) }}
               </template>
             </el-table-column>
-            <el-table-column :label="t('apiKey.actions')" width="180" fixed="right">
+            <el-table-column :label="t('apiKey.actions')" width="140" fixed="right">
               <template #default="{ row }">
-                <el-button
-                  link
-                  :type="row.status === 'active' ? 'warning' : 'success'"
-                  size="small"
-                  @click="handleToggleStatus(row)"
-                >
-                  <AppIcon
-                    :name="row.status === 'active' ? 'close' : 'check'"
-                    :size="14"
-                    style="margin-right: 2px"
-                  />
-                  {{ row.status === 'active' ? t('common.disable') : t('common.enable') }}
-                </el-button>
-                <el-button
-                  link
-                  type="danger"
-                  size="small"
-                  @click="handleDelete(row)"
-                >
-                  <AppIcon name="delete" :size="14" style="margin-right: 2px" />
-                  {{ t('common.delete') }}
-                </el-button>
+                <TableRowActions :actions="rowActions(row)" />
               </template>
             </el-table-column>
           </el-table>
