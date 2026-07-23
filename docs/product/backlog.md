@@ -29,7 +29,7 @@
 | **Phase K** — Provider/Model 两级结构 | **100%** |
 | **Phase L** — 消息组件化重构 | **100%** |
 | **Phase M** — Chat 预览增强 | **100%** |
-| **Phase N** — 功能补全 | **50%**（N-1 ✅、N-2 ✅、N-3 ✅ 插件编辑） |
+| **Phase N** — 功能补全 | **100%**（N-1~N-6 全部完成） |
 | **Phase O** — 能力层细化 | **100%** |
 | **Phase P** — 节点能力细化与体验修补 | **100%** |
 | **Phase P2** — UI 规范固化 | **100%**（双层标题 / 操作列 / 图标 / PageHeader） |
@@ -162,9 +162,9 @@
 | N-1 | RAG 文档上传入口 | RagKnowledgeBase.vue 已有上传对话框（拖拽 + 点击） | P2 | ✅ |
 | N-2 | 嵌入模型配置 UI | EmbeddingSettingsView.vue 已有完整配置（SiliconFlow/OpenAI/自定义） | P2 | ✅ |
 | N-3 | 插件在线编辑 | PluginEditor.vue + JSON 编辑器 + 保存到 local 配置 | P2 | ✅ |
-| N-4 | 消息音频预览 | 不支持音频文件上传/播放 | P3 | ⬜ |
-| N-5 | 消息视频预览 | 不支持视频文件上传/播放 | P3 | ⬜ |
-| N-6 | 消息 3D 模型预览 | 不支持 3D 模型预览 | P3 | ⬜ |
+| N-4 | 消息音频预览 | 不支持音频文件上传/播放 | P3 | ✅（DocumentAttachmentCard 内联 `<audio>` 播放器） |
+| N-5 | 消息视频预览 | 不支持视频文件上传/播放 | P3 | ✅（DocumentAttachmentCard 内联 `<video>` 播放器） |
+| N-6 | 消息 3D 模型预览 | 不支持 3D 模型预览 | P3 | ✅（DocumentAttachmentCard 检测 gltf/glb/obj/stl/fbx → ThreePreviewCard） |
 
 ### Phase O — 能力层细化（P1-P2，按需）
 

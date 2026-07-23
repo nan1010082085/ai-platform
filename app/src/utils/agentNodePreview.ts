@@ -375,6 +375,66 @@ export function getAgentNodePreviewSections(
       }
       break
     }
+    case 'code-execute': {
+      const lang = data.codeLanguage ?? 'javascript'
+      const script = data.codeScript ?? ''
+      config.push({
+        key: 'code-lang',
+        label: '语言',
+        value: lang,
+        tone: 'primary',
+      })
+      config.push({
+        key: 'code-lines',
+        label: '代码行数',
+        value: String(script.split('\n').length),
+        tone: 'muted',
+      })
+      if (record?.output && typeof record.output === 'object') {
+        const out = record.output as Record<string, unknown>
+        if ('result' in out || 'error' in out) {
+          runtime.push({
+            key: 'code-result',
+            label: '输出',
+            value: JSON.stringify(out, null, 2).slice(0, 500),
+            tone: 'error' in out ? 'danger' : 'success',
+          })
+        }
+      }
+      break
+    }
+    case 'variable-set': {
+      config.push({
+        key: 'var-name',
+        label: '变量名',
+        value: data.variableName ?? '',
+        tone: 'primary',
+      })
+      config.push({
+        key: 'var-value',
+        label: '变量值',
+        value: data.variableValue ?? '',
+        tone: 'muted',
+      })
+      config.push({
+        key: 'var-mode',
+        label: '模式',
+        value: data.variableMode ?? 'set',
+        tone: 'default',
+      })
+      if (record?.output && typeof record.output === 'object') {
+        const out = record.output as Record<string, unknown>
+        if ('value' in out) {
+          runtime.push({
+            key: 'var-result',
+            label: '结果',
+            value: JSON.stringify(out.value),
+            tone: 'success',
+          })
+        }
+      }
+      break
+    }
     case 'end':
       break
   }

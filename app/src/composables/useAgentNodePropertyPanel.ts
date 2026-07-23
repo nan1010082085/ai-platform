@@ -27,6 +27,8 @@ import TaskPlannerNodePanel from '@/components/agent-workflow/property-panel/pan
 import TaskChainNodePanel from '@/components/agent-workflow/property-panel/panels/TaskChainNodePanel.vue'
 import CollaborationRouterNodePanel from '@/components/agent-workflow/property-panel/panels/CollaborationRouterNodePanel.vue'
 import AgentLoopNodePanel from '@/components/agent-workflow/property-panel/panels/AgentLoopNodePanel.vue'
+import CodeExecuteNodePanel from '@/components/agent-workflow/property-panel/panels/CodeExecuteNodePanel.vue'
+import VariableSetNodePanel from '@/components/agent-workflow/property-panel/panels/VariableSetNodePanel.vue'
 
 const toolPanel = markRaw(ToolNodePanel)
 const agentPanel = markRaw(AgentNodePanel)
@@ -57,6 +59,8 @@ const registry = new Map<AgentNodeType, Component>([
   ['task-chain', markRaw(TaskChainNodePanel)],
   ['collaboration-router', markRaw(CollaborationRouterNodePanel)],
   ['agent-loop', markRaw(AgentLoopNodePanel)],
+  ['code-execute', markRaw(CodeExecuteNodePanel)],
+  ['variable-set', markRaw(VariableSetNodePanel)],
 ])
 
 export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
@@ -84,6 +88,8 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   'task-chain': '任务链',
   'collaboration-router': '协作路由',
   'agent-loop': '智能体循环',
+  'code-execute': '代码执行',
+  'variable-set': '变量赋值',
 }
 
 export function useAgentNodePropertyPanel() {

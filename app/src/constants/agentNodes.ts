@@ -284,6 +284,31 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
       agentLoopInputTemplate: '',
     },
   },
+  {
+    type: 'code-execute',
+    label: '代码执行',
+    icon: 'document',
+    category: 'tools',
+    description: '在沙箱中执行 JavaScript 代码，支持 $input 和 $node 变量',
+    defaultData: {
+      label: '代码执行',
+      codeLanguage: 'javascript',
+      codeScript: '// 可用变量：$input（工作流输入）、$node（上游节点输出）\n// 返回值作为节点输出\nreturn { result: $input.message }',
+    },
+  },
+  {
+    type: 'variable-set',
+    label: '变量赋值',
+    icon: 'edit',
+    category: 'tools',
+    description: '设置或更新工作流变量，支持 set/append/increment 模式',
+    defaultData: {
+      label: '变量赋值',
+      variableName: 'myVar',
+      variableValue: '{{$input.message}}',
+      variableMode: 'set',
+    },
+  },
 ]
 
 export const AGENT_NODE_COLORS: Record<string, string> = {
@@ -310,6 +335,8 @@ export const AGENT_NODE_COLORS: Record<string, string> = {
   'task-chain': '#E6A23C',
   'collaboration-router': '#9B59B6',
   'agent-loop': '#00D4FF',
+  'code-execute': '#607D8B',
+  'variable-set': '#795548',
 }
 
 export function getPaletteItem(type: AgentNodeType): AgentPaletteItem | undefined {
