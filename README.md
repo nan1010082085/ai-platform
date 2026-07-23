@@ -1,6 +1,14 @@
 # Schema Platform AI
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2020-brightgreen.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![Vue.js](https://img.shields.io/badge/Vue.js-3.0-brightgreen.svg)](https://vuejs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-8.0-green.svg)](https://www.mongodb.com/)
+
 Open-source AI application platform: conversational Agent, visual workflow orchestration, RAG knowledge base, plugin center, and external integration.
+
+**[Documentation](./docs)** | **[Contributing](./CONTRIBUTING.md)** | **[Changelog](./CHANGELOG.md)** | **[Security](./SECURITY.md)**
 
 ---
 
@@ -260,10 +268,63 @@ cd shared/platform-shared && pnpm build
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup, coding standards, and pull request guidelines.
+We welcome contributions from the community! See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup, coding standards, and pull request guidelines.
+
+### Ways to Contribute
+
+- **Report bugs** - Use our [bug report template](https://github.com/nan1010082085/ai-platform/issues/new?template=bug_report.md)
+- **Suggest features** - Use our [feature request template](https://github.com/nan1010082085/ai-platform/issues/new?template=feature_request.md)
+- **Submit pull requests** - Follow our [PR guidelines](./CONTRIBUTING.md#pull-requests)
+- **Improve documentation** - Help us make the docs better
+- **Share feedback** - Join our [discussions](https://github.com/nan1010082085/ai-platform/discussions)
+
+### Good First Issues
+
+Looking for a way to contribute? Check out our [good first issues](https://github.com/nan1010082085/ai-platform/labels/good%20first%20issue) label.
+
+---
+
+## Community
+
+- **GitHub Discussions** - Ask questions and share ideas
+- **Issues** - Report bugs and request features
+- **Pull Requests** - Contribute code changes
+
+### Code of Conduct
+
+Please read our [Code of Conduct](./CODE_OF_CONDUCT.md) before participating in our community.
+
+---
+
+## Security
+
+For security concerns, please see our [Security Policy](./SECURITY.md).
+
+**DO NOT** open public issues for security vulnerabilities.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](./LICENSE) for details.
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+
+### Attribution
+
+Built with:
+- [Vue.js](https://vuejs.org/) - The Progressive JavaScript Framework
+- [LangGraph](https://langchain-ai.github.io/langgraph/) - Stateful LLM workflows
+- [MongoDB](https://www.mongodb.com/) - Document database
+- [Element Plus](https://element-plus.org/) - Vue 3 UI library
+- [Socket.IO](https://socket.io/) - Real-time communication
+
+---
+
+## Support
+
+- **Documentation** - Check the [docs](./docs) folder first
+- **Issues** - Search [existing issues](https://github.com/nan1010082085/ai-platform/issues) before creating new ones
+- **Discussions** - Use [GitHub Discussions](https://github.com/nan1010082085/ai-platform/discussions) for questions
+
+---
+
+**Made with ❤️ by the Schema Platform Team**

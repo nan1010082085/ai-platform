@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/nan1010082085/ai-platform/tree/main/docs
+    about: Check the documentation before asking questions
+  - name: Discussions
+    url: https://github.com/nan1010082085/ai-platform/discussions
+    about: Ask questions and discuss ideas
