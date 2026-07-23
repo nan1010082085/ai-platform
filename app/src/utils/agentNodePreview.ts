@@ -435,6 +435,35 @@ export function getAgentNodePreviewSections(
       }
       break
     }
+    case 'switch': {
+      const branches = (data.switchBranches ?? []) as Array<{ label: string; expression: string }>
+      config.push({
+        key: 'switch-count',
+        label: '分支数',
+        value: String(branches.length),
+        tone: 'primary',
+      })
+      branches.forEach((b, i) => {
+        config.push({
+          key: `switch-${i}`,
+          label: b.label || `分支${i + 1}`,
+          value: b.expression || '',
+          tone: 'muted',
+        })
+      })
+      if (record?.output && typeof record.output === 'object') {
+        const out = record.output as Record<string, unknown>
+        if ('branch' in out) {
+          runtime.push({
+            key: 'switch-taken',
+            label: '匹配分支',
+            value: String(out.branch),
+            tone: 'primary',
+          })
+        }
+      }
+      break
+    }
     case 'end':
       break
   }

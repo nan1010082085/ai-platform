@@ -309,6 +309,20 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
       variableMode: 'set',
     },
   },
+  {
+    type: 'switch',
+    label: '多路分支',
+    icon: 'sort',
+    category: 'logic',
+    description: '根据多个条件表达式路由到不同分支，类似 switch-case',
+    defaultData: {
+      label: '多路分支',
+      switchBranches: [
+        { label: '分支A', expression: 'true' },
+        { label: '分支B', expression: 'false' },
+      ],
+    },
+  },
 ]
 
 export const AGENT_NODE_COLORS: Record<string, string> = {
@@ -337,6 +351,7 @@ export const AGENT_NODE_COLORS: Record<string, string> = {
   'agent-loop': '#00D4FF',
   'code-execute': '#607D8B',
   'variable-set': '#795548',
+  'switch': '#9B59B6',
 }
 
 export function getPaletteItem(type: AgentNodeType): AgentPaletteItem | undefined {

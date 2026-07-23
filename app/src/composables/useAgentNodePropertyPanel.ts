@@ -29,6 +29,7 @@ import CollaborationRouterNodePanel from '@/components/agent-workflow/property-p
 import AgentLoopNodePanel from '@/components/agent-workflow/property-panel/panels/AgentLoopNodePanel.vue'
 import CodeExecuteNodePanel from '@/components/agent-workflow/property-panel/panels/CodeExecuteNodePanel.vue'
 import VariableSetNodePanel from '@/components/agent-workflow/property-panel/panels/VariableSetNodePanel.vue'
+import SwitchNodePanel from '@/components/agent-workflow/property-panel/panels/SwitchNodePanel.vue'
 
 const toolPanel = markRaw(ToolNodePanel)
 const agentPanel = markRaw(AgentNodePanel)
@@ -61,6 +62,7 @@ const registry = new Map<AgentNodeType, Component>([
   ['agent-loop', markRaw(AgentLoopNodePanel)],
   ['code-execute', markRaw(CodeExecuteNodePanel)],
   ['variable-set', markRaw(VariableSetNodePanel)],
+  ['switch', markRaw(SwitchNodePanel)],
 ])
 
 export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
@@ -90,6 +92,7 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   'agent-loop': '智能体循环',
   'code-execute': '代码执行',
   'variable-set': '变量赋值',
+  'switch': '多路分支',
 }
 
 export function useAgentNodePropertyPanel() {
