@@ -41,6 +41,18 @@ const TONE_CLASS: Partial<Record<PreviewTone, string>> = {
 
 const detail = computed(() => buildAgentNodeExecutionDetail(props.record, props.nodeData))
 
+/** agent-loop 思考链：每轮迭代的工具调用详情 */
+const agentLoopSteps = computed<Array<{
+  iteration: number
+  toolCalls: Array<{ name: string; success: boolean }>
+}>>(() => {
+  if (props.record.nodeType !== 'agent-loop') return []
+  const output = props.record.output as Record<string, unknown> | undefined
+  const steps = output?.steps
+  if (!Array.isArray(steps)) return []
+  return steps as Array<{ iteration: number; toolCalls: Array<{ name: string; success: boolean }> }>
+})
+
 function toneClass(tone?: PreviewTone): string {
   if (!tone || tone === 'default') return ''
   return TONE_CLASS[tone] ?? ''
@@ -110,6 +122,26 @@ async function copyJson(label: string, value: unknown) {
         <div v-for="row in detail.runtimeSummary" :key="row.key" :class="styles.fieldRow">
           <span :class="styles.fieldLabel">{{ row.label }}</span>
           <span :class="[styles.fieldValue, toneClass(row.tone)]">{{ row.value }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section v-if="agentLoopSteps.length" :class="styles.section">
+      <div :class="styles.sectionTitle">思考链（{{ agentLoopSteps.length }} 轮）</div>
+      <div :class="styles.stepList">
+        <div v-for="step in agentLoopSteps" :key="step.iteration" :class="styles.stepItem">
+          <span :class="styles.stepIteration">第 {{ step.iteration }} 轮</span>
+          <span v-if="step.toolCalls.length === 0" :class="styles.stepIdle">给出最终回答</span>
+          <div v-else :class="styles.stepTools">
+            <span
+              v-for="(tc, idx) in step.toolCalls"
+              :key="idx"
+              :class="[styles.stepTool, tc.success ? styles.stepToolOk : styles.stepToolFail]"
+            >
+              <AppIcon :name="tc.success ? 'circle-check' : 'circle-close'" :size="12" />
+              {{ tc.name }}
+            </span>
+          </div>
         </div>
       </div>
     </section>

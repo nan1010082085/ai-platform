@@ -200,7 +200,7 @@ onUnmounted(() => {
               <h3 :class="styles.cardTitle">测试历史</h3>
               <el-button link type="primary" size="small" @click="clearHistory">清空</el-button>
             </div>
-            <div :class="styles.historyList}>
+            <div :class="styles.historyList">
               <div
                 v-for="(item, i) in history"
                 :key="i"
@@ -222,7 +222,7 @@ onUnmounted(() => {
         <!-- 执行轨迹区 -->
         <div :class="styles.rightCol">
           <div :class="styles.traceCard">
-            <div :class="styles.traceHeader}>
+            <div :class="styles.traceHeader">
               <h3 :class="styles.cardTitle">执行轨迹</h3>
               <el-tag
                 v-if="execution"
@@ -240,7 +240,7 @@ onUnmounted(() => {
 
             <template v-else>
               <div :class="styles.traceBody">
-                <div :class="styles.traceList}>
+                <div :class="styles.traceList">
                   <NodeTraceList
                     :records="execution.nodeRecords"
                     :selected-node-id="selectedRecord?.nodeId"

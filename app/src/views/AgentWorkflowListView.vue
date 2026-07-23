@@ -127,7 +127,22 @@ const systemTemplates = computed(() =>
   workflowTemplates.filter((tpl) => tpl.id !== 'blank'),
 )
 
+/** 模板分类筛选（模板 tab 内部） */
+const templateCategory = ref<'all' | AgentWorkflowTemplateMeta['category']>('all')
+const templateCategoryOptions = computed(() => {
+  const counts = new Map<string, number>()
+  for (const tpl of systemTemplates.value) {
+    counts.set(tpl.category, (counts.get(tpl.category) ?? 0) + 1)
+  }
+  const opts: Array<{ value: string; label: string }> = [{ value: 'all', label: '全部' }]
+  for (const [cat, label] of Object.entries(TEMPLATE_CATEGORY_LABELS)) {
+    if (counts.has(cat)) opts.push({ value: cat, label: `${label} (${counts.get(cat)})` })
+  }
+  return opts
+})
+
 function matchesTemplateSearch(tpl: AgentWorkflowTemplateMeta): boolean {
+  if (templateCategory.value !== 'all' && tpl.category !== templateCategory.value) return false
   const q = searchInput.value.trim().toLowerCase()
   if (!q) return true
   return (
@@ -377,6 +392,16 @@ onMounted(load)
         <p :class="styles.templatesIntro">
           系统内置编排模板，选择后可一键创建到您的工作流列表，再编辑、发布与执行。
         </p>
+        <div :class="styles.templateCategoryBar">
+          <button
+            v-for="opt in templateCategoryOptions"
+            :key="opt.value"
+            :class="[styles.templateCategoryBtn, templateCategory === opt.value && styles.templateCategoryBtnActive]"
+            @click="templateCategory = opt.value as typeof templateCategory"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
         <div v-if="filteredTemplates.length === 0" :class="styles.noResults">
           <p>未找到匹配的模板</p>
           <el-button @click="searchInput = ''">清除搜索</el-button>

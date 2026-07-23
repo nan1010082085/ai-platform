@@ -1,12 +1,10 @@
-<script setup lang="ts">
+<script lang="ts">
 /**
  * NodeTraceList - 工作流执行节点轨迹列表
  *
  * 从 AgentExecutionDetailView 抽出，WorkflowDebugView 复用。
  * 展示每个节点的状态图标、名称、类型、耗时，点击选中查看详情。
  */
-import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import type { AgentNodeRecord } from '@/types/agentWorkflow'
 
 type TagType = 'success' | 'info' | 'warning' | 'danger' | 'primary'
 
@@ -39,6 +37,11 @@ export const NODE_STATUS_LABELS: Record<string, string> = {
   waiting: '待确认',
   cancelled: '已取消',
 }
+</script>
+
+<script setup lang="ts">
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import type { AgentNodeRecord } from '@/types/agentWorkflow'
 
 const props = defineProps<{
   records: AgentNodeRecord[]

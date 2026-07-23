@@ -211,3 +211,56 @@
 .toneDanger {
   color: var(--color-danger);
 }
+
+.stepList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--bg-color-page, #f5f7fa);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.stepIteration {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--text-color-primary, #303133);
+  min-width: 48px;
+}
+
+.stepIdle {
+  color: var(--text-color-secondary, #909399);
+}
+
+.stepTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.stepTool {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--font-family-mono, monospace);
+}
+
+.stepToolOk {
+  background: rgba(0, 230, 118, 0.1);
+  color: #00b96b;
+}
+
+.stepToolFail {
+  background: rgba(245, 108, 108, 0.1);
+  color: #f56c6c;
+}
