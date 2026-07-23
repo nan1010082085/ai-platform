@@ -8,6 +8,7 @@ import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
 import ModelOptionSelect from '@/components/ModelOptionSelect.vue'
 import SectionToggle from '@/components/agent-workflow/property-panel/SectionToggle.vue'
 import FieldRow from '@/components/agent-workflow/property-panel/FieldRow.vue'
+import PromptTemplateManager from '@/components/PromptTemplateManager.vue'
 import styles from './AiChatSettings.module.scss'
 
 const props = defineProps<{
@@ -171,6 +172,10 @@ function handleSave(): void {
             placeholder="输入对话历史摘要..."
           />
         </FieldRow>
+      </SectionToggle>
+
+      <SectionToggle title="Prompt 模板库" :count="1">
+        <PromptTemplateManager @select="(content) => { handleClose(); emit('update:settings', { ...localSettings, _templateContent: content }) }" />
       </SectionToggle>
     </el-scrollbar>
 

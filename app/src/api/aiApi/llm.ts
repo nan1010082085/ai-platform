@@ -107,3 +107,48 @@ export interface AIHealthResponse {
 export async function checkAIHealth(): Promise<AIHealthResponse> {
   return request<AIHealthResponse>('/ai/health')
 }
+
+// ---- Prompt 模板库 ----
+
+export interface PromptTemplate {
+  id: string
+  title: string
+  content: string
+  category: string
+  createdAt: string
+}
+
+export async function getPromptTemplates(): Promise<PromptTemplate[]> {
+  const res = await request<{ templates: PromptTemplate[] }>('/ai/prompt-templates')
+  return res.templates ?? []
+}
+
+export async function createPromptTemplate(data: {
+  title: string
+  content: string
+  category?: string
+}): Promise<PromptTemplate> {
+  const res = await request<{ success: boolean; data: PromptTemplate }>('/ai/prompt-templates', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return res.data
+}
+
+export async function updatePromptTemplate(id: string, data: {
+  title?: string
+  content?: string
+  category?: string
+}): Promise<PromptTemplate> {
+  const res = await request<{ success: boolean; data: PromptTemplate }>(`/ai/prompt-templates/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return res.data
+}
+
+export async function deletePromptTemplate(id: string): Promise<void> {
+  await request(`/ai/prompt-templates/${id}`, { method: 'DELETE' })
+}
