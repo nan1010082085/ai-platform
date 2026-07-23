@@ -56,6 +56,33 @@ export function deleteWorkflow(id: string): Promise<{ deleted: boolean }> {
   return request(`/ai/workflows/${id}`, { method: 'DELETE' })
 }
 
+/** 导出工作流为 JSON DSL */
+export async function exportWorkflow(id: string): Promise<void> {
+  const { fetchRaw } = await import('@/api/aiApi')
+  const res = await fetchRaw(`/schema-platform/api/ai/workflows/${id}/export`)
+  const blob = await res.blob()
+  const disposition = res.headers.get('Content-Disposition') ?? ''
+  const match = disposition.match(/filename="?(.+?)"?$/)
+  const filename = match ? match[1] : `workflow-${id}.json`
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+/** 从 JSON 文件导入工作流 */
+export async function importWorkflow(file: File): Promise<{ id: string; name: string }> {
+  const text = await file.text()
+  const data = JSON.parse(text)
+  return request('/ai/workflows/import', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
 export function publishWorkflow(id: string): Promise<AgentWorkflowPublishResult> {
   return request(`/ai/workflows/${id}/publish`, { method: 'POST' })
 }

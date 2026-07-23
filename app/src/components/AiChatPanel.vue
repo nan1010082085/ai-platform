@@ -16,6 +16,7 @@ import { useShellEmbed } from '@/composables/useShellEmbed'
 import { useSmartSuggestions } from '@/composables/useSmartSuggestions'
 import { useChatAttachments } from '@/composables/useChatAttachments'
 import { useWorkflowSuggestion } from '@/composables/useWorkflowSuggestion'
+import { trackAi, AI_TELEMETRY_EVENTS } from '@/utils/telemetry'
 import { DOCUMENT_UPLOAD_ACCEPT, DOCUMENT_FORMAT_LABEL } from '@schema-platform/platform-shared/ai'
 import {
   AI_CHAT_PANEL_DEFAULTS,
@@ -138,6 +139,7 @@ function onInputChange(text: string): void {
       autoSwitchedWorkflowId = wf.id
       selectedWorkflowId.value = wf.id
       workflowSuggestion.clear()
+      trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_AUTO_SWITCH, { workflowId: wf.id, name: wf.name })
       emit('workflow-auto-switched', wf.name)
     }
   }

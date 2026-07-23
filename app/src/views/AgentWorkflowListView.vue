@@ -227,6 +227,35 @@ function onBrowseTemplates() {
   activeTab.value = 'templates'
 }
 
+async function onExport(id: string) {
+  try {
+    await api.exportWorkflow(id)
+    trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_EXPORT, { workflowId: id })
+    message.success('已导出')
+  } catch (e) {
+    message.error(e instanceof Error ? e.message : '导出失败')
+  }
+}
+
+async function onImport() {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.json'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    try {
+      const result = await api.importWorkflow(file)
+      trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_IMPORT, { workflowId: result.id, name: result.name })
+      message.success(`已导入「${result.name}」`)
+      await load()
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : '导入失败，请检查文件格式')
+    }
+  }
+  input.click()
+}
+
 async function confirmCreate() {
   const name = createName.value.trim()
   if (!name) {
@@ -317,6 +346,10 @@ onMounted(load)
             <p :class="styles.subtitle">可视化编排 AI 工作流</p>
           </div>
           <div :class="styles.headerActions">
+            <el-button @click="onImport">
+              <AppIcon name="download" :size="14" style="margin-right: 4px" />
+              导入
+            </el-button>
             <el-button type="primary" @click="onCreate">
               <AppIcon name="plus" class="el-icon--left" :size="14" />新建
             </el-button>
@@ -463,6 +496,11 @@ onMounted(load)
               <el-tooltip content="执行记录" placement="top" :show-after="300">
                 <el-button size="small" text @click="onExecutions(item.id)">
                   <AppIcon name="list" />
+                </el-button>
+              </el-tooltip>
+              <el-tooltip content="导出 JSON" placement="top" :show-after="300">
+                <el-button size="small" text @click="onExport(item.id)">
+                  <AppIcon name="download" :size="14" />
                 </el-button>
               </el-tooltip>
               <el-tooltip content="发布" placement="top" :show-after="300">

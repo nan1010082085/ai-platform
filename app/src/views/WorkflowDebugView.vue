@@ -28,6 +28,7 @@ import type {
   AgentWorkflowNodeData,
 } from '@/types/agentWorkflow'
 import { resolveErrorText } from '@/constants/errorCodes'
+import { trackAi, AI_TELEMETRY_EVENTS } from '@/utils/telemetry'
 import styles from './WorkflowDebugView.module.scss'
 
 const route = useRoute()
@@ -86,6 +87,7 @@ async function runTest() {
       input.file = await fileToWorkflowPayload(file)
     }
     const exec = await api.executeWorkflow(workflowId.value, input, { trigger: 'manual' })
+    trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_DEBUG_RUN, { workflowId: workflowId.value })
     execution.value = exec
     pendingFile.value = null
     history.value.unshift({
@@ -130,6 +132,7 @@ async function stopTest() {
   if (!execution.value) return
   try {
     await api.cancelExecution(execution.value.id)
+    trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_DEBUG_STOP, { workflowId: workflowId.value })
     ElMessage.success('已发送停止请求')
   } catch (err) {
     ElMessage.error(resolveErrorText(err, '停止失败'))
