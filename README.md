@@ -58,8 +58,10 @@ Edit `server/.env` -- set at minimum:
 ```env
 MONGODB_URI=mongodb://formgrid:formgrid@localhost:27017/formgrid
 JWT_SECRET=<any-random-hex-string-32-bytes>
-DEEPSEEK_API_KEY=sk-your-key-here
+DEEPSEEK_API_KEY=<your-deepseek-api-key>
 ```
+
+> ⚠️ **Security Warning**: Never commit real API keys to version control. Use environment variables or `.env` files (which should be in `.gitignore`).
 
 ### 4. Seed the database (optional but recommended)
 

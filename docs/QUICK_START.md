@@ -63,9 +63,11 @@ nano server/.env  # or use your preferred editor
 
 ```env
 MONGODB_URI=mongodb://formgrid:formgrid@localhost:27017/formgrid
-JWT_SECRET=your-random-32-byte-hex-string
-DEEPSEEK_API_KEY=sk-your-deepseek-api-key
+JWT_SECRET=<generate-a-random-32-byte-hex-string>
+DEEPSEEK_API_KEY=<your-deepseek-api-key>
 ```
+
+> ⚠️ **Security Warning**: Never commit real API keys to version control. Use environment variables or `.env` files (which should be in `.gitignore`).
 
 ### Step 4: Start MongoDB
 

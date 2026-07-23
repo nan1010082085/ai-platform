@@ -101,14 +101,16 @@ Create `ai/.env`:
 
 ```env
 # Required
-JWT_SECRET=your-random-32-byte-hex-string
-DEEPSEEK_API_KEY=sk-your-deepseek-api-key
+JWT_SECRET=<generate-a-random-32-byte-hex-string>
+DEEPSEEK_API_KEY=<your-deepseek-api-key>
 
 # Optional
 MONGODB_URI=mongodb://formgrid:formgrid@mongodb:27017/formgrid
 NODE_ENV=production
 CORS_ORIGINS=https://yourdomain.com
 ```
+
+> ⚠️ **Security Warning**: Never commit real API keys to version control. Use environment variables or secrets management tools.
 
 ### Docker Commands
 
@@ -176,11 +178,11 @@ nano .env.production
 
 ```env
 # Database
-MONGODB_URI=mongodb://username:password@host:27017/database?authSource=admin
+MONGODB_URI=mongodb://<username>:<password>@<host>:27017/<database>?authSource=admin
 
 # Security
-JWT_SECRET=your-strong-random-secret
-CREDENTIAL_SECRET=your-credential-encryption-secret
+JWT_SECRET=<generate-a-strong-random-secret>
+CREDENTIAL_SECRET=<generate-a-credential-encryption-secret>
 
 # Server
 PORT=3001
@@ -188,8 +190,10 @@ NODE_ENV=production
 CORS_ORIGINS=https://yourdomain.com
 
 # LLM
-DEEPSEEK_API_KEY=sk-your-api-key
+DEEPSEEK_API_KEY=<your-api-key>
 ```
+
+> ⚠️ **Security Warning**: Replace all `<placeholder>` values with your actual credentials. Never commit real credentials to version control.
 
 ### Start with PM2
 
