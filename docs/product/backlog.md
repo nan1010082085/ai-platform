@@ -36,9 +36,10 @@
 | **Phase Q** — Workflow 调试界面 | **100%**（WorkflowDebugView + NodeTraceList） |
 | **Phase R** — agent-loop 节点 | **100%**（LLM 自主循环 + runAgentLoop + 4 测试） |
 | **Phase S** — workflow 可路由技能 | **100%**（routingKeywords + chat 建议条） |
-| **Phase T** — 复杂文件组件化 | **50%**（T-1/T-3/T-4 ✅；T-2/T-5/T-6 待做） |
-| **Phase U** — 智能体深化 | **0%**（U-1~U-4 待做） |
-| **Phase V** — 智能体自动路由 | **0%**（V-1~V-4 待做） |
+| **Phase T** — 复杂文件组件化 | **80%**（T-1~T-6 ✅；T-2 ✅ aiApi.ts barrel；T-5 ✅ WorkflowTemplateCard；T-6 ✅ useModelCenter） |
+| **Phase U** — 智能体深化 | **75%**（U-1 ✅ 子 workflow 调用；U-2 ✅ 成本可见；U-3 ✅ 配额限流；U-4 断点单步可选） |
+| **Phase V** — 智能体自动路由 | **50%**（V-1 ✅ workflow 注册为 expert；V-2 ✅ 强匹配自动切换 + 弱匹配建议条） |
+| **Phase W** — agent-loop 流式 + 思考链 + 模板分类 | **100%**（W-1 ✅ 流式进度；W-2 ✅ 思考链展示；W-3 ✅ 模板分类筛选） |
 
 ---
 
