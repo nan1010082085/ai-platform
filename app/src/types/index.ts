@@ -163,6 +163,8 @@ export interface ChatSettings {
     replyLanguage: ReplyLanguage
     replyStyle: ReplyStyle
     codeComment: CodeCommentMode
+    /** 最大上下文轮数（LLM 节点 useConversationHistory 时生效），默认 20 */
+    maxHistoryTurns?: number
   }
   historySummary: {
     mode: HistorySummaryMode

@@ -62,6 +62,19 @@ export async function getMonitorStats(): Promise<AgentMetricStats[]> {
   return request<AgentMetricStats[]>('/ai/monitor/stats')
 }
 
+export interface NodeTypeStat {
+  nodeType: string
+  totalCalls: number
+  successRate: number
+  avgDuration: number
+  maxDuration: number
+}
+
+export async function getNodeTypeStats(): Promise<NodeTypeStat[]> {
+  const res = await request<{ success: boolean; data: NodeTypeStat[] }>('/ai/monitor/node-type-stats')
+  return res.data ?? []
+}
+
 export async function getMonitorRecent(params?: {
   limit?: number
   page?: number

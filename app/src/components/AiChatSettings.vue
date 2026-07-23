@@ -130,7 +130,7 @@ function handleSave(): void {
         </div>
       </SectionToggle>
 
-      <SectionToggle title="用户偏好" :count="3">
+      <SectionToggle title="用户偏好" :count="4">
         <FieldRow label="回复语言">
           <el-select v-model="localSettings.preferences.replyLanguage">
             <el-option label="中文" value="zh-CN" />
@@ -148,6 +148,16 @@ function handleSave(): void {
             <el-option label="是" value="yes" />
             <el-option label="否" value="no" />
           </el-select>
+        </FieldRow>
+        <FieldRow label="上下文轮数" hint="LLM 节点启用历史时保留的对话轮数，默认 20">
+          <el-input-number
+            v-model="localSettings.preferences.maxHistoryTurns"
+            :min="1"
+            :max="100"
+            :step="5"
+            size="small"
+            :placeholder="20"
+          />
         </FieldRow>
       </SectionToggle>
 

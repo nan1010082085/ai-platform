@@ -21,6 +21,8 @@ import {
   formatMonitorTokens,
   formatMonitorTime,
 } from '@/utils/monitorFormat'
+import { ref, onMounted } from 'vue'
+import { getNodeTypeStats, type NodeTypeStat } from '@/api/aiApi/monitor'
 
 const {
   loading,
@@ -48,6 +50,21 @@ const {
   handleRefresh,
   handleAlertPageChange,
 } = useAiMonitor()
+
+const nodeTypeStats = ref<NodeTypeStat[]>([])
+const nodeTypeLoading = ref(false)
+
+async function loadNodeTypeStats() {
+  nodeTypeLoading.value = true
+  try {
+    nodeTypeStats.value = await getNodeTypeStats()
+  } catch { /* ignore */ }
+  nodeTypeLoading.value = false
+}
+
+onMounted(() => {
+  loadNodeTypeStats()
+})
 </script>
 
 <template>
@@ -138,6 +155,27 @@ const {
             :class="$style.tokenFill"
             :style="{ width: `${Math.min(100, Math.round((item.totalTokens / (topTokenOps[0].totalTokens || 1)) * 100))}%` }"
           />
+        </div>
+      </div>
+    </div>
+
+    <!-- 节点类型统计 -->
+    <div v-if="nodeTypeStats.length" :class="$style.section">
+      <div :class="$style.sectionHeader">
+        <h3 :class="$style.sectionTitle">节点类型统计</h3>
+        <span :class="$style.sectionHint">{{ nodeTypeStats.length }} 种节点类型</span>
+      </div>
+      <div :class="$style.nodeTypeGrid">
+        <div v-for="stat in nodeTypeStats" :key="stat.nodeType" :class="$style.nodeTypeCard">
+          <div :class="$style.nodeTypeHead">
+            <span :class="$style.nodeTypeName">{{ stat.nodeType }}</span>
+            <span :class="$style.nodeTypeCalls">{{ stat.totalCalls }} 次</span>
+          </div>
+          <div :class="$style.nodeTypeMetrics">
+            <span>成功率 <strong>{{ stat.successRate }}%</strong></span>
+            <span>平均 <strong>{{ formatMonitorDuration(stat.avgDuration) }}</strong></span>
+            <span>最大 <strong>{{ formatMonitorDuration(stat.maxDuration) }}</strong></span>
+          </div>
         </div>
       </div>
     </div>
@@ -361,6 +399,43 @@ const {
 .tableBody {
   flex: 1;
   min-height: 0;
+}
+.nodeTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.nodeTypeCard {
+  background: var(--el-fill-color-lighter, #f5f7fa);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.nodeTypeHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.nodeTypeName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary, #303133);
+  font-family: var(--el-font-family-mono, monospace);
+}
+.nodeTypeCalls {
+  font-size: 11px;
+  color: var(--el-text-color-secondary, #909399);
+}
+.nodeTypeMetrics {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--el-text-color-secondary, #909399);
+}
+.nodeTypeMetrics strong {
+  color: var(--el-text-color-primary, #303133);
+  font-weight: 500;
 }
 .section {
   background: var(--el-bg-color, #fff);
