@@ -11,53 +11,60 @@ import type {
   AgentWorkflowTemplateId,
   AgentWorkflowTemplateMeta,
 } from '@/types/agentWorkflow'
-import { AGENT_WORKFLOW_TEMPLATES } from '@/types/agentWorkflow'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import AgentWorkflowTemplatePreviewDialog from '@/components/agent-workflow/AgentWorkflowTemplatePreviewDialog.vue'
 import WorkflowTemplateCard from '@/components/agent-workflow/WorkflowTemplateCard.vue'
 import WorkflowInvokeInfo from '@/components/WorkflowInvokeInfo.vue'
 import * as api from '@/api/agentWorkflowApi'
+import {
+  TEMPLATE_DEFAULT_NAMES,
+  TEMPLATE_ICONS,
+  TEMPLATE_CATEGORY_LABELS,
+  useWorkflowTemplates,
+} from '@/composables/useWorkflowTemplates'
+import { useWorkflowActions } from '@/composables/useWorkflowActions'
 import styles from './AgentWorkflowListView.module.scss'
 
-const router = useRouter()
-const loading = ref(false)
-const workflows = ref<AgentWorkflowSummary[]>([])
 const searchInput = ref('')
 const activeTab = ref<ListTab>('all')
 const sortBy = ref<'updated' | 'name'>('updated')
-const publishingId = ref<string | null>(null)
-const createDialogVisible = ref(false)
-const createName = ref('')
-const selectedTemplateId = ref<AgentWorkflowTemplateId>('blank')
-const creating = ref(false)
-const previewVisible = ref(false)
-const previewTemplate = ref<AgentWorkflowTemplateMeta | null>(null)
-const tryingTemplateId = ref<AgentWorkflowTemplateId | null>(null)
-const expandedInvokeId = ref<string | null>(null)
 
-const workflowTemplates = AGENT_WORKFLOW_TEMPLATES
+const {
+  workflowTemplates,
+  systemTemplates,
+  templateCategory,
+  templateCategoryOptions,
+  filteredTemplates,
+  updateFilteredTemplates,
+} = useWorkflowTemplates()
 
-const TEMPLATE_DEFAULT_NAMES: Record<AgentWorkflowTemplateId, string> = {
-  blank: '我的工作流',
-  'document-summary': '文档摘要编排',
-  'doc-image-recognition': '文档图片识别',
-  'intelligent-assistant': '智能助手问答',
-  'contract-extract': '合同条款提取',
-  'kb-faq': '知识库 FAQ 生成',
-  'http-notify': 'HTTP 回调通知',
-  'rag-ingest-qa': 'RAG 入库质检',
-  'multi-doc-batch': '多文档批量处理',
-  'smart-suggestions': '智能建议',
-  'smart-action-proposals': '智能拟办',
-  'image-text-generation': '图文生成',
-  'ppt-generation': 'PPT 生成',
-  'image-analysis': '图片智能分析',
-  'chat-parity-assistant': '聊天对等助手',
-  'requirement-gated-build': '需求门控构建',
-  'cs-ticket-triage': '客服工单智能分流',
-  'cs-kb-reply': '客服知识库回复',
-  'cs-sentiment-escalate': '情绪检测与升级',
-}
+const {
+  loading,
+  workflows,
+  publishingId,
+  createDialogVisible,
+  createName,
+  selectedTemplateId,
+  creating,
+  previewVisible,
+  previewTemplate,
+  tryingTemplateId,
+  expandedInvokeId,
+  load,
+  onCreate,
+  onTemplateSelect,
+  onUseTemplate,
+  onPreviewTemplate,
+  onPreviewUse,
+  onTryTemplate,
+  onBrowseTemplates,
+  onExport,
+  onImport,
+  confirmCreate,
+  onEdit,
+  onDelete,
+  onPublish,
+} = useWorkflowActions()
 
 type ListTab = 'all' | 'draft' | 'published' | 'templates'
 
@@ -68,52 +75,10 @@ const filterTabs = [
   { label: '模板', value: 'templates' },
 ]
 
-const TEMPLATE_ICONS: Record<AgentWorkflowTemplateId, string> = {
-  blank: 'set-up',
-  'document-summary': 'document',
-  'doc-image-recognition': 'picture',
-  'intelligent-assistant': 'chat-dot-round',
-  'contract-extract': 'document-checked',
-  'kb-faq': 'notebook',
-  'http-notify': 'bell',
-  'rag-ingest-qa': 'search',
-  'multi-doc-batch': 'files',
-  'smart-suggestions': 'magic-stick',
-  'smart-action-proposals': 'finished',
-  'image-text-generation': 'picture-outline',
-  'ppt-generation': 'data-board',
-  'image-analysis': 'view',
-  'chat-parity-assistant': 'chat-line-round',
-  'requirement-gated-build': 'key',
-  'cs-ticket-triage': 'message',
-  'cs-kb-reply': 'chat-dot-round',
-  'cs-sentiment-escalate': 'warning',
-}
-
-const TEMPLATE_CATEGORY_LABELS: Record<AgentWorkflowTemplateMeta['category'], string> = {
-  general: '通用',
-  document: '文档',
-  assistant: '助手',
-  integration: '集成',
-  batch: '批处理',
-  'customer-service': '客服',
-}
-
 const sortOptions = [
   { label: '最近更新', value: 'updated' },
   { label: '名称', value: 'name' },
 ]
-
-async function load() {
-  loading.value = true
-  try {
-    workflows.value = await api.listWorkflows()
-  } catch (e) {
-    message.error(e instanceof Error ? e.message : '加载失败')
-  } finally {
-    loading.value = false
-  }
-}
 
 function matchesSearch(w: AgentWorkflowSummary): boolean {
   const q = searchInput.value.trim().toLowerCase()
@@ -122,39 +87,6 @@ function matchesSearch(w: AgentWorkflowSummary): boolean {
 }
 
 const isTemplatesTab = computed(() => activeTab.value === 'templates')
-
-const systemTemplates = computed(() =>
-  workflowTemplates.filter((tpl) => tpl.id !== 'blank'),
-)
-
-/** 模板分类筛选（模板 tab 内部） */
-const templateCategory = ref<'all' | AgentWorkflowTemplateMeta['category']>('all')
-const templateCategoryOptions = computed(() => {
-  const counts = new Map<string, number>()
-  for (const tpl of systemTemplates.value) {
-    counts.set(tpl.category, (counts.get(tpl.category) ?? 0) + 1)
-  }
-  const opts: Array<{ value: string; label: string }> = [{ value: 'all', label: '全部' }]
-  for (const [cat, label] of Object.entries(TEMPLATE_CATEGORY_LABELS)) {
-    if (counts.has(cat)) opts.push({ value: cat, label: `${label} (${counts.get(cat)})` })
-  }
-  return opts
-})
-
-function matchesTemplateSearch(tpl: AgentWorkflowTemplateMeta): boolean {
-  if (templateCategory.value !== 'all' && tpl.category !== templateCategory.value) return false
-  const q = searchInput.value.trim().toLowerCase()
-  if (!q) return true
-  return (
-    tpl.name.toLowerCase().includes(q) ||
-    tpl.description.toLowerCase().includes(q) ||
-    TEMPLATE_CATEGORY_LABELS[tpl.category].includes(q)
-  )
-}
-
-const filteredTemplates = computed(() =>
-  systemTemplates.value.filter(matchesTemplateSearch),
-)
 
 const filteredWorkflows = computed(() => {
   let list = workflows.value
@@ -181,140 +113,8 @@ const isNoResults = computed(() => {
   return workflows.value.length > 0 && filteredWorkflows.value.length === 0
 })
 
-async function onCreate() {
-  selectedTemplateId.value = 'blank'
-  createName.value = TEMPLATE_DEFAULT_NAMES.blank
-  createDialogVisible.value = true
-}
-
-function onTemplateSelect(id: AgentWorkflowTemplateId) {
-  trackAi(AI_TELEMETRY_EVENTS.TEMPLATE_SELECT, { templateId: id })
-  selectedTemplateId.value = id
-  createName.value = TEMPLATE_DEFAULT_NAMES[id]
-}
-
-function onUseTemplate(id: AgentWorkflowTemplateId) {
-  onTemplateSelect(id)
-  createDialogVisible.value = true
-}
-
-function onPreviewTemplate(tpl: AgentWorkflowTemplateMeta) {
-  previewTemplate.value = tpl
-  previewVisible.value = true
-}
-
-function onPreviewUse(id: AgentWorkflowTemplateId) {
-  onUseTemplate(id)
-}
-
-async function onTryTemplate(templateId: AgentWorkflowTemplateId) {
-  if (tryingTemplateId.value) return
-  tryingTemplateId.value = templateId
-  try {
-    const tpl = workflowTemplates.find((t) => t.id === templateId)
-    const name = `试用-${TEMPLATE_DEFAULT_NAMES[templateId]}`
-    const wf = await api.createWorkflow(name, tpl?.description ?? '', templateId)
-    await api.publishWorkflow(wf.id)
-    router.push({ name: 'chat', query: { workflowId: wf.id } })
-  } catch (e) {
-    message.error(e instanceof Error ? e.message : '创建试用工作流失败')
-  } finally {
-    tryingTemplateId.value = null
-  }
-}
-
-function onBrowseTemplates() {
-  activeTab.value = 'templates'
-}
-
-async function onExport(id: string) {
-  try {
-    await api.exportWorkflow(id)
-    trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_EXPORT, { workflowId: id })
-    message.success('已导出')
-  } catch (e) {
-    message.error(e instanceof Error ? e.message : '导出失败')
-  }
-}
-
-async function onImport() {
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.json'
-  input.onchange = async () => {
-    const file = input.files?.[0]
-    if (!file) return
-    try {
-      const result = await api.importWorkflow(file)
-      trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_IMPORT, { workflowId: result.id, name: result.name })
-      message.success(`已导入「${result.name}」`)
-      await load()
-    } catch (e) {
-      message.error(e instanceof Error ? e.message : '导入失败，请检查文件格式')
-    }
-  }
-  input.click()
-}
-
-async function confirmCreate() {
-  const name = createName.value.trim()
-  if (!name) {
-    message.warning('请输入工作流名称')
-    return
-  }
-  creating.value = true
-  try {
-    const tpl = workflowTemplates.find((t) => t.id === selectedTemplateId.value)
-    const wf = await api.createWorkflow(
-      name,
-      tpl?.description ?? '',
-      selectedTemplateId.value,
-    )
-    createDialogVisible.value = false
-    router.push({ name: 'agent-workflow-designer', params: { id: wf.id } })
-  } catch (e) {
-    message.error(e instanceof Error ? e.message : '创建失败')
-  } finally {
-    creating.value = false
-  }
-}
-
-function onEdit(id: string) {
-  router.push({ name: 'agent-workflow-designer', params: { id } })
-}
-
 function onExecutions(id: string) {
   router.push({ name: 'agent-workflow-executions', params: { id } })
-}
-
-async function onPublish(id: string) {
-  publishingId.value = id
-  try {
-    const res = await api.publishWorkflow(id)
-    trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_PUBLISH, { workflowId: id, version: res.version })
-    ElMessage.success(`已发布 v${res.version}`)
-    await load()
-  } catch (e) {
-    void reportAiError(e instanceof Error ? e : String(e), { workflowId: id, phase: 'publish' })
-    message.error(e instanceof Error ? e.message : '发布失败')
-  } finally {
-    publishingId.value = null
-  }
-}
-
-async function onDelete(id: string) {
-  try {
-    await ElMessageBox.confirm('确定删除此工作流？删除后不可恢复。', '删除', { type: 'warning' })
-  } catch {
-    return
-  }
-  try {
-    await api.deleteWorkflow(id)
-    ElMessage.success('已删除')
-    await load()
-  } catch (e) {
-    message.error(e instanceof Error ? e.message : '删除失败')
-  }
 }
 
 function toggleInvokeInfo(id: string): void {
