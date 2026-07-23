@@ -64,6 +64,11 @@
   margin-top: 12px;
 }
 
+.btnGroup {
+  display: flex;
+  gap: 8px;
+}
+
 .hint {
   font-size: 12px;
   color: var(--el-text-color-secondary, #909399);

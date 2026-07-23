@@ -122,6 +122,20 @@ function selectRecord(record: AgentNodeRecord) {
   selectedRecord.value = record
 }
 
+const canStop = computed(() =>
+  execution.value != null && !['success', 'error', 'cancelled'].includes(execution.value.status),
+)
+
+async function stopTest() {
+  if (!execution.value) return
+  try {
+    await api.cancelExecution(execution.value.id)
+    ElMessage.success('已发送停止请求')
+  } catch (err) {
+    ElMessage.error(resolveErrorText(err, '停止失败'))
+  }
+}
+
 function loadFromHistory(item: { executionId: string }) {
   routeToExecution(item.executionId)
 }
@@ -187,10 +201,21 @@ onUnmounted(() => {
             </div>
             <div :class="styles.inputActions">
               <span :class="styles.hint">Ctrl + Enter 执行</span>
-              <el-button type="primary" :loading="executing" @click="runTest">
-                <AppIcon name="video-play" :size="14" style="margin-right: 4px" />
-                执行
-              </el-button>
+              <div :class="styles.btnGroup">
+                <el-button
+                  v-if="canStop"
+                  type="danger"
+                  plain
+                  @click="stopTest"
+                >
+                  <AppIcon name="video-pause" :size="14" style="margin-right: 4px" />
+                  停止
+                </el-button>
+                <el-button type="primary" :loading="executing" :disabled="canStop" @click="runTest">
+                  <AppIcon name="video-play" :size="14" style="margin-right: 4px" />
+                  执行
+                </el-button>
+              </div>
             </div>
           </div>
 
