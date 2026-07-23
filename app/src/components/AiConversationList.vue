@@ -17,6 +17,7 @@ const emit = defineEmits<{
   select: [id: string]
   'new-conversation': []
   delete: [id: string]
+  share: [id: string]
 }>()
 
 function formatTime(date: Date | string): string {
@@ -78,6 +79,11 @@ async function handleExport(command: string, id: string): Promise<void> {
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+          <el-tooltip content="分享对话" placement="top">
+            <el-button size="small" link @click.stop="emit('share', conv.id)">
+              <AppIcon name="share" :size="14" />
+            </el-button>
+          </el-tooltip>
           <el-tooltip content="删除对话" placement="top">
             <el-button size="small" link type="danger" @click.stop="emit('delete', conv.id)">
               <AppIcon name="delete" :size="14" />

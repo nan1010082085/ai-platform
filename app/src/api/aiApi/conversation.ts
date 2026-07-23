@@ -130,3 +130,19 @@ export async function submitMessageFeedback(
     body: JSON.stringify({ feedback, comment }),
   })
 }
+
+// ---- 对话分享 ----
+
+/** 生成分享链接 */
+export async function shareConversation(conversationId: string): Promise<{ shareId: string }> {
+  return request(`/ai/conversations/${encodeURIComponent(conversationId)}/share`, {
+    method: 'POST',
+  })
+}
+
+/** 取消分享 */
+export async function unshareConversation(conversationId: string): Promise<void> {
+  await request(`/ai/conversations/${encodeURIComponent(conversationId)}/share`, {
+    method: 'DELETE',
+  })
+}

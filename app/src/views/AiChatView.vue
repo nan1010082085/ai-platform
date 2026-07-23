@@ -73,6 +73,17 @@ function handleUpdateSettingsVisible(val: boolean): void {
   settingsVisible.value = val
 }
 
+async function handleShareConversation(id: string): Promise<void> {
+  try {
+    const result = await import('@/api/aiApi').then((m) => m.shareConversation(id))
+    const url = `${window.location.origin}/ai/shared/${result.shareId}`
+    await navigator.clipboard.writeText(url)
+    message.success('分享链接已复制到剪贴板')
+  } catch (err) {
+    message.error('分享失败')
+  }
+}
+
 function handleSaveSettings(settings: ChatSettings): void {
   store.updateChatSettings(settings)
 }
@@ -279,6 +290,7 @@ onMounted(async () => {
       @select="handleSelectConversation"
       @delete="handleDeleteConversation"
       @new-conversation="handleNewConversation"
+      @share="handleShareConversation"
     />
 
     <!-- Settings Dialog -->

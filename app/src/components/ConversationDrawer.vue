@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import type { Conversation } from '@/types'
 import styles from './ConversationDrawer.module.scss'
 
@@ -13,6 +14,7 @@ const emit = defineEmits<{
   'update:visible': [value: boolean]
   select: [id: string]
   delete: [id: string]
+  share: [id: string]
 }>()
 
 const sortedConversations = computed(() => {
@@ -59,6 +61,11 @@ function handleSelect(id: string): void {
   emit('select', id)
 }
 
+function handleShare(id: string, event: Event): void {
+  event.stopPropagation()
+  emit('share', id)
+}
+
 function handleDelete(id: string, event: Event): void {
   event.stopPropagation()
   emit('delete', id)
@@ -90,6 +97,14 @@ function handleDelete(id: string, event: Event): void {
           <span :class="styles.source">{{ getSourceLabel(conv.source) }}</span>
           <span>{{ formatTime(conv.updatedAt) }}</span>
         </div>
+        <button
+          type="button"
+          :class="styles.shareBtn"
+          aria-label="分享对话"
+          @click="(e: Event) => handleShare(conv.id, e)"
+        >
+          <AppIcon name="share" :size="14" />
+        </button>
         <button
           type="button"
           :class="styles.deleteBtn"
