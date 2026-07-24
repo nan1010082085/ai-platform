@@ -455,7 +455,7 @@ export interface PptGenerateResult {
 // ---- Step Card ----
 
 /** 步骤类型 */
-export type StepType = 'thinking' | 'tool_call' | 'tool_error' | 'result' | 'text' | 'code' | 'requirement_confirm' | 'action_proposal' | 'image_generate' | 'ppt_generate'
+export type StepType = 'thinking' | 'tool_call' | 'tool_error' | 'result' | 'text' | 'code' | 'requirement_confirm' | 'action_proposal' | 'image_generate' | 'ppt_generate' | 'artifact'
 
 /** 步骤状态 */
 export type StepStatus = 'pending' | 'running' | 'done' | 'error'
@@ -478,6 +478,10 @@ export interface StepData {
   error?: string
   /** 工具调用在 toolCalls 数组中的索引（用于重试） */
   toolCallIndex?: number
+  /** artifact 类型（type === 'artifact'） */
+  artifactType?: 'code' | 'json' | 'html' | 'form'
+  /** artifact 语言（code/json/html） */
+  artifactLanguage?: string
   /** 嵌入的卡片类型：schema 或 flow */
   cardType?: 'schema' | 'flow'
   /** 卡片标题 */

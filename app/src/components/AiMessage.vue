@@ -99,6 +99,7 @@ const emit = defineEmits<{
   copy: []
   regenerate: []
   feedback: [type: 'positive' | 'negative']
+  'artifact-sendback': [content: string, language: string]
 }>()
 
 // ---- Hover state ----
@@ -268,6 +269,17 @@ const steps = computed<StepData[]>(() => {
           timestamp: now,
           agent: props.agent,
         })
+      } else if (part.type === 'artifact') {
+        result.push({
+          type: 'artifact',
+          title: '工件',
+          content: part.content,
+          status: 'done',
+          timestamp: now,
+          agent: props.agent,
+          artifactType: part.artifactType,
+          artifactLanguage: part.language,
+        })
       }
     }
   }
@@ -313,6 +325,7 @@ const contentEvents = {
   'requirement-answer': (questionId: string, value: string) => emit('requirement-answer', questionId, value),
   'requirement-skip': () => emit('requirement-skip'),
   'proposal-approve': (stepIndex: number, selectedIds: string[]) => emit('action-proposal-approve', getProposalIndex(stepIndex), selectedIds),
+  'artifact-sendback': (_stepIndex: number, content: string, language: string) => emit('artifact-sendback', content, language),
   'proposal-reject': (stepIndex: number) => emit('action-proposal-reject', getProposalIndex(stepIndex)),
   'proposal-toggle-item': (stepIndex: number, itemId: string) => emit('action-proposal-toggle-item', getProposalIndex(stepIndex), itemId),
   'proposal-toggle-all': (stepIndex: number) => emit('action-proposal-toggle-all', getProposalIndex(stepIndex)),

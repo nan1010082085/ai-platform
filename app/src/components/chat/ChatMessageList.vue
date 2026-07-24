@@ -31,6 +31,7 @@ const emit = defineEmits<{
   'regenerate-message': [messageIndex: number]
   'message-feedback': [messageIndex: number, type: 'positive' | 'negative']
   'requirement-confirm': [answers: Record<string, string>]
+  'artifact-sendback': [content: string, language: string]
   'requirement-answer': [questionId: string, value: string]
   'requirement-skip': []
   'select-starter-agent': [agent: AgentType]
@@ -178,6 +179,7 @@ function handleStarterClick(prompt: StarterPrompt) {
             @requirement-confirm="(answers) => emit('requirement-confirm', answers)"
             @requirement-answer="(qid, val) => emit('requirement-answer', qid, val)"
             @requirement-skip="emit('requirement-skip')"
+            @artifact-sendback="(content, lang) => emit('artifact-sendback', content, lang)"
           />
         </DynamicScrollerItem>
       </template>

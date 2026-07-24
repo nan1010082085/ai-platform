@@ -153,6 +153,16 @@ function applySuggestion(): void {
   }
 }
 
+function handleArtifactSendback(content: string, language: string): void {
+  const fenced = `\`\`\`${language}
+${content}
+\`\`\``
+  const text = `这是修改后的工件，请基于它继续优化：
+
+${fenced}`
+  handleMentionSend(text)
+}
+
 function handleMentionSend(text: string, mentions?: MentionReference[]): void {
   if ((!text && pendingAttachments.value.length === 0) || props.disabled) return
   workflowSuggestion.clear()
@@ -277,6 +287,7 @@ function handleSelectStarterAgent(agent: AgentType): void {
       @requirement-confirm="(answers) => emit('requirement-confirm', answers)"
       @requirement-answer="(qid, val) => emit('requirement-answer', qid, val)"
       @requirement-skip="emit('requirement-skip')"
+      @artifact-sendback="handleArtifactSendback"
     />
 
     <div v-if="visibleSuggestions.length > 0 && !loading" :class="$style.suggestionsArea">

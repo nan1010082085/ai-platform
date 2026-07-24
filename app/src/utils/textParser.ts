@@ -7,9 +7,11 @@
  */
 
 export interface TextPart {
-  type: 'text' | 'code'
+  type: 'text' | 'code' | 'artifact'
   content: string
   language?: string
+  /** artifact 子类型：code/json/html/form */
+  artifactType?: 'code' | 'json' | 'html' | 'form'
 }
 
 /**
@@ -38,7 +40,7 @@ function isRedundantSummary(text: string): boolean {
 export function splitTextAndCodeBlocks(content: string): TextPart[] {
   const parts: TextPart[] = []
 
-  const blockRegex = /(<schema>[\s\S]*?<\/schema>|```(\w+)?\n([\s\S]*?)```)/g
+  const blockRegex = /(<schema>[\s\S]*?<\/schema>|```([\w:]+)?\n([\s\S]*?)```)/g
   let lastIndex = 0
   let match
   let hasSchemaTag = false
@@ -60,7 +62,13 @@ export function splitTextAndCodeBlocks(content: string): TextPart[] {
     } else {
       const language = match[2] || 'json'
       const codeContent = match[3].trim()
-      parts.push({ type: 'code', content: codeContent, language })
+      // ```artifact:code / ```artifact:json / ```artifact:html -> 可交互工件
+      if (language.startsWith('artifact:')) {
+        const artifactType = language.slice('artifact:'.length) as 'code' | 'json' | 'html' | 'form'
+        parts.push({ type: 'artifact', content: codeContent, language: artifactType, artifactType })
+      } else {
+        parts.push({ type: 'code', content: codeContent, language })
+      }
     }
 
     lastIndex = match.index + fullMatch.length

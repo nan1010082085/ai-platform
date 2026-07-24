@@ -72,6 +72,7 @@ const emit = defineEmits<{
   'proposal-toggle-all': [stepIndex: number]
   'proposal-modify': [stepIndex: number, itemId: string, changes: Record<string, unknown>]
   'proposal-reset': [stepIndex: number]
+  'artifact-sendback': [stepIndex: number, content: string, language: string]
   'document-download': [documentId: string]
   'document-expand': [documentId: string]
   'workflow-retry': [executionId: string]
@@ -179,6 +180,7 @@ function getRendererEvents(step: StepData, stepIndex: number): Record<string, (.
         'schema-publish', 'schema-preview', 'flow-publish', 'flow-preview',
         'proposal-approve', 'proposal-reject', 'proposal-toggle-item',
         'proposal-toggle-all', 'proposal-modify', 'proposal-reset',
+        'artifact-sendback',
       ])
       if (eventsNeedingIndex.has(eventName)) {
         emit(eventName as never, stepIndex, ...args)

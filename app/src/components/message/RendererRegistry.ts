@@ -18,6 +18,7 @@ import DocumentAttachmentRenderer from './renderers/DocumentAttachmentRenderer.v
 import DocumentSummaryRenderer from './renderers/DocumentSummaryRenderer.vue'
 import WorkflowExecutionRenderer from './renderers/WorkflowExecutionRenderer.vue'
 import CodeRenderer from './renderers/CodeRenderer.vue'
+import ArtifactRenderer from './renderers/ArtifactRenderer.vue'
 import ThinkingRenderer from './renderers/ThinkingRenderer.vue'
 import ToolCallRenderer from './renderers/ToolCallRenderer.vue'
 import SchemaResultRenderer from './renderers/SchemaResultRenderer.vue'
@@ -179,6 +180,13 @@ const presetRenderers: MessageRenderer[] = [
     matcher: (step) => step.type === 'code',
     priority: 30,
     emitEvents: ['code-copy', 'code-insert'],
+  },
+  {
+    type: 'artifact',
+    component: ArtifactRenderer,
+    matcher: (step) => step.type === 'artifact',
+    priority: 25,
+    emitEvents: ['artifact-sendback'],
   },
   {
     type: 'thinking',
