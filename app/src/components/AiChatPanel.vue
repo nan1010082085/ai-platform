@@ -36,6 +36,7 @@ const mentionInputRef = ref<InstanceType<typeof AiMentionInput>>()
 const ragVisible = ref(false)
 const workflowPickerVisible = ref(false)
 const store = useAiStore()
+const interruptFeedback = ref('')
 const router = useRouter()
 const { shouldHideSubAppMenu } = useShellEmbed()
 const { loadPublishedWorkflows, getWorkflowName } = usePublishedAgentWorkflows()
@@ -314,6 +315,29 @@ function handleSelectStarterAgent(agent: AgentType): void {
         <AppIcon name="refresh-right" :size="12" />
         {{ t('common.retry') }}
       </el-button>
+    </div>
+
+    <!-- Agent 中断反馈 -->
+    <div v-if="store.pendingInterrupt" :class="$style.interruptCard">
+      <div :class="$style.interruptHead">
+        <AppIcon name="warning-filled" :size="14" :class="$style.interruptIcon" />
+        <span :class="$style.interruptTitle">{{ store.pendingInterrupt.message }}</span>
+      </div>
+      <div :class="$style.interruptBody">
+        <el-input
+          v-model="interruptFeedback"
+          type="textarea"
+          :rows="2"
+          :placeholder="'输入反馈后回车发送，或点击确认/跳过'"
+          @keydown.ctrl.enter="() => { store.respondInterrupt(true, interruptFeedback); interruptFeedback = '' }"
+        />
+      </div>
+      <div :class="$style.interruptActions">
+        <el-button size="small" @click="store.respondInterrupt(false); interruptFeedback = ''">跳过</el-button>
+        <el-button type="primary" size="small" @click="store.respondInterrupt(true, interruptFeedback); interruptFeedback = ''">
+          发送反馈
+        </el-button>
+      </div>
     </div>
 
     <div :class="$style.inputArea">

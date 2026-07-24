@@ -710,3 +710,38 @@
   flex-direction: column;
   gap: 8px;
 }
+
+.interruptCard {
+  margin: 0 24px 12px;
+  padding: 12px 14px;
+  background: var(--el-color-warning-light-9);
+  border: 1px solid var(--el-color-warning-light-5);
+  border-radius: 10px;
+}
+
+.interruptHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.interruptIcon {
+  color: var(--el-color-warning);
+}
+
+.interruptTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.interruptBody {
+  margin-bottom: 8px;
+}
+
+.interruptActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}

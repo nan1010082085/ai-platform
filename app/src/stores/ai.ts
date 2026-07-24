@@ -90,7 +90,7 @@ export const useAiStore = defineStore('ai', () => {
     context.value.source = agent === 'auto' ? 'standalone' : (agent as 'editor' | 'flow')
   }
 
-  async function respondInterrupt(confirmed: boolean): Promise<void> {
+  async function respondInterrupt(confirmed: boolean, feedback?: string): Promise<void> {
     const interrupt = hitlStore.pendingInterrupt
     if (!interrupt) return
 
@@ -98,7 +98,12 @@ export const useAiStore = defineStore('ai', () => {
     streamStore.error = null
     hitlStore.clearInterrupt()
 
-    await streamStore.executeResume(interrupt.threadId, confirmed, conversationStore.messages, {
+    // agent-loop interrupt：把 feedback 作为 resumeValue
+    const resumeValue = feedback
+      ? { approved: confirmed, feedback }
+      : confirmed
+
+    await streamStore.executeResume(interrupt.threadId, resumeValue, conversationStore.messages, {
       onStreamEvent: handleStreamEventForStore,
       onDone: (conversationId) => {
         if (conversationId) conversationStore.loadConversations()
