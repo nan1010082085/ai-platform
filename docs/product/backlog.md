@@ -1,6 +1,6 @@
 # AI 平台 — 未完成任务与进度
 
-> 最后更新：**2026-07-22** · **全量任务索引**见 [open-platform-roadmap.md § 七](./open-platform-roadmap.md#七全量任务索引) · 可执行拆解见 [open-source-iteration.md](./open-source-iteration.md) · **LangGraph→Workflow 对话节点**见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md) · **Workflow-as-Agent 演进**见 [evolution-plan-2026-07-22-workflow-as-agent.md](./evolution-plan-2026-07-22-workflow-as-agent.md)
+> 最后更新：**2026-07-24** · **全量任务索引**见 [open-platform-roadmap.md § 七](./open-platform-roadmap.md#七全量任务索引) · 可执行拆解见 [open-source-iteration.md](./open-source-iteration.md) · **LangGraph→Workflow 对话节点**见 [langgraph-workflow-nodes-roadmap.md](./langgraph-workflow-nodes-roadmap.md) · **Workflow-as-Agent 演进**见 [evolution-plan-2026-07-22-workflow-as-agent.md](./evolution-plan-2026-07-22-workflow-as-agent.md)
 
 **已完成总览**：[ai-five-phase-iteration.md](./ai-five-phase-iteration.md) · [plugin.md](../plugin.md) · [platform.md](../platform.md)
 
@@ -40,6 +40,10 @@
 | **Phase U** — 智能体深化 | **75%**（U-1 ✅ 子 workflow 调用；U-2 ✅ 成本可见；U-3 ✅ 配额限流；U-4 断点单步可选） |
 | **Phase V** — 智能体自动路由 | **50%**（V-1 ✅ workflow 注册为 expert；V-2 ✅ 强匹配自动切换 + 弱匹配建议条） |
 | **Phase W** — agent-loop 流式 + 思考链 + 模板分类 | **100%**（W-1 ✅ 流式进度；W-2 ✅ 思考链展示；W-3 ✅ 模板分类筛选） |
+| **Phase X** — RAG 检索增强 + 评测体系 | **100%**（X-1 ✅ rerank+hybrid+RagDebugView；X-2 ✅ Dataset/Run/EvaluationView） |
+| **Phase Y** — 触发器 + Artifacts | **100%**（Y-1 ✅ schedule-trigger+调度器+ScheduleView；Y-2 ✅ ArtifactRenderer+回传闭环） |
+| **Phase Z** — 多Agent + 中断恢复 | **100%**（Z-1 ✅ agent-team+AgentTeamNodePanel；Z-2 ✅ AgentInterruptError+状态保存恢复+反馈UI） |
+| **体验打磨** — 节点搜索 + AI 诊断 | **部分完成**（✅ designer 节点搜索；✅ 失败节点 AI 诊断；❌ 模板扩充 20+；❌ 成本看板；❌ 监控告警；❌ 批量操作） |
 
 ---
 

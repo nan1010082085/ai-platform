@@ -399,3 +399,60 @@ agent-loop 运行中：
 3. **Artifacts 回传是否限模型**：所有模型支持，还是仅强模型（避免小模型处理不好编辑回传）？→ 建议全支持，由用户自行判断
 4. **agent-team 协作模式**：首版只做"顺序"还是三模式都做？→ 建议首版顺序+讨论，投票后续
 5. **调度器实现**：node-cron 进程内，还是独立 worker？→ 单实例用 node-cron，多实例需后续抽 worker（先单实例）
+
+---
+
+## 九、实际完成状态（2026-07-24）
+
+### 批次完成度
+
+| 批次 | 计划 | 实际 | 状态 |
+|---|---|---|---|
+| **1** X-1 | RAG rerank + RagDebugView | rerankService + hybrid + searchWithDebug + RagDebugView(三Tab) | ✅ 100% |
+| **2** X-2 | 评测体系 | Dataset/Run 模型 + 服务 + 路由 + EvaluationView(三Tab) + CSV 导入 | ✅ 100% |
+| **3** Y-1 | 定时触发器 | cron 匹配器 + 60s 调度器 + ScheduleTriggerNodePanel + ScheduleView 日历 | ✅ 100% |
+| **4** Y-2 | Artifacts | textParser artifact 检测 + ArtifactRenderer(编辑/预览/回传) + 事件链 | ✅ 100% |
+| **5** 体验打磨 | 模板/空状态/诊断/成本/告警/搜索/批量 | 节点搜索 ✅ + AI 诊断 ✅ + 空状态已有 starterPrompts ✅ | ⚠️ 3/7 |
+| **6** Z-1 | 多 Agent | agent-team 节点 + AgentTeamNodePanel + executor | ✅ 100% |
+| **7** Z-2 | 中断恢复 | AgentInterruptError + 状态保存/恢复 + 反馈 UI | ✅ 100% |
+
+### 成功度量对照
+
+| 度量项 | 状态 | 说明 |
+|---|---|---|
+| RagDebugView rerank 前后对比 | ✅ | 三 Tab + 排名变化箭头 + chunk 原文 |
+| 评测 v1 vs v2 对比 | ✅ | 对比 Tab + 变化箭头 + 失败 diff |
+| schedule-trigger 定时触发 | ⚠️ | 代码完成，需真机验证 |
+| Artifact 编辑回传闭环 | ✅ | 就地编辑 + 回传给 Agent |
+| agent-team 协作 demo | ⚠️ | 代码完成，需真机验证 |
+| 新视图 UI 一致性 | ✅ | RagDebug/Evaluation/Schedule 全通过检查清单 |
+| 测试不退化 | ✅ | 687 过（原 680，新增 7） |
+| 模板数 20+ | ❌ | 未做（原计划批次 5，2d） |
+| 失败诊断 | ✅ | /ai/debug/diagnose-node |
+| 成本趋势看板 | ❌ | 未做（原计划批次 5，1d） |
+
+### 已做的决策（对齐 §八）
+
+1. ✅ 评测中心 → 挂设置下拉（非顶导第 6 项）
+2. ✅ RagDebugView → 独立视图 /debug/rag（非 Tab，与路由/工作流调试并列三件套）
+3. ✅ Artifacts → 全模型支持，不限
+4. ✅ agent-team → 首版 sequential + discussion，投票后续
+5. ✅ 调度器 → 自实现 cron 匹配 + 60s 轮询（无外部依赖），单实例
+
+### 剩余待办（批次 5 未完成项）
+
+| 项 | 工期 | 优先级 | 说明 |
+|---|---|---|---|
+| Workflow 模板扩充到 20+ | 2d | P1 | 客服/HR/财务/法务/运营，带预览图 |
+| 成本趋势看板 + 预算预警 | 1d | P1 | 按模型/workflow 折线图 + 超预算高亮 |
+| 监控告警 webhook | 1d | P2 | 配额/错误率超阈值通知 |
+| 列表批量操作 | 1d | P2 | 执行列表/工作流列表多选批量 |
+
+### 真机验证清单
+
+1. schedule-trigger：配 cron，发布 workflow，验证定时触发
+2. agent-team：配 2+ 成员，输入多步任务，验证 supervisor 调度
+3. Artifact：LLM 输出 ```artifact:code 块，验证编辑+回传
+4. 评测运行：建数据集 → 跑评测 → 对比两次运行
+5. RAG rerank：配 SILICONFLOW_API_KEY，检索调试看 rerank 效果
+6. 中断恢复：agent-loop 里 LLM 调 request_user_input，验证暂停+反馈+恢复
