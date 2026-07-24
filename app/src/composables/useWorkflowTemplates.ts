@@ -61,6 +61,10 @@ export const TEMPLATE_CATEGORY_LABELS: Record<AgentWorkflowTemplateMeta['categor
   integration: '集成',
   batch: '批处理',
   'customer-service': '客服',
+  audit: '审计',
+  hr: 'HR',
+  finance: '财务',
+  operations: '运营',
 }
 
 export function useWorkflowTemplates() {
