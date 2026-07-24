@@ -87,6 +87,11 @@ const routes = [
         name: 'evaluation',
         component: () => import('./views/EvaluationView.vue'),
       },
+      {
+        path: 'schedules',
+        name: 'schedules',
+        component: () => import('./views/ScheduleView.vue'),
+      },
     ],
   },
   {

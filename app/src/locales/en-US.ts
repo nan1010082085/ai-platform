@@ -35,6 +35,7 @@ export default {
       routingDebug: 'Routing Debug',
       ragDebug: 'Retrieval Debug',
       evaluation: 'Evaluation',
+      schedules: 'Schedules',
     },
   },
   chat: {

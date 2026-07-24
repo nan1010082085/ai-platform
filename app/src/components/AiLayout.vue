@@ -34,6 +34,7 @@ const settingsNav = computed(() => [
   { path: '/debug/routing', label: t('layout.nav.routingDebug'), icon: 'search' },
   { path: '/debug/rag', label: t('layout.nav.ragDebug'), icon: 'filter' },
   { path: '/evaluation', label: t('layout.nav.evaluation'), icon: 'data-analysis' },
+  { path: '/schedules', label: t('layout.nav.schedules'), icon: 'alarm-clock' },
 ])
 
 const languageLabel = computed(() =>
@@ -48,6 +49,7 @@ const activeNav = computed(() => {
   if (route.path.startsWith('/settings')) return '/settings/keys'
   if (route.path.startsWith('/debug')) return route.path
   if (route.path.startsWith('/evaluation')) return '/evaluation'
+  if (route.path.startsWith('/schedules')) return '/schedules'
   return route.path
 })
 

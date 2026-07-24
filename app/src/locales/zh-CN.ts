@@ -35,6 +35,7 @@ export default {
       routingDebug: '路由调试',
       ragDebug: '检索调试',
       evaluation: '评测中心',
+      schedules: '调度管理',
     },
   },
   chat: {

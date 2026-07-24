@@ -32,6 +32,14 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
     defaultData: { label: 'Webhook 触发', webhookPath: '/hook', webhookMethod: 'POST' },
   },
   {
+    type: 'schedule-trigger',
+    label: '定时触发',
+    icon: 'alarm-clock',
+    category: 'trigger',
+    description: '按 cron 表达式定时启动（发布后生效，每分钟检查）',
+    defaultData: { label: '定时触发', scheduleCron: '0 9 * * *', scheduleTimezone: 'Asia/Shanghai', scheduleEnabled: true },
+  },
+  {
     type: 'document-parse',
     label: '文档解析',
     icon: 'document',
@@ -328,6 +336,7 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
 export const AGENT_NODE_COLORS: Record<string, string> = {
   'manual-trigger': '#67C23A',
   'webhook-trigger': '#67C23A',
+  'schedule-trigger': '#67C23A',
   'document-parse': '#409EFF',
   'vision-analyze': '#9B59B6',
   'audio-transcribe': '#67C23A',

@@ -78,3 +78,51 @@
   font-size: 12px;
   color: var(--text-color-secondary);
 }
+
+.presetRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+
+.presetChip {
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--el-fill-color-blank);
+  color: var(--el-text-color-regular);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--el-color-primary);
+    color: var(--el-color-primary);
+  }
+}
+
+.nextRuns {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.nextRunItem {
+  font-size: 12px;
+  color: var(--el-text-color-primary);
+  padding: 4px 8px;
+  background: var(--el-fill-color-light);
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.errorHint {
+  font-size: 12px;
+  color: var(--el-color-danger);
+}
+
+.muted {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
