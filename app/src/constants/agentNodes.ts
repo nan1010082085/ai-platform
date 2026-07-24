@@ -40,6 +40,25 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
     defaultData: { label: '定时触发', scheduleCron: '0 9 * * *', scheduleTimezone: 'Asia/Shanghai', scheduleEnabled: true },
   },
   {
+    type: 'agent-team',
+    label: 'Agent 团队',
+    icon: 'user',
+    category: 'ai',
+    description: '多 Agent 协作：Supervisor 调度团队成员（各自人设/模型/工具），讨论或顺序完成任务',
+    defaultData: {
+      label: 'Agent 团队',
+      agentTeamMembers: [
+        { name: '产品', persona: '产品经理，负责需求分析和方案设计', tools: [] },
+        { name: '开发', persona: '开发工程师，负责技术实现和代码编写', tools: [] },
+      ],
+      agentTeamMode: 'sequential',
+      agentTeamMaxRounds: 5,
+      agentTeamModel: 'default',
+      agentTeamSystemPrompt: '',
+      agentLoopMaxToolInvocations: 50,
+    },
+  },
+  {
     type: 'document-parse',
     label: '文档解析',
     icon: 'document',
@@ -337,6 +356,7 @@ export const AGENT_NODE_COLORS: Record<string, string> = {
   'manual-trigger': '#67C23A',
   'webhook-trigger': '#67C23A',
   'schedule-trigger': '#67C23A',
+  'agent-team': '#9B59B6',
   'document-parse': '#409EFF',
   'vision-analyze': '#9B59B6',
   'audio-transcribe': '#67C23A',

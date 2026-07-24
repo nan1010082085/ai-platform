@@ -31,6 +31,7 @@ import CodeExecuteNodePanel from '@/components/agent-workflow/property-panel/pan
 import VariableSetNodePanel from '@/components/agent-workflow/property-panel/panels/VariableSetNodePanel.vue'
 import SwitchNodePanel from '@/components/agent-workflow/property-panel/panels/SwitchNodePanel.vue'
 import ScheduleTriggerNodePanel from '@/components/agent-workflow/property-panel/panels/ScheduleTriggerNodePanel.vue'
+import AgentTeamNodePanel from '@/components/agent-workflow/property-panel/panels/AgentTeamNodePanel.vue'
 
 const toolPanel = markRaw(ToolNodePanel)
 const agentPanel = markRaw(AgentNodePanel)
@@ -40,6 +41,7 @@ const registry = new Map<AgentNodeType, Component>([
   ['manual-trigger', markRaw(TriggerNodePanel)],
   ['webhook-trigger', markRaw(WebhookTriggerNodePanel)],
   ['schedule-trigger', markRaw(ScheduleTriggerNodePanel)],
+  ['agent-team', markRaw(AgentTeamNodePanel)],
   ['document-parse', markRaw(DocumentParseNodePanel)],
   ['vision-analyze', markRaw(VisionAnalyzeNodePanel)],
   ['audio-transcribe', markRaw(AudioTranscribeNodePanel)],
@@ -71,6 +73,7 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   'manual-trigger': '手动触发',
   'webhook-trigger': 'Webhook 触发',
   'schedule-trigger': '定时触发',
+  'agent-team': 'Agent 团队',
   'document-parse': '文档解析',
   'vision-analyze': '图片视觉分析',
   'audio-transcribe': '音频转录',

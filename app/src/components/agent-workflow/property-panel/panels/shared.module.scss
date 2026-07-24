@@ -126,3 +126,38 @@
   font-size: 12px;
   color: var(--el-text-color-secondary);
 }
+
+.sectionDivider {
+  height: 1px;
+  background: var(--el-border-color-extra-light);
+  margin: 12px 0;
+}
+
+.subSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 8px;
+}
+
+.memberCard {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: var(--el-fill-color-light);
+}
+
+.memberHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.memberMeta {
+  margin-top: 8px;
+}
