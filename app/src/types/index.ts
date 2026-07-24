@@ -550,6 +550,56 @@ export interface RagSearchResponse {
   schemas: RagSearchResult[]
 }
 
+// ---- RAG 检索调试 ----
+
+export interface RagDebugItem {
+  schemaId: string
+  editId: string
+  name: string
+  type: string
+  score: number
+  widgetTypes: string[]
+  fieldNames: string[]
+  labels: string[]
+  description: string
+  /** rerank 视图：rerank 前在语义结果中的排名（1-based，0=语义未召回） */
+  beforeRank?: number
+  /** rerank 视图：排名变化（正=上升，负=下降） */
+  rankChange?: number
+}
+
+export interface RagDebugSnippet {
+  snippet: string
+  matchedTerms: string[]
+}
+
+export interface RagDebugTimings {
+  semantic: number
+  rerank: number
+  hybrid: number
+}
+
+export interface RagDebugResult {
+  semantic: RagDebugItem[]
+  rerank: RagDebugItem[]
+  hybrid: RagDebugItem[]
+  snippets: Record<string, RagDebugSnippet>
+  timings: RagDebugTimings
+  rerankEnabled: boolean
+  rerankConfigured: boolean
+  rerankModel: string | null
+}
+
+export interface RagDebugParams {
+  query: string
+  topK?: number
+  type?: 'form' | 'search_list'
+  minScore?: number
+  rerankEnabled?: boolean
+  semanticWeight?: number
+  keywordWeight?: number
+}
+
 // ---- HITL Interrupt ----
 
 /** 前端 pending interrupt 状态 */

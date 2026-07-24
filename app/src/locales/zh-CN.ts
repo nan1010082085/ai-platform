@@ -33,6 +33,7 @@ export default {
       embedding: '嵌入模型',
       keys: '集成密钥',
       routingDebug: '路由调试',
+      ragDebug: '检索调试',
     },
   },
   chat: {

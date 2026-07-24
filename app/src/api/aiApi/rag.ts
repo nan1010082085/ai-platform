@@ -20,6 +20,30 @@ export async function searchRag(params: RagSearchParams): Promise<RagSearchRespo
   return request<RagSearchResponse>(`/ai/rag/search?${query.toString()}`)
 }
 
+// ---- RAG 检索调试 ----
+
+import type { RagDebugParams, RagDebugResult } from '@/types'
+
+/**
+ * 检索调试：对同一 query 并行跑 semantic / rerank / hybrid 三路，返回对比结果。
+ * /ai/debug/* 返回裸对象，使用 raw 信封。
+ */
+export async function debugRagSearch(params: RagDebugParams): Promise<RagDebugResult> {
+  return request<RagDebugResult>('/ai/debug/rag', {
+    method: 'POST',
+    body: {
+      query: params.query,
+      topK: params.topK,
+      type: params.type,
+      minScore: params.minScore,
+      rerankEnabled: params.rerankEnabled,
+      semanticWeight: params.semanticWeight,
+      keywordWeight: params.keywordWeight,
+    },
+    raw: true,
+  })
+}
+
 // ---- Mention Search ----
 
 export type MentionType = 'schema' | 'flow' | 'widget'

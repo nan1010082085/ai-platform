@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
@@ -131,6 +131,16 @@ function formatVersion(v: string): string {
   if (!v || v.length !== 14) return v
   return `${v.slice(0, 8)}.${v.slice(8, 10)}${v.slice(10, 12)}`
 }
+
+// 模板 tab 的 filteredTemplates 需主动填充：切到模板 tab、搜索词或分类变化时刷新。
+// （filteredTemplates 初始为空数组，useWorkflowTemplates 不会自动计算）
+watch(
+  [isTemplatesTab, searchInput, templateCategory],
+  ([onTemplates]) => {
+    if (onTemplates) updateFilteredTemplates(searchInput.value)
+  },
+  { immediate: true },
+)
 
 onMounted(load)
 </script>

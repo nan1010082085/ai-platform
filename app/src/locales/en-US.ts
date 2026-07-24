@@ -33,6 +33,7 @@ export default {
       embedding: 'Embedding Models',
       keys: 'API Keys',
       routingDebug: 'Routing Debug',
+      ragDebug: 'Retrieval Debug',
     },
   },
   chat: {

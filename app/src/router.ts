@@ -77,6 +77,11 @@ const routes = [
         name: 'workflow-debug',
         component: () => import('./views/WorkflowDebugView.vue'),
       },
+      {
+        path: 'debug/rag',
+        name: 'rag-debug',
+        component: () => import('./views/RagDebugView.vue'),
+      },
     ],
   },
   {

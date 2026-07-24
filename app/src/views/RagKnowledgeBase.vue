@@ -196,6 +196,10 @@ onMounted(() => {
       subtitle="管理 Schema / 流程向量索引，验证语义召回，保障对话上下文质量"
     >
       <template #actions>
+        <el-button size="small" @click="router.push('/debug/rag')">
+          <AppIcon name="filter" :size="14" />
+          检索调试
+        </el-button>
         <el-tooltip
           v-if="status"
           :content="status.embeddingConfigured

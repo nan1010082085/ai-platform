@@ -32,6 +32,7 @@ const settingsNav = computed(() => [
   { path: '/settings/embedding', label: t('layout.nav.embedding'), icon: 'collection' },
   { path: '/settings/keys', label: t('layout.nav.keys'), icon: 'key' },
   { path: '/debug/routing', label: t('layout.nav.routingDebug'), icon: 'search' },
+  { path: '/debug/rag', label: t('layout.nav.ragDebug'), icon: 'filter' },
 ])
 
 const languageLabel = computed(() =>
