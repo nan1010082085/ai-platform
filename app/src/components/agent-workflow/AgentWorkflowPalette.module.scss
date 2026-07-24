@@ -124,3 +124,14 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.searchBox {
+  padding: 0 0 8px;
+}
+
+.empty {
+  padding: 16px 8px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  text-align: center;
+}

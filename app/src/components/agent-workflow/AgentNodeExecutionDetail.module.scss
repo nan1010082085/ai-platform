@@ -264,3 +264,31 @@
   background: rgba(245, 108, 108, 0.1);
   color: #f56c6c;
 }
+
+.diagnosisBox {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--el-color-primary-light-9);
+  border: 1px solid var(--el-color-primary-light-5);
+  border-radius: 8px;
+}
+
+.diagnosisTitle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-color-primary);
+  margin-bottom: 6px;
+}
+
+.diagnosisText {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-primary);
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  font-family: inherit;
+}

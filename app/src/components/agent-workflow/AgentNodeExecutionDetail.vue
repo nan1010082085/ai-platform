@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import type { AgentNodeRecord, AgentWorkflowNodeData } from '@/types/agentWorkflow'
@@ -64,6 +64,32 @@ function formatJson(value: unknown): string {
     return JSON.stringify(value, null, 2)
   } catch {
     return String(value)
+  }
+}
+
+const diagnosing = ref(false)
+const diagnosis = ref('')
+
+async function diagnoseError() {
+  diagnosing.value = true
+  diagnosis.value = ''
+  try {
+    const { request } = await import('@/api/aiApi/base')
+    const data = await request<{ analysis: string }>('/ai/debug/diagnose-node', {
+      method: 'POST',
+      body: {
+        nodeType: props.record.nodeType,
+        error: props.record.error,
+        input: props.record.input,
+        output: props.record.output,
+      },
+      raw: true,
+    })
+    diagnosis.value = data.analysis
+  } catch (err) {
+    message.error(err instanceof Error ? err.message : '诊断失败')
+  } finally {
+    diagnosing.value = false
   }
 }
 
@@ -168,8 +194,26 @@ async function copyJson(label: string, value: unknown) {
     </section>
 
     <section v-if="record.error" :class="styles.section">
-      <div :class="styles.sectionTitle">错误信息</div>
+      <div :class="styles.sectionHeader">
+        <div :class="styles.sectionTitle">错误信息</div>
+        <el-button
+          type="primary"
+          size="small"
+          plain
+          :loading="diagnosing"
+          @click="diagnoseError"
+        >
+          <AppIcon name="magic-stick" :size="12" style="margin-right: 2px" />
+          AI 诊断
+        </el-button>
+      </div>
       <div :class="styles.errorBox">{{ record.error }}</div>
+      <div v-if="diagnosis" :class="styles.diagnosisBox">
+        <div :class="styles.diagnosisTitle">
+          <AppIcon name="magic-stick" :size="12" /> 诊断结果
+        </div>
+        <pre :class="styles.diagnosisText">{{ diagnosis }}</pre>
+      </div>
     </section>
 
     <section :class="styles.section">

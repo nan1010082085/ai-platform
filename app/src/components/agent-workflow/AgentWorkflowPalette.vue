@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import { AGENT_PALETTE_ITEMS, AGENT_NODE_COLORS } from '@/constants/agentNodes'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
@@ -11,6 +11,27 @@ const { expertPaletteItems, toolPaletteItems, load, expertColor } = usePluginReg
 
 onMounted(() => {
   void load()
+})
+
+const searchQuery = ref('')
+
+function matchesQuery(item: AgentPaletteItem): boolean {
+  if (!searchQuery.value.trim()) return true
+  const q = searchQuery.value.trim().toLowerCase()
+  return item.label.toLowerCase().includes(q) || item.description.toLowerCase().includes(q)
+}
+
+/** 搜索时扁平展示所有匹配项；非搜索时按分类展示 */
+const isSearching = computed(() => searchQuery.value.trim().length > 0)
+
+const flatResults = computed<AgentPaletteItem[]>(() => {
+  if (!isSearching.value) return []
+  const all = [
+    ...AGENT_PALETTE_ITEMS,
+    ...expertPaletteItems.value,
+    ...toolPaletteItems.value,
+  ]
+  return all.filter(matchesQuery)
 })
 
 const categories = [
@@ -64,6 +85,45 @@ function onDragStart(e: DragEvent, item: AgentPaletteItem) {
 <template>
   <div :class="styles.palette">
     <div :class="styles.title">节点</div>
+    <div :class="styles.searchBox">
+      <el-input
+        v-model="searchQuery"
+        placeholder="搜索节点"
+        clearable
+        size="small"
+      >
+        <template #prefix>
+          <AppIcon name="search" :size="14" />
+        </template>
+      </el-input>
+    </div>
+
+    <template v-if="isSearching">
+      <div :class="styles.section">
+        <div :class="styles.sectionTitle">搜索结果（{{ flatResults.length }}）</div>
+        <div v-if="flatResults.length === 0" :class="styles.empty">无匹配节点</div>
+        <div :class="styles.items">
+          <div
+            v-for="item in flatResults"
+            :key="`${item.type}-${item.defaultData.expertId ?? item.defaultData.toolName ?? item.label}`"
+            :class="styles.item"
+            :style="{ '--item-accent': itemColor(item.type, item.defaultData.expertId) }"
+            draggable="true"
+            @dragstart="onDragStart($event, item)"
+          >
+            <div :class="styles.iconWrap">
+              <AppIcon :name="item.icon" :size="15" />
+            </div>
+            <div :class="styles.itemText">
+              <span :class="styles.itemLabel">{{ item.label }}</span>
+              <span :class="styles.itemDesc">{{ item.description }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template v-else>
     <div v-for="cat in categories" :key="cat.key" :class="styles.section">
       <div :class="styles.sectionTitle">{{ cat.label }}</div>
       <div :class="styles.items">
@@ -85,5 +145,6 @@ function onDragStart(e: DragEvent, item: AgentPaletteItem) {
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>
