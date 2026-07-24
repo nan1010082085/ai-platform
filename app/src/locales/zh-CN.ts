@@ -34,6 +34,7 @@ export default {
       keys: '集成密钥',
       routingDebug: '路由调试',
       ragDebug: '检索调试',
+      evaluation: '评测中心',
     },
   },
   chat: {

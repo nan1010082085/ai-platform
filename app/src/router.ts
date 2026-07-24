@@ -82,6 +82,11 @@ const routes = [
         name: 'rag-debug',
         component: () => import('./views/RagDebugView.vue'),
       },
+      {
+        path: 'evaluation',
+        name: 'evaluation',
+        component: () => import('./views/EvaluationView.vue'),
+      },
     ],
   },
   {

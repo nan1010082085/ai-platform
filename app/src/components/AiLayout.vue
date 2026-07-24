@@ -33,6 +33,7 @@ const settingsNav = computed(() => [
   { path: '/settings/keys', label: t('layout.nav.keys'), icon: 'key' },
   { path: '/debug/routing', label: t('layout.nav.routingDebug'), icon: 'search' },
   { path: '/debug/rag', label: t('layout.nav.ragDebug'), icon: 'filter' },
+  { path: '/evaluation', label: t('layout.nav.evaluation'), icon: 'data-analysis' },
 ])
 
 const languageLabel = computed(() =>
@@ -46,6 +47,7 @@ const activeNav = computed(() => {
   if (route.path.startsWith('/settings/embedding')) return '/settings/embedding'
   if (route.path.startsWith('/settings')) return '/settings/keys'
   if (route.path.startsWith('/debug')) return route.path
+  if (route.path.startsWith('/evaluation')) return '/evaluation'
   return route.path
 })
 

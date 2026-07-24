@@ -34,6 +34,7 @@ export default {
       keys: 'API Keys',
       routingDebug: 'Routing Debug',
       ragDebug: 'Retrieval Debug',
+      evaluation: 'Evaluation',
     },
   },
   chat: {
