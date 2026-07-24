@@ -38,8 +38,8 @@ async function loadData() {
     ])
     trend.value = t
     budget.value = b
-  } catch {
-    // 静默
+  } catch (err) {
+    console.error('[CostTrendCard] 加载失败:', err)
   } finally {
     loading.value = false
   }

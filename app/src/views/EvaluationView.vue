@@ -9,7 +9,7 @@
  *
  * 挂在监控下拉（评测 = 质量监控）。
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -324,6 +324,10 @@ onMounted(() => {
   loadDatasets()
   loadWorkflows()
   loadRuns()
+})
+
+onUnmounted(() => {
+  if (runPollTimer) clearInterval(runPollTimer)
 })
 </script>
 
