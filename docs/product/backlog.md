@@ -43,7 +43,7 @@
 | **Phase X** — RAG 检索增强 + 评测体系 | **100%**（X-1 ✅ rerank+hybrid+RagDebugView；X-2 ✅ Dataset/Run/EvaluationView） |
 | **Phase Y** — 触发器 + Artifacts | **100%**（Y-1 ✅ schedule-trigger+调度器+ScheduleView；Y-2 ✅ ArtifactRenderer+回传闭环） |
 | **Phase Z** — 多Agent + 中断恢复 | **100%**（Z-1 ✅ agent-team+AgentTeamNodePanel；Z-2 ✅ AgentInterruptError+状态保存恢复+反馈UI） |
-| **体验打磨** — 节点搜索 + AI 诊断 | **部分完成**（✅ designer 节点搜索；✅ 失败节点 AI 诊断；❌ 模板扩充 20+；❌ 成本看板；❌ 监控告警；❌ 批量操作） |
+| **体验打磨** — 节点搜索 + AI 诊断 + 模板/成本/告警/批量 | **100%**（✅ 节点搜索；✅ AI 诊断；✅ 模板 31 个 10 分类；✅ CostTrendCard 成本看板；✅ check-alerts webhook；✅ 工作流批量管理） |
 
 ---
 
