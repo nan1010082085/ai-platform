@@ -374,3 +374,15 @@
 .templateCategoryBtnActive:hover {
   color: #ffffff;
 }
+
+.cardSelected {
+  border-color: var(--el-color-primary) !important;
+  background: var(--el-color-primary-light-9);
+}
+
+.cardCheckbox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+}

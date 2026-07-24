@@ -26,6 +26,38 @@ import { useWorkflowActions } from '@/composables/useWorkflowActions'
 import styles from './AgentWorkflowListView.module.scss'
 
 const searchInput = ref('')
+const bulkMode = ref(false)
+const selectedIds = ref<Set<string>>(new Set())
+const bulkDeleting = ref(false)
+
+function toggleBulkMode() {
+  bulkMode.value = !bulkMode.value
+  selectedIds.value.clear()
+}
+
+function toggleSelect(id: string) {
+  const next = new Set(selectedIds.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  selectedIds.value = next
+}
+
+async function handleBulkDelete() {
+  if (selectedIds.value.size === 0) return
+  try {
+    await ElMessageBox.confirm(`确认删除选中的 ${selectedIds.value.size} 个工作流？`, '批量删除', { type: 'warning' })
+  } catch { return }
+  bulkDeleting.value = true
+  let success = 0
+  for (const id of selectedIds.value) {
+    try { await deleteWorkflow(id); success++ } catch { /* skip */ }
+  }
+  bulkDeleting.value = false
+  ElMessage.success(`已删除 ${success} 个工作流`)
+  selectedIds.value.clear()
+  bulkMode.value = false
+  await load()
+}
 const activeTab = ref<ListTab>('all')
 const sortBy = ref<'updated' | 'name'>('updated')
 
@@ -198,6 +230,13 @@ onMounted(load)
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
+            <el-button v-if="!isTemplatesTab" size="small" :type="bulkMode ? 'warning' : 'default'" @click="toggleBulkMode">
+              <AppIcon name="operation" :size="14" />
+              {{ bulkMode ? '退出批量' : '批量管理' }}
+            </el-button>
+            <el-button v-if="bulkMode && selectedIds.size > 0" type="danger" size="small" :loading="bulkDeleting" @click="handleBulkDelete">
+              删除选中 ({{ selectedIds.size }})
+            </el-button>
           </div>
         </div>
       </div>
@@ -277,10 +316,13 @@ onMounted(load)
           <div
             v-for="(item, idx) in filteredWorkflows"
             :key="item.id"
-            :class="styles.card"
+            :class="[styles.card, bulkMode && selectedIds.has(item.id) && styles.cardSelected]"
             :style="{ animationDelay: `${idx * 0.04}s` }"
           >
-            <div :class="styles.cardPreview" @click="onEdit(item.id)">
+            <div v-if="bulkMode" :class="styles.cardCheckbox" @click="toggleSelect(item.id)">
+              <el-checkbox :model-value="selectedIds.has(item.id)" @click.stop="toggleSelect(item.id)" />
+            </div>
+            <div :class="styles.cardPreview" @click="bulkMode ? toggleSelect(item.id) : onEdit(item.id)">
               <div :class="styles.cardPreviewInner">
                 <AppIcon name="share" :size="32" />
               </div>
