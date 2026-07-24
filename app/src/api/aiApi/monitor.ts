@@ -172,3 +172,50 @@ export async function getPluginMetricSummary(hours?: number): Promise<PluginMetr
   const query = hours ? `?hours=${hours}` : ''
   return request<PluginMetricSummary>(`/ai/monitor/plugin-summary${query}`)
 }
+
+// ---- 成本趋势 ----
+
+export interface CostTrendDay {
+  date: string
+  totalTokens: number
+  promptTokens: number
+  completionTokens: number
+  callCount: number
+  avgTokens: number
+}
+
+export interface CostTrendByAgent {
+  agentName: string
+  totalTokens: number
+  callCount: number
+}
+
+export interface CostTrendData {
+  periodDays: number
+  trend: CostTrendDay[]
+  byAgent: CostTrendByAgent[]
+  totalTokens: number
+  totalCalls: number
+}
+
+export interface BudgetStatus {
+  configured: boolean
+  budget?: number
+  usedTokens?: number
+  remainingTokens?: number
+  usagePercent?: number
+  status?: 'ok' | 'warning' | 'exceeded'
+  monthStart?: string
+}
+
+export async function getCostTrend(days?: number, agentName?: string): Promise<CostTrendData> {
+  const params = new URLSearchParams()
+  if (days) params.set('days', String(days))
+  if (agentName) params.set('agentName', agentName)
+  const qs = params.toString()
+  return request<CostTrendData>(`/ai/monitor/cost-trend${qs ? `?${qs}` : ''}`)
+}
+
+export async function getBudgetStatus(): Promise<BudgetStatus> {
+  return request<BudgetStatus>('/ai/monitor/budget')
+}

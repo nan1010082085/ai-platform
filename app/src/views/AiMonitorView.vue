@@ -4,6 +4,7 @@
  */
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import CostTrendCard from '@/components/monitor/CostTrendCard.vue'
 import MonitorSummaryCard from '@/components/monitor/MonitorSummary.vue'
 import AgentDistribution from '@/components/monitor/AgentDistribution.vue'
 import AlertList from '@/components/monitor/AlertList.vue'
@@ -160,6 +161,8 @@ onMounted(() => {
     </div>
 
     <!-- 节点类型统计 -->
+    <CostTrendCard :class="$style.costSection" />
+
     <div v-if="nodeTypeStats.length" :class="$style.section">
       <div :class="$style.sectionHeader">
         <h3 :class="$style.sectionTitle">节点类型统计</h3>
