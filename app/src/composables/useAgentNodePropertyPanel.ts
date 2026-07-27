@@ -15,6 +15,9 @@ import VisionAnalyzeNodePanel from '@/components/agent-workflow/property-panel/p
 import AudioTranscribeNodePanel from '@/components/agent-workflow/property-panel/panels/AudioTranscribeNodePanel.vue'
 import VideoAnalyzeNodePanel from '@/components/agent-workflow/property-panel/panels/VideoAnalyzeNodePanel.vue'
 import ConversationMemoryNodePanel from '@/components/agent-workflow/property-panel/panels/ConversationMemoryNodePanel.vue'
+import MemoryRecallNodePanel from '@/components/agent-workflow/property-panel/panels/MemoryRecallNodePanel.vue'
+import MemoryWriteNodePanel from '@/components/agent-workflow/property-panel/panels/MemoryWriteNodePanel.vue'
+import MemoryExtractNodePanel from '@/components/agent-workflow/property-panel/panels/MemoryExtractNodePanel.vue'
 import ExpertPluginNodePanel from '@/components/agent-workflow/property-panel/panels/ExpertPluginNodePanel.vue'
 import ImageGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/ImageGenerateNodePanel.vue'
 import VideoGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/VideoGenerateNodePanel.vue'
@@ -61,6 +64,9 @@ const registry = new Map<AgentNodeType, Component>([
   ['audio-transcribe', markRaw(AudioTranscribeNodePanel)],
   ['video-analyze', markRaw(VideoAnalyzeNodePanel)],
   ['conversation-memory', markRaw(ConversationMemoryNodePanel)],
+  ['memory-recall', markRaw(MemoryRecallNodePanel)],
+  ['memory-write', markRaw(MemoryWriteNodePanel)],
+  ['memory-extract', markRaw(MemoryExtractNodePanel)],
   ['llm', markRaw(LlmNodePanel)],
   ['agent-intent', agentPanel],
   ['tool', toolPanel],
@@ -100,6 +106,9 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   'audio-transcribe': '音频转录',
   'video-analyze': '视频分析',
   'conversation-memory': '对话记忆',
+  'memory-recall': '长程记忆检索',
+  'memory-write': '长程记忆写入',
+  'memory-extract': '长程记忆提取',
   llm: 'LLM',
   'agent-intent': getExpertNodeTypeLabel('agent-intent') ?? '意图识别',
   tool: getToolNodeTypeLabel('tool') ?? '工具',

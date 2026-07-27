@@ -163,7 +163,7 @@ LangGraph 官方推荐：
 **我们的实现**：
 - chatStreamRunner.ts 完整处理了上述四类事件
 - 支持 thinking_delta（reasoning_content）和 text_delta 分离
-- 支持 <think> 标签解析（兼容非 reasoning_content 模型）
+- 支持 `<think>` 标签解析（兼容非 reasoning_content 模型）
 - 工具结果中提取 schema/flow payload 并发送结构化事件
 
 **差距**：
