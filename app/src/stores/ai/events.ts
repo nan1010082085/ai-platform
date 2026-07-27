@@ -375,6 +375,28 @@ export function handleStreamEvent(
       break
     }
 
+    case 'task_progress': {
+      const step = (event.step as number) ?? 0
+      const total = (event.total as number) ?? 0
+      const status = String(event.status ?? '')
+      const description = String(event.description ?? '')
+      const steps = (event.steps as Array<{ agent?: string; description?: string; status?: string }>) ?? []
+
+      const statusIcon = status === 'done' ? '✅' : status === 'running' ? '🔄' : status === 'error' ? '❌' : '⏳'
+      const progressText = steps.length > 0
+        ? steps.map((s, i) => {
+            const icon = s.status === 'done' ? '✅' : s.status === 'running' ? '🔄' : '⏳'
+            return `  ${icon} ${i + 1}. [${s.agent ?? '?'}] ${s.description ?? ''}`
+          }).join('\n')
+        : `  ${statusIcon} 步骤 ${step + 1}/${total}: ${description}`
+
+      updateMessage({
+        thinking: (msg.thinking ?? '')
+          + `\n\n📊 任务进度 (${step + 1}/${total})\n${progressText}`,
+      })
+      break
+    }
+
     // v2: 思考推理事件
     case 'thinker_start':
       updateMessage({

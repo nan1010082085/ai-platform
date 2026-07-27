@@ -226,6 +226,7 @@ export type StreamEventType =
   | 'requirement_confirm_response'
   | 'task_plan_start'
   | 'task_plan_complete'
+  | 'task_progress'
   | 'thinker_start'
   | 'thinker_complete'
   | 'quality_check_start'
