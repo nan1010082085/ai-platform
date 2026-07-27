@@ -1,716 +1,268 @@
-# Development Guide
+# 开发指南
 
-This guide covers the development setup, architecture, and best practices for contributing to Schema Platform AI.
-
----
-
-## Table of Contents
-
-- [Architecture Overview](#architecture-overview)
-- [Development Setup](#development-setup)
-- [Project Structure](#project-structure)
-- [Coding Standards](#coding-standards)
-- [Testing](#testing)
-- [Debugging](#debugging)
-- [Common Tasks](#common-tasks)
-- [Troubleshooting](#troubleshooting)
+本指南涵盖开发环境搭建、架构和贡献最佳实践。
 
 ---
 
-## Architecture Overview
+## 目录
 
-Schema Platform AI follows a modular architecture:
+- [架构概览](#架构概览)
+- [开发环境](#开发环境)
+- [项目结构](#项目结构)
+- [编码规范](#编码规范)
+- [测试](#测试)
+- [调试](#调试)
+- [常见任务](#常见任务)
+- [常见问题](#常见问题)
+
+---
+
+## 架构概览
+
+Schema Platform AI 采用模块化架构：
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Browser (Vue 3 SPA)                       │
+│                    浏览器（Vue 3 SPA）                       │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │  AI Chat    │  │  Workflow   │  │  Plugin     │         │
-│  │  Panel      │  │  Designer   │  │  Center     │         │
+│  │  AI 对话     │  │  工作流      │  │  插件中心    │         │
+│  │  面板        │  │  设计器      │  │             │         │
 │  └─────────────┘  └─────────────┘  └─────────────┘         │
 └─────────────────────────────────────────────────────────────┘
-                           │
-                    REST API + WebSocket
-                           │
+          │                    │                  │
+          ▼                    ▼                  ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    API Server (Koa.js)                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │  LangGraph  │  │  Workflow   │  │  Plugin     │         │
-│  │  Engine     │  │  Executor   │  │  Registry   │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
+│              后端（Koa.js + MongoDB）                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│  │ LangGraph │  │ Workflow │  │   RAG    │  │  Plugin  │   │
+│  │  对话引擎  │  │  执行器   │  │ 检索增强  │  │  Registry│   │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
 └─────────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-                    MongoDB 8 + Vector Store
 ```
 
-### Key Components
+### 前后端通信
 
-1. **AI Chat** - LangGraph-based conversational agent
-2. **Workflow Designer** - Visual DAG editor for workflows
-3. **Plugin Center** - Expert/Skill/Tool/MCP configuration
-4. **RAG Engine** - Document vectorization and retrieval
-5. **Model Manager** - LLM provider configuration
+- **REST API**：常规请求（CRUD、执行、配置）
+- **WebSocket**（Socket.IO）：流式对话、实时执行进度
+- **Open API**：外部系统通过 API Key 调用已发布工作流
 
 ---
 
-## Development Setup
+## 开发环境
 
-### Prerequisites
+### 前置条件
 
-```bash
-# Node.js 20+
-node --version  # Should be v20.x or higher
+- Node.js >= 20
+- pnpm >= 9
+- MongoDB 8
 
-# pnpm 9+
-pnpm --version  # Should be 9.x or higher
-
-# MongoDB 8
-mongod --version  # Should be 8.x
-
-# Git
-git --version
-```
-
-### Initial Setup
+### 安装
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/nan1010082085/ai-platform.git
-cd ai-platform
-
-# 2. Install dependencies
+# 共享包
 cd shared/platform-shared && pnpm install && pnpm build && cd ../..
+
+# 后端
 cd server && pnpm install && cd ..
+
+# 前端
 cd ai/app && pnpm install && cd ../..
+```
 
-# 3. Configure environment
-cp server/.env.example server/.env
-# Edit server/.env with your settings
+### 启动开发服务器
 
-# 4. Start MongoDB
-cd server && pnpm db:up && cd ..
-
-# 5. Seed database
-cd server && pnpm db:seed && cd ..
-
-# 6. Start development servers
-# Terminal 1:
+```bash
+# 终端 1：后端
 cd server && pnpm dev
 
-# Terminal 2:
+# 终端 2：前端
 cd ai/app && pnpm dev
 ```
 
-### IDE Setup
+### 生产构建
 
-**Recommended: VS Code**
-
-Install these extensions:
-- Vue - Official (Volar)
-- ESLint
-- Prettier
-- TypeScript Vue Plugin (Volar)
-
-**Settings.json:**
-
-```json
-{
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "vue.server.useSecondServer": true,
-  "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode"
-}
+```bash
+cd shared/platform-shared && pnpm build
+cd server && npx tsc
+cd ai/app && pnpm build
 ```
 
 ---
 
-## Project Structure
+## 项目结构
 
 ```
-ai-platform/
-├── ai/                          # AI application
-│   ├── app/                     # Vue 3 frontend
-│   │   ├── src/
-│   │   │   ├── api/             # API clients
-│   │   │   ├── components/      # Vue components
-│   │   │   ├── composables/     # Vue composables
-│   │   │   ├── constants/       # Constants
-│   │   │   ├── stores/          # Pinia stores
-│   │   │   ├── types/           # TypeScript types
-│   │   │   ├── utils/           # Utilities
-│   │   │   └── views/           # Page components
-│   │   ├── __tests__/           # Test files
-│   │   └── package.json
-│   └── docs/                    # Documentation
-├── shared/
-│   └── platform-shared/         # Shared package
-│       └── ai/                  # AI types & events
-├── server/                      # Backend server
+ai/
+├── app/                          @ai-app（Vue 3 前端）
 │   ├── src/
-│   │   ├── ai/                  # AI logic
-│   │   ├── models/              # MongoDB models
-│   │   ├── routes/              # API routes
-│   │   └── middleware/          # Koa middleware
+│   │   ├── api/                  API 客户端（按域拆分）
+│   │   ├── components/           Vue 组件
+│   │   ├── composables/          组合式 API（useXXX）
+│   │   ├── constants/            常量（节点定义、配置）
+│   │   ├── stores/               Pinia 状态管理
+│   │   ├── types/                TypeScript 类型
+│   │   └── views/                页面视图
 │   └── package.json
-└── docs/                        # Project documentation
+├── docs/                         文档
+└── README.md
+
+server/src/ai/
+├── graph/                        LangGraph StateGraph
+├── models/                       Mongoose 模型
+├── nodes/                        节点执行器（按类型拆分）
+├── queue/                        BullMQ 队列 + Worker
+├── runtime/                      纯函数运行时
+├── services/                     业务服务
+└── routes/                       API 路由
+
+shared/platform-shared/
+├── ai/                           AI 共享类型 + 模板
+│   ├── agentWorkflow/            工作流类型 + 模板工厂
+│   └── index.ts
+├── components/                   共享 Vue 组件
+└── utils/                        共享工具
 ```
-
-### Key Directories
-
-#### `ai/app/src/api/`
-
-API client modules. Each file handles a specific domain:
-
-- `aiApi.ts` - Chat, documents, LLM, monitor, RAG
-- `agentWorkflowApi.ts` - Workflow operations
-- `modelApi.ts` - Model management
-- `providerApi.ts` - Provider management
-- `pluginApi.ts` - Plugin operations
-
-#### `ai/app/src/stores/`
-
-Pinia stores for global state:
-
-- `chat.ts` - Chat conversations
-- `agentWorkflowDesigner.ts` - Workflow designer state
-- `modelSettings.ts` - Model configuration
-- `plugin.ts` - Plugin state
-
-#### `ai/app/src/composables/`
-
-Reusable Vue composables:
-
-- `useModelCenter.ts` - Model selection logic
-- `useChatScroll.ts` - Chat scroll behavior
-- `useWorkflowExecution.ts` - Workflow execution
-
-#### `server/src/ai/`
-
-AI-specific server logic:
-
-- `runtime/` - LangGraph runtime modules
-- `routes/` - AI API routes
-- `services/` - Business logic
-- `agents/` - Chat agent implementations
 
 ---
 
-## Coding Standards
+## 编码规范
 
 ### TypeScript
 
-```typescript
-// ✅ Good: Explicit types
-interface User {
-  id: string
-  name: string
-  email: string
-}
+- 严格模式（`strict: true`）
+- 禁止 `any`，用 `unknown` + 类型守卫
+- 接口用 `interface`，联合类型用 `type`
 
-function getUser(id: string): Promise<User> {
-  // ...
-}
+### Vue 组件
 
-// ❌ Bad: Using any
-function getUser(id: any): any {
-  // ...
-}
-```
+- `<script setup lang="ts">` 组合式 API
+- CSS Modules（`*.module.scss`），禁止全局样式
+- 组件只做渲染，业务逻辑进 composable 或 store
 
-### Vue 3 Composition API
+### API 层
 
-```vue
-<script setup lang="ts">
-// ✅ Good: Composition API with TypeScript
-import { ref, computed } from 'vue'
+- 所有 API 调用聚合到 `src/api/`
+- 组件/store 禁止直接 `fetch()`
+- 使用 `request()` 封装（自动注入 JWT）
 
-interface Props {
-  title: string
-  count?: number
-}
+### 状态管理
 
-const props = withDefaults(defineProps<Props>(), {
-  count: 0
-})
+- 全局状态用 Pinia Store
+- 组合式逻辑用 `useXXX` composable
+- 废弃零散 utils
 
-const doubled = computed(() => props.count * 2)
-</script>
-```
+### 文件组织
 
-### Composables
-
-```typescript
-// ✅ Good: Reusable composable
-export function useCounter(initialValue = 0) {
-  const count = ref(initialValue)
-  
-  const increment = () => count.value++
-  const decrement = () => count.value--
-  const reset = () => count.value = initialValue
-  
-  return {
-    count: readonly(count),
-    increment,
-    decrement,
-    reset
-  }
-}
-```
-
-### API Clients
-
-```typescript
-// ✅ Good: Type-safe API client
-export async function getConversation(id: string): Promise<Conversation> {
-  const response = await apiClient.get(`/api/ai/conversations/${id}`)
-  return response.data
-}
-
-// ❌ Bad: Direct fetch in component
-const data = await fetch('/api/ai/conversations/123')
-```
-
-### Error Handling
-
-```typescript
-// ✅ Good: Proper error handling
-try {
-  const result = await riskyOperation()
-  return result
-} catch (error) {
-  console.error('Operation failed:', error)
-  throw new Error(`Failed to complete operation: ${error.message}`)
-}
-
-// ❌ Bad: Silent error swallowing
-try {
-  await riskyOperation()
-} catch (error) {
-  // Silence!
-}
-```
+- 视图文件 > 300 行考虑拆分
+- composable > 200 行考虑拆分
+- 一个文件一个职责
 
 ---
 
-## Testing
+## 测试
 
-### Running Tests
+### 单元测试
 
 ```bash
-# Run all tests
+# 前端
 cd ai/app && pnpm test
 
-# Run tests in watch mode
-cd ai/app && pnpm test -- --watch
-
-# Run tests with coverage
-cd ai/app && pnpm test:coverage
-
-# Run specific test file
-cd ai/app && pnpm test -- src/__tests__/chat.spec.ts
+# 后端
+cd server && pnpm test
 ```
 
-### Writing Tests
-
-#### Unit Tests
-
-```typescript
-// src/__tests__/useCounter.spec.ts
-import { describe, it, expect } from 'vitest'
-import { useCounter } from '../composables/useCounter'
-
-describe('useCounter', () => {
-  it('should initialize with default value', () => {
-    const { count } = useCounter()
-    expect(count.value).toBe(0)
-  })
-
-  it('should initialize with custom value', () => {
-    const { count } = useCounter(10)
-    expect(count.value).toBe(10)
-  })
-
-  it('should increment', () => {
-    const { count, increment } = useCounter()
-    increment()
-    expect(count.value).toBe(1)
-  })
-})
-```
-
-#### Component Tests
-
-```typescript
-// src/__tests__/MyComponent.spec.ts
-import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
-import MyComponent from '../components/MyComponent.vue'
-
-describe('MyComponent', () => {
-  it('should render correctly', () => {
-    const wrapper = mount(MyComponent, {
-      props: {
-        title: 'Test'
-      }
-    })
-    
-    expect(wrapper.text()).toContain('Test')
-  })
-})
-```
-
-### Test Coverage
-
-Coverage thresholds are enforced:
-
-- **Statements**: >= 70%
-- **Branches**: >= 70%
-- **Functions**: >= 70%
-- **Lines**: >= 70%
-
-View coverage report:
+### 测试覆盖率
 
 ```bash
 cd ai/app && pnpm test:coverage
-open coverage/index.html
 ```
 
----
-
-## Debugging
-
-### Frontend Debugging
-
-1. **Browser DevTools**
-   - Open Chrome DevTools (F12)
-   - Use Vue DevTools extension
-   - Check Console for errors
-   - Inspect Network requests
-
-2. **VS Code Debugger**
-
-   Create `.vscode/launch.json`:
-
-   ```json
-   {
-     "version": "0.2.0",
-     "configurations": [
-       {
-         "type": "chrome",
-         "request": "launch",
-         "name": "Debug Vue App",
-         "url": "http://localhost:5300",
-         "webRoot": "${workspaceFolder}/ai/app/src"
-       }
-     ]
-   }
-   ```
-
-### Backend Debugging
-
-1. **Console Logging**
-
-   ```typescript
-   console.log('Debug:', { variable })
-   console.error('Error:', error)
-   ```
-
-2. **VS Code Debugger**
-
-   Create `.vscode/launch.json`:
-
-   ```json
-   {
-     "version": "0.2.0",
-     "configurations": [
-       {
-         "type": "node",
-         "request": "launch",
-         "name": "Debug Server",
-         "program": "${workspaceFolder}/server/src/index.ts",
-         "outFiles": ["${workspaceFolder}/server/dist/**/*.js"],
-         "env": {
-           "NODE_ENV": "development"
-         }
-       }
-     ]
-   }
-   ```
-
-### Common Debug Scenarios
-
-#### WebSocket Issues
-
-```typescript
-// Check WebSocket connection
-socket.on('connect', () => {
-  console.log('Connected:', socket.id)
-})
-
-socket.on('disconnect', (reason) => {
-  console.log('Disconnected:', reason)
-})
-
-socket.on('connect_error', (error) => {
-  console.error('Connection error:', error)
-})
-```
-
-#### API Errors
-
-```typescript
-// Check API responses
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error('API Error:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
-    })
-    return Promise.reject(error)
-  }
-)
-```
-
----
-
-## Common Tasks
-
-### Adding a New API Endpoint
-
-1. **Define the route** in `server/src/routes/`:
-
-   ```typescript
-   // server/src/routes/myFeature.ts
-   import Router from '@koa/router'
-   
-   const router = new Router({ prefix: '/api/ai/my-feature' })
-   
-   router.get('/', async (ctx) => {
-     ctx.body = { message: 'Hello' }
-   })
-   
-   export default router
-   ```
-
-2. **Add the API client** in `ai/app/src/api/`:
-
-   ```typescript
-   // ai/app/src/api/myFeatureApi.ts
-   import { apiClient } from './shared/apiClient'
-   
-   export async function getMyFeature(): Promise<MyFeature> {
-     const response = await apiClient.get('/api/ai/my-feature')
-     return response.data
-   }
-   ```
-
-3. **Create a store** if needed:
-
-   ```typescript
-   // ai/app/src/stores/myFeature.ts
-   import { defineStore } from 'pinia'
-   import { getMyFeature } from '../api/myFeatureApi'
-   
-   export const useMyFeatureStore = defineStore('myFeature', {
-     state: () => ({
-       data: null as MyFeature | null
-     }),
-     actions: {
-       async fetch() {
-         this.data = await getMyFeature()
-       }
-     }
-   })
-   ```
-
-### Adding a New Vue Component
-
-1. **Create the component**:
-
-   ```vue
-   <!-- ai/app/src/components/MyComponent.vue -->
-   <script setup lang="ts">
-   interface Props {
-     title: string
-   }
-   
-   const props = defineProps<Props>()
-   </script>
-   
-   <template>
-     <div :class="$style.container">
-       <h2>{{ title }}</h2>
-     </div>
-   </template>
-   
-   <style module>
-   .container {
-     padding: 16px;
-   }
-   </style>
-   ```
-
-2. **Add tests**:
-
-   ```typescript
-   // ai/app/src/__tests__/MyComponent.spec.ts
-   import { describe, it, expect } from 'vitest'
-   import { mount } from '@vue/test-utils'
-   import MyComponent from '../components/MyComponent.vue'
-   
-   describe('MyComponent', () => {
-     it('should render title', () => {
-       const wrapper = mount(MyComponent, {
-         props: { title: 'Test' }
-       })
-       expect(wrapper.text()).toContain('Test')
-     })
-   })
-   ```
-
-### Adding a New Workflow Node
-
-1. **Define the node type** in `server/src/ai/`:
-
-   ```typescript
-   // server/src/ai/nodes/myNode.ts
-   export async function executeMyNode(
-     input: MyNodeInput,
-     context: ExecutionContext
-   ): Promise<MyNodeOutput> {
-     // Implementation
-   }
-   ```
-
-2. **Register the node** in the executor:
-
-   ```typescript
-   // server/src/ai/agentWorkflowExecutor.ts
-   case 'my-node':
-     return await executeMyNode(input, context)
-   ```
-
-3. **Add the frontend panel**:
-
-   ```vue
-   <!-- ai/app/src/components/agent-workflow/property-panel/panels/MyNodePanel.vue -->
-   <script setup lang="ts">
-   // Node configuration UI
-   </script>
-   ```
-
-4. **Register in the palette**:
-
-   ```typescript
-   // ai/app/src/constants/agentNodes.ts
-   {
-     type: 'my-node',
-     label: 'My Node',
-     icon: 'my-icon',
-     category: 'Custom'
-   }
-   ```
-
----
-
-## Troubleshooting
-
-### Build Errors
-
-#### TypeScript Errors
+### 类型检查
 
 ```bash
-# Check TypeScript configuration
-cd ai/app && npx tsc --noEmit
-
-# Fix common issues
-# 1. Missing types: Install @types/xxx
-# 2. Import errors: Check import paths
-# 3. Type assertions: Use proper types
-```
-
-#### Vite Build Errors
-
-```bash
-# Clear cache and rebuild
-cd ai/app
-rm -rf node_modules/.vite
-pnpm dev
-```
-
-### Test Failures
-
-#### Mock Issues
-
-```typescript
-// ✅ Good: Proper mocking
-vi.mock('../api/myApi', () => ({
-  getData: vi.fn().mockResolvedValue({ data: 'test' })
-}))
-
-// ❌ Bad: Incomplete mock
-vi.mock('../api/myApi')
-```
-
-#### Async Test Issues
-
-```typescript
-// ✅ Good: Wait for async operations
-it('should load data', async () => {
-  const wrapper = mount(MyComponent)
-  await wrapper.vm.$nextTick()
-  expect(wrapper.text()).toContain('Loaded')
-})
-```
-
-### Runtime Errors
-
-#### WebSocket Connection Issues
-
-```bash
-# Check server is running
-curl http://localhost:3001/api/health
-
-# Check WebSocket endpoint
-wscat -c ws://localhost:3001
-```
-
-#### Database Connection Issues
-
-```bash
-# Check MongoDB is running
-mongosh --eval "db.stats()"
-
-# Check connection string
-echo $MONGODB_URI
+cd ai/app && pnpm typecheck    # vue-tsc
+cd server && npx tsc --noEmit  # tsc
 ```
 
 ---
 
-## Resources
+## 调试
 
-### Documentation
+### 调试模式
 
-- [Vue 3 Documentation](https://vuejs.org/)
-- [Pinia Documentation](https://pinia.vuejs.org/)
-- [Vite Documentation](https://vitejs.dev/)
-- [Koa Documentation](https://koajs.com/)
-- [MongoDB Documentation](https://www.mongodb.com/docs/)
+后端日志输出到控制台，关键节点有 `console.log` 标记：
 
-### Tools
+```bash
+cd server && pnpm dev  # 看 [router] [pluginExpert] [afterTools] 等日志
+```
 
-- [Vue DevTools](https://devtools.vuejs.org/)
-- [VS Code](https://code.visualstudio.com/)
-- [MongoDB Compass](https://www.mongodb.com/products/compass)
+### 热重载
 
-### Community
+- 前端：Vite HMR（保存即刷新）
+- 后端：ts-node-dev（保存即重启）
+- 共享包：改后需 `pnpm build`，前端 vite alias 自动生效
 
-- [GitHub Discussions](https://github.com/nan1010082085/ai-platform/discussions)
-- [GitHub Issues](https://github.com/nan1010082085/ai-platform/issues)
+### 数据库检查
+
+```bash
+# 连接 MongoDB
+mongosh "mongodb://formgrid:formgrid@localhost:27017/formgrid"
+
+# 查看集合
+show collections
+db.conversations.find().limit(5).pretty()
+db.agentworkflows.find({status: 'published'}).pretty()
+```
 
 ---
 
-**Happy coding!** 🚀
+## 常见任务
+
+### 添加新节点类型
+
+1. `shared/platform-shared/ai/agentWorkflow/types.ts`：加 `AgentNodeType`
+2. `shared/platform-shared/ai/agentWorkflow/defaults.ts`：加 `createDefaultNodeData` case
+3. `server/src/ai/services/nodes/`：新建 `xxxNode.ts` 执行器
+4. `server/src/ai/services/agentWorkflowExecutor.ts`：注册 dispatch case
+5. `ai/app/src/constants/agentNodes.ts`：加 palette 项
+6. `ai/app/src/components/agent-workflow/property-panel/panels/`：新建面板组件
+7. `ai/app/src/composables/useAgentNodePropertyPanel.ts`：注册面板
+
+### 添加新专家
+
+在 `server/config/plugins/local/` 创建 JSON 配置，或通过插件中心 UI 添加。
+
+### 添加新模板
+
+1. `shared/platform-shared/ai/agentWorkflow/templates.ts`：加模板元数据
+2. `shared/platform-shared/ai/agentWorkflow/templateFactories/`：新建工厂函数
+3. `shared/platform-shared/ai/agentWorkflow/createByTemplate.ts`：注册 switch case
+
+---
+
+## 常见问题
+
+### 端口被占用
+
+```bash
+lsof -ti:3001 | xargs kill  # 后端
+lsof -ti:5300 | xargs kill  # 前端
+```
+
+### MongoDB 连接失败
+
+- 确认 MongoDB 在运行：`docker ps | grep mongo`
+- 检查连接字符串
+- SSH 隧道：`ssh -fN -L 27018:localhost:27017 服务器`
+
+### 构建错误
+
+- 清理 node_modules：`rm -rf node_modules && pnpm install`
+- 重新构建共享包：`cd shared/platform-shared && pnpm build`
+- 清理 Vite 缓存：`rm -rf ai/app/node_modules/.vite`
+
+### 测试失败
+
+- 确认 MongoDB 在运行（部分测试需要）
+- 检查 mock 是否正确
+- 预存失败：4 个测试因前端模块引用导致，非代码问题

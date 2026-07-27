@@ -1,359 +1,140 @@
-# Quick Start Guide
+# 快速开始
 
-Get Schema Platform AI up and running in 5 minutes.
-
----
-
-## Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-- **Node.js** >= 20.x ([Download](https://nodejs.org/))
-- **pnpm** >= 9.x (`npm install -g pnpm`)
-- **MongoDB** 8.x ([Download](https://www.mongodb.com/try/download/community))
-- **Git** ([Download](https://git-scm.com/))
-
-### Optional
-
-- **Docker** - For containerized deployment
-- **LLM API Key** - DeepSeek (recommended), OpenAI, or Anthropic
+5 分钟启动 Schema Platform AI。
 
 ---
 
-## Option 1: Local Development Setup
+## 前置条件
 
-### Step 1: Clone the Repository
+- **Node.js** >= 20.x
+- **pnpm** >= 9.x（`npm install -g pnpm`）
+- **MongoDB** 8.x
+- **Git**
+
+### 可选
+
+- **Docker** - 容器化部署
+- **LLM API Key** - DeepSeek（推荐）、OpenAI 或 Anthropic
+
+---
+
+## 方式一：本地开发环境
+
+### 步骤 1：克隆仓库
 
 ```bash
 git clone https://github.com/nan1010082085/ai-platform.git
 cd ai-platform
 ```
 
-### Step 2: Install Dependencies
+### 步骤 2：安装依赖
 
 ```bash
-# Install shared package (required)
-cd shared/platform-shared
-pnpm install
-pnpm build
-cd ../..
+# 构建共享包（必须）
+cd shared/platform-shared && pnpm install && pnpm build && cd ../..
 
-# Install server
-cd server
-pnpm install
-cd ..
+# 安装后端
+cd server && pnpm install && cd ..
 
-# Install AI app
-cd ai/app
-pnpm install
-cd ../..
+# 安装 AI 前端
+cd ai/app && pnpm install && cd ../..
 ```
 
-### Step 3: Configure Environment
+### 步骤 3：启动 MongoDB
 
 ```bash
-# Copy environment template
+cd server && pnpm db:up && cd ..
+```
+
+MongoDB 8 运行在端口 27017（用户 `formgrid`，密码 `formgrid`，数据库 `formgrid`）。
+
+### 步骤 4：配置环境
+
+```bash
 cp server/.env.example server/.env
-
-# Edit with your settings
-nano server/.env  # or use your preferred editor
 ```
 
-**Minimum required settings:**
+编辑 `server/.env`：
 
 ```env
 MONGODB_URI=mongodb://formgrid:formgrid@localhost:27017/formgrid
-JWT_SECRET=<generate-a-random-32-byte-hex-string>
-DEEPSEEK_API_KEY=<your-deepseek-api-key>
+JWT_SECRET=<随机 32 字节 hex>
+DEEPSEEK_API_KEY=<你的 API Key>
 ```
 
-> ⚠️ **Security Warning**: Never commit real API keys to version control. Use environment variables or `.env` files (which should be in `.gitignore`).
-
-### Step 4: Start MongoDB
+### 步骤 5：初始化数据（可选）
 
 ```bash
-# Using Docker (recommended)
-cd server
-pnpm db:up
-cd ..
-
-# Or start MongoDB manually
-mongod --dbpath /path/to/data
+cd server && pnpm db:seed && cd ..
 ```
 
-### Step 5: Seed the Database
+### 步骤 6：启动后端
 
 ```bash
-cd server
-pnpm db:seed
-cd ..
+cd server && pnpm dev
 ```
 
-This populates the database with:
-- Default admin user
-- Sample workflows
-- Plugin configurations
-- Provider/Model presets
+后端运行在 `http://localhost:3001`。
 
-### Step 6: Start the Application
-
-**Terminal 1 - Server:**
+### 步骤 7：启动前端
 
 ```bash
-cd server
-pnpm dev
+cd ai/app && pnpm dev
 ```
 
-Server starts at `http://localhost:3001`
-
-**Terminal 2 - AI App:**
-
-```bash
-cd ai/app
-pnpm dev
-```
-
-AI app starts at `http://localhost:5300`
-
-### Step 7: Access the Application
-
-1. Open `http://localhost:5300` in your browser
-2. Login with default credentials:
-   - Email: `admin@example.com`
-   - Password: `admin123`
-3. Start using the AI platform!
+打开 `http://localhost:5300`。
 
 ---
 
-## Option 2: Docker Compose Setup
-
-The fastest way to get started with zero local setup.
-
-### Step 1: Clone and Configure
+## 方式二：Docker Compose
 
 ```bash
-git clone https://github.com/nan1010082085/ai-platform.git
-cd ai-platform
-
-# Copy environment template
 cp ai/.env.example ai/.env
-```
-
-### Step 2: Edit Environment
-
-```bash
-nano ai/.env
-```
-
-**Required settings:**
-
-```env
-DEEPSEEK_API_KEY=sk-your-deepseek-api-key
-JWT_SECRET=your-random-32-byte-hex-string
-```
-
-### Step 3: Start All Services
-
-```bash
+# 编辑 ai/.env 设置 DEEPSEEK_API_KEY 和 JWT_SECRET
 docker compose -f ai/docker-compose.ai.yml up -d
 ```
 
-This starts:
-- MongoDB (port 27017)
-- API Server (port 3001)
-- AI Frontend (port 5300)
-
-### Step 4: Access the Application
-
-Open `http://localhost:5300` in your browser.
-
-### Docker Commands
-
-```bash
-# View logs
-docker compose -f ai/docker-compose.ai.yml logs -f
-
-# Stop services
-docker compose -f ai/docker-compose.ai.yml down
-
-# Restart services
-docker compose -f ai/docker-compose.ai.yml restart
-
-# Rebuild and start
-docker compose -f ai/docker-compose.ai.yml up -d --build
-```
+启动 MongoDB + 后端 + 前端，打开 `http://localhost:5300`。
 
 ---
 
-## Verify Installation
-
-### Check Server Health
+## 验证
 
 ```bash
+# 后端健康检查
 curl http://localhost:3001/api/health
-```
 
-Expected response:
-```json
-{
-  "status": "ok",
-  "timestamp": "2026-07-23T00:00:00.000Z"
-}
-```
-
-### Run Tests
-
-```bash
-# AI app tests
-cd ai/app
-pnpm test
-
-# Server tests
-cd server
-pnpm test
-```
-
-### Check Test Coverage
-
-```bash
-cd ai/app
-pnpm test:coverage
+# 前端页面
+open http://localhost:5300
 ```
 
 ---
 
-## Next Steps
+## 下一步
 
-### Explore Features
-
-1. **AI Chat** - Start a conversation with the AI assistant
-2. **Workflow Designer** - Create visual workflows
-3. **RAG Knowledge Base** - Upload documents for context
-4. **Plugin Center** - Configure experts and tools
-5. **Model Settings** - Add custom LLM providers
-
-### Read Documentation
-
-- **[Architecture Overview](./architecture.md)** - System design
-- **[Agent System](./agent.md)** - Chat experts
-- **[Workflow Guide](./agent-workflow.md)** - Visual workflows
-- **[Plugin System](./plugin.md)** - Extensibility
-- **[API Reference](../server/docs/api-reference.md)** - REST API
-
-### Configure LLM Providers
-
-Add additional LLM providers in **Settings → Model Settings**:
-
-- **DeepSeek** - Default, recommended
-- **OpenAI** - GPT-4, GPT-3.5
-- **Anthropic** - Claude models
-- **Custom** - Any OpenAI-compatible API
+- [AI 对话 Agent](./agent) - 了解多专家对话
+- [Agent Workflow](./agent-workflow) - 可视化工作流编排
+- [RAG 知识库](./rag-tool-mcp-boundary) - 向量检索
+- [插件中心](./plugin) - 扩展 AI 能力
 
 ---
 
-## Troubleshooting
+## 常见问题
 
-### Common Issues
-
-#### MongoDB Connection Failed
+### 端口被占用
 
 ```bash
-# Check if MongoDB is running
-docker ps | grep mongo
-
-# Restart MongoDB
-cd server && pnpm db:up
+lsof -ti:3001 | xargs kill  # 后端
+lsof -ti:5300 | xargs kill  # 前端
 ```
 
-#### Port Already in Use
+### MongoDB 连接失败
 
-```bash
-# Find process using port 3001
-lsof -i :3001
+- 确认 MongoDB 在运行：`docker ps | grep mongo`
+- 检查连接字符串：`MONGODB_URI=mongodb://formgrid:formgrid@localhost:27017/formgrid`
 
-# Kill the process
-kill -9 <PID>
-```
+### LLM 调用失败
 
-#### Build Errors
-
-```bash
-# Clean and rebuild
-cd shared/platform-shared
-rm -rf node_modules dist
-pnpm install
-pnpm build
-
-cd ../../ai/app
-rm -rf node_modules
-pnpm install
-```
-
-#### Test Failures
-
-```bash
-# Clear test cache
-cd ai/app
-pnpm test -- --clearCache
-```
-
-### Getting Help
-
-1. **Check Documentation** - Most answers are in the docs
-2. **Search Issues** - Look for similar problems
-3. **Ask in Discussions** - Community can help
-4. **Open an Issue** - Report bugs with reproduction steps
-
----
-
-## Environment Variables Reference
-
-### Required
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `MONGODB_URI` | MongoDB connection string | `mongodb://formgrid:formgrid@localhost:27017/formgrid` |
-| `JWT_SECRET` | Secret for JWT tokens | `your-random-32-byte-hex-string` |
-| `DEEPSEEK_API_KEY` | DeepSeek API key | `sk-...` |
-
-### Optional
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3001` | Server port |
-| `NODE_ENV` | `development` | Environment mode |
-| `CORS_ORIGINS` | `*` | Allowed CORS origins |
-| `REDIS_URL` | - | Redis URL for caching |
-
-See [Environment Variables](./environment-variables.md) for complete reference.
-
----
-
-## Development Workflow
-
-### Daily Development
-
-```bash
-# Start development servers
-cd server && pnpm dev &
-cd ai/app && pnpm dev
-
-# Run tests before committing
-cd ai/app && pnpm test
-
-# Check code quality
-pnpm lint
-```
-
-### Making Changes
-
-1. Create a feature branch: `git checkout -b feat/my-feature`
-2. Make your changes
-3. Run tests: `pnpm test`
-4. Commit: `git commit -m "feat: add my feature"`
-5. Push: `git push origin feat/my-feature`
-6. Create a Pull Request
-
----
-
-**Congratulations!** You're now ready to develop with Schema Platform AI. Happy coding! 🚀
+- 确认 API Key 有效
+- DeepSeek：`DEEPSEEK_API_KEY=sk-xxx`
+- 自定义模型：参考[自定义模型接入指南](/extend/custom-models)
