@@ -166,6 +166,19 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
     },
   },
   {
+    type: 'handoff',
+    label: '会话交接',
+    icon: 'switch',
+    category: 'logic',
+    description: '将会话控制权转移给目标已发布 workflow（传递对话历史，目标 persona 接管）',
+    defaultData: {
+      label: '会话交接',
+      handoffTargetWorkflowId: '',
+      handoffPassHistory: true,
+      handoffInputTemplate: '{{$input.message}}',
+    },
+  },
+  {
     type: 'llm',
     label: 'LLM',
     icon: 'cpu',
@@ -485,6 +498,7 @@ export const AGENT_NODE_COLORS: Record<string, string> = {
   'memory-recall': '#E6A23C',
   'memory-write': '#E6A23C',
   'memory-extract': '#00D4FF',
+  'handoff': '#9B59B6',
   llm: '#00D4FF',
   'agent-intent': '#9B59B6',
   expert: '#9B59B6',

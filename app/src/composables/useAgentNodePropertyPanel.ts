@@ -18,6 +18,7 @@ import ConversationMemoryNodePanel from '@/components/agent-workflow/property-pa
 import MemoryRecallNodePanel from '@/components/agent-workflow/property-panel/panels/MemoryRecallNodePanel.vue'
 import MemoryWriteNodePanel from '@/components/agent-workflow/property-panel/panels/MemoryWriteNodePanel.vue'
 import MemoryExtractNodePanel from '@/components/agent-workflow/property-panel/panels/MemoryExtractNodePanel.vue'
+import HandoffNodePanel from '@/components/agent-workflow/property-panel/panels/HandoffNodePanel.vue'
 import ExpertPluginNodePanel from '@/components/agent-workflow/property-panel/panels/ExpertPluginNodePanel.vue'
 import ImageGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/ImageGenerateNodePanel.vue'
 import VideoGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/VideoGenerateNodePanel.vue'
@@ -67,6 +68,7 @@ const registry = new Map<AgentNodeType, Component>([
   ['memory-recall', markRaw(MemoryRecallNodePanel)],
   ['memory-write', markRaw(MemoryWriteNodePanel)],
   ['memory-extract', markRaw(MemoryExtractNodePanel)],
+  ['handoff', markRaw(HandoffNodePanel)],
   ['llm', markRaw(LlmNodePanel)],
   ['agent-intent', agentPanel],
   ['tool', toolPanel],
@@ -109,6 +111,7 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   'memory-recall': '长程记忆检索',
   'memory-write': '长程记忆写入',
   'memory-extract': '长程记忆提取',
+  'handoff': '会话交接',
   llm: 'LLM',
   'agent-intent': getExpertNodeTypeLabel('agent-intent') ?? '意图识别',
   tool: getToolNodeTypeLabel('tool') ?? '工具',

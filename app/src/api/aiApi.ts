@@ -7,6 +7,7 @@
  * - document: 文档上传、预览、摘要、图片分析
  * - monitor: Agent/插件监控指标
  * - rag: 语义搜索、知识库管理、mention
+ * - memory: 长程记忆检索、写入、管理（跨会话个性化记忆）
  * - evaluation: 评测体系（测试集、评测运行）
  * - llm: 供应商、用量、模型配置、引导词、健康检查
  * - workflowTemplate: 工作流模板管理（CRUD + 导入导出）
@@ -21,6 +22,7 @@ export * from './aiApi/conversation'
 export * from './aiApi/document'
 export * from './aiApi/monitor'
 export * from './aiApi/rag'
+export * from './aiApi/memory'
 export * from './aiApi/evaluation'
 export * from './aiApi/llm'
 export * from './aiApi/workflowTemplate'
