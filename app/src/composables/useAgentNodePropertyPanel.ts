@@ -32,6 +32,13 @@ import VariableSetNodePanel from '@/components/agent-workflow/property-panel/pan
 import SwitchNodePanel from '@/components/agent-workflow/property-panel/panels/SwitchNodePanel.vue'
 import ScheduleTriggerNodePanel from '@/components/agent-workflow/property-panel/panels/ScheduleTriggerNodePanel.vue'
 import AgentTeamNodePanel from '@/components/agent-workflow/property-panel/panels/AgentTeamNodePanel.vue'
+import ApprovalAnalyzeNodePanel from '@/components/agent-workflow/property-panel/panels/ApprovalAnalyzeNodePanel.vue'
+import FlowInteractNodePanel from '@/components/agent-workflow/property-panel/panels/FlowInteractNodePanel.vue'
+import ComplianceCheckNodePanel from '@/components/agent-workflow/property-panel/panels/ComplianceCheckNodePanel.vue'
+import ModuleAssembleNodePanel from '@/components/agent-workflow/property-panel/panels/ModuleAssembleNodePanel.vue'
+import FormQueryNodePanel from '@/components/agent-workflow/property-panel/panels/FormQueryNodePanel.vue'
+import AnomalyDetectNodePanel from '@/components/agent-workflow/property-panel/panels/AnomalyDetectNodePanel.vue'
+import ChartGenerateNodePanel from '@/components/agent-workflow/property-panel/panels/ChartGenerateNodePanel.vue'
 
 const toolPanel = markRaw(ToolNodePanel)
 const agentPanel = markRaw(AgentNodePanel)
@@ -42,6 +49,13 @@ const registry = new Map<AgentNodeType, Component>([
   ['webhook-trigger', markRaw(WebhookTriggerNodePanel)],
   ['schedule-trigger', markRaw(ScheduleTriggerNodePanel)],
   ['agent-team', markRaw(AgentTeamNodePanel)],
+  ['approval-analyze', markRaw(ApprovalAnalyzeNodePanel)],
+  ['flow-interact', markRaw(FlowInteractNodePanel)],
+  ['compliance-check', markRaw(ComplianceCheckNodePanel)],
+  ['module-assemble', markRaw(ModuleAssembleNodePanel)],
+  ['form-query', markRaw(FormQueryNodePanel)],
+  ['anomaly-detect', markRaw(AnomalyDetectNodePanel)],
+  ['chart-generate', markRaw(ChartGenerateNodePanel)],
   ['document-parse', markRaw(DocumentParseNodePanel)],
   ['vision-analyze', markRaw(VisionAnalyzeNodePanel)],
   ['audio-transcribe', markRaw(AudioTranscribeNodePanel)],
@@ -74,6 +88,13 @@ export const AGENT_NODE_TYPE_LABELS: Record<string, string> = {
   'webhook-trigger': 'Webhook 触发',
   'schedule-trigger': '定时触发',
   'agent-team': 'Agent 团队',
+  'approval-analyze': '审批建议',
+  'flow-interact': '流程交互',
+  'compliance-check': '合规检查',
+  'module-assemble': '模块组装',
+  'form-query': '表单查询',
+  'anomaly-detect': '异常检测',
+  'chart-generate': '图表生成',
   'document-parse': '文档解析',
   'vision-analyze': '图片视觉分析',
   'audio-transcribe': '音频转录',

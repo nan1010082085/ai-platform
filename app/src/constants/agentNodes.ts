@@ -350,6 +350,85 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
       ],
     },
   },
+  {
+    type: 'approval-analyze',
+    label: '审批建议',
+    icon: 'circle-check',
+    category: 'ai',
+    description: '分析表单审批提交内容，结合上下文给出审批建议',
+    defaultData: {
+      label: '审批建议',
+      approvalSubmissionSource: 'input',
+      approvalModel: 'default',
+    },
+  },
+  {
+    type: 'flow-interact',
+    label: '流程交互',
+    icon: 'connection',
+    category: 'ai',
+    description: '与流程引擎交互：发起流程、查询状态、审批/驳回',
+    defaultData: {
+      label: '流程交互',
+      flowInteractAction: 'query',
+    },
+  },
+  {
+    type: 'compliance-check',
+    label: '合规检查',
+    icon: 'warning-filled',
+    category: 'ai',
+    description: '按行业合规规则检查内容合规性，输出违规项与建议',
+    defaultData: {
+      label: '合规检查',
+      complianceIndustry: 'general',
+      complianceRules: [],
+    },
+  },
+  {
+    type: 'module-assemble',
+    label: '模块组装',
+    icon: 'grid',
+    category: 'ai',
+    description: '按业务模块类型（OA/HR/财务/审计）组装方案或页面结构',
+    defaultData: {
+      label: '模块组装',
+      moduleType: 'custom',
+    },
+  },
+  {
+    type: 'form-query',
+    label: '表单查询',
+    icon: 'search',
+    category: 'ai',
+    description: '按表单 ID 和过滤条件查询表单数据，支持数量限制',
+    defaultData: {
+      label: '表单查询',
+      formQueryLimit: 10,
+    },
+  },
+  {
+    type: 'anomaly-detect',
+    label: '异常检测',
+    icon: 'data-analysis',
+    category: 'ai',
+    description: '按指定维度检测数据异常，输出异常项与风险等级',
+    defaultData: {
+      label: '异常检测',
+      anomalyDimensions: ['amount', 'frequency'],
+    },
+  },
+  {
+    type: 'chart-generate',
+    label: '图表生成',
+    icon: 'data-line',
+    category: 'ai',
+    description: '根据数据字段自动生成图表（柱状/折线/饼图/表格）',
+    defaultData: {
+      label: '图表生成',
+      chartType: 'auto',
+    },
+  },
 ]
 
 export const AGENT_NODE_COLORS: Record<string, string> = {
@@ -381,6 +460,13 @@ export const AGENT_NODE_COLORS: Record<string, string> = {
   'code-execute': '#607D8B',
   'variable-set': '#795548',
   'switch': '#9B59B6',
+  'approval-analyze': '#67C23A',
+  'flow-interact': '#409EFF',
+  'compliance-check': '#F56C6C',
+  'module-assemble': '#9B59B6',
+  'form-query': '#00D4FF',
+  'anomaly-detect': '#E6A23C',
+  'chart-generate': '#909399',
 }
 
 export function getPaletteItem(type: AgentNodeType): AgentPaletteItem | undefined {
