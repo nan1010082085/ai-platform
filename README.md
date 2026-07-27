@@ -1,167 +1,70 @@
 # Schema Platform AI
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2020-brightgreen.svg)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D%2020-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 [![Vue.js](https://img.shields.io/badge/Vue.js-3.0-brightgreen.svg)](https://vuejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-8.0-green.svg)](https://www.mongodb.com/)
 
-Open-source AI application platform: conversational Agent, visual workflow orchestration, RAG knowledge base, plugin center, and external integration.
+**表单/流程垂直场景的 AI 应用平台** — 对话 Agent、可视化工作流编排、RAG 知识库、评测体系、插件中心。
 
-**[Documentation](./docs)** | **[Contributing](./CONTRIBUTING.md)** | **[Changelog](./CHANGELOG.md)** | **[Security](./SECURITY.md)**
+> 不是通用 AI 平台（Dify/n8n 的赛道），而是"表单/流程 + AI"垂直场景的最佳选择。
 
----
-
-## Quick Start (5 minutes)
-
-Get a standalone AI platform running with **server + ai frontend** -- two terminals, no Docker required.
-
-### Prerequisites
-
-- Node.js >= 20
-- pnpm >= 9
-- MongoDB 8 (local or Docker)
-- An LLM API key (DeepSeek recommended)
-
-### 1. Clone and install
-
-```bash
-git clone https://github.com/schema-platform/schema-platform.git
-cd schema-platform
-
-# Build shared package (required; includes AI types/events under platform-shared/ai/)
-cd shared/platform-shared && pnpm install && pnpm build && cd ../..
-
-# Install server
-cd server && pnpm install && cd ..
-
-# Install AI app
-cd ai/app && pnpm install && cd ../..
-```
-
-### 2. Start MongoDB
-
-```bash
-cd server && pnpm db:up && cd ..
-```
-
-This starts MongoDB 8 on port 27017 (user: `formgrid`, password: `formgrid`, database: `formgrid`).
-
-### 3. Configure environment
-
-```bash
-cp server/.env.example server/.env
-```
-
-Edit `server/.env` -- set at minimum:
-
-```env
-MONGODB_URI=mongodb://formgrid:formgrid@localhost:27017/formgrid
-JWT_SECRET=<any-random-hex-string-32-bytes>
-DEEPSEEK_API_KEY=<your-deepseek-api-key>
-```
-
-> ⚠️ **Security Warning**: Never commit real API keys to version control. Use environment variables or `.env` files (which should be in `.gitignore`).
-
-### 4. Seed the database (optional but recommended)
-
-```bash
-cd server && pnpm db:seed && cd ..
-```
-
-### 5. Start the server
-
-```bash
-cd server && pnpm dev
-```
-
-Server runs at `http://localhost:3001`. Verify with `curl http://localhost:3001/api/health`.
-
-### 6. Start the AI app
-
-```bash
-cd ai/app && pnpm dev
-```
-
-Open `http://localhost:5300`. The AI chat panel connects to the server automatically.
+**[文档](./docs)** | **[贡献指南](./CONTRIBUTING.md)** | **[更新日志](./CHANGELOG.md)** | **[安全](./SECURITY.md)**
 
 ---
 
-## Docker Compose (all-in-one)
+## 核心能力
 
-For the fastest experience with zero local setup:
+### 🤖 AI Chat（LangGraph 多专家）
 
-```bash
-# From the repo root
-cp ai/.env.example ai/.env
-# Edit ai/.env with your DEEPSEEK_API_KEY and JWT_SECRET
+多专家对话 Agent，支持需求分析、任务规划、工具调用。通过插件中心配置专家，无需改代码扩展新领域。
 
-docker compose -f ai/docker-compose.ai.yml up -d
-```
+- LangGraph StateGraph 架构（10 节点 + 条件路由）
+- 专家匹配 + 多意图链 + 协作路由
+- 流式输出 + 思考链展示
+- HITL 中断/恢复（`request_user_input` 工具触发暂停，用户反馈后继续）
 
-This starts MongoDB, the API server, and the AI frontend. Open http://localhost:5300 when ready.
+### 🔧 Agent Workflow（可视化 DAG 编排）
 
-See [docker-compose.ai.yml](./docker-compose.ai.yml) for configuration details.
+n8n 风格可视化工作流编辑器，**32 种节点类型**：
 
----
+| 类别 | 节点 |
+|------|------|
+| **触发器** | 手动触发、Webhook 触发、定时触发（cron） |
+| **AI 节点** | LLM、Agent Loop（自主循环）、Agent Team（多 Agent 协作）、意图路由、需求分析、任务规划、任务链、协作路由、摘要 |
+| **文档处理** | 文档解析、视觉分析、音频转录、视频分析、图片生成、视频生成、PPT 生成 |
+| **逻辑控制** | 条件分支（if）、多路分支（switch）、变量赋值、代码执行（JS 沙箱） |
+| **人工介入** | HITL 人工审批（暂停→确认→继续） |
+| **垂直场景** | 审批建议、流程交互、合规检查、模块组装、表单查询、异常检测、图表生成 |
 
-## Architecture
+发布后通过 REST API 或 Webhook 调用，支持多版本管理。
 
-```
-Browser (port 5300)
-  └─ ai/app (Vue 3 SPA)
-       ├─ REST API ──→ server (Koa, port 3001)
-       └─ WebSocket ──→ server (Socket.IO)
-                           ├─ MongoDB (schemas, conversations, users, workflows)
-                           ├─ LLM (DeepSeek / OpenAI / Anthropic / custom)
-                           └─ RAG (embedding + vector search)
-```
+### 📚 RAG 知识库
 
-The AI app runs standalone or embeds in editor/flow via qiankun micro-frontend as a sidebar assistant.
+- 向量检索 + 关键词 fallback + **Rerank 重排**（BGE-Reranker）
+- **Hybrid 混合检索**（语义 + 关键词加权融合）
+- **检索调试视图**（三路对比：语义/Rerank 后/Hybrid，命中片段高亮）
+- 文档上传 + 自动索引 + 分段策略
+- 默认 embedding：SiliconFlow 托管 BGE-M3
 
----
+### 📊 评测体系
 
-## Project Structure
+离线评测 workflow 质量，量化"改了 prompt/换了模型"是好是坏：
 
-```
-ai/
-  app/               @ai-app                           Vue 3 frontend: Chat, Workflows, RAG, Plugins
-  shared/            @schema-platform/ai-shared        Cross-package types, events, promptBuilder
-  docs/              Architecture & design documentation
-```
+- **数据集管理**（CRUD + CSV 导入）
+- **评测运行**（选目标 workflow + 数据集 + 评判方式）
+- **结果对比**（两版本横向对比：通过率/耗时/token/LLM 评分）
+- 评判方式：关键词命中 / 正则匹配 / LLM-as-judge
 
-| Package | Description |
-|---------|-------------|
-| `@ai-app` | Full AI application: Chat, workflow designer, execution monitor, RAG, plugin center |
-| `@schema-platform/platform-shared/ai` | Shared types, event protocol, prompt builder, workflow domain model |
+### 🔌 插件中心
 
----
+JSON 配置 Experts、Skills、Tools、MCP servers。热重载，CLI 打包安装。
 
-## Core Capabilities
-
-### AI Chat (LangGraph)
-
-Multi-expert conversational Agent with requirement analysis, task planning, and tool execution. Experts are configured via the plugin center -- add new domain experts without code changes.
-
-### Agent Workflow (Visual DAG)
-
-n8n-style visual workflow editor. Nodes: LLM, document parsing, vision analysis, conditional logic, human-in-the-loop, tool invocation. Publish and invoke via REST API or webhook.
-
-### RAG Knowledge Base
-
-Index documents (PDF, Word, Excel, text) into vector store. Retrieval-augmented generation in Chat and workflows. Default embedding: SiliconFlow-hosted BGE-M3.
-
-### Plugin Center
-
-Configure Experts, Skills, Tools, and MCP servers via JSON. Hot-reload with SIGHUP. CLI tools for packaging and installation.
-
-### External Integration
-
-Invoke published workflows via HTTP with API keys:
+### 🔗 外部集成
 
 ```bash
-curl -X POST http://localhost:3001/api/ai/workflows/invoke/your-workflow-slug \
-  -H "X-Tenant-Id: your-tenant-id" \
+curl -X POST http://localhost:3001/api/ai/workflows/invoke/your-slug \
   -H "X-Workflow-Key: wf_your_key" \
   -H "Content-Type: application/json" \
   -d '{"input": "your data"}'
@@ -169,164 +72,234 @@ curl -X POST http://localhost:3001/api/ai/workflows/invoke/your-workflow-slug \
 
 ---
 
-## Environment Variables
+## 31 个行业模板
 
-### Required
+按 10 个分类覆盖主流业务场景：
 
-| Variable | Description |
-|----------|-------------|
-| `MONGODB_URI` | MongoDB connection string |
-| `JWT_SECRET` | Secret for signing JWT tokens (required in production; auto-fallback in dev) |
-| `DEEPSEEK_API_KEY` | DeepSeek API key for LLM chat |
-
-### Optional -- LLM Providers
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DEEPSEEK_BASE_URL` | (DeepSeek default) | Custom DeepSeek endpoint |
-| `DEEPSEEK_MODEL` | (provider default) | Override chat model name |
-| `OPENAI_API_KEY` | -- | OpenAI API key (alternative provider) |
-| `OPENAI_BASE_URL` | -- | Custom OpenAI-compatible endpoint |
-| `OPENAI_MODEL` | -- | Override OpenAI model name |
-| `ANTHROPIC_API_KEY` | -- | Anthropic API key |
-| `ANTHROPIC_BASE_URL` | -- | Custom Anthropic endpoint |
-| `CLAUDE_MODEL` | -- | Override Claude model name |
-| `DEFAULT_LLM` | -- | Default provider key |
-| `PLATFORM_LLM_ENABLED` | `true` | Set `false` to use only DB-stored ModelConfig |
-
-### Optional -- Embedding (RAG)
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `EMBEDDING_API_KEY` | -- | Embedding API key |
-| `EMBEDDING_BASE_URL` | `https://api.hpc-ai.com/inference/v1` | Embedding endpoint (SiliconFlow) |
-| `EMBEDDING_MODEL` | `BAAI/bge-m3` | Embedding model name |
-| `EMBEDDING_DIMENSIONS` | `1024` | Vector dimensions |
-
-### Optional -- Server
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3001` | Server port |
-| `NODE_ENV` | `development` | `development` or `production` |
-| `CORS_ORIGINS` | `*` | Allowed origins (comma-separated) |
-| `CREDENTIAL_SECRET` | -- | Encryption key for stored credentials |
-| `SKIP_PERMISSION_CHECK` | `false` | Skip auth checks (dev only, never in production) |
-| `REDIS_URL` | -- | Redis URL (optional, for caching) |
-
-### Optional -- AI Behavior
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AI_ENABLE_TASK_PLANNER` | `true` | Enable task planning node |
-| `AI_DOCUMENT_STORAGE_ROOT` | -- | Root directory for document storage |
-| `AI_VISION_OCR_MODEL` | -- | Model for vision/OCR tasks |
-| `AI_PLUGIN_CONFIG_DIR` | -- | Plugin configuration directory |
+| 分类 | 模板 |
+|------|------|
+| **通用** | 智能助手问答、需求门控构建、智能建议、行动方案 |
+| **文档** | 文档摘要、文档图片识别、Excel 报表、多文档对比、结构化提取 |
+| **助手** | 图文生成、PPT 生成、图片分析、多模态图文、视频营销 |
+| **客服** | 工单分流、知识库问答、情感升级 |
+| **审计** | 内容合规、合同风险标注、FAQ 质量检查 |
+| **HR** | 简历筛选 |
+| **财务** | 报销单审核 |
+| **运营** | 客户反馈分析 |
+| **集成** | HTTP 通知、Webhook 批量派发 |
+| **批处理** | 多文档批处理、RAG 摄入 QA |
 
 ---
 
-## Tech Stack
+## 架构
 
-- **Frontend**: Vue 3, TypeScript, Element Plus, Pinia, Vue Router, Socket.IO client
-- **Backend**: Koa.js, TypeScript, Mongoose, LangGraph, Socket.IO
-- **AI**: LangGraph (state graph + checkpoint), OpenAI-compatible API, MCP protocol
-- **Database**: MongoDB 8+
-- **Build**: Vite, TypeScript compiler
+```
+浏览器 (port 5300)
+  └─ ai/app (Vue 3 SPA)
+       ├─ REST API ──→ server (Koa, port 3001)
+       └─ WebSocket ──→ server (Socket.IO)
+                           ├─ MongoDB（schema/conversation/workflow/embedding/telemetry）
+                           ├─ BullMQ + Redis（workflow 执行队列，自动重试）
+                           ├─ LLM（DeepSeek/OpenAI/Anthropic/自定义）
+                           ├─ RAG（BGE-M3 embedding + rerank + hybrid）
+                           └─ 追踪（span-based telemetry → MongoDB）
+```
+
+### 关键架构决策
+
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 执行引擎 | BullMQ 队列 + Worker | 进程崩溃不丢执行，自动重试，并发可控 |
+| 向量存储 | MongoDB cosine（默认）+ Qdrant（可选） | 小规模零依赖，大规模可升级 |
+| 渠道部署 | ChannelAdapter（Web/飞书/钉钉） | 抽象接口，一个 workflow 多渠道 |
+| 连接器 | Connector 框架（HTTP/Database） | 注册表模式，可扩展 |
+| 模板管理 | DB 存储 + CRUD API + UI | 用户可自建模板，不依赖代码发版 |
 
 ---
 
-## Documentation
+## Quick Start
 
-| Document | Content |
-|----------|---------|
-| [Architecture](./docs/architecture.md) | Dual-engine architecture, system overview |
-| [Agent System](./docs/agent.md) | Chat expert agents, execution flow |
-| [Agent Workflow](./docs/agent-workflow.md) | Visual workflow orchestration guide |
-| [Tool System](./docs/tool.md) | MCP tools, LangGraph tools, registry |
-| [MCP Protocol](./docs/mcp.md) | MCP server configuration |
-| [Event Protocol](./docs/events.md) | WebSocket event types |
-| [ai-shared API](./docs/ai-shared.md) | Shared package exports |
-| [Plugin Center](./docs/plugin.md) | Plugin architecture and configuration |
-| [SDK Guide](./docs/sdk.md) | SDK usage and external integration |
-| [Platform Positioning](./docs/platform.md) | Three-capability platform, JWT, credential model |
+### 前置条件
 
----
+- Node.js >= 20
+- pnpm >= 9
+- MongoDB 8（本地或 Docker）
+- LLM API key（DeepSeek 推荐）
 
-## Development
+### 安装
 
 ```bash
-# Run tests
-cd ai/app && pnpm test
+git clone https://github.com/schema-platform/schema-platform.git
+cd schema-platform
 
-# Coverage (stores/api thresholds enforced)
-cd ai/app && pnpm test:coverage
+# 构建共享包（必须）
+cd shared/platform-shared && pnpm install && pnpm build && cd ../..
 
-# Build
-cd ai/app && pnpm build
-cd shared/platform-shared && pnpm build
+# 安装 server
+cd server && pnpm install && cd ..
+
+# 安装 AI 前端
+cd ai/app && pnpm install && cd ../..
+```
+
+### 配置
+
+```bash
+cp server/.env.example server/.env
+```
+
+编辑 `server/.env`，至少设置：
+
+```env
+MONGODB_URI=mongodb://formgrid:formgrid@localhost:27017/formgrid
+JWT_SECRET=<random-hex-32-bytes>
+DEEPSEEK_API_KEY=<your-api-key>
+```
+
+### 启动
+
+```bash
+# 终端 1：Server
+cd server && pnpm dev
+
+# 终端 2：AI 前端
+cd ai/app && pnpm dev
+```
+
+打开 `http://localhost:5300`。
+
+### Docker Compose（一键启动）
+
+```bash
+cp ai/.env.example ai/.env
+# 编辑 ai/.env 设置 DEEPSEEK_API_KEY 和 JWT_SECRET
+docker compose -f ai/docker-compose.ai.yml up -d
 ```
 
 ---
 
-## Contributing
+## 环境变量
 
-We welcome contributions from the community! See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup, coding standards, and pull request guidelines.
+### 必需
 
-### Ways to Contribute
+| 变量 | 说明 |
+|------|------|
+| `MONGODB_URI` | MongoDB 连接字符串 |
+| `JWT_SECRET` | JWT 签名密钥（生产必须，开发自动 fallback） |
+| `DEEPSEEK_API_KEY` | DeepSeek API key |
 
-- **Report bugs** - Use our [bug report template](https://github.com/nan1010082085/ai-platform/issues/new?template=bug_report.md)
-- **Suggest features** - Use our [feature request template](https://github.com/nan1010082085/ai-platform/issues/new?template=feature_request.md)
-- **Submit pull requests** - Follow our [PR guidelines](./CONTRIBUTING.md#pull-requests)
-- **Improve documentation** - Help us make the docs better
-- **Share feedback** - Join our [discussions](https://github.com/nan1010082085/ai-platform/discussions)
+### LLM Provider
 
-### Good First Issues
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `OPENAI_API_KEY` | -- | OpenAI API key |
+| `OPENAI_BASE_URL` | -- | 自定义 OpenAI 兼容端点 |
+| `ANTHROPIC_API_KEY` | -- | Anthropic API key |
+| `DEFAULT_LLM` | -- | 默认 provider key |
 
-Looking for a way to contribute? Check out our [good first issues](https://github.com/nan1010082085/ai-platform/labels/good%20first%20issue) label.
+### Embedding / RAG
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `EMBEDDING_API_KEY` | -- | Embedding API key |
+| `EMBEDDING_MODEL` | `BAAI/bge-m3` | Embedding 模型 |
+| `SILICONFLOW_API_KEY` | -- | SiliconFlow key（rerank 复用） |
+
+### 执行引擎
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `REDIS_URL` | `redis://localhost:6379` | Redis（BullMQ 队列，可选，无则降级） |
+| `AI_MAX_TOOL_ITERATIONS` | `3` | 工具迭代上限 |
+| `AI_CHECKPOINT_TTL_DAYS` | `7` | checkpoint 自动过期天数 |
+| `AI_MONTHLY_TOKEN_BUDGET` | -- | 月度 token 预算（超限预警） |
+
+### 监控告警
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `AI_ALERT_WEBHOOK_URL` | -- | 告警 webhook URL |
+| `AI_ALERT_ERROR_RATE_THRESHOLD` | `10` | 错误率阈值（%） |
+| `AI_ALERT_SLOW_THRESHOLD_MS` | `10000` | 慢操作阈值（ms） |
+
+### 向量存储
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `VECTOR_STORE` | `mongodb` | 向量存储后端（`mongodb` 或 `qdrant`） |
+| `QDRANT_URL` | `http://localhost:6333` | Qdrant 地址 |
 
 ---
 
-## Community
+## 测试
 
-- **GitHub Discussions** - Ask questions and share ideas
-- **Issues** - Report bugs and request features
-- **Pull Requests** - Contribute code changes
+```bash
+# 前端测试
+cd ai/app && pnpm test        # 687 tests
 
-### Code of Conduct
+# 后端测试
+cd server && pnpm test         # 500+ tests
 
-Please read our [Code of Conduct](./CODE_OF_CONDUCT.md) before participating in our community.
+# 类型检查
+cd ai/app && pnpm typecheck
+cd server && npx tsc --noEmit
+```
 
 ---
 
-## Security
+## 部署
 
-For security concerns, please see our [Security Policy](./SECURITY.md).
+```bash
+# 打包
+bash deploy/pack.sh --target ai
 
-**DO NOT** open public issues for security vulnerabilities.
+# 部署到服务器
+bash deploy/deploy.sh --target ai <VERSION>
+
+# 全量部署（server + 所有前端）
+bash deploy/deploy.sh --target all <VERSION>
+```
+
+详见 [deploy/deploy.sh](../deploy/deploy.sh) 和 [deploy/ecosystem.config.cjs](../deploy/ecosystem.config.cjs)。
+
+---
+
+## 技术栈
+
+| 层 | 技术 |
+|---|---|
+| 前端 | Vue 3 + TypeScript + Element Plus + Pinia + Socket.IO |
+| 后端 | Koa.js + TypeScript + Mongoose + LangGraph + BullMQ + Socket.IO |
+| AI | LangGraph StateGraph + OpenAI 兼容 API + MCP 协议 |
+| 存储 | MongoDB 8 + Redis（可选）+ Qdrant（可选） |
+| 构建 | Vite + TypeScript |
+| 部署 | PM2 + nginx + rsync |
+
+---
+
+## 文档
+
+| 文档 | 内容 |
+|------|------|
+| [架构](./docs/architecture.md) | 双引擎架构、系统概览 |
+| [全链路架构](./docs/product/full-chain-architecture-2026-07-24.md) | Chat → LangGraph → LLM → 31 模板完整链路 |
+| [LangGraph 优化](./docs/product/langgraph-optimization-2026-07-24.md) | 12 项优化分析 + 路线图 |
+| [提示词优化](./docs/product/prompt-optimization-2026-07-24.md) | 温度策略 + 提示词规范 |
+| [垂直领域分析](./docs/product/vertical-domain-analysis-2026-07-24.md) | 表单/流程 + AI 差异化场景 |
+| [Agent Workflow](./docs/agent-workflow.md) | 可视化工作流编排指南 |
+| [事件协议](./docs/events.md) | WebSocket 事件类型 |
+| [插件中心](./docs/plugin.md) | 插件架构与配置 |
+
+---
+
+## 贡献
+
+欢迎贡献！详见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
 ---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
-
-### Attribution
-
-Built with:
-- [Vue.js](https://vuejs.org/) - The Progressive JavaScript Framework
-- [LangGraph](https://langchain-ai.github.io/langgraph/) - Stateful LLM workflows
-- [MongoDB](https://www.mongodb.com/) - Document database
-- [Element Plus](https://element-plus.org/) - Vue 3 UI library
-- [Socket.IO](https://socket.io/) - Real-time communication
-
----
-
-## Support
-
-- **Documentation** - Check the [docs](./docs) folder first
-- **Issues** - Search [existing issues](https://github.com/nan1010082085/ai-platform/issues) before creating new ones
-- **Discussions** - Use [GitHub Discussions](https://github.com/nan1010082085/ai-platform/discussions) for questions
-
----
+MIT License - 详见 [LICENSE](./LICENSE)。
 
 **Made with ❤️ by the Schema Platform Team**
