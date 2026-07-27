@@ -1,4 +1,4 @@
-# Security Best Practices
+# 安全最佳实践
 
 This guide covers security best practices for developers working with Schema Platform AI.
 

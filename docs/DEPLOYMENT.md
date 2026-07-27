@@ -1,10 +1,10 @@
-# Deployment Guide
+# 部署指南
 
-This guide covers deploying Schema Platform AI to various environments.
+本指南涵盖 deploying Schema Platform AI to various environments.
 
 ---
 
-## Table of Contents
+## 目录
 
 - [Deployment Options](#deployment-options)
 - [Docker Deployment](#docker-deployment)
@@ -27,7 +27,7 @@ This guide covers deploying Schema Platform AI to various environments.
 
 ---
 
-## Docker Deployment
+## Docker 部署
 
 ### Quick Start (Docker Compose)
 
@@ -136,9 +136,9 @@ docker compose -f ai/docker-compose.ai.yml ps
 
 ---
 
-## Manual Deployment
+## 手动部署
 
-### Prerequisites
+### 前置条件
 
 - Node.js 20+
 - pnpm 9+
@@ -374,7 +374,7 @@ az webapp config appsettings set \
 - [ ] Gzip compression enabled
 - [ ] Image optimization enabled
 
-### Monitoring
+### 监控
 
 - [ ] Health check endpoint configured
 - [ ] Error tracking enabled (Sentry, etc.)
@@ -398,9 +398,9 @@ az webapp config appsettings set \
 
 ---
 
-## Monitoring
+## 监控
 
-### Health Check
+### 健康检查
 
 ```bash
 # Server health
@@ -453,7 +453,7 @@ Set up alerts for:
 
 ## Backup & Recovery
 
-### Database Backup
+### 数据库备份
 
 ```bash
 # Manual backup
@@ -485,9 +485,9 @@ mongorestore --uri="mongodb://formgrid:formgrid@localhost:27017/formgrid" /backu
 
 ---
 
-## Troubleshooting
+## 常见问题
 
-### Common Issues
+### 常见问题
 
 #### Server Won't Start
 
