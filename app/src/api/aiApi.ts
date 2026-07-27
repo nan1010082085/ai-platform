@@ -9,6 +9,7 @@
  * - rag: 语义搜索、知识库管理、mention
  * - evaluation: 评测体系（测试集、评测运行）
  * - llm: 供应商、用量、模型配置、引导词、健康检查
+ * - workflowTemplate: 工作流模板管理（CRUD + 导入导出）
  *
  * 本文件仅 re-export，保持 `@/api/aiApi` 导入路径不变（60+ 文件零迁移）。
  *
@@ -22,3 +23,4 @@ export * from './aiApi/monitor'
 export * from './aiApi/rag'
 export * from './aiApi/evaluation'
 export * from './aiApi/llm'
+export * from './aiApi/workflowTemplate'

@@ -68,6 +68,11 @@ const routes = [
         component: () => import('./views/EmbeddingSettingsView.vue'),
       },
       {
+        path: 'settings/templates',
+        name: 'workflow-templates',
+        component: () => import('./views/WorkflowTemplateManagerView.vue'),
+      },
+      {
         path: 'debug/routing',
         name: 'routing-debug',
         component: () => import('./views/RoutingDebugView.vue'),

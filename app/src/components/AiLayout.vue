@@ -31,6 +31,7 @@ const settingsNav = computed(() => [
   { path: '/settings/models', label: t('layout.nav.models'), icon: 'connection' },
   { path: '/settings/embedding', label: t('layout.nav.embedding'), icon: 'collection' },
   { path: '/settings/keys', label: t('layout.nav.keys'), icon: 'key' },
+  { path: '/settings/templates', label: t('layout.nav.templates'), icon: 'document-checked' },
   { path: '/debug/routing', label: t('layout.nav.routingDebug'), icon: 'search' },
   { path: '/debug/rag', label: t('layout.nav.ragDebug'), icon: 'filter' },
   { path: '/evaluation', label: t('layout.nav.evaluation'), icon: 'data-analysis' },
@@ -46,6 +47,7 @@ const activeNav = computed(() => {
   if (route.path.startsWith('/workflows') || route.path.startsWith('/executions')) return '/workflows'
   if (route.path.startsWith('/settings/models')) return '/settings/models'
   if (route.path.startsWith('/settings/embedding')) return '/settings/embedding'
+  if (route.path.startsWith('/settings/templates')) return '/settings/templates'
   if (route.path.startsWith('/settings')) return '/settings/keys'
   if (route.path.startsWith('/debug')) return route.path
   if (route.path.startsWith('/evaluation')) return '/evaluation'
