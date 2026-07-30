@@ -208,6 +208,29 @@ export function getAgentNodePreviewSections(
         })
       }
       break
+    case 'memory-recall':
+      config.push(
+        { key: 'call', label: '调用', value: '长程记忆检索', tone: 'primary' },
+        { key: 'query', label: '检索 query', value: formatPreviewValue(data.memoryRecallQuery ?? '{{$input.message}}'), tone: 'default' },
+        { key: 'limit', label: '召回', value: `${data.memoryRecallLimit ?? 5} 条`, tone: 'muted' },
+        { key: 'ns', label: '类型', value: data.memoryRecallNamespace ?? 'all', tone: 'muted' },
+      )
+      break
+    case 'memory-write':
+      config.push(
+        { key: 'call', label: '调用', value: '长程记忆写入', tone: 'primary' },
+        { key: 'content', label: '内容', value: formatPreviewValue(data.memoryWriteContent ?? '{{$input.message}}'), tone: 'default' },
+        { key: 'ns', label: '类型', value: data.memoryWriteNamespace ?? 'fact', tone: 'muted' },
+        { key: 'imp', label: '重要性', value: String(data.memoryWriteImportance ?? 0.5), tone: 'muted' },
+      )
+      break
+    case 'memory-extract':
+      config.push(
+        { key: 'call', label: '调用', value: '长程记忆提取', tone: 'primary' },
+        { key: 'source', label: '来源', value: data.memoryExtractSource ?? 'lastOutput', tone: 'muted' },
+        { key: 'ns', label: '默认归类', value: data.memoryExtractNamespace ?? 'fact', tone: 'muted' },
+      )
+      break
     case 'llm':
       config.push(
         { key: 'model', label: '模型', value: data.model?.trim() || 'default', tone: 'primary' },
@@ -375,6 +398,18 @@ export function getAgentNodePreviewSections(
       }
       break
     }
+    case 'handoff':
+      config.push(
+        { key: 'call', label: '调用', value: '会话交接', tone: 'primary' },
+        {
+          key: 'target',
+          label: '目标 workflow',
+          value: data.handoffTargetWorkflowId ? String(data.handoffTargetWorkflowId).slice(0, 12) : '未选择',
+          tone: data.handoffTargetWorkflowId ? 'primary' : 'muted',
+        },
+        { key: 'history', label: '传递历史', value: (data.handoffPassHistory ?? true) ? '是' : '否', tone: 'muted' },
+      )
+      break
     case 'code-execute': {
       const lang = data.codeLanguage ?? 'javascript'
       const script = data.codeScript ?? ''

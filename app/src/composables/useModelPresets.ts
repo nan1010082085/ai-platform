@@ -1,7 +1,7 @@
 /**
  * Model Provider Presets
  *
- * 平台默认仅接入 DeepSeek + Mimo（见 ai/docs/environment-variables.md）。
+ * 平台默认仅接入 DeepSeek + Mimo（见 ../docs/ai/environment-variables.md）。
  */
 
 import { type ModelProvider, type CreateModelConfigPayload, type ModelConfigItem } from '@/api/modelConfigApi'

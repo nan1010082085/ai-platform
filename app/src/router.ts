@@ -33,6 +33,16 @@ const routes = [
         component: () => import('./views/RagKnowledgeBase.vue'),
       },
       {
+        path: 'memory',
+        name: 'memory',
+        component: () => import('./views/MemoryManagementView.vue'),
+      },
+      {
+        path: 'integration',
+        name: 'integration',
+        component: () => import('./views/WorkflowIntegrationView.vue'),
+      },
+      {
         path: 'monitor',
         name: 'monitor',
         component: () => import('./views/AiMonitorView.vue'),

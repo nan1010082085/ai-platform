@@ -61,6 +61,56 @@ describe('agentNodePreview', () => {
     expect(sections.runtime.find((r) => r.key === 'rt-output')).toBeUndefined()
   })
 
+  it('builds memory-recall config rows', () => {
+    const sections = getAgentNodePreviewSections('memory-recall', {
+      label: '长程记忆检索',
+      memoryRecallQuery: '{{$input.message}}',
+      memoryRecallLimit: 5,
+      memoryRecallNamespace: 'all',
+    })
+    expect(sections.config.find((r) => r.key === 'call')?.value).toBe('长程记忆检索')
+    expect(sections.config.find((r) => r.key === 'limit')?.value).toBe('5 条')
+    expect(sections.config.find((r) => r.key === 'ns')?.value).toBe('all')
+  })
+
+  it('builds memory-write config rows', () => {
+    const sections = getAgentNodePreviewSections('memory-write', {
+      label: '长程记忆写入',
+      memoryWriteContent: '用户偏好简洁',
+      memoryWriteNamespace: 'preference',
+      memoryWriteImportance: 0.8,
+    })
+    expect(sections.config.find((r) => r.key === 'call')?.value).toBe('长程记忆写入')
+    expect(sections.config.find((r) => r.key === 'ns')?.value).toBe('preference')
+    expect(sections.config.find((r) => r.key === 'imp')?.value).toBe('0.8')
+  })
+
+  it('builds memory-extract config rows', () => {
+    const sections = getAgentNodePreviewSections('memory-extract', {
+      label: '长程记忆提取',
+      memoryExtractSource: 'lastOutput',
+      memoryExtractNamespace: 'fact',
+    })
+    expect(sections.config.find((r) => r.key === 'call')?.value).toBe('长程记忆提取')
+    expect(sections.config.find((r) => r.key === 'source')?.value).toBe('lastOutput')
+  })
+
+  it('builds handoff config rows with target', () => {
+    const sections = getAgentNodePreviewSections('handoff', {
+      label: '会话交接',
+      handoffTargetWorkflowId: 'wf-abc123def456',
+      handoffPassHistory: true,
+    })
+    expect(sections.config.find((r) => r.key === 'call')?.value).toBe('会话交接')
+    expect(sections.config.find((r) => r.key === 'target')?.value).toBe('wf-abc123def456'.slice(0, 12))
+    expect(sections.config.find((r) => r.key === 'history')?.value).toBe('是')
+  })
+
+  it('handoff shows 未选择 when no target workflow', () => {
+    const sections = getAgentNodePreviewSections('handoff', { label: '会话交接' })
+    expect(sections.config.find((r) => r.key === 'target')?.value).toBe('未选择')
+  })
+
   it('truncates long preview text', () => {
     const long = 'a'.repeat(100)
     expect(truncateText(long, 20).endsWith('…')).toBe(true)

@@ -20,7 +20,7 @@ const router = useRouter()
 const store = useAgentWorkflowDesignerStore()
 const execution = ref<AgentWorkflowExecution | null>(null)
 const selectedRecord = ref<AgentNodeRecord | null>(null)
-const activeTab = ref<'records' | 'logs' | 'detail'>('records')
+const activeTab = ref<'records' | 'logs' | 'detail' | 'variables'>('records')
 const panelOpen = ref(true)
 const panelExpanded = ref(false)
 const hitlDialogVisible = ref(false)
@@ -36,6 +36,7 @@ const tabOptions = [
   { label: '节点记录', value: 'records' },
   { label: '日志', value: 'logs' },
   { label: '节点详情', value: 'detail' },
+  { label: '变量检视', value: 'variables' },
 ]
 
 async function load() {
@@ -244,6 +245,16 @@ const LOG_LEVEL_LABEL: Record<string, string> = {
   error: '错误',
 }
 
+const variableOutputs = computed(() => {
+  return (execution.value?.nodeRecords ?? [])
+    .filter((r) => r.output !== undefined && r.output !== null)
+    .map((r) => ({
+      nodeId: r.nodeId,
+      nodeName: r.nodeName,
+      outputText: typeof r.output === 'string' ? r.output : JSON.stringify(r.output, null, 2),
+    }))
+})
+
 function togglePanel() {
   panelOpen.value = !panelOpen.value
   if (!panelOpen.value) panelExpanded.value = false
@@ -362,7 +373,7 @@ function togglePanelExpand() {
           </template>
 
           <!-- 节点详情 -->
-          <template v-else>
+          <template v-else-if="activeTab === 'detail'">
             <div v-if="!selectedRecord" :class="styles.empty">选择节点记录查看输入输出</div>
             <AgentNodeExecutionDetail
               v-else
@@ -370,6 +381,17 @@ function togglePanelExpand() {
               :node-data="selectedNodeData"
               :expanded="panelExpanded"
             />
+          </template>
+          <!-- 变量检视 -->
+          <template v-else>
+            <div v-if="!variableOutputs.length" :class="styles.empty">暂无变量输出（等待节点执行完成）</div>
+            <div v-else>
+              <div v-for="item in variableOutputs" :key="item.nodeId" :class="styles.logEntry">
+                <span :class="styles.logTime">{{ item.nodeId }}</span>
+                <span :class="styles.logMsg">{{ item.nodeName }}</span>
+                <pre style="margin: 4px 0 0; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: var(--text-color-primary);">{{ item.outputText }}</pre>
+              </div>
+            </div>
           </template>
         </div>
       </div>

@@ -31,6 +31,8 @@ export default {
       monitor: 'Monitoring',
       models: 'Models & Connections',
       embedding: 'Embedding Models',
+      memory: 'Long-term Memory',
+      integration: 'Integration',
       keys: 'API Keys',
       routingDebug: 'Routing Debug',
       ragDebug: 'Retrieval Debug',

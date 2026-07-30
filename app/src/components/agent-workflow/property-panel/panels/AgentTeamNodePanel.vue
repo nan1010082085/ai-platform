@@ -5,15 +5,16 @@
  * 多 Agent 协作配置：成员列表（人设/模型/工具）+ 协作模式 + supervisor 设置。
  * 复用 AgentLoopNodePanel 的模型选择 + 工具多选范式。
  */
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import SectionToggle from '../SectionToggle.vue'
 import FieldRow from '../FieldRow.vue'
 import ModelOptionSelect from '@/components/ModelOptionSelect.vue'
 import { useModelOptions } from '@/composables/useModelOptions'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
+import { listWorkflows } from '@/api/agentWorkflowApi'
 import type { AgentNodePanelProps } from '../types'
-import type { AgentWorkflowNodeData } from '@/types/agentWorkflow'
+import type { AgentWorkflowNodeData, AgentWorkflowSummary } from '@/types/agentWorkflow'
 import styles from './shared.module.scss'
 
 const props = defineProps<AgentNodePanelProps>()
@@ -22,12 +23,29 @@ const emit = defineEmits<{
 }>()
 
 const { options: modelOptions } = useModelOptions()
-const { tools } = usePluginRegistry()
+const { tools, load: loadRegistry } = usePluginRegistry()
+
+const publishedWorkflows = ref<AgentWorkflowSummary[]>([])
+
+onMounted(async () => {
+  loadRegistry().catch(() => {})
+  try {
+    const all = await listWorkflows()
+    publishedWorkflows.value = all.filter((w) => w.status === 'published')
+  } catch { /* ignore */ }
+})
 
 const toolOptions = computed(() =>
   tools.value.map((t: { name: string; label?: string }) => ({
     label: t.label ?? t.name,
     value: t.name,
+  })),
+)
+
+const workflowOptions = computed(() =>
+  publishedWorkflows.value.map((w) => ({
+    label: w.name,
+    value: `workflow:${w.id}`,
   })),
 )
 
@@ -161,11 +179,16 @@ const modeOptions = [
             :model-value="member.tools ?? []"
             multiple
             filterable
-            placeholder="选择工具"
+            placeholder="选择工具或子工作流"
             style="width: 100%"
             @update:model-value="(v: string[]) => updateMember(idx, 'tools', v)"
           >
-            <el-option v-for="opt in toolOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            <el-option-group v-if="toolOptions.length" label="平台工具">
+              <el-option v-for="opt in toolOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            </el-option-group>
+            <el-option-group v-if="workflowOptions.length" label="子工作流">
+              <el-option v-for="opt in workflowOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            </el-option-group>
           </el-select>
         </FieldRow>
       </div>

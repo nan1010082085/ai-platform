@@ -281,14 +281,14 @@ bash deploy/deploy.sh --target all <VERSION>
 
 | 文档 | 内容 |
 |------|------|
-| [架构](./docs/architecture.md) | 双引擎架构、系统概览 |
-| [全链路架构](./docs/product/full-chain-architecture-2026-07-24.md) | Chat → LangGraph → LLM → 31 模板完整链路 |
-| [LangGraph 优化](./docs/product/langgraph-optimization-2026-07-24.md) | 12 项优化分析 + 路线图 |
-| [提示词优化](./docs/product/prompt-optimization-2026-07-24.md) | 温度策略 + 提示词规范 |
-| [垂直领域分析](./docs/product/vertical-domain-analysis-2026-07-24.md) | 表单/流程 + AI 差异化场景 |
-| [Agent Workflow](./docs/agent-workflow.md) | 可视化工作流编排指南 |
-| [事件协议](./docs/events.md) | WebSocket 事件类型 |
-| [插件中心](./docs/plugin.md) | 插件架构与配置 |
+| [架构](../docs/ai/architecture.md) | 双引擎架构、系统概览 |
+| [全链路架构](../docs/ai/product/full-chain-architecture-2026-07-24.md) | Chat → LangGraph → LLM → 31 模板完整链路 |
+| [LangGraph 优化](../docs/ai/product/langgraph-optimization-2026-07-24.md) | 12 项优化分析 + 路线图 |
+| [提示词优化](../docs/ai/product/prompt-optimization-2026-07-24.md) | 温度策略 + 提示词规范 |
+| [垂直领域分析](../docs/ai/product/vertical-domain-analysis-2026-07-24.md) | 表单/流程 + AI 差异化场景 |
+| [Agent Workflow](../docs/ai/agent-workflow.md) | 可视化工作流编排指南 |
+| [事件协议](../docs/ai/events.md) | WebSocket 事件类型 |
+| [插件中心](../docs/ai/plugin.md) | 插件架构与配置 |
 
 ---
 

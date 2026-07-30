@@ -30,6 +30,8 @@ const primaryNav = computed(() => [
 const settingsNav = computed(() => [
   { path: '/settings/models', label: t('layout.nav.models'), icon: 'connection' },
   { path: '/settings/embedding', label: t('layout.nav.embedding'), icon: 'collection' },
+  { path: '/memory', label: t('layout.nav.memory'), icon: 'data-board' },
+  { path: '/integration', label: t('layout.nav.integration'), icon: 'link' },
   { path: '/settings/keys', label: t('layout.nav.keys'), icon: 'key' },
   { path: '/settings/templates', label: t('layout.nav.templates'), icon: 'document-checked' },
   { path: '/debug/routing', label: t('layout.nav.routingDebug'), icon: 'search' },

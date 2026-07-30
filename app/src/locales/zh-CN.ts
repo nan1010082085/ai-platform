@@ -31,6 +31,8 @@ export default {
       monitor: '性能监控',
       models: '模型与连接',
       embedding: '嵌入模型',
+      memory: '长程记忆',
+      integration: '集成测试',
       keys: '集成密钥',
       routingDebug: '路由调试',
       ragDebug: '检索调试',

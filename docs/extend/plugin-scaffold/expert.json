@@ -1,8 +1,0 @@
-{
-  "id": "example-expert",
-  "name": "Example Expert",
-  "description": "Scaffold expert — replace prompts and tools for your domain",
-  "systemPrompt": "You are a helpful specialist. Answer concisely.",
-  "tools": ["rag__search"],
-  "enabled": true
-}
