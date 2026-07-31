@@ -16,7 +16,7 @@ function update(key: string, value: unknown) {
 </script>
 
 <template>
-  <SectionToggle title="LLM 配置" :count="6">
+  <SectionToggle title="LLM 配置" :count="7">
     <FieldRow label="模型" hint="按供应商分组，可筛选或直接输入 model id">
       <ModelOptionSelect
         :model-value="String(props.node.data?.model ?? 'default')"
@@ -67,6 +67,22 @@ function update(key: string, value: unknown) {
         :min="1"
         :max="100"
         @update:model-value="update('maxHistoryTurns', $event)"
+      />
+    </FieldRow>
+    <FieldRow label="多模态输入">
+      <el-switch
+        :model-value="props.node.data?.attachImages === true"
+        @update:model-value="update('attachImages', $event)"
+      />
+      <span style="margin-left: 8px; font-size: 12px; color: var(--el-text-color-secondary)">
+        注入上传图片（图文混合，需 vision 模型）
+      </span>
+    </FieldRow>
+    <FieldRow v-if="props.node.data?.attachImages" label="图片字段">
+      <el-input
+        :model-value="String(props.node.data?.imageField ?? '')"
+        placeholder="留空自动取 input.files / documentAttachments"
+        @update:model-value="update('imageField', $event)"
       />
     </FieldRow>
   </SectionToggle>

@@ -88,6 +88,7 @@ const modeOptions = [
   { label: '顺序执行', value: 'sequential', hint: '按顺序让每位成员完成各自部分，最后综合' },
   { label: '自由讨论', value: 'discussion', hint: '可多次调用同一成员，成员间基于前一位输出深化' },
   { label: '并行执行', value: 'parallel', hint: '独立子任务并行分派所有成员，各自完成后 supervisor 合成' },
+  { label: '投票决策', value: 'vote', hint: '所有成员对同一问题各出方案，supervisor 仲裁选最佳或综合' },
 ]
 </script>
 

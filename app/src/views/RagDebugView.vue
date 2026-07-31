@@ -16,7 +16,7 @@ import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.
 import PageHeader from '@/components/common/PageHeader.vue'
 import { debugRagSearch } from '@/api/aiApi'
 import { resolveErrorText } from '@/constants/errorCodes'
-import type { RagDebugItem, RagDebugResult } from '@/types'
+import type { RagDebugItem, RagDebugFilter, RagDebugResult } from '@/types'
 import styles from './RagDebugView.module.scss'
 
 type TabKey = 'semantic' | 'rerank' | 'hybrid'
@@ -34,6 +34,11 @@ const rerankEnabled = ref(true)
 const semanticWeight = ref(0.7)
 const keywordWeight = ref(0.3)
 const schemaType = ref<string>('')
+
+// VR-2 结构化过滤
+const filterEntityKind = ref<string[]>([])
+const filterWidgetTypes = ref<string[]>([])
+const filterFieldNames = ref<string[]>([])
 
 const history = ref<Array<{ query: string; result: RagDebugResult; timestamp: Date }>>([])
 
@@ -61,6 +66,16 @@ async function runSearch() {
   result.value = null
   expandedIds.value.clear()
   try {
+    const hasFilter = filterEntityKind.value.length > 0
+      || filterWidgetTypes.value.length > 0
+      || filterFieldNames.value.length > 0
+    const filter: RagDebugFilter | undefined = hasFilter
+      ? {
+          entityKind: filterEntityKind.value.length ? filterEntityKind.value as Array<'schema' | 'flow' | 'document'> : undefined,
+          widgetTypes: filterWidgetTypes.value.length ? filterWidgetTypes.value : undefined,
+          fieldNames: filterFieldNames.value.length ? filterFieldNames.value : undefined,
+        }
+      : undefined
     const data = await debugRagSearch({
       query: query.value.trim(),
       topK: topK.value,
@@ -68,6 +83,7 @@ async function runSearch() {
       rerankEnabled: rerankEnabled.value,
       semanticWeight: semanticWeight.value,
       keywordWeight: keywordWeight.value,
+      filter,
     })
     result.value = data
     // rerank 未配置时默认切到语义 tab
@@ -194,6 +210,39 @@ function highlightSnippet(snippet: string, terms: string[]): Array<{ text: strin
                 <label>关键词权重</label>
                 <el-slider v-model="keywordWeight" :min="0" :max="1" :step="0.1" show-input style="flex: 1" />
               </div>
+              <div :class="styles.paramDivider">结构化过滤（VR-2）</div>
+              <div :class="styles.paramRow">
+                <label>实体类型</label>
+                <el-select v-model="filterEntityKind" multiple placeholder="全部" style="flex: 1">
+                  <el-option label="表单/Schema" value="schema" />
+                  <el-option label="流程" value="flow" />
+                  <el-option label="文档" value="document" />
+                </el-select>
+              </div>
+              <div :class="styles.paramRow">
+                <label>组件类型</label>
+                <el-select
+                  v-model="filterWidgetTypes"
+                  multiple
+                  filterable
+                  allow-create
+                  default-first-option
+                  placeholder="如 input, select, mobile"
+                  style="flex: 1"
+                />
+              </div>
+              <div :class="styles.paramRow">
+                <label>字段名</label>
+                <el-select
+                  v-model="filterFieldNames"
+                  multiple
+                  filterable
+                  allow-create
+                  default-first-option
+                  placeholder="如 phone, email"
+                  style="flex: 1"
+                />
+              </div>
             </div>
 
             <div :class="styles.inputActions">
@@ -302,6 +351,13 @@ function highlightSnippet(snippet: string, terms: string[]): Array<{ text: strin
                       <span v-if="item.widgetTypes.length" :class="styles.resultWidgets">
                         {{ item.widgetTypes.slice(0, 3).join(' · ') }}
                       </span>
+                      <template v-if="item.matchedFields?.length">
+                        <span
+                          v-for="mf in item.matchedFields"
+                          :key="`mf-${mf}`"
+                          :class="styles.fieldChip"
+                        >命中 {{ mf }}</span>
+                      </template>
                     </div>
 
                     <div v-if="expandedIds.has(item.schemaId)" :class="styles.snippetBox">

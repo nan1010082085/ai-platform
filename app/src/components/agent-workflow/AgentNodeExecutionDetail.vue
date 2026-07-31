@@ -53,6 +53,15 @@ const agentLoopSteps = computed<Array<{
   return steps as Array<{ iteration: number; toolCalls: Array<{ name: string; success: boolean }> }>
 })
 
+/** agent-team 成员方案：vote/parallel 模式下各成员的输出（steps / details） */
+const agentTeamProposals = computed<Array<{ member: string; proposal?: string; task?: string; result?: string }>>(() => {
+  if (props.record.nodeType !== 'agent-team') return []
+  const output = props.record.output as Record<string, unknown> | undefined
+  const steps = output?.steps ?? output?.details
+  if (!Array.isArray(steps)) return []
+  return steps as Array<{ member: string; proposal?: string; task?: string; result?: string }>
+})
+
 function toneClass(tone?: PreviewTone): string {
   if (!tone || tone === 'default') return ''
   return TONE_CLASS[tone] ?? ''
@@ -157,6 +166,9 @@ async function copyJson(label: string, value: unknown) {
       <div :class="styles.stepList">
         <div v-for="step in agentLoopSteps" :key="step.iteration" :class="styles.stepItem">
           <span :class="styles.stepIteration">第 {{ step.iteration }} 轮</span>
+          <span v-if="step.tokens?.totalTokens" style="font-size: 11px; color: var(--el-text-color-secondary); margin-left: 6px;">{{ step.tokens.totalTokens }} token</span>
+          <span v-if="step.durationMs" style="font-size: 11px; color: var(--el-text-color-secondary); margin-left: 6px;">{{ step.durationMs }}ms</span>
+          <div v-if="step.reasoning" style="font-size: 12px; color: var(--el-text-color-regular); margin-top: 4px; padding-left: 12px; border-left: 2px solid var(--el-border-color-lighter);">{{ step.reasoning }}</div>
           <span v-if="step.toolCalls.length === 0" :class="styles.stepIdle">给出最终回答</span>
           <div v-else :class="styles.stepTools">
             <span
@@ -166,8 +178,20 @@ async function copyJson(label: string, value: unknown) {
             >
               <AppIcon :name="tc.success ? 'circle-check' : 'circle-close'" :size="12" />
               {{ tc.name }}
+              <span v-if="tc.args" style="font-size: 11px; color: var(--el-text-color-secondary); margin-left: 4px; cursor: help;" :title="tc.result ?? undefined">({{ tc.args }})</span>
             </span>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section v-if="agentTeamProposals.length" :class="styles.section">
+      <div :class="styles.sectionTitle">成员方案（{{ agentTeamProposals.length }} 名）</div>
+      <div :class="styles.stepList">
+        <div v-for="(p, idx) in agentTeamProposals" :key="idx" :class="styles.stepItem">
+          <span :class="styles.stepIteration">{{ p.member }}</span>
+          <span v-if="p.task" :class="styles.stepIdle">{{ p.task }}</span>
+          <pre v-if="p.proposal || p.result" :class="styles.highlightValue">{{ p.proposal || p.result }}</pre>
         </div>
       </div>
     </section>

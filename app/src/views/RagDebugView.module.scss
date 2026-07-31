@@ -100,6 +100,14 @@
   }
 }
 
+.paramDivider {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--el-border-color-extra-light);
+}
+
 .inputActions {
   display: flex;
   align-items: center;

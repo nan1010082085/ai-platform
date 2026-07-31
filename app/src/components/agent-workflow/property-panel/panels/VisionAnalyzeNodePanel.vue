@@ -25,6 +25,7 @@ function update(key: string, value: unknown) {
         :options="modelOptions"
         :groups="providerGroups"
         :loading="modelsLoading"
+        capability="vision"
         show-default-option
         :default-label="`默认模型 (${defaultModel || '未配置'})`"
         @update:model-value="update('model', $event)"

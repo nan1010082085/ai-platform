@@ -33,6 +33,7 @@ const languageOptions = [
         :options="modelOptions"
         :groups="providerGroups"
         :loading="modelsLoading"
+        capability="audio"
         show-default-option
         :default-label="`默认模型 (whisper-1)`"
         @update:model-value="update('model', $event)"

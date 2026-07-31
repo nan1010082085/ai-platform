@@ -117,6 +117,63 @@ describe('agentNodePreview', () => {
     expect(formatPreviewValue({ foo: long }).length).toBeLessThanOrEqual(72)
   })
 
+  it('builds agent-team config rows with vote mode', () => {
+    const sections = getAgentNodePreviewSections('agent-team', {
+      label: '团队投票',
+      agentTeamMode: 'vote',
+      agentTeamMembers: [
+        { name: '产品经理', persona: '产品角度' },
+        { name: '技术架构师', persona: '技术角度' },
+      ],
+      agentTeamMaxRounds: 5,
+      agentTeamModel: 'default',
+    })
+    expect(sections.config.find((r) => r.key === 'team-mode')?.value).toBe('投票决策')
+    expect(sections.config.find((r) => r.key === 'team-members')?.value).toContain('2 名')
+    expect(sections.config.find((r) => r.key === 'team-rounds')?.value).toBe('5')
+  })
+
+  it('shows llm attachImages multimodal indicator', () => {
+    const sections = getAgentNodePreviewSections('llm', {
+      label: '图文分析',
+      model: 'gpt-4o',
+      prompt: '分析图片',
+      attachImages: true,
+    })
+    expect(sections.config.find((r) => r.key === 'multimodal')?.value).toContain('图文混合')
+  })
+
+  it('builds agent-loop runtime rows with token info', () => {
+    const sections = getAgentNodePreviewSections(
+      'agent-loop',
+      { label: '循环' },
+      {
+        nodeId: 'loop-1',
+        nodeType: 'agent-loop',
+        nodeName: '循环',
+        status: 'success',
+        output: { text: '结果', iterations: 3, toolInvocations: 5, tokens: { totalTokens: 2000, promptTokens: 1500, completionTokens: 500 } },
+      },
+    )
+    expect(sections.runtime.find((r) => r.key === 'loop-tokens')?.value).toContain('2000')
+    expect(sections.runtime.find((r) => r.key === 'loop-tokens')?.value).toContain('1500')
+  })
+
+  it('builds agent-team runtime rows with token info', () => {
+    const sections = getAgentNodePreviewSections(
+      'agent-team',
+      { label: '团队', agentTeamMode: 'vote', agentTeamMembers: [{ name: 'A', persona: 'x' }] },
+      {
+        nodeId: 'team-1',
+        nodeType: 'agent-team',
+        nodeName: '团队',
+        status: 'success',
+        output: { text: '结论', members: 1, mode: 'vote', toolInvocations: 2, tokens: { totalTokens: 1500, promptTokens: 1000, completionTokens: 500 } },
+      },
+    )
+    expect(sections.runtime.find((r) => r.key === 'team-runtime-tokens')?.value).toContain('1500')
+  })
+
   it('detects empty preview values', () => {
     expect(hasMeaningfulPreviewValue('—')).toBe(false)
     expect(hasMeaningfulPreviewValue('hello')).toBe(true)

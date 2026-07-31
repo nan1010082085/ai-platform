@@ -50,6 +50,7 @@ const JUDGE_TYPE_OPTIONS: Array<{ label: string; value: JudgeType; hint: string 
   { label: '关键词', value: 'keyword', hint: '逗号分隔，全部命中即通过' },
   { label: '正则', value: 'regex', hint: '正则匹配即通过' },
   { label: 'LLM 评分', value: 'llm', hint: 'LLM 打分 0-5，≥3 通过' },
+  { label: '语义相似', value: 'semantic', hint: 'embedding 余弦相似度阈值（如 0.75）' },
 ]
 
 // ── Run ──
@@ -192,7 +193,7 @@ function importCsv(file: File) {
         id: `tc-${Date.now()}-${i}`,
         input: cols[0] ?? '',
         expectedOutput: cols[1] ?? '',
-        judgeType: (['keyword', 'regex', 'llm'].includes(cols[2]) ? cols[2] : 'keyword') as JudgeType,
+        judgeType: (['keyword', 'regex', 'llm', 'semantic'].includes(cols[2]) ? cols[2] : 'keyword') as JudgeType,
         judgeConfig: cols[3] ?? '',
       })
     }
@@ -317,7 +318,7 @@ function changeText(change: number, unit: string): string {
 }
 
 function judgeTypeLabel(t: JudgeType): string {
-  return { keyword: '关键词', regex: '正则', llm: 'LLM' }[t]
+  return { keyword: '关键词', regex: '正则', llm: 'LLM', semantic: '语义相似' }[t]
 }
 
 onMounted(() => {
@@ -405,6 +406,7 @@ onUnmounted(() => {
               <el-checkbox value="keyword">关键词</el-checkbox>
               <el-checkbox value="regex">正则</el-checkbox>
               <el-checkbox value="llm">LLM 评分</el-checkbox>
+              <el-checkbox value="semantic">语义相似</el-checkbox>
             </el-checkbox-group>
           </div>
           <div :class="styles.formRow">

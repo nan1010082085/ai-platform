@@ -39,6 +39,7 @@ export async function debugRagSearch(params: RagDebugParams): Promise<RagDebugRe
       rerankEnabled: params.rerankEnabled,
       semanticWeight: params.semanticWeight,
       keywordWeight: params.keywordWeight,
+      filter: params.filter,
     },
     raw: true,
   })

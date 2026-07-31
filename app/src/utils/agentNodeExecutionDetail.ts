@@ -155,6 +155,10 @@ export function buildAgentNodeExecutionDetail(
   const preview = getAgentNodePreviewSections(record.nodeType, data, record)
   const hitl = record.nodeType === 'hitl' ? extractHitlItems(record) : { items: [] }
 
+  const outputTokens = record.output && typeof record.output === 'object'
+    ? (record.output as Record<string, unknown>).tokens as { promptTokens?: number; completionTokens?: number; totalTokens?: number } | undefined
+    : undefined
+
   return {
     typeLabel: palette?.label ?? record.nodeType,
     typeIcon: palette?.icon ?? 'connection',
@@ -165,6 +169,7 @@ export function buildAgentNodeExecutionDetail(
       { key: 'startedAt', label: '开始时间', value: formatTime(record.startedAt), mono: true },
       { key: 'finishedAt', label: '结束时间', value: formatTime(record.finishedAt), mono: true },
       { key: 'duration', label: '耗时', value: formatDuration(record.durationMs), mono: true },
+      ...(outputTokens?.totalTokens ? [{ key: 'tokens', label: 'Token', value: `${outputTokens.totalTokens} (prompt ${outputTokens.promptTokens ?? 0} + completion ${outputTokens.completionTokens ?? 0})`, mono: true }] : []),
     ],
     config: preview.config,
     runtimeSummary: preview.runtime.filter((row) => row.key !== 'rt-input' && row.key !== 'rt-output'),

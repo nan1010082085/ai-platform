@@ -234,6 +234,7 @@ export function getAgentNodePreviewSections(
     case 'llm':
       config.push(
         { key: 'model', label: '模型', value: data.model?.trim() || 'default', tone: 'primary' },
+        { key: 'temperature', label: '温度', value: String(data.temperature ?? 0.3), tone: 'default' },
         { key: 'prompt', label: 'Prompt', value: formatPreviewValue(data.prompt?.trim() || '{{$json}}'), tone: 'default' },
       )
       if (data.useConversationHistory) {
@@ -250,6 +251,14 @@ export function getAgentNodePreviewSections(
           label: '系统',
           value: formatPreviewValue(data.systemPrompt),
           tone: 'muted',
+        })
+      }
+      if (data.attachImages) {
+        config.push({
+          key: 'multimodal',
+          label: '多模态',
+          value: '图文混合（注入上传图片，需 vision 模型）',
+          tone: 'primary',
         })
       }
       config.push({ key: 'call', label: '调用', value: 'LLM 推理', tone: 'primary' })
@@ -372,11 +381,40 @@ export function getAgentNodePreviewSections(
         tone: 'default',
       })
       config.push({
+        key: 'loop-max-tools',
+        label: '工具调用上限',
+        value: String(data.agentLoopMaxToolInvocations ?? 50),
+        tone: 'default',
+      })
+      config.push({
         key: 'loop-tools',
         label: '可用工具',
         value: tools.length > 0 ? tools.join(', ') : '未配置',
         tone: tools.length > 0 ? 'default' : 'warning',
       })
+      const inputSourceLabels: Record<string, string> = { message: '用户输入', lastOutput: '上一节点输出', custom: '自定义模板' }
+      config.push({
+        key: 'loop-input',
+        label: '输入来源',
+        value: inputSourceLabels[data.agentLoopInputSource ?? 'message'] ?? '用户输入',
+        tone: 'default',
+      })
+      if (data.agentLoopInputSource === 'custom' && data.agentLoopInputTemplate?.trim()) {
+        config.push({
+          key: 'loop-input-template',
+          label: '输入模板',
+          value: formatPreviewValue(data.agentLoopInputTemplate),
+          tone: 'muted',
+        })
+      }
+      if (data.agentLoopSystemPrompt?.trim()) {
+        config.push({
+          key: 'loop-system',
+          label: '系统指令',
+          value: formatPreviewValue(data.agentLoopSystemPrompt),
+          tone: 'muted',
+        })
+      }
       if (record?.output && typeof record.output === 'object') {
         const out = record.output as Record<string, unknown>
         if (typeof out.iterations === 'number') {
@@ -394,6 +432,98 @@ export function getAgentNodePreviewSections(
             value: `${out.toolInvocations} 次`,
             tone: 'muted',
           })
+        }
+        if (Array.isArray(out.steps)) {
+          const usedTools = [...new Set(
+            (out.steps as Array<{ toolCalls?: Array<{ name?: string }> }>)
+              .flatMap((s) => (s.toolCalls ?? []).map((c) => c.name).filter(Boolean) as string[]),
+          )]
+          if (usedTools.length > 0) {
+            runtime.push({ key: 'loop-used-tools', label: '已用工具', value: usedTools.join('、'), tone: 'default' })
+          }
+        }
+        const loopTokens = out.tokens as { totalTokens?: number; promptTokens?: number; completionTokens?: number } | undefined
+        if (loopTokens?.totalTokens) {
+          runtime.push({
+            key: 'loop-tokens',
+            label: 'Token',
+            value: `${loopTokens.totalTokens} (prompt ${loopTokens.promptTokens ?? 0} + completion ${loopTokens.completionTokens ?? 0})`,
+            tone: 'muted',
+          })
+        }
+      }
+      break
+    }
+    case 'agent-team': {
+      const mode = data.agentTeamMode ?? 'sequential'
+      const modeLabel: Record<string, string> = {
+        sequential: '顺序执行',
+        discussion: '自由讨论',
+        parallel: '并行执行',
+        vote: '投票决策',
+      }
+      const members = Array.isArray(data.agentTeamMembers) ? data.agentTeamMembers : []
+      const memberNames = members.slice(0, 3).map((m) => (m as { name?: string }).name).filter(Boolean).join('、')
+      config.push({
+        key: 'team-mode',
+        label: '协作模式',
+        value: modeLabel[mode] ?? mode,
+        tone: 'primary',
+      })
+      config.push({
+        key: 'team-members',
+        label: '成员',
+        value: members.length > 0 ? `${members.length} 名：${memberNames}${members.length > 3 ? '…' : ''}` : '未配置',
+        tone: members.length > 0 ? 'default' : 'warning',
+      })
+      config.push({
+        key: 'team-rounds',
+        label: '最大轮数',
+        value: String(data.agentTeamMaxRounds ?? 5),
+        tone: 'default',
+      })
+      config.push({
+        key: 'team-model',
+        label: 'Supervisor 模型',
+        value: data.agentTeamModel?.trim() || 'default',
+        tone: 'muted',
+      })
+      if (data.agentTeamSystemPrompt?.trim()) {
+        config.push({
+          key: 'team-system',
+          label: 'Supervisor 指令',
+          value: formatPreviewValue(data.agentTeamSystemPrompt),
+          tone: 'muted',
+        })
+      }
+      if (record?.output && typeof record.output === 'object') {
+        const out = record.output as Record<string, unknown>
+        if (typeof out.members === 'number') {
+          runtime.push({ key: 'team-runtime-members', label: '参与成员', value: String(out.members), tone: 'primary' })
+        }
+        if (typeof out.mode === 'string') {
+          runtime.push({ key: 'team-runtime-mode', label: '执行模式', value: out.mode, tone: 'muted' })
+        }
+        if (typeof out.toolInvocations === 'number') {
+          runtime.push({ key: 'team-runtime-calls', label: '成员调用', value: `${out.toolInvocations} 次`, tone: 'muted' })
+        }
+        const teamTokens = out.tokens as { totalTokens?: number; promptTokens?: number; completionTokens?: number } | undefined
+        if (teamTokens?.totalTokens) {
+          runtime.push({
+            key: 'team-runtime-tokens',
+            label: 'Token',
+            value: `${teamTokens.totalTokens} (prompt ${teamTokens.promptTokens ?? 0} + completion ${teamTokens.completionTokens ?? 0})`,
+            tone: 'muted',
+          })
+        }
+        if (Array.isArray(out.details) && out.details.length > 0) {
+          const preview = (out.details as Array<{ member?: string; proposal?: string; result?: string }>)
+            .slice(0, 3)
+            .map((d) => `${d.member}: ${(d.proposal || d.result || '').slice(0, 50)}`)
+            .join('；')
+          if (preview) {
+            runtime.push({ key: 'team-runtime-preview', label: '成员方案', value: preview, tone: 'default' })
+          }
         }
       }
       break

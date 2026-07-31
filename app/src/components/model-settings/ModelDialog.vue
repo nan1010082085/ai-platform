@@ -41,6 +41,7 @@ const CAPABILITY_OPTIONS: Array<{ value: ModelCapability; label: string; desc: s
   { value: 'image', label: '图像生成', desc: '文生图' },
   { value: 'video', label: '视频生成', desc: '文生视频' },
   { value: 'audio', label: '音频', desc: '语音 / 转录' },
+  { value: 'vision', label: '图像理解', desc: '多模态输入 / 看图说话' },
 ]
 
 const form = ref<ModelFormState>({
