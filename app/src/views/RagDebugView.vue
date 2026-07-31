@@ -259,7 +259,7 @@ function highlightSnippet(snippet: string, terms: string[]): Array<{ text: strin
               <h3 :class="styles.cardTitle">检索历史</h3>
               <el-button link type="primary" size="small" @click="clearHistory">清空</el-button>
             </div>
-            <div :class="styles.historyList}>
+            <div :class="styles.historyList">
               <div
                 v-for="(item, i) in history"
                 :key="i"
@@ -371,7 +371,7 @@ function highlightSnippet(snippet: string, terms: string[]): Array<{ text: strin
                           <template v-else>{{ seg.text }}</template>
                         </template>
                       </div>
-                      <div v-if="result.snippets[item.schemaId]?.matchedTerms.length" :class="styles.matchedTerms}>
+                      <div v-if="result.snippets[item.schemaId]?.matchedTerms.length" :class="styles.matchedTerms">
                         匹配词：
                         <span
                           v-for="term in result.snippets[item.schemaId]!.matchedTerms"

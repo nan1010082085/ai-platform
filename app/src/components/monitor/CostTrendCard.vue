@@ -127,7 +127,7 @@ onMounted(loadData)
       </div>
     </div>
 
-    <div v-if="!trend?.trend.length && !loading" :class="styles.empty}>
+    <div v-if="!trend?.trend.length && !loading" :class="styles.empty">
       <AppIcon name="data-line" :size="28" />
       <span>暂无 token 消耗数据</span>
     </div>
