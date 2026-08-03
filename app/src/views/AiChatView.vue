@@ -6,7 +6,7 @@
  * 简洁设计，专注于对话体验。
  */
 
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAiStore } from '@/stores/ai'
 import { useChatConfigStore } from '@/stores/chatConfig'
@@ -31,6 +31,7 @@ const { starterPrompts } = storeToRefs(chatConfigStore)
 
 // ---- WebSocket 连接 ----
 // 连接状态由 AiChatPanel 的 streamStatus 徽章展示，此处只负责建立连接。
+let bridgeUnsubscribers: (() => void)[] = []
 
 // ---- 防止发布按钮重复调用 ----
 const isPublishing = ref(false)
@@ -230,13 +231,19 @@ onMounted(async () => {
     usePublishedAgentWorkflowsStore().sanitizeStoredWorkflowSelection()
   }
 
-  bridge.on('ai:set-context', (payload) => {
-    store.setContext(payload)
-  })
+  bridgeUnsubscribers = [
+    bridge.on('ai:set-context', (payload) => {
+      store.setContext(payload)
+    }),
+    bridge.on('ai:current-schema', (payload) => {
+      store.setCurrentSchema(payload)
+    }),
+  ]
+})
 
-  bridge.on('ai:current-schema', (payload) => {
-    store.setCurrentSchema(payload)
-  })
+onUnmounted(() => {
+  bridgeUnsubscribers.forEach((fn) => fn())
+  bridgeUnsubscribers = []
 })
 </script>
 

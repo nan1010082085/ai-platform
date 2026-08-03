@@ -42,6 +42,7 @@ const selectedWorkflowName = computed(() => getWorkflowName(selectedWorkflowId.v
 // ---- WebSocket 状态 ----
 const wsConnected = ref(isConnected())
 let unsubscribeConnection: (() => void) | null = null
+let bridgeUnsubscribers: (() => void)[] = []
 
 function startStatusCheck(): void {
   unsubscribeConnection = onConnectionChange((next) => {
@@ -251,17 +252,17 @@ onMounted(async () => {
   }
 
   // 监听宿主上下文（standalone 模式 postMessage）
-  bridge.on('ai:set-context', (payload) => {
-    store.setContext(payload)
-  })
-
-  bridge.on('ai:current-schema', (payload) => {
-    store.setCurrentSchema(payload)
-  })
-
-  bridge.on('ai:current-flow', (payload) => {
-    store.setCurrentFlow(payload)
-  })
+  bridgeUnsubscribers = [
+    bridge.on('ai:set-context', (payload) => {
+      store.setContext(payload)
+    }),
+    bridge.on('ai:current-schema', (payload) => {
+      store.setCurrentSchema(payload)
+    }),
+    bridge.on('ai:current-flow', (payload) => {
+      store.setCurrentFlow(payload)
+    }),
+  ]
 
   // qiankun 模式：从全局状态读取初始数据
   if (window.__POWERED_BY_QIANKUN__) {
@@ -279,6 +280,8 @@ onMounted(async () => {
 onUnmounted(() => {
   unsubscribeConnection?.()
   unsubscribeConnection = null
+  bridgeUnsubscribers.forEach((fn) => fn())
+  bridgeUnsubscribers = []
 })
 
 function handleHostData(data: Record<string, unknown>) {
