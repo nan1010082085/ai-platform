@@ -142,14 +142,18 @@ async function loadExecutionGraph(exec: AgentWorkflowExecution) {
 }
 
 onMounted(async () => {
-  const exec = await api.getExecution(executionId())
-  execution.value = exec
-  await loadExecutionGraph(exec)
-  await load()
-  if (execution.value?.status === 'waiting') {
-    openHitlDialog('approve')
+  try {
+    const exec = await api.getExecution(executionId())
+    execution.value = exec
+    startWorkflowWatch()
+    await loadExecutionGraph(exec)
+    await load()
+    if (execution.value?.status === 'waiting') {
+      openHitlDialog('approve')
+    }
+  } catch (err) {
+    console.error('[exec] load failed', err)
   }
-  startWorkflowWatch()
 })
 
 onUnmounted(() => {

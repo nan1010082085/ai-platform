@@ -214,8 +214,8 @@ function handleMessageFeedback(messageIndex: number, type: 'positive' | 'negativ
 // ---- Bridge ----
 
 onMounted(async () => {
-  store.loadConversations()
-  chatConfigStore.fetchConfig()
+  store.loadConversations().catch((e) => console.warn('[chat] loadConversations failed', e))
+  chatConfigStore.fetchConfig().catch((e) => console.warn('[chat] fetchConfig failed', e))
   connectSocket()
   await loadPublishedWorkflows()
 

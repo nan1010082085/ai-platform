@@ -26,7 +26,11 @@ export const useConversationStore = defineStore('conversation', () => {
 
   // ---- Actions ----
   async function loadConversations(): Promise<void> {
-    conversations.value = await getConversations()
+    try {
+      conversations.value = await getConversations()
+    } catch (err) {
+      console.warn('[conversation] loadConversations failed', err)
+    }
   }
 
   async function loadConversation(id: string): Promise<{
