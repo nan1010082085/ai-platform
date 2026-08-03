@@ -6,6 +6,7 @@
  */
 
 import { ref, watch, computed } from 'vue'
+import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import type { EditContext } from '@/composables/usePreviewInteraction'
 
 export interface AiFieldEditorProps {
@@ -88,12 +89,12 @@ function handleCancel() {
 </script>
 
 <template>
-  <el-dialog
+  <AppDialog
     :model-value="visible"
     title="编辑属性"
     width="520px"
     :close-on-click-modal="false"
-    @close="handleClose"
+    @update:model-value="(v) => { if (!v) handleClose() }"
   >
     <div v-if="context" :class="$style.editor">
       <el-form label-position="top" size="default">
@@ -145,7 +146,7 @@ function handleCancel() {
         <el-button type="primary" @click="handleSave">保存</el-button>
       </div>
     </template>
-  </el-dialog>
+  </AppDialog>
 </template>
 
 <style module>
