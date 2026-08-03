@@ -233,6 +233,10 @@ async function handleApply() {
 }
 
 onMounted(async () => {
+  // 连接 Socket 优先，不阻塞于 loadPublishedWorkflows（避免 API 失败导致 ws 不连）
+  connectSocket()
+  startStatusCheck()
+
   await loadPublishedWorkflows()
 
   const workflowId = route.query.workflowId
@@ -245,10 +249,6 @@ onMounted(async () => {
   } else {
     usePublishedAgentWorkflowsStore().sanitizeStoredWorkflowSelection()
   }
-
-  // 连接 Socket
-  connectSocket()
-  startStatusCheck()
 
   // 监听宿主上下文（standalone 模式 postMessage）
   bridge.on('ai:set-context', (payload) => {
