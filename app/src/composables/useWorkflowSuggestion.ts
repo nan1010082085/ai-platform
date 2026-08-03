@@ -5,7 +5,7 @@
  * - 强匹配（score >= 2）：自动切换（autoSwitch），用户无感
  * - 弱匹配（score === 1）：显示建议条供用户点选
  */
-import { ref } from 'vue'
+import { ref, onScopeDispose } from 'vue'
 import { matchWorkflowByMessage, type WorkflowRouteMatch } from '@/api/agentWorkflowApi'
 
 /** score >= 2 视为强匹配，自动切换 */
@@ -53,6 +53,10 @@ export function useWorkflowSuggestion() {
     suggestedWorkflow.value = null
     autoSwitchReady.value = false
   }
+
+  onScopeDispose(() => {
+    if (debounceTimer) clearTimeout(debounceTimer)
+  })
 
   return { suggestedWorkflow, autoSwitchReady, checking, checkOnInput, clear }
 }
