@@ -430,6 +430,16 @@
   color: var(--ai-color-danger, #ff5252);
 }
 
+.connConnected {
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--ai-color-success, #4caf50);
+}
+
+.connConnected .connDot {
+  background: var(--ai-color-success, #4caf50);
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.5);
+}
+
 .connDisconnected .connDot {
   background: var(--ai-color-danger, #ff5252);
   box-shadow: 0 0 6px rgba(255, 82, 82, 0.5);

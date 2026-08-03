@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@schema-platform/platform-shared'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import { isConnected, onConnectionChange } from '@schema-platform/platform-shared/socket'
 import TaskChainBar from './TaskChainBar.vue'
 import AiRagSearch from './AiRagSearch.vue'
 import AiMentionInput from './AiMentionInput.vue'
@@ -76,8 +77,19 @@ function openWorkflowList() {
   void router.push({ name: 'agent-workflows' })
 }
 
+// WebSocket 连接状态
+const wsConnected = ref(isConnected())
+let unsubscribeConnection: (() => void) | null = null
+
 onMounted(() => {
   loadPublishedWorkflows().catch(() => {})
+  unsubscribeConnection = onConnectionChange((next) => {
+    wsConnected.value = next
+  })
+})
+
+onUnmounted(() => {
+  unsubscribeConnection?.()
 })
 
 watch(workflowPickerVisible, (visible) => {
@@ -208,6 +220,10 @@ function handleSelectStarterAgent(agent: AgentType): void {
         >
           <span :class="$style.connDot" />
           {{ t('chat.disconnected') }}
+        </span>
+        <span :class="[$style.connStatus, wsConnected ? $style.connConnected : $style.connDisconnected]">
+          <span :class="$style.connDot" />
+          {{ wsConnected ? 'WS 已连接' : 'WS 未连接' }}
         </span>
       </div>
       <div :class="$style.headerActions">
