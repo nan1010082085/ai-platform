@@ -21,7 +21,6 @@ import { createAiActions } from './ai/actions'
 import { useConversationStore } from './conversation'
 import { useStreamStore } from './stream'
 import { useSchemaStore } from './schema'
-import { useLLMStore } from './llm'
 import { useRAGStore } from './rag'
 import { useChatSettingsStore } from './chatSettings'
 import { useHITLStore } from './hitl'
@@ -32,7 +31,6 @@ export const useAiStore = defineStore('ai', () => {
   const conversationStore = useConversationStore()
   const streamStore = useStreamStore()
   const schemaStore = useSchemaStore()
-  const llmStore = useLLMStore()
   const ragStore = useRAGStore()
   const chatSettingsStore = useChatSettingsStore()
   const hitlStore = useHITLStore()
@@ -191,12 +189,6 @@ export const useAiStore = defineStore('ai', () => {
     currentVersionIndex: computed(() => schemaStore.currentVersionIndex),
     streamStatus: computed(() => streamStore.streamStatus),
     retryCount: computed(() => streamStore.retryCount),
-    llmProviders: computed(() => llmStore.llmProviders),
-    llmDefaultProvider: computed(() => llmStore.llmDefaultProvider),
-    llmDefaultStrategy: computed(() => llmStore.llmDefaultStrategy),
-    llmStrategies: computed(() => llmStore.llmStrategies),
-    llmUsage: computed(() => llmStore.llmUsage),
-    llmLoading: computed(() => llmStore.llmLoading),
     chatSettings: computed(() => chatSettingsStore.chatSettings),
     selectedAgentWorkflowId: computed(() => chatSettingsStore.chatSettings.agentWorkflowId),
     pendingWorkflowExecutionId: computed(() => workflowModule.state.pendingWorkflowExecutionId.value),
@@ -237,9 +229,6 @@ export const useAiStore = defineStore('ai', () => {
     clearDiff: () => schemaStore.clearDiff(),
     loadVersionHistory: (conversationId: string) => schemaStore.loadVersionHistory(conversationId),
     rollbackToVersion: (conversationId: string, versionId: string) => schemaStore.rollbackToVersion(conversationId, versionId),
-    loadLLMProviders: () => llmStore.loadLLMProviders(),
-    loadLLMUsage: () => llmStore.loadLLMUsage(),
-    switchProvider: (provider: string) => llmStore.switchProvider(provider),
     updateChatSettings: (settings: Parameters<typeof chatSettingsStore.updateChatSettings>[0]) => {
       const prevWorkflowId = chatSettingsStore.chatSettings.agentWorkflowId
       chatSettingsStore.updateChatSettings(settings)
