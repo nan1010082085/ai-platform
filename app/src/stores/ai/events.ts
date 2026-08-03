@@ -357,99 +357,24 @@ export function handleStreamEvent(
       })
       break
 
-    case 'task_plan_complete': {
-      const plan = event.plan
-      if (plan && plan.chain) {
-        const stepsText = plan.chain
-          .map((step, i) => `${i + 1}. [${step.agent}] ${step.description}`)
-          .join('\n')
-
-        updateMessage({
-          thinking: (msg.thinking ?? '')
-            + `\n\n📋 任务规划完成`
-            + `\n- 执行模式：${plan.strategy.mode}`
-            + `\n- 步骤数：${plan.chain.length}`
-            + `\n\n执行计划：\n${stepsText}`,
-        })
-      }
+    case 'task_plan_complete':
       break
-    }
 
-    case 'task_progress': {
-      const step = (event.step as number) ?? 0
-      const total = (event.total as number) ?? 0
-      const status = String(event.status ?? '')
-      const description = String(event.description ?? '')
-      const steps = (event.steps as Array<{ agent?: string; description?: string; status?: string }>) ?? []
-
-      const statusIcon = status === 'done' ? '✅' : status === 'running' ? '🔄' : status === 'error' ? '❌' : '⏳'
-      const progressText = steps.length > 0
-        ? steps.map((s, i) => {
-            const icon = s.status === 'done' ? '✅' : s.status === 'running' ? '🔄' : '⏳'
-            return `  ${icon} ${i + 1}. [${s.agent ?? '?'}] ${s.description ?? ''}`
-          }).join('\n')
-        : `  ${statusIcon} 步骤 ${step + 1}/${total}: ${description}`
-
-      updateMessage({
-        thinking: (msg.thinking ?? '')
-          + `\n\n📊 任务进度 (${step + 1}/${total})\n${progressText}`,
-      })
+    case 'task_progress':
       break
-    }
 
-    // v2: 思考推理事件
+    // v2: 思考推理事件（内部执行过程，不暴露给用户）
     case 'thinker_start':
-      updateMessage({
-        thinking: (msg.thinking ?? '') + '\n\n🤔 正在思考执行策略...',
-      })
       break
 
-    case 'thinker_complete': {
-      const { adjustments, risks, suggestions } = event
-      let thinkerText = '\n\n🤔 思考完成'
-
-      if (risks && risks.length > 0) {
-        thinkerText += `\n\n风险评估：${risks.map(r => `\n- ${r.description}`).join('')}`
-      }
-
-      if (suggestions && suggestions.length > 0) {
-        thinkerText += `\n\n建议：${suggestions.map(s => `\n- ${s.description}`).join('')}`
-      }
-
-      if (adjustments?.skipSteps && adjustments.skipSteps.length > 0) {
-        thinkerText += `\n\n调整：跳过步骤 ${adjustments.skipSteps.join(', ')}`
-      }
-
-      updateMessage({
-        thinking: (msg.thinking ?? '') + thinkerText,
-      })
+    case 'thinker_complete':
       break
-    }
 
     // v2: 质量检查事件
     case 'quality_check_start':
-      updateMessage({
-        thinking: (msg.thinking ?? '') + '\n\n✅ 正在检查质量...',
-      })
       break
 
-    case 'quality_check_complete': {
-      const result = event.result
-      if (result) {
-        let qualityText = '\n\n✅ 质量检查完成'
-        qualityText += `\n- 结构有效：${result.structure.valid ? '是' : '否'}`
-        qualityText += `\n- 完整性：${result.completeness.score}%`
-        qualityText += `\n- 一致性：${result.consistency.score}%`
-
-        if (result.suggestions && result.suggestions.length > 0) {
-          qualityText += `\n\n改进建议：${result.suggestions.map(s => `\n- ${s.description}`).join('')}`
-        }
-
-        updateMessage({
-          thinking: (msg.thinking ?? '') + qualityText,
-        })
-      }
+    case 'quality_check_complete':
       break
-    }
   }
 }
