@@ -414,33 +414,34 @@ onMounted(load)
       v-model="createDialogVisible"
       title="新建 Agent 工作流"
       width="640px"
-      :show-fullscreen-btn="false"
     >
-      <div :class="styles.createForm">
-        <label :class="styles.createLabel">名称</label>
-        <el-input v-model="createName" placeholder="工作流名称" maxlength="64" />
-      </div>
-      <div :class="styles.createForm">
-        <label :class="styles.createLabel">选择模板</label>
-        <div :class="styles.templateGrid">
-          <button
-            v-for="tpl in workflowTemplates"
-            :key="tpl.id"
-            type="button"
-            :class="[
-              styles.templateCard,
-              selectedTemplateId === tpl.id && styles.templateCardActive,
-            ]"
-            @click="onTemplateSelect(tpl.id)"
-          >
-            <span :class="styles.templateName">{{ tpl.name }}</span>
-            <span :class="styles.templateDesc">{{ tpl.description }}</span>
-          </button>
+      <div :style="{ display: 'flex', flexDirection: 'column', flex: '1', minHeight: '0' }">
+        <div :style="{ marginBottom: '16px', flexShrink: '0' }">
+          <label :class="styles.createLabel">名称</label>
+          <el-input v-model="createName" placeholder="工作流名称" maxlength="64" />
+        </div>
+        <div :style="{ flex: '1', minHeight: '0', display: 'flex', flexDirection: 'column' }">
+          <label :class="styles.createLabel">选择模板</label>
+          <div :style="{ flex: '1', minHeight: '0', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }">
+            <button
+              v-for="tpl in workflowTemplates"
+              :key="tpl.id"
+              type="button"
+              :class="[
+                styles.templateCard,
+                selectedTemplateId === tpl.id && styles.templateCardActive,
+              ]"
+              @click="onTemplateSelect(tpl.id)"
+            >
+              <span :class="styles.templateName">{{ tpl.name }}</span>
+              <span :class="styles.templateDesc">{{ tpl.description }}</span>
+            </button>
+          </div>
         </div>
       </div>
       <template #footer>
         <el-button @click="createDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="creating" @click="confirmCreate">创建</el-button>
+        <el-button type="primary" :loading="creating" @click="confirmCreate(workflowTemplates)">创建</el-button>
       </template>
     </AppDialog>
 

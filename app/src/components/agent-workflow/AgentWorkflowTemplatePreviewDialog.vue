@@ -106,7 +106,6 @@ function onUse() {
     :model-value="modelValue"
     :title="template ? `预览：${template.name}` : '预览模板'"
     width="920px"
-    :show-fullscreen-btn="true"
     @update:model-value="emit('update:modelValue', $event)"
   >
     <div v-if="template" :class="styles.dialogBody">

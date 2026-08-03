@@ -6,9 +6,9 @@ import { mount } from '@vue/test-utils'
 import AiFieldEditor from '@/components/AiFieldEditor.vue'
 import type { EditContext } from '@/composables/usePreviewInteraction'
 
-// Stub Element Plus components
-const ElDialogStub = {
-  name: 'ElDialog',
+/** AppDialog stub：透传 title / modelValue，保留 footer 插槽 */
+const AppDialogStub = {
+  name: 'AppDialog',
   template: '<div v-if="modelValue"><div>{{ title }}</div><slot /><slot name="footer" /></div>',
   props: ['modelValue', 'title', 'width', 'closeOnClickModal'],
   emits: ['close', 'update:modelValue'],
@@ -22,7 +22,7 @@ const ElSwitchStub = { template: '<input type="checkbox" :checked="modelValue" @
 const ElButtonStub = { template: '<button><slot /></button>', props: ['type'] }
 
 const globalStubs = {
-  ElDialog: ElDialogStub,
+  AppDialog: AppDialogStub,
   ElForm: ElFormStub,
   ElFormItem: ElFormItemStub,
   ElInput: ElInputStub,
@@ -76,7 +76,7 @@ describe('AiFieldEditor', () => {
       global: { stubs: globalStubs },
     })
 
-    // ElDialog stub uses v-if="modelValue", so content should not render
+    // AppDialog stub uses v-if="modelValue", so content should not render
     expect(wrapper.text()).not.toContain('编辑属性')
   })
 
@@ -163,10 +163,10 @@ describe('AiFieldEditor', () => {
       global: { stubs: globalStubs },
     })
 
-    // Find the el-dialog component and trigger close event
-    const elDialog = wrapper.findComponent({ name: 'ElDialog' })
-    expect(elDialog.exists()).toBe(true)
-    await elDialog.vm.$emit('close')
+    // Find the AppDialog component and trigger close via modelValue
+    const appDialog = wrapper.findComponent({ name: 'AppDialog' })
+    expect(appDialog.exists()).toBe(true)
+    await appDialog.vm.$emit('update:modelValue', false)
 
     expect(wrapper.emitted('update:visible')).toBeTruthy()
     expect(wrapper.emitted('update:visible')![0]).toEqual([false])

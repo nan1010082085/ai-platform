@@ -110,7 +110,6 @@ defineExpose({ setAction: (a: 'approve' | 'reject') => { action.value = a } })
     :model-value="visible"
     :title="action === 'approve' ? '人工确认 - 继续' : '人工确认 - 拒绝'"
     :width="dialogWidth"
-    :show-fullscreen-btn="false"
     :close-on-click-modal="false"
     @update:model-value="emit('update:visible', $event)"
   >

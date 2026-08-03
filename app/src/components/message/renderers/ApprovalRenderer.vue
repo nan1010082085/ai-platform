@@ -81,7 +81,7 @@ function handleReject() {
         :class="$style.question"
       >
         <div :class="$style.questionText">
-          <span v-if="question.required" :class="$style.required}>*</span>
+          <span v-if="question.required" :class="$style.required">*</span>
           {{ question.question }}
         </div>
         <div v-if="question.options?.length" :class="$style.options">

@@ -278,7 +278,6 @@ onMounted(() => {
       v-model="showKeyDialog"
       :title="t('apiKey.createdTitle')"
       width="680px"
-      :show-fullscreen-btn="false"
     >
       <div :class="styles.keyNotice">
         <AppIcon name="warning" :size="18" :class="styles.keyNoticeIcon" />

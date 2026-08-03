@@ -171,7 +171,6 @@ onMounted(() => {
       v-model="showTestDialog"
       :title="testDialogTitle"
       width="600px"
-      :show-fullscreen-btn="false"
     >
       <div v-if="testDialogLoading" style="text-align: center; padding: 20px">
         <AppIcon name="loading" :size="24" />

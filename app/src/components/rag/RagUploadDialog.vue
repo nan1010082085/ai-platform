@@ -7,6 +7,7 @@
 import { ref } from 'vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import { uploadRagDocument } from '@/api/aiApi'
 
 const props = defineProps<{
@@ -48,7 +49,7 @@ function onVisibleChange(v: boolean): void {
 </script>
 
 <template>
-  <el-dialog
+  <AppDialog
     :model-value="props.visible"
     title="上传文档到知识库"
     width="600px"
@@ -82,7 +83,7 @@ function onVisibleChange(v: boolean): void {
         上传并索引
       </el-button>
     </template>
-  </el-dialog>
+  </AppDialog>
 </template>
 
 <style module>

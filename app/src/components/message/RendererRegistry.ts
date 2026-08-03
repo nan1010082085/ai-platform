@@ -24,6 +24,12 @@ import ToolCallRenderer from './renderers/ToolCallRenderer.vue'
 import SchemaResultRenderer from './renderers/SchemaResultRenderer.vue'
 import FlowResultRenderer from './renderers/FlowResultRenderer.vue'
 import TextRenderer from './renderers/TextRenderer.vue'
+import SubWorkflowRenderer from './renderers/SubWorkflowRenderer.vue'
+import AgentHandoffRenderer from './renderers/AgentHandoffRenderer.vue'
+import CostUsageRenderer from './renderers/CostUsageRenderer.vue'
+import ApprovalRenderer from './renderers/ApprovalRenderer.vue'
+import VariableChangeRenderer from './renderers/VariableChangeRenderer.vue'
+import ErrorRecoveryRenderer from './renderers/ErrorRecoveryRenderer.vue'
 
 /**
  * 尚未加入 StepType 联合的渲染器类型，matcher 中用此函数安全判断。
@@ -228,6 +234,45 @@ const presetRenderers: MessageRenderer[] = [
     matcher: () => true,
     priority: 100,
     emitEvents: ['copy'],
+  },
+  {
+    type: 'sub_workflow',
+    component: SubWorkflowRenderer,
+    matcher: (step) => step.type === 'sub_workflow',
+    priority: 12,
+    emitEvents: ['workflow-retry', 'workflow-detail'],
+  },
+  {
+    type: 'agent_handoff',
+    component: AgentHandoffRenderer,
+    matcher: (step) => step.type === 'agent_handoff',
+    priority: 13,
+  },
+  {
+    type: 'cost_usage',
+    component: CostUsageRenderer,
+    matcher: (step) => step.type === 'cost_usage',
+    priority: 14,
+  },
+  {
+    type: 'approval_gate',
+    component: ApprovalRenderer,
+    matcher: (step) => step.type === 'approval_gate',
+    priority: 15,
+    emitEvents: ['approval-approve', 'approval-reject', 'approval-answer'],
+  },
+  {
+    type: 'variable_change',
+    component: VariableChangeRenderer,
+    matcher: (step) => step.type === 'variable_change',
+    priority: 22,
+  },
+  {
+    type: 'error_recovery',
+    component: ErrorRecoveryRenderer,
+    matcher: (step) => step.type === 'error_recovery',
+    priority: 23,
+    emitEvents: ['error-retry', 'error-skip', 'error-rollback'],
   },
 ]
 

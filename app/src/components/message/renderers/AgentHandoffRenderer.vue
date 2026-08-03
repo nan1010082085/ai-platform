@@ -71,8 +71,8 @@ const targetIcon = computed(() => {
         </div>
       </div>
       <div v-if="handoffData.reason" :class="$style.reason">
-        <span :class="$style.reasonLabel}>原因：</span>
-        <span :class="$style.reasonText}>{{ handoffData.reason }}</span>
+        <span :class="$style.reasonLabel">原因：</span>
+        <span :class="$style.reasonText">{{ handoffData.reason }}</span>
       </div>
     </div>
   </div>

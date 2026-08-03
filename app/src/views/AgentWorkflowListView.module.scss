@@ -275,8 +275,22 @@
   }
 }
 
+.createDialogContent {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 200px);
+}
+
 .createForm {
   margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.createForm:last-child {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .createLabel {
@@ -285,12 +299,17 @@
   font-weight: 500;
   color: var(--text-color-secondary);
   margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .templateGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  overflow-y: auto;
+  padding-right: 4px;
+  flex: 1;
+  min-height: 0;
 }
 
 .templateCard {

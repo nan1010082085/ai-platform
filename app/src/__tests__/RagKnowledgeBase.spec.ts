@@ -49,7 +49,7 @@ const globalStubs = {
   'el-table': ElTableStub,
   'el-table-column': ElTableColumnStub,
   'el-pagination': ElPaginationStub,
-  'el-dialog': { template: '<div><slot /><slot name="footer" /></div>', props: ['modelValue', 'title', 'width'] },
+  AppDialog: { template: '<div v-if="modelValue"><slot /><slot name="footer" /></div>', props: ['modelValue', 'title', 'width', 'closeOnClickModal'] },
   'el-upload': { template: '<div><slot /></div>' },
   'el-checkbox': { template: '<input type="checkbox" />' },
   'router-link': { template: '<a><slot /></a>', props: ['to'] },

@@ -57,3 +57,19 @@
   --ai-spacing-lg: 24px;
   --ai-spacing-xl: 32px;
 }
+
+/* AI 项目对话框高度约束 */
+.el-dialog {
+  max-height: 70vh !important;
+  margin-top: 15vh !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.el-dialog__body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}

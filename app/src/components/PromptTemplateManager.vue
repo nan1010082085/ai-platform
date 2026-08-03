@@ -8,6 +8,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import {
   getPromptTemplates,
   createPromptTemplate,
@@ -125,7 +126,7 @@ function handleSelect(t: PromptTemplate) {
     </div>
 
     <!-- 创建/编辑弹窗 -->
-    <el-dialog
+    <AppDialog
       v-model="formVisible"
       :title="editingId ? '编辑模板' : '新建模板'"
       width="480px"
@@ -152,7 +153,7 @@ function handleSelect(t: PromptTemplate) {
           {{ editingId ? '更新' : '创建' }}
         </el-button>
       </template>
-    </el-dialog>
+    </AppDialog>
   </div>
 </template>
 

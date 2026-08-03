@@ -2,349 +2,59 @@
  * AI 应用类型定义
  *
  * 对齐后端 AIConversationState 和 API 响应结构。
+ * 按域拆分到独立文件，此文件统一导出。
  */
 
 import type { AgentExecutionStatus, AgentNodeRecord } from '@/types/agentWorkflow'
 
-// ---- Widget（简化引用，完整类型在 editor 包） ----
+// ---- 按域拆分的类型导出 ----
 
-/** Widget 位置信息 */
-export interface WidgetPosition {
-  x: number
-  y: number
-  w: number
-  h: number
-  zIndex?: number
-}
-
-/** Widget 基础结构（对齐 editor/widgets/base/types.ts） */
-export interface Widget {
-  id: string
-  type: string
-  field?: string
-  label?: string
-  props?: Record<string, unknown>
-  position?: WidgetPosition
-  children?: Widget[]
-  events?: unknown[]
-  rules?: unknown[]
-  variables?: unknown[]
-}
-
-// ---- FlowGraph（对齐后端 FlowGraph 结构） ----
-
-export interface FlowNodeData {
-  bpmnType: string
-  label?: string
-  description?: string
-  [key: string]: unknown
-}
-
-export interface FlowNode {
-  id: string
-  data: FlowNodeData
-  position?: { x: number; y: number }
-  width?: number
-  height?: number
-}
-
-export interface FlowEdgeData {
-  conditionExpression?: string
-  isDefault?: boolean
-  [key: string]: unknown
-}
-
-export interface FlowEdge {
-  id: string
-  source: { cell: string }
-  target: { cell: string }
-  data?: FlowEdgeData
-}
-
-export interface FlowGraph {
-  nodes: FlowNode[]
-  edges: FlowEdge[]
-}
-
-// ---- 对话消息 ----
-
-export interface ToolCallInfo {
-  /** Unique run ID for matching calling/result phases (S4) */
-  id?: string
-  name: string
-  arguments: Record<string, unknown>
-  result?: unknown
-  /** Whether the tool execution failed (S5) */
-  error?: string
-}
-
-export interface AIMessage {
-  id?: string
-  role: 'user' | 'assistant' | 'system'
-  content: string
-  /** 消息子类型（如 interrupt 表示 HITL 确认） */
-  type?: 'interrupt' | string
-  agent?: 'editor' | 'flow' | 'page' | 'general'
-  thinking?: string
-  thinkingExpanded?: boolean
-  tip?: string
-  toolCalls?: ToolCallInfo[]
-  toolCallsExpanded?: boolean
-  schema?: Widget[]
-  flow?: FlowGraph
-  timestamp: Date
-  /** 消息状态（用于实时同步） */
-  status?: MessageStatus
-  /** 消息反馈状态 */
-  feedback?: 'positive' | 'negative' | null
-  /** 附加数据（如 interrupt 的确认信息） */
-  data?: unknown
-  /** 用户消息附带的文档卡片元数据 */
-  attachments?: MessageDocumentAttachment[]
-  /** 助手消息中的文档结构化摘要 */
-  documentSummaries?: MessageDocumentSummary[]
-  /** 工作流 Chat 模式下的执行进度（节点时间线） */
-  workflowExecution?: WorkflowMessageExecution
-}
-
-/** Chat 消息内嵌的工作流执行快照 */
-export interface WorkflowMessageExecution {
-  executionId: string
-  workflowName: string
-  status: AgentExecutionStatus
-  nodeRecords: AgentNodeRecord[]
-  streamingNodeId: string | null
-}
-
-/** 消息状态 */
-export type MessageStatus = 'sending' | 'sent' | 'streaming' | 'received' | 'error'
-
-// ---- 上下文 ----
-
-export interface SelectedWidgetInfo {
-  id: string
-  type: string
-  field?: string
-  label?: string
-}
-
-export interface ChatContext {
-  source: 'editor' | 'flow' | 'page' | 'standalone'
-  schemaId?: string
-  flowId?: string
-  nodeId?: string
-  version?: string
-  /** 用户偏好（如布局风格、label 宽度约定） */
-  preferences?: Record<string, unknown>
-  /** 前文摘要（长对话时压缩早期消息） */
-  historySummary?: string
-  /** 当前已生成的 Schema（多轮迭代时携带，供 AI 基于上次结果修改） */
-  currentSchema?: Widget[]
-  /** 当前已生成的流程（多轮迭代时携带，供 AI 基于上次结果修改） */
-  currentFlow?: FlowGraph
-  /** 当前选中的组件信息（编辑器中选中的 Widget） */
-  selectedWidget?: SelectedWidgetInfo
-  /** 编辑器当前模式 */
-  editorMode?: 'edit' | 'preview'
-}
-
-// ---- Chat Settings ----
-
-export type ReplyLanguage = 'zh-CN' | 'en-US'
-export type ReplyStyle = 'concise' | 'detailed'
-export type CodeCommentMode = 'yes' | 'no'
-export type HistorySummaryMode = 'auto' | 'manual'
-
-export interface ChatSettings {
-  model: string
-  /** 已发布的 Agent 工作流 ID；null 表示默认 LangGraph 对话 */
-  agentWorkflowId: string | null
-  preferences: {
-    replyLanguage: ReplyLanguage
-    replyStyle: ReplyStyle
-    codeComment: CodeCommentMode
-    /** 最大上下文轮数（LLM 节点 useConversationHistory 时生效），默认 20 */
-    maxHistoryTurns?: number
-  }
-  historySummary: {
-    mode: HistorySummaryMode
-    manualSummary?: string
-  }
-}
-
-// ---- 流式连接状态 ----
-
-export type StreamConnectionStatus = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'reconnecting'
-
-// ---- 对话请求 ----
-
-export interface MentionReference {
-  id: string
-  type: string
-  label: string
-}
-
-export interface ChatRequest {
-  conversationId?: string
-  message: string
-  context: ChatContext
-  mentions?: MentionReference[]
-  /** 当前已生成的 Schema（多轮迭代时携带） */
-  currentSchema?: Widget[]
-  /** 当前已生成的流程（多轮迭代时携带） */
-  currentFlow?: FlowGraph
-}
-
-// ---- 流式事件 ----
-
-export type StreamEventType =
-  | 'text_delta'
-  | 'thinking_delta'
-  | 'schema_start'
-  | 'schema_progress'
-  | 'schema_complete'
-  | 'schema_diff'
-  | 'flow_start'
-  | 'flow_progress'
-  | 'flow_complete'
-  | 'flow_diff'
-  | 'tool_call_start'
-  | 'tool_call_end'
-  | 'tool_error'
-  | 'agent_switch'
-  | 'agent_collaboration'
-  | 'chain_start'
-  | 'chain_step'
-  | 'chain_complete'
-  | 'interrupt'
-  | 'resume'
-  | 'done'
-  | 'error'
-  | 'requirement_analysis_start'
-  | 'requirement_analysis_complete'
-  | 'requirement_confirm_request'
-  | 'requirement_confirm_response'
-  | 'task_plan_start'
-  | 'task_plan_complete'
-  | 'task_progress'
-  | 'thinker_start'
-  | 'thinker_complete'
-  | 'quality_check_start'
-  | 'quality_check_complete'
-  | 'document_summaries'
-
-export interface StreamEvent {
-  type: StreamEventType
-  content?: string
-  payload?: Widget[] | FlowGraph
-  description?: string
-  conversationId?: string
-  threadId?: string
-  agent?: string
-  /** Tool call event data */
-  tools?: Array<{ id: string; name: string; arguments?: Record<string, unknown>; result?: unknown }>
-  /** Task chain event data */
-  steps?: TaskChainStep[]
-  currentIndex?: number
-  /** Collaboration event data */
-  collaboration?: boolean
-  /** Tool error event data */
-  toolName?: string
-  runId?: string
-  /** Diff event data */
-  diff?: SchemaDiff | FlowDiff
-  /** Schema/Flow progress event data */
-  step?: string
-  schema?: Widget[]
-  flow?: FlowGraph
-  /** Interrupt event data (HITL) */
-  interruptType?: string
-  message?: string
-  data?: unknown
-  /** v2: requirement analysis event data */
-  analysis?: RequirementAnalysis
-  needsConfirmation?: boolean
-  answers?: Record<string, string>
-  /** v2: task plan event data */
-  plan?: {
-    chain: Array<{
-      id: string
-      agent: 'editor' | 'flow' | 'page'
-      description: string
-      dependencies: string[]
-      priority: number
-    }>
-    strategy: {
-      mode: 'sequential' | 'parallel' | 'mixed'
-      retryPolicy: 'none' | 'simple' | 'exponential'
-      timeout: number
-    }
-  }
-  /** v2: thinker event data */
-  adjustments?: {
-    skipSteps?: string[]
-    addSteps?: Array<{ id: string; agent: string; description: string }>
-    reorderSteps?: string[]
-  }
-  risks?: Array<{ type: string; description: string; mitigation: string }>
-  suggestions?: Array<{ type: string; description: string; impact: string }>
-  /** v2: quality check event data */
-  result?: {
-    structure: { valid: boolean; errors: string[]; warnings: string[] }
-    completeness: { score: number; missing: string[] }
-    consistency: { score: number; conflicts: string[] }
-    suggestions: Array<{ type: string; description: string; priority: string }>
-    needsRetry: boolean
-    retryReason?: string
-  }
-  /** 文档结构化摘要（Chat 附件） */
-  summaries?: MessageDocumentSummary[]
-}
+export * from './widget'
+export * from './flow'
+export * from './message'
+export * from './chat'
+export * from './stream'
+export * from './requirement'
+export * from './proposal'
+export * from './generation'
+export * from './step'
+export * from './rag'
+export * from './evaluation'
+export * from './monitor'
 
 // ---- 任务链 ----
 
 export interface TaskChainStep {
-  agent: 'editor' | 'flow' | 'page'
+  agent: string
   description: string
-  status: 'pending' | 'running' | 'done' | 'skipped'
+  status?: 'pending' | 'running' | 'done' | 'error'
 }
 
 // ---- Diff ----
 
 export interface SchemaDiffEntry {
   type: 'add' | 'remove' | 'modify'
-  widgetId: string
-  widgetType: string
   path: string
-  before?: Record<string, unknown>
-  after?: Record<string, unknown>
-  summary: string
+  oldValue?: unknown
+  newValue?: unknown
 }
 
 export interface SchemaDiff {
-  changes: SchemaDiffEntry[]
-  added: number
-  removed: number
-  modified: number
-}
-
-export interface FlowDiffEntry {
-  type: 'add_node' | 'remove_node' | 'modify_node' | 'add_edge' | 'remove_edge' | 'modify_edge'
-  elementId: string
-  elementType: 'node' | 'edge'
-  before?: Record<string, unknown>
-  after?: Record<string, unknown>
+  entries: SchemaDiffEntry[]
   summary: string
 }
 
+export interface FlowDiffEntry {
+  type: 'add' | 'remove' | 'modify'
+  elementId: string
+  elementType: string
+  oldValue?: unknown
+  newValue?: unknown
+}
+
 export interface FlowDiff {
-  changes: FlowDiffEntry[]
-  nodesAdded: number
-  nodesRemoved: number
-  nodesModified: number
-  edgesAdded: number
-  edgesRemoved: number
-  edgesModified: number
+  entries: FlowDiffEntry[]
+  summary: string
 }
 
 // ---- 版本历史 ----
@@ -352,31 +62,24 @@ export interface FlowDiff {
 export interface VersionEntry {
   id: string
   version: number
-  type: 'schema' | 'flow'
   description?: string
+  createdBy: string
   createdAt: string
 }
 
 // ---- 发布 ----
 
 export interface PublishRequest {
-  conversationId: string
-  type: 'schema' | 'flow'
-  payload: Widget[] | FlowGraph
-  target?: {
-    type: 'flow_node'
-    flowId: string
-    nodeId: string
-  }
+  schemaId?: string
+  flowId?: string
+  version?: number
+  description?: string
 }
 
 export interface PublishResponse {
-  id: string
-  publishId?: string
-  boundTo?: {
-    flowId: string
-    nodeId: string
-  }
+  success: boolean
+  version: number
+  message?: string
 }
 
 // ---- 对话列表 ----
@@ -384,306 +87,10 @@ export interface PublishResponse {
 export interface Conversation {
   id: string
   title: string
-  source: 'editor' | 'flow' | 'page' | 'standalone'
-  activeAgent: 'router' | 'editor' | 'flow' | 'page' | 'general'
-  version?: string
+  lastMessage?: string
+  lastMessageAt?: string
+  messageCount: number
   createdAt: string
-  updatedAt: string
-}
-
-// ---- Action Proposal ----
-
-/** 行动项 */
-export interface ActionItem {
-  id: string
-  title: string
-  description: string
-  assignee?: string
-  deadline?: string
-  priority: 'high' | 'medium' | 'low'
-  type: 'todo' | 'approval' | 'review' | 'decision'
-}
-
-/** 行动方案 */
-export interface ActionProposal {
-  id: string
-  documentTitle?: string
-  summary?: string
-  actionItems: ActionItem[]
-  approvalChain?: string[]
-}
-
-/** 行动方案状态 */
-export type ProposalStatus = 'pending' | 'approved' | 'rejected'
-
-// ---- Image & PPT Generation ----
-
-/** 图片生成结果 */
-export interface ImageGenerateResult {
-  imageUrl?: string
-  prompt?: string
-  model?: string
-  size?: string
-  style?: string
-  quality?: string
-  loading?: boolean
-  error?: string
-}
-
-/** PPT 幻灯片数据 */
-export interface PptSlideData {
-  index: number
-  type: 'title' | 'content' | 'chart' | 'comparison' | 'summary'
-  heading: string
-  content?: string[]
-  speakerNotes?: string
-}
-
-/** PPT 生成结果 */
-export interface PptGenerateResult {
-  slides?: PptSlideData[]
-  metadata?: {
-    title: string
-    template: string
-    totalSlides: number
-    style: string
-  }
-  loading?: boolean
-  error?: string
-  blob?: Blob
-}
-
-// ---- Step Card ----
-
-/** 步骤类型 */
-export type StepType = 'thinking' | 'tool_call' | 'tool_error' | 'result' | 'text' | 'code' | 'requirement_confirm' | 'action_proposal' | 'image_generate' | 'ppt_generate' | 'artifact'
-
-/** 步骤状态 */
-export type StepStatus = 'pending' | 'running' | 'done' | 'error'
-
-/** 单个步骤卡片数据 */
-export interface StepData {
-  type: StepType
-  title: string
-  content?: string
-  status: StepStatus
-  /** 工具名称（tool_call / tool_error 类型） */
-  toolName?: string
-  /** 工具显示名称（中文） */
-  toolDisplayName?: string
-  /** 工具调用结果 */
-  toolResult?: unknown
-  /** 工具调用参数 */
-  toolArguments?: Record<string, unknown>
-  /** 错误信息 */
-  error?: string
-  /** 工具调用在 toolCalls 数组中的索引（用于重试） */
-  toolCallIndex?: number
-  /** artifact 类型（type === 'artifact'） */
-  artifactType?: 'code' | 'json' | 'html' | 'form'
-  /** artifact 语言（code/json/html） */
-  artifactLanguage?: string
-  /** 嵌入的卡片类型：schema 或 flow */
-  cardType?: 'schema' | 'flow'
-  /** 卡片标题 */
-  cardTitle?: string
-  /** 卡片操作标签 */
-  primaryAction?: string
-  secondaryAction?: string
-  /** 步骤时间戳 */
-  timestamp?: Date
-  /** 智能体类型 */
-  agent?: 'editor' | 'flow' | 'page' | 'auto' | 'general'
-  /** 需求分析结果（requirement_confirm 类型） */
-  requirementAnalysis?: RequirementAnalysis
-  /** 已收集的部分答案 */
-  requirementPartialAnswers?: Record<string, string>
-  /** 当前待回答问题 id */
-  requirementNextQuestionId?: string | null
-  /** 是否等待用户确认（requirement_confirm 类型） */
-  waitingConfirmation?: boolean
-  /** 行动方案数据（action_proposal 类型） */
-  actionProposal?: ActionProposal
-  /** 图片生成数据（image_generate 类型） */
-  imageGenerateData?: ImageGenerateResult
-  /** PPT 生成数据（ppt_generate 类型） */
-  pptGenerateData?: PptGenerateResult
-  /** 工作流执行数据（workflow_execution 类型） */
-  workflowExecution?: unknown
-}
-
-// ---- Requirement Analysis ----
-
-/** 需求分析结果 */
-export interface RequirementAnalysis {
-  intent: 'create' | 'modify' | 'query' | 'help'
-  type: 'form' | 'flow' | 'page' | 'mixed' | 'general'
-  complexity: 'simple' | 'medium' | 'complex'
-  completeness: {
-    score: number
-    missing: string[]
-    assumptions: string[]
-  }
-  confirmQuestions: Array<{
-    id: string
-    question: string
-    options?: string[]
-    required: boolean
-  }>
-  suggestedChain: Array<{
-    agent: string
-    description: string
-  }>
-}
-
-// ---- RAG ----
-
-export interface RagSearchResult {
-  id: string
-  editId: string
-  name: string
-  type: string
-  score: number
-  widgetTypes: string[]
-  fieldNames: string[]
-  labels: string[]
-  description: string
-}
-
-export interface RagSearchResponse {
-  total: number
-  schemas: RagSearchResult[]
-}
-
-// ---- RAG 检索调试 ----
-
-export interface RagDebugItem {
-  schemaId: string
-  editId: string
-  name: string
-  type: string
-  score: number
-  widgetTypes: string[]
-  fieldNames: string[]
-  labels: string[]
-  description: string
-  /** VR-1: 字段级命中的字段路径（field chunk 召回时填充） */
-  matchedFields?: string[]
-  /** rerank 视图：rerank 前在语义结果中的排名（1-based，0=语义未召回） */
-  beforeRank?: number
-  /** rerank 视图：排名变化（正=上升，负=下降） */
-  rankChange?: number
-}
-
-export interface RagDebugSnippet {
-  snippet: string
-  matchedTerms: string[]
-}
-
-export interface RagDebugTimings {
-  semantic: number
-  rerank: number
-  hybrid: number
-}
-
-export interface RagDebugResult {
-  semantic: RagDebugItem[]
-  rerank: RagDebugItem[]
-  hybrid: RagDebugItem[]
-  snippets: Record<string, RagDebugSnippet>
-  timings: RagDebugTimings
-  rerankEnabled: boolean
-  rerankConfigured: boolean
-  rerankModel: string | null
-}
-
-/** VR-2: 结构化过滤，在向量召回前/后按元数据过滤结果 */
-export interface RagDebugFilter {
-  /** 限定实体类型（schema/flow/document） */
-  entityKind?: Array<'schema' | 'flow' | 'document'>
-  /** 表单需包含这些组件类型之一 */
-  widgetTypes?: string[]
-  /** 表单需包含这些字段之一 */
-  fieldNames?: string[]
-  industry?: string
-  category?: string
-}
-
-export interface RagDebugParams {
-  query: string
-  topK?: number
-  type?: 'form' | 'search_list'
-  minScore?: number
-  rerankEnabled?: boolean
-  semanticWeight?: number
-  keywordWeight?: number
-  filter?: RagDebugFilter
-}
-
-// ---- 评测体系 ----
-
-export type JudgeType = 'keyword' | 'regex' | 'llm' | 'semantic'
-
-export interface EvaluationTestcase {
-  id: string
-  input: string
-  expectedOutput?: string
-  judgeType: JudgeType
-  /** keyword: 逗号分隔关键词；regex: 正则字符串；llm: 评判 prompt */
-  judgeConfig: string
-}
-
-export interface EvaluationDataset {
-  id: string
-  name: string
-  description: string
-  testcases: EvaluationTestcase[]
-  createdBy: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface EvaluationResultItem {
-  testcaseId: string
-  input: string
-  expectedOutput: string
-  actualOutput: string
-  passed: boolean
-  durationMs: number
-  tokens: number
-  llmScore?: number | null
-  error?: string
-}
-
-export interface EvaluationRunSummary {
-  total: number
-  passed: number
-  failed: number
-  passRate: number
-  avgDurationMs: number
-  avgTokens: number
-  avgLlmScore?: number | null
-}
-
-export type EvaluationRunStatus = 'running' | 'completed' | 'failed'
-
-export interface EvaluationRun {
-  id: string
-  datasetId: string
-  datasetName: string
-  target: {
-    type: 'workflow' | 'agent'
-    id: string
-    name: string
-    version: string
-  }
-  judgeMethods: JudgeType[]
-  status: EvaluationRunStatus
-  results: EvaluationResultItem[]
-  summary: EvaluationRunSummary
-  createdBy: string
-  createdAt: string
-  updatedAt: string
 }
 
 // ---- HITL Interrupt ----
@@ -713,29 +120,6 @@ export interface AIVersion {
 
 // ---- 附件 ----
 
-export interface MessageDocumentAttachment {
-  documentId: string
-  filename: string
-  mimetype: string
-  size: number
-  excerpt?: string
-}
-
-export interface MessageDocumentSummary {
-  documentId: string
-  filename: string
-  summary: StructuredSummary
-}
-
-export interface StructuredSummary {
-  title: string
-  summary: string
-  keyPoints: string[]
-  sections: Array<{ heading: string; content: string }>
-  entities?: string[]
-  generatedAt: string
-}
-
 export interface Attachment {
   documentId?: string
   filename: string
@@ -748,83 +132,13 @@ export interface Attachment {
   error?: string
 }
 
-// ---- 监控 ----
+// ---- 文档摘要 ----
 
-export interface MonitorSummary {
-  totalCalls: number
-  successRate: number
-  avgDuration: number
-  maxDuration: number
-  totalTokens: number
-  slowCalls: number
-}
-
-export interface AgentMetricStats {
-  agentName: string
-  operation: string
-  totalCalls: number
-  successRate: number
-  avgDuration: number
-  p95Duration: number
-  maxDuration: number
-  totalTokens: number
-}
-
-export interface AgentMetric {
-  id: string
-  agentName: string
-  operation: string
-  duration: number
-  success: boolean
-  error?: string
-  tokenUsage?: { total?: number }
-  createdAt: string
-}
-
-export interface AgentAlert {
-  id: string
-  agentName: string
-  alertType: 'failure' | 'slow' | 'high_token'
-  operation: string
-  duration: number
-  tokenUsage?: { total?: number }
-  error?: string
-  createdAt: string
-}
-
-// ---- 插件监控 ----
-
-export interface PluginMetricStats {
-  pluginId: string
-  pluginName: string
-  pluginType: 'expert' | 'tool' | 'mcp' | 'skill'
-  totalCalls: number
-  successRate: number
-  avgDuration: number
-  p95Duration: number
-  maxDuration: number
-  failureRate: number
-  recentErrors: Array<{ error: string; at: string }>
-}
-
-export interface PluginMetric {
-  id: string
-  pluginId: string
-  pluginName: string
-  pluginType: 'expert' | 'tool' | 'mcp' | 'skill'
-  duration: number
-  success: boolean
-  error?: string
-  metadata?: Record<string, unknown>
-  createdAt: string
-}
-
-export interface PluginMetricSummary {
-  totalCalls: number
-  successRate: number
-  avgDuration: number
-  maxDuration: number
-  slowCalls: number
-  activePlugins: number
-  periodHours: number
+export interface StructuredSummary {
+  title: string
+  summary: string
+  keyPoints: string[]
+  sections: Array<{ heading: string; content: string }>
+  entities?: string[]
+  generatedAt: string
 }
