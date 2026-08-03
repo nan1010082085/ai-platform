@@ -103,15 +103,20 @@ export const useAiStore = defineStore('ai', () => {
       ? { approved: confirmed, feedback }
       : confirmed
 
-    await streamStore.executeResume(interrupt.threadId, resumeValue, conversationStore.messages, {
-      onStreamEvent: handleStreamEventForStore,
-      onDone: (conversationId) => {
-        if (conversationId) conversationStore.loadConversations()
-      },
-      getContext: () => ({
-        currentConversationId: conversationStore.currentConversationId,
-      }),
-    })
+    try {
+      await streamStore.executeResume(interrupt.threadId, resumeValue, conversationStore.messages, {
+        onStreamEvent: handleStreamEventForStore,
+        onDone: (conversationId) => {
+          if (conversationId) conversationStore.loadConversations()
+        },
+        getContext: () => ({
+          currentConversationId: conversationStore.currentConversationId,
+        }),
+      })
+    } catch (err) {
+      streamStore.loading = false
+      console.error('[ai] respondInterrupt failed', err)
+    }
   }
 
   async function loadConversation(id: string): Promise<void> {

@@ -59,7 +59,7 @@ async function handleSelectConversation(id: string): Promise<void> {
 }
 
 function handleDeleteConversation(id: string): void {
-  store.removeConversation(id)
+  store.removeConversation(id).catch((e) => message.error('删除对话失败：' + (e instanceof Error ? e.message : '未知错误')))
 }
 
 // ---- Settings dialog ----
