@@ -36,6 +36,7 @@ export default {
       keys: '集成密钥',
       routingDebug: '路由调试',
       ragDebug: '检索调试',
+      mcp: 'MCP 管理',
       evaluation: '评测中心',
       schedules: '调度管理',
       templates: '模板管理',

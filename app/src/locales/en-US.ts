@@ -36,6 +36,7 @@ export default {
       keys: 'API Keys',
       routingDebug: 'Routing Debug',
       ragDebug: 'Retrieval Debug',
+      mcp: 'MCP Manager',
       evaluation: 'Evaluation',
       schedules: 'Schedules',
       templates: 'Templates',

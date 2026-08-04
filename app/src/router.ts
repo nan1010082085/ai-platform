@@ -53,6 +53,11 @@ const routes = [
         component: () => import('./views/PluginCenterView.vue'),
       },
       {
+        path: 'mcp',
+        name: 'mcp-manager',
+        component: () => import('./views/McpManagerView.vue'),
+      },
+      {
         path: 'workflows',
         name: 'agent-workflows',
         component: () => import('./views/AgentWorkflowListView.vue'),

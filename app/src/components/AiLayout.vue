@@ -36,6 +36,7 @@ const settingsNav = computed(() => [
   { path: '/settings/templates', label: t('layout.nav.templates'), icon: 'document-checked' },
   { path: '/debug/routing', label: t('layout.nav.routingDebug'), icon: 'search' },
   { path: '/debug/rag', label: t('layout.nav.ragDebug'), icon: 'filter' },
+  { path: '/mcp', label: t('layout.nav.mcp'), icon: 'set-up' },
   { path: '/evaluation', label: t('layout.nav.evaluation'), icon: 'data-analysis' },
   { path: '/schedules', label: t('layout.nav.schedules'), icon: 'alarm-clock' },
 ])

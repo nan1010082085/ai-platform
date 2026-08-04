@@ -1,0 +1,586 @@
+<script setup lang="ts">
+/**
+ * MCP 管理页面 - 浏览和测试 MCP 工具
+ */
+import { ref, computed, onMounted } from 'vue'
+import { message } from '@schema-platform/platform-shared/utils/message'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import {
+  fetchMcpTools,
+  testMcpTool,
+  type McpServerInfo,
+  type McpToolInfo,
+  type McpTestResult,
+} from '@/api/aiApi/mcp'
+
+// ── 数据 ──
+const servers = ref<McpServerInfo[]>([])
+const loading = ref(false)
+const selectedServer = ref('')
+const selectedTool = ref('')
+const argsText = ref('{}')
+const testing = ref(false)
+const testResult = ref<McpTestResult | null>(null)
+const testError = ref<string | null>(null)
+const history = ref<Array<{ tool: string; server: string; success: boolean; duration: number; time: string }>>([])
+
+// ── 计算属性 ──
+const currentServer = computed(() => servers.value.find((s) => s.id === selectedServer.value))
+const currentTool = computed(() => {
+  if (!currentServer.value) return null
+  return currentServer.value.tools.find((t) => t.name === selectedTool.value) ?? null
+})
+
+const totalTools = computed(() =>
+  servers.value.reduce((sum, s) => sum + s.tools.length, 0),
+)
+
+// ── 方法 ──
+async function loadTools() {
+  loading.value = true
+  try {
+    servers.value = await fetchMcpTools()
+    // 自动选第一个工具
+    const first = servers.value.find((s) => s.tools.length > 0)
+    if (first) {
+      selectTool(first.id, first.tools[0].name)
+    }
+  } catch (err) {
+    message.error(err instanceof Error ? err.message : '加载 MCP 工具失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+function selectTool(serverId: string, toolName: string) {
+  selectedServer.value = serverId
+  selectedTool.value = toolName
+  testResult.value = null
+  testError.value = null
+
+  // 从 inputSchema 生成默认参数
+  const server = servers.value.find((s) => s.id === serverId)
+  const tool = server?.tools.find((t) => t.name === toolName)
+  if (tool?.inputSchema?.properties) {
+    const defaults: Record<string, unknown> = {}
+    for (const [key, prop] of Object.entries(tool.inputSchema.properties)) {
+      if (prop.default !== undefined) {
+        defaults[key] = prop.default
+      } else if (prop.type === 'string') {
+        defaults[key] = ''
+      } else if (prop.type === 'number' || prop.type === 'integer') {
+        defaults[key] = 0
+      } else if (prop.type === 'boolean') {
+        defaults[key] = false
+      } else if (prop.type === 'array') {
+        defaults[key] = []
+      }
+    }
+    // 只填 required 字段 + 有默认值的字段，避免过多空值
+    const required = tool.inputSchema.required ?? []
+    const filtered: Record<string, unknown> = {}
+    for (const key of Object.keys(defaults)) {
+      if (required.includes(key) || tool.inputSchema.properties[key].default !== undefined) {
+        filtered[key] = defaults[key]
+      }
+    }
+    argsText.value = JSON.stringify(Object.keys(filtered).length > 0 ? filtered : {}, null, 2)
+  } else {
+    argsText.value = '{}'
+  }
+}
+
+function parseArgs(): Record<string, unknown> | null {
+  try {
+    const parsed = JSON.parse(argsText.value)
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      message.error('参数必须是 JSON 对象')
+      return null
+    }
+    return parsed as Record<string, unknown>
+  } catch (err) {
+    message.error(`JSON 格式错误: ${err instanceof Error ? err.message : String(err)}`)
+    return null
+  }
+}
+
+async function handleTest() {
+  if (!selectedServer.value || !selectedTool.value) return
+  const args = parseArgs()
+  if (args === null) return
+
+  testing.value = true
+  testResult.value = null
+  testError.value = null
+
+  try {
+    const result = await testMcpTool(selectedServer.value, selectedTool.value, args)
+    testResult.value = result
+    history.value.unshift({
+      tool: result.tool,
+      server: result.server,
+      success: !result.isError,
+      duration: result.duration,
+      time: new Date().toLocaleTimeString(),
+    })
+    if (history.value.length > 20) history.value.pop()
+  } catch (err) {
+    testError.value = err instanceof Error ? err.message : String(err)
+    history.value.unshift({
+      tool: selectedTool.value,
+      server: selectedServer.value,
+      success: false,
+      duration: 0,
+      time: new Date().toLocaleTimeString(),
+    })
+    if (history.value.length > 20) history.value.pop()
+  } finally {
+    testing.value = false
+  }
+}
+
+function formatJson(data: unknown): string {
+  try {
+    return JSON.stringify(data, null, 2)
+  } catch {
+    return String(data)
+  }
+}
+
+onMounted(() => {
+  void loadTools()
+})
+</script>
+
+<template>
+  <div :class="$style.container">
+    <!-- Header -->
+    <div :class="$style.header">
+      <div>
+        <h2 :class="$style.title">
+          <AppIcon name="set-up" :size="20" />
+          MCP 管理
+        </h2>
+        <p :class="$style.subtitle">
+          浏览和测试 MCP 工具 · {{ servers.length }} 个 Server · {{ totalTools }} 个工具
+        </p>
+      </div>
+      <el-button :loading="loading" @click="loadTools">
+        <AppIcon name="refresh-right" :size="14" />
+        刷新
+      </el-button>
+    </div>
+
+    <div :class="$style.body">
+      <!-- 左侧：Server + 工具列表 -->
+      <div :class="$style.sidebar">
+        <div v-loading="loading" :class="$style.serverList">
+          <div
+            v-for="server in servers"
+            :key="server.id"
+            :class="$style.serverGroup"
+          >
+            <div :class="$style.serverHeader">
+              <AppIcon
+                :name="server.id === 'rag' ? 'magic-stick' : server.id === 'schema' ? 'document-copy' : server.id === 'flow' ? 'switch-button' : server.id === 'widget' ? 'takeaway-box' : 'office-building'"
+                :size="14"
+              />
+              <span :class="$style.serverName">{{ server.id }}</span>
+              <el-tag size="small" type="info">{{ server.tools.length }}</el-tag>
+              <el-tag v-if="server.transport" size="small" type="info" effect="plain">{{ server.transport }}</el-tag>
+            </div>
+            <div v-if="server.error" :class="$style.serverError">
+              <AppIcon name="warning-filled" :size="12" />
+              {{ server.error }}
+            </div>
+            <div
+              v-for="tool in server.tools"
+              :key="tool.name"
+              :class="[
+                $style.toolItem,
+                selectedTool === tool.name && selectedServer === server.id ? $style.toolItemActive : '',
+              ]"
+              @click="selectTool(server.id, tool.name)"
+            >
+              <AppIcon name="arrow-right" :size="12" />
+              <span :class="$style.toolName">{{ tool.name }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧：测试面板 -->
+      <div :class="$style.panel">
+        <template v-if="currentTool">
+          <!-- 工具信息 -->
+          <div :class="$style.toolHeader">
+            <div>
+              <h3 :class="$style.toolTitle">{{ currentTool.name }}</h3>
+              <p :class="$style.toolDesc">{{ currentTool.description || '无描述' }}</p>
+            </div>
+            <el-tag size="small" type="info">{{ currentServer?.id }}</el-tag>
+          </div>
+
+          <!-- 参数输入 -->
+          <div :class="$style.section">
+            <div :class="$style.sectionLabel">
+              <AppIcon name="edit-pen" :size="14" />
+              参数 (JSON)
+            </div>
+            <div v-if="currentTool.inputSchema?.properties" :class="$style.paramHints">
+              <span
+                v-for="key in Object.keys(currentTool.inputSchema.properties)"
+                :key="key"
+                :class="$style.paramTag"
+              >
+                {{ key }}
+                <span v-if="currentTool.inputSchema.required?.includes(key)" :class="$style.required">*</span>
+                <span :class="$style.paramType">{{ currentTool.inputSchema.properties[key].type ?? 'any' }}</span>
+              </span>
+            </div>
+            <textarea
+              v-model="argsText"
+              :class="$style.codeEditor"
+              spellcheck="false"
+              placeholder='{"keyword":"表单","limit":5}'
+            />
+          </div>
+
+          <!-- 调用按钮 -->
+          <div :class="$style.actions">
+            <el-button type="primary" :loading="testing" @click="handleTest">
+              <AppIcon name="video-play" :size="14" />
+              调用工具
+            </el-button>
+          </div>
+
+          <!-- 结果展示 -->
+          <div v-if="testResult || testError" :class="$style.section">
+            <div :class="$style.sectionLabel">
+              <AppIcon name="document-copy" :size="14" />
+              结果
+              <span v-if="testResult" :class="$style.resultMeta">
+                <el-tag :type="testResult.isError ? 'danger' : 'success'" size="small">
+                  {{ testResult.isError ? '工具返回错误' : '成功' }}
+                </el-tag>
+                <span :class="$style.duration">{{ testResult.duration }}ms</span>
+              </span>
+            </div>
+            <pre v-if="testResult" :class="$style.resultBox">{{ formatJson(testResult.result) }}</pre>
+            <pre v-if="testError" :class="[$style.resultBox, $style.resultError]">{{ testError }}</pre>
+          </div>
+
+          <!-- 调用历史 -->
+          <div v-if="history.length > 0" :class="$style.section">
+            <div :class="$style.sectionLabel">
+              <AppIcon name="alarm-clock" :size="14" />
+              调用历史
+            </div>
+            <div :class="$style.historyList">
+              <div
+                v-for="(h, idx) in history"
+                :key="idx"
+                :class="$style.historyItem"
+              >
+                <el-tag :type="h.success ? 'success' : 'danger'" size="small" effect="plain">
+                  {{ h.success ? '✓' : '✗' }}
+                </el-tag>
+                <span :class="$style.historyTool">{{ h.tool }}</span>
+                <span :class="$style.historyTime">{{ h.time }}</span>
+                <span v-if="h.duration" :class="$style.historyDuration">{{ h.duration }}ms</span>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <div v-else :class="$style.empty">
+          <AppIcon name="set-up" :size="48" />
+          <p>选择左侧工具开始测试</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style module>
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--ai-text-primary, #1d2129);
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--ai-text-secondary, #86909c);
+  margin: 4px 0 0;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: 16px;
+}
+
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  border: 1px solid var(--ai-border-light, #ebedf3);
+  border-radius: 8px;
+  overflow-y: auto;
+  background: var(--ai-bg-white, #fff);
+}
+
+.serverList {
+  padding: 8px;
+}
+
+.serverGroup {
+  margin-bottom: 8px;
+}
+
+.serverHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ai-text-primary, #1d2129);
+}
+
+.serverName {
+  flex: 1;
+}
+
+.serverError {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--el-color-danger);
+}
+
+.toolItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 6px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ai-text-regular, #4e5969);
+  transition: all 0.15s;
+}
+
+.toolItem:hover {
+  background: var(--ai-bg-gray, #f5f7fa);
+}
+
+.toolItemActive {
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-weight: 500;
+}
+
+.toolName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panel {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--ai-border-light, #ebedf3);
+  border-radius: 8px;
+  padding: 20px;
+  overflow-y: auto;
+  background: var(--ai-bg-white, #fff);
+}
+
+.toolHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ai-border-light, #ebedf3);
+}
+
+.toolTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--ai-text-primary, #1d2129);
+}
+
+.toolDesc {
+  font-size: 13px;
+  color: var(--ai-text-secondary, #86909c);
+  margin: 6px 0 0;
+  line-height: 1.5;
+  max-width: 600px;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ai-text-primary, #1d2129);
+  margin-bottom: 8px;
+}
+
+.paramHints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.paramTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  background: var(--ai-bg-gray, #f5f7fa);
+  color: var(--ai-text-regular, #4e5969);
+}
+
+.required {
+  color: var(--el-color-danger);
+}
+
+.paramType {
+  color: var(--ai-text-secondary, #86909c);
+  font-size: 11px;
+}
+
+.codeEditor {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ai-text-primary, #1d2129);
+  background: var(--ai-bg-gray, #f5f7fa);
+  border: 1px solid var(--ai-border-light, #ebedf3);
+  border-radius: 8px;
+  outline: none;
+  resize: vertical;
+  tab-size: 2;
+}
+
+.codeEditor:focus {
+  border-color: var(--el-color-primary);
+  background: var(--ai-bg-white, #fff);
+}
+
+.actions {
+  margin-bottom: 20px;
+}
+
+.resultMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.duration {
+  font-size: 12px;
+  color: var(--ai-text-secondary, #86909c);
+}
+
+.resultBox {
+  padding: 12px;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  background: var(--ai-bg-gray, #f5f7fa);
+  border: 1px solid var(--ai-border-light, #ebedf3);
+  border-radius: 8px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 400px;
+  overflow-y: auto;
+  margin: 0;
+}
+
+.resultError {
+  color: var(--el-color-danger);
+  border-color: var(--el-color-danger-light-5);
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.historyItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: var(--ai-bg-gray, #f5f7fa);
+}
+
+.historyTool {
+  flex: 1;
+  color: var(--ai-text-regular, #4e5969);
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+.historyTime {
+  color: var(--ai-text-secondary, #86909c);
+}
+
+.historyDuration {
+  color: var(--ai-text-secondary, #86909c);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--ai-text-secondary, #86909c);
+  font-size: 14px;
+}
+</style>
