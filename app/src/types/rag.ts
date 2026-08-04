@@ -14,6 +14,8 @@ export interface RagSearchResult {
   fieldNames: string[]
   labels: string[]
   description: string
+  /** VR-1: 字段级命中的字段路径（field chunk 召回时填充） */
+  matchedFields?: string[]
 }
 
 export interface RagSearchResponse {

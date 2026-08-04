@@ -72,21 +72,21 @@ describe('rag store', () => {
     expect(store.ragSearchResults).toEqual([])
   })
 
-  it('getRagContextContent returns formatted content and clears context', () => {
+  it('consumeRagContextContent returns formatted content and clears context', () => {
     const store = useRAGStore()
     store.ragContext = [
       { id: 's1', name: 'UserForm', score: 95, widgetTypes: ['input', 'select'] },
     ]
-    const content = store.getRagContextContent()
+    const content = store.consumeRagContextContent()
     expect(content).toContain('RAG 上下文')
     expect(content).toContain('UserForm')
     expect(content).toContain('95%')
     expect(content).toContain('input, select')
-    expect(store.ragContext).toEqual([]) // cleared after get
+    expect(store.ragContext).toEqual([]) // cleared after consume
   })
 
-  it('getRagContextContent returns empty string when no context', () => {
+  it('consumeRagContextContent returns empty string when no context', () => {
     const store = useRAGStore()
-    expect(store.getRagContextContent()).toBe('')
+    expect(store.consumeRagContextContent()).toBe('')
   })
 })

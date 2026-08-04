@@ -49,9 +49,9 @@ export const useRAGStore = defineStore('rag', () => {
   }
 
   /**
-   * 获取 RAG 上下文内容（用于注入消息）
+   * 消费 RAG 上下文内容（用于注入消息），返回后清除已消费的 context
    */
-  function getRagContextContent(): string {
+  function consumeRagContextContent(): string {
     if (ragContext.value.length === 0) return ''
     const ragBlock = ragContext.value
       .map((r) => `[引用 Schema: ${r.name}] (相似度 ${r.score}%, 组件: ${r.widgetTypes.join(', ')})`)
@@ -71,6 +71,6 @@ export const useRAGStore = defineStore('rag', () => {
     addRagContext,
     removeRagContext,
     clearRagContext,
-    getRagContextContent,
+    consumeRagContextContent,
   }
 })

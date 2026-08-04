@@ -31,7 +31,7 @@ export interface WorkflowDeps {
     error: string | null
   }
   ragStore: {
-    getRagContextContent: () => string
+    consumeRagContextContent: () => string
   }
   conversationStore: {
     messages: AIMessage[]
@@ -62,7 +62,7 @@ export function createWorkflowModule(state: WorkflowExecutionState) {
     streamStore.loading = true
     streamStore.error = null
 
-    const ragPrefix = ragStore.getRagContextContent()
+    const ragPrefix = ragStore.consumeRagContextContent()
     const enrichedContent = ragPrefix + content
 
     conversationStore.messages.push({

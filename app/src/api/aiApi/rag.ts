@@ -100,6 +100,7 @@ export interface RagReindexResult {
 
 export interface RagSingleReindexResult {
   schemaId: string
+  entityKind: string
   action: 'created' | 'updated' | 'skipped'
 }
 
@@ -113,14 +114,20 @@ export async function reindexAllRag(): Promise<RagReindexResult> {
   })
 }
 
-export async function reindexSingleRag(schemaId: string): Promise<RagSingleReindexResult> {
-  return request<RagSingleReindexResult>(`/ai/rag/reindex/${encodeURIComponent(schemaId)}`, {
+export async function reindexSingleRag(
+  schemaId: string,
+  entityKind: 'schema' | 'flow' | 'document' = 'schema',
+): Promise<RagSingleReindexResult> {
+  return request<RagSingleReindexResult>(`/ai/rag/reindex/${encodeURIComponent(schemaId)}?entityKind=${entityKind}`, {
     method: 'POST',
   })
 }
 
-export async function deleteRagEmbedding(schemaId: string): Promise<{ schemaId: string; deleted: boolean }> {
-  return request<{ schemaId: string; deleted: boolean }>(`/ai/rag/${encodeURIComponent(schemaId)}`, {
+export async function deleteRagEmbedding(
+  schemaId: string,
+  entityKind: 'schema' | 'flow' | 'document' = 'schema',
+): Promise<{ schemaId: string; entityKind: string; deleted: boolean }> {
+  return request<{ schemaId: string; entityKind: string; deleted: boolean }>(`/ai/rag/${encodeURIComponent(schemaId)}?entityKind=${entityKind}`, {
     method: 'DELETE',
   })
 }

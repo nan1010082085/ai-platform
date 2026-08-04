@@ -99,7 +99,7 @@ describe('workflow module', () => {
     const deps = {
       chatSettingsStore: { chatSettings: { agentWorkflowId: null } },
       streamStore: { loading: false, error: null },
-      ragStore: { getRagContextContent: () => '' },
+      ragStore: { consumeRagContextContent: () => '' },
       conversationStore: { messages: [] as never[], currentConversationId: null, loadConversations: vi.fn() },
     }
 
@@ -141,7 +141,7 @@ describe('workflow module', () => {
     const deps = {
       chatSettingsStore: { chatSettings: { agentWorkflowId: 'wf-1' } },
       streamStore: { loading: false, error: null },
-      ragStore: { getRagContextContent: () => '' },
+      ragStore: { consumeRagContextContent: () => '' },
       conversationStore: { messages, currentConversationId: 'conv-1', loadConversations: vi.fn() },
     }
 
@@ -166,7 +166,7 @@ describe('workflow module', () => {
     const deps = {
       chatSettingsStore: { chatSettings: { agentWorkflowId: 'wf-1' } },
       streamStore: { loading: false, error: null },
-      ragStore: { getRagContextContent: () => '' },
+      ragStore: { consumeRagContextContent: () => '' },
       conversationStore: { messages, currentConversationId: 'conv-1', loadConversations: vi.fn() },
     }
 
@@ -202,7 +202,7 @@ describe('workflow module', () => {
     const deps = {
       chatSettingsStore: { chatSettings: { agentWorkflowId: 'wf-1' } },
       streamStore: { loading: false, error: null },
-      ragStore: { getRagContextContent: () => '' },
+      ragStore: { consumeRagContextContent: () => '' },
       conversationStore: { messages, currentConversationId: 'conv-1', loadConversations: vi.fn() },
     }
 
@@ -227,7 +227,7 @@ describe('workflow module', () => {
     const deps = {
       chatSettingsStore: { chatSettings: { agentWorkflowId: 'wf-1' } },
       streamStore: { loading: false, error: null },
-      ragStore: { getRagContextContent: () => '[RAG] context\n\n' },
+      ragStore: { consumeRagContextContent: () => '[RAG] context\n\n' },
       conversationStore: { messages, currentConversationId: 'conv-1', loadConversations: vi.fn() },
     }
 
@@ -257,7 +257,7 @@ describe('workflow module', () => {
     const deps = {
       chatSettingsStore: { chatSettings: { agentWorkflowId: 'wf-1' } },
       streamStore: { loading: false, error: null },
-      ragStore: { getRagContextContent: () => '' },
+      ragStore: { consumeRagContextContent: () => '' },
       conversationStore: { messages, currentConversationId: 'conv-1', loadConversations: vi.fn() },
     }
 
@@ -294,7 +294,7 @@ describe('workflow module', () => {
     const deps = {
       chatSettingsStore: { chatSettings: { agentWorkflowId: 'wf-1' } },
       streamStore: { loading: false, error: null },
-      ragStore: { getRagContextContent: () => '' },
+      ragStore: { consumeRagContextContent: () => '' },
       conversationStore: { messages, currentConversationId: 'conv-1', loadConversations: vi.fn() },
     }
 

@@ -298,15 +298,15 @@ describe('aiApi', () => {
   })
 
   it('reindexSingleRag POSTs by encoded id', async () => {
-    mockedRequest.mockResolvedValue({ schemaId: 's1', action: 'created' })
+    mockedRequest.mockResolvedValue({ schemaId: 's1', entityKind: 'schema', action: 'created' })
     await reindexSingleRag('s1')
-    expectCalledWith('/ai/rag/reindex/s1', { method: 'POST' })
+    expectCalledWith('/ai/rag/reindex/s1?entityKind=schema', { method: 'POST' })
   })
 
   it('deleteRagEmbedding sends DELETE', async () => {
-    mockedRequest.mockResolvedValue({ schemaId: 's1', deleted: true })
+    mockedRequest.mockResolvedValue({ schemaId: 's1', entityKind: 'schema', deleted: true })
     await deleteRagEmbedding('s1')
-    expectCalledWith('/ai/rag/s1', { method: 'DELETE' })
+    expectCalledWith('/ai/rag/s1?entityKind=schema', { method: 'DELETE' })
   })
 
   it('uploadRagDocument delegates to uploadBlob', async () => {

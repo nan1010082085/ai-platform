@@ -60,7 +60,7 @@ function createMockContext() {
         chatSettings: { agentWorkflowId: null, selectedAgent: 'auto' },
       },
       ragStore: {
-        getRagContextContent: () => '',
+        consumeRagContextContent: () => '',
       },
       hitlStore: {
         pendingInterrupt: null,

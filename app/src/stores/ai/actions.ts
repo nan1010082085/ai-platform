@@ -53,7 +53,7 @@ export interface AiActionStores {
     currentFlow: import('@/types').FlowGraph | null
   }
   ragStore: {
-    getRagContextContent: () => string
+    consumeRagContextContent: () => string
   }
   chatSettingsStore: {
     chatSettings: { agentWorkflowId: string | null }
@@ -149,7 +149,7 @@ export function createAiActions(ctx: AiActionContext) {
     streamStore.loading = true
     streamStore.error = null
 
-    const ragPrefix = ragStore.getRagContextContent()
+    const ragPrefix = ragStore.consumeRagContextContent()
     const enrichedContent = ragPrefix + content
 
     conversationStore.messages.push({
