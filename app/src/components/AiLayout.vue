@@ -97,17 +97,17 @@ function handleSettingsSelect(path: string) {
 
       <div :class="$style.topbarRight">
         <el-dropdown trigger="click" @command="handleSettingsSelect">
-          <span
+          <button
+            type="button"
             :class="[
-              $style.navItem,
-              $style.settingsTrigger,
+              $style.iconBtn,
               settingsActive && $style.navItemActive,
             ]"
+            :title="t('layout.settings')"
+            :aria-label="t('layout.settings')"
           >
             <AppIcon name="setting" :size="16" />
-            <span>{{ t('layout.settings') }}</span>
-            <AppIcon name="arrow-down" :size="12" />
-          </span>
+          </button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item
@@ -124,12 +124,12 @@ function handleSettingsSelect(path: string) {
 
         <button
           type="button"
-          :class="[$style.navItem, $style.localeBtn]"
-          :title="t('layout.language')"
+          :class="$style.iconBtn"
+          :title="languageLabel"
+          :aria-label="languageLabel"
           @click="toggleLocale"
         >
-          <AppIcon name="switch-button" :size="16" />
-          <span>{{ languageLabel }}</span>
+          <AppIcon name="flag" :size="16" />
         </button>
       </div>
     </header>
@@ -253,20 +253,29 @@ function handleSettingsSelect(path: string) {
   flex-shrink: 0;
 }
 
-.settingsTrigger {
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ai-text-secondary, #666666);
+  cursor: pointer;
   outline: none;
+  transition: all 0.15s;
+}
+
+.iconBtn:hover {
+  background: var(--ai-bg-gray, #F5F7FA);
+  color: var(--ai-text-primary, #333333);
 }
 
 .dropdownLabel {
   margin-left: 6px;
-}
-
-.localeBtn {
-  border: none;
-  background: transparent;
-  font: inherit;
-  color: var(--ai-text-hint, #999999);
-  font-size: 12px;
 }
 
 .main {
