@@ -3,6 +3,9 @@
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 160px;
 }
 
 .header {
@@ -28,7 +31,7 @@
 }
 
 .budgetBar {
-  margin-bottom: 16px;
+  margin-bottom: var(--ai-card-gap);
   padding: 10px 12px;
   background: var(--el-fill-color-light);
   border-radius: 8px;
@@ -57,7 +60,7 @@
 }
 
 .chartSection {
-  margin-bottom: 16px;
+  margin-bottom: var(--ai-card-gap);
 }
 
 .chartBars {
@@ -159,12 +162,12 @@
 }
 
 .empty {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 100px;
   color: var(--el-text-color-secondary);
   font-size: 13px;
 }

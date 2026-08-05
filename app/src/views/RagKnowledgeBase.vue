@@ -394,7 +394,7 @@ onMounted(() => {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: var(--ai-card-gap);
   padding: 10px 12px;
   border-radius: 10px;
   background: var(--el-color-warning-light-9);
@@ -404,14 +404,14 @@ onMounted(() => {
 }
 
 .summaryRow {
-  margin-bottom: 16px;
+  margin-bottom: var(--ai-card-gap);
 }
 
 .panelRow {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: var(--ai-card-gap);
+  margin-bottom: var(--ai-card-gap);
   height: 420px;
 }
 

@@ -337,13 +337,13 @@ onMounted(() => {
   width: 132px;
 }
 .summaryRow {
-  margin-bottom: 16px;
+  margin-bottom: var(--ai-card-gap);
 }
 .panelRow {
   display: grid;
   grid-template-columns: 1.1fr 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: var(--ai-card-gap);
+  margin-bottom: var(--ai-card-gap);
   height: 320px;
 }
 .panelRow > * {
@@ -353,7 +353,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: var(--ai-card-gap);
 }
 .tokenCard {
   background: var(--el-bg-color);
@@ -391,8 +391,8 @@ onMounted(() => {
 .tableRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: var(--ai-card-gap);
+  margin-bottom: var(--ai-card-gap);
   height: 440px;
 }
 .tableRow > .section {
@@ -446,8 +446,11 @@ onMounted(() => {
   background: var(--el-bg-color, #fff);
   border-radius: 12px;
   padding: 16px;
-  margin-bottom: 16px;
+  margin-bottom: var(--ai-card-gap);
   border: 1px solid var(--el-border-color-lighter, #e4e7ed);
+}
+.costSection {
+  margin-bottom: var(--ai-card-gap);
 }
 .sectionHeader {
   display: flex;

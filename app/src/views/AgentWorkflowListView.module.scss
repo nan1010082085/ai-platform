@@ -35,7 +35,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-bottom: 16px;
+  padding-bottom: var(--ai-card-gap);
   border-bottom: 1px solid var(--border-color-lighter);
   flex-wrap: wrap;
 }

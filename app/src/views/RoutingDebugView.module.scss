@@ -32,7 +32,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: var(--ai-card-gap);
 
   h3 {
     font-size: 16px;
@@ -44,8 +44,8 @@
 .resultGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: var(--ai-card-gap);
+  margin-bottom: var(--ai-card-gap);
 }
 
 .resultField {
@@ -76,8 +76,8 @@
 }
 
 .matchedSection {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: var(--ai-card-gap);
+  padding-top: var(--ai-card-gap);
   border-top: 1px solid var(--el-border-color-lighter);
 
   h4 {

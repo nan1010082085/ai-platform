@@ -1,7 +1,7 @@
 .tabsRow {
   display: flex;
   gap: 4px;
-  margin-bottom: 16px;
+  margin-bottom: var(--ai-card-gap);
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
@@ -30,7 +30,7 @@
 }
 
 .toolbar {
-  margin-bottom: 16px;
+  margin-bottom: var(--ai-card-gap);
 }
 
 .empty {
@@ -112,7 +112,7 @@
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
   padding: 16px;
-  margin-bottom: 16px;
+  margin-bottom: var(--ai-card-gap);
 }
 
 .formRow {
@@ -227,7 +227,7 @@
 .compareBody {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--ai-card-gap);
 }
 
 .changeGood {

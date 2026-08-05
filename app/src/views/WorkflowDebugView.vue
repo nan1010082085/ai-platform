@@ -181,7 +181,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <PageShell>
+  <PageShell fill>
       <PageHeader
         title="工作流调试"
         :subtitle="workflow ? `「${workflow.name}」自定义输入并查看节点级执行轨迹` : '加载工作流中...'"

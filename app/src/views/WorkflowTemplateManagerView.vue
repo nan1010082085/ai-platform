@@ -313,7 +313,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <PageShell>
+  <PageShell fill>
       <PageHeader
         :title="t('workflowTemplates.title')"
         :subtitle="t('workflowTemplates.subtitle')"

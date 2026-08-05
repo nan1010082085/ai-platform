@@ -96,7 +96,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <PageShell>
+  <PageShell fill>
       <PageHeader
         title="调度管理"
         subtitle="查看已发布工作流的定时触发调度，监控下次执行时间"
@@ -164,6 +164,7 @@ onUnmounted(() => {
 
         <div :class="styles.calendarCol">
           <h3 :class="styles.sectionTitle">日历视图</h3>
+          <div :class="styles.calendarBody">
           <el-calendar v-model="calendarDate">
             <template #date-cell="{ data }">
               <div :class="styles.calendarCell">

@@ -177,12 +177,14 @@ function typeTag(type: AgentAlert['alertType']): 'danger' | 'warning' | 'info' {
 }
 
 .empty {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 24px 12px;
   color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 
 .list {

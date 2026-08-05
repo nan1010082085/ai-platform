@@ -29,7 +29,7 @@
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--ai-card-gap);
 }
 
 .search {
@@ -49,7 +49,7 @@
 
 .summary {
   display: flex;
-  gap: 16px;
+  gap: var(--ai-card-gap);
   margin-bottom: 24px;
 }
 

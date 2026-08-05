@@ -188,7 +188,7 @@ onMounted(loadWorkflows)
 </script>
 
 <template>
-  <PageShell>
+  <PageShell fill>
     <div class="integration-view">
     <PageHeader title="集成测试" subtitle="工作流 Open API 集成 Playground：在线试调、HITL 确认、取消执行、查看契约、复制 curl/JS/Python 示例，供三方快速接入">
       <template #actions>
@@ -360,8 +360,30 @@ onMounted(loadWorkflows)
 </template>
 
 <style scoped>
-.integration-view { display: flex; flex-direction: column; gap: 16px; }
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.integration-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ai-card-gap);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.integration-view > *:not(.grid) {
+  flex-shrink: 0;
+}
+.grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ai-card-gap);
+  align-items: stretch;
+}
+.col-left,
+.col-right {
+  min-height: 0;
+  overflow: auto;
+}
 .col-right :deep(.el-card__body) { padding: 16px; }
 .form-row { margin-bottom: 14px; }
 .form-row label { display: block; font-size: 13px; color: var(--el-text-color-regular); margin-bottom: 6px; font-weight: 500; }
@@ -371,7 +393,7 @@ onMounted(loadWorkflows)
 code { background: var(--el-fill-color-light, #f5f7fa); padding: 1px 6px; border-radius: 3px; font-size: 12px; }
 .action-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .hitl-panel {
-  margin-top: 16px;
+  margin-top: var(--ai-card-gap);
   padding: 12px;
   border: 1px solid var(--el-color-warning-light-5);
   border-radius: 8px;
@@ -382,7 +404,7 @@ code { background: var(--el-fill-color-light, #f5f7fa); padding: 1px 6px; border
 }
 .hitl-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .hitl-hint { margin: 0; font-size: 12px; color: var(--el-text-color-secondary); line-height: 1.5; }
-.result { margin-top: 16px; }
+.result { margin-top: var(--ai-card-gap); }
 .result-alert { margin-bottom: 12px; }
 .code-block { background: #1e1e1e; color: #e0e0e0; padding: 12px; border-radius: 6px; font-size: 12px; line-height: 1.6; overflow-x: auto; max-height: 320px; white-space: pre-wrap; word-break: break-all; }
 .exec-info { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }

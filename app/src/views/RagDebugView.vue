@@ -146,7 +146,7 @@ function highlightSnippet(snippet: string, terms: string[]): Array<{ text: strin
 </script>
 
 <template>
-  <PageShell>
+  <PageShell fill>
       <PageHeader
         title="检索调试"
         subtitle="对同一查询并行跑语义 / Rerank / Hybrid 三路检索，横向对比召回质量"

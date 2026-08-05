@@ -202,13 +202,14 @@ onMounted(load)
 </template>
 
 <style scoped>
-.memory-view { display: flex; flex-direction: column; gap: 16px; }
+.memory-view { display: flex; flex-direction: column; gap: var(--ai-card-gap); }
 .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
 .stat-card { background: var(--el-bg-color, #fff); border: 1px solid var(--el-border-color-light, #ebeef5); border-radius: 8px; padding: 16px; text-align: center; }
 .stat-num { font-size: 24px; font-weight: 600; color: var(--el-color-primary, #409eff); }
 .stat-label { font-size: 12px; color: var(--el-text-color-secondary, #909399); margin-top: 4px; }
 .recall-panel :deep(.el-card__body) { padding: 16px; }
 .recall-row { display: flex; gap: 8px; }
+.recall-row :deep(.el-input) { flex: 1; max-width: 480px; }
 .recall-results { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
 .recall-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .recall-rank { color: var(--el-text-color-secondary); min-width: 20px; }

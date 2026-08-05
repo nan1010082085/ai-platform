@@ -56,6 +56,9 @@
   --ai-spacing-md: 16px;
   --ai-spacing-lg: 24px;
   --ai-spacing-xl: 32px;
+
+  /* 卡片 gutter（分栏 / 列表 / dashboard 外层） */
+  --ai-card-gap: var(--ai-spacing-sm);
 }
 
 /* AI 项目对话框高度约束 */
