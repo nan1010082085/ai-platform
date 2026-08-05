@@ -5,8 +5,9 @@
  */
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessageBox } from 'element-plus'
 import { message } from '@schema-platform/platform-shared/utils/message'
-import { trackAi, AI_TELEMETRY_EVENTS } from '@/utils/telemetry'
+import { trackAi, AI_TELEMETRY_EVENTS, reportAiError } from '@/utils/telemetry'
 import type {
   AgentWorkflowSummary,
   AgentWorkflowTemplateId,
@@ -81,10 +82,6 @@ export function useWorkflowActions() {
     }
   }
 
-  function onBrowseTemplates(activeTab: { value: string }) {
-    activeTab.value = 'templates'
-  }
-
   async function onExport(id: string) {
     try {
       await api.exportWorkflow(id)
@@ -141,9 +138,17 @@ export function useWorkflowActions() {
     router.push({ name: 'agent-workflow-designer', params: { id } })
   }
 
-  async function onDelete(wf: AgentWorkflowSummary) {
+  /**
+   * 删除工作流。模板侧传 `item.id`（string），不可按对象取 `.id`。
+   */
+  async function onDelete(id: string) {
     try {
-      await api.deleteWorkflow(wf.id)
+      await ElMessageBox.confirm('确定删除此工作流？删除后不可恢复。', '删除', { type: 'warning' })
+    } catch {
+      return
+    }
+    try {
+      await api.deleteWorkflow(id)
       message.success('已删除')
       await load()
     } catch (e) {
@@ -151,13 +156,18 @@ export function useWorkflowActions() {
     }
   }
 
-  async function onPublish(wf: AgentWorkflowSummary) {
-    publishingId.value = wf.id
+  /**
+   * 发布工作流。模板侧传 `item.id`（string），不可按对象取 `.id`。
+   */
+  async function onPublish(id: string) {
+    publishingId.value = id
     try {
-      await api.publishWorkflow(wf.id)
-      message.success('已发布')
+      const res = await api.publishWorkflow(id)
+      trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_PUBLISH, { workflowId: id, version: res.version })
+      message.success(`已发布 v${res.version}`)
       await load()
     } catch (e) {
+      void reportAiError(e instanceof Error ? e : String(e), { workflowId: id, phase: 'publish' })
       message.error(e instanceof Error ? e.message : '发布失败')
     } finally {
       publishingId.value = null
@@ -183,7 +193,6 @@ export function useWorkflowActions() {
     onPreviewTemplate,
     onPreviewUse,
     onTryTemplate,
-    onBrowseTemplates,
     onExport,
     onImport,
     confirmCreate,

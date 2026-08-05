@@ -4,20 +4,13 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
-import { message } from '@schema-platform/platform-shared/utils/message'
-import { trackAi, AI_TELEMETRY_EVENTS, reportAiError } from '@/utils/telemetry'
-import type {
-  AgentWorkflowSummary,
-  AgentWorkflowTemplateId,
-  AgentWorkflowTemplateMeta,
-} from '@/types/agentWorkflow'
+import type { AgentWorkflowSummary } from '@/types/agentWorkflow'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import AgentWorkflowTemplatePreviewDialog from '@/components/agent-workflow/AgentWorkflowTemplatePreviewDialog.vue'
 import WorkflowTemplateCard from '@/components/agent-workflow/WorkflowTemplateCard.vue'
 import WorkflowInvokeInfo from '@/components/WorkflowInvokeInfo.vue'
 import * as api from '@/api/agentWorkflowApi'
 import {
-  TEMPLATE_DEFAULT_NAMES,
   TEMPLATE_ICONS,
   TEMPLATE_CATEGORY_LABELS,
   useWorkflowTemplates,
@@ -26,6 +19,7 @@ import { useWorkflowActions } from '@/composables/useWorkflowActions'
 import styles from './AgentWorkflowListView.module.scss'
 import PageShell from '@/components/common/PageShell.vue'
 
+const router = useRouter()
 const searchInput = ref('')
 const bulkMode = ref(false)
 const selectedIds = ref<Set<string>>(new Set())
@@ -51,7 +45,10 @@ async function handleBulkDelete() {
   bulkDeleting.value = true
   let success = 0
   for (const id of selectedIds.value) {
-    try { await deleteWorkflow(id); success++ } catch { /* skip */ }
+    try {
+      await api.deleteWorkflow(id)
+      success++
+    } catch { /* skip */ }
   }
   bulkDeleting.value = false
   ElMessage.success(`已删除 ${success} 个工作流`)
@@ -90,7 +87,6 @@ const {
   onPreviewTemplate,
   onPreviewUse,
   onTryTemplate,
-  onBrowseTemplates,
   onExport,
   onImport,
   confirmCreate,
@@ -260,7 +256,7 @@ onMounted(load)
         <h2 :class="styles.emptyTitle">还没有 Agent 工作流</h2>
         <p :class="styles.emptyDesc">创建您的第一个工作流来开始编排 AI 节点</p>
         <div :class="styles.emptyActions">
-          <el-button type="primary" size="large" @click="onBrowseTemplates">
+          <el-button type="primary" size="large" @click="activeTab = 'templates'">
             <AppIcon name="magic-stick" class="el-icon--left" :size="14" />浏览模板
           </el-button>
           <el-button size="large" @click="onCreate">

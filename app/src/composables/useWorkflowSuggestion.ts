@@ -1,7 +1,7 @@
 /**
  * useWorkflowSuggestion - 根据用户消息匹配已发布工作流
  *
- * Phase S + V-2：workflow 作为可路由技能被 chat 唤起。
+ * 将已发布 workflow 作为可路由技能供 chat 唤起：
  * - 强匹配（score >= 2）：自动切换（autoSwitch），用户无感
  * - 弱匹配（score === 1）：显示建议条供用户点选
  */
