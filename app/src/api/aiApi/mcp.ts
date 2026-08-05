@@ -37,10 +37,17 @@ export interface McpTestResult {
   duration: number
 }
 
+/**
+ * 获取 MCP Server 工具列表。
+ * 服务端返回标准信封 `{ success, data }`，由 request 解包为数组。
+ */
 export async function fetchMcpTools(): Promise<McpServerInfo[]> {
-  return request<McpServerInfo[]>('/ai/mcp/tools', { raw: true })
+  return request<McpServerInfo[]>('/ai/mcp/tools')
 }
 
+/**
+ * 调用指定 MCP 工具（测试用途）。
+ */
 export async function testMcpTool(
   server: string,
   tool: string,
@@ -49,6 +56,5 @@ export async function testMcpTool(
   return request<McpTestResult>('/ai/mcp/test', {
     method: 'POST',
     body: { server, tool, args },
-    raw: true,
   })
 }

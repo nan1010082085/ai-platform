@@ -6,20 +6,19 @@ import { ref, computed, onMounted } from 'vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import {
-  fetchMcpTools,
   testMcpTool,
-  type McpServerInfo,
-  type McpToolInfo,
   type McpTestResult,
 } from '@/api/aiApi/mcp'
 import { useMcpHealth } from '@/composables/useMcpHealth'
 
-// ── useMcpHealth ──
+// ── useMcpHealth（单一 servers 数据源，避免与本地 ref 脱节）──
 const {
-  serverHealths,
+  servers,
   totalTools,
   unhealthyCount,
+  loading,
   checking,
+  loadServers,
   getToolMetric,
   getSuccessRate,
   pingAll,
@@ -27,8 +26,6 @@ const {
 } = useMcpHealth()
 
 // ── 数据 ──
-const servers = ref<McpServerInfo[]>([])
-const loading = ref(false)
 const selectedServer = ref('')
 const selectedTool = ref('')
 const argsText = ref('{}')
@@ -55,17 +52,14 @@ const currentSuccessRate = computed(() => {
 
 // ── 方法 ──
 async function loadTools() {
-  loading.value = true
   try {
-    servers.value = await fetchMcpTools()
+    await loadServers()
     const first = servers.value.find((s) => s.tools.length > 0)
     if (first) {
       selectTool(first.id, first.tools[0].name)
     }
   } catch (err) {
     message.error(err instanceof Error ? err.message : '加载 MCP 工具失败')
-  } finally {
-    loading.value = false
   }
 }
 
