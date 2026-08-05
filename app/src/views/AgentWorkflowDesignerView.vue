@@ -16,6 +16,7 @@ import AgentWorkflowPropertyPanel from '@/components/agent-workflow/AgentWorkflo
 import * as api from '@/api/agentWorkflowApi'
 import { useAiStore } from '@/stores/ai'
 import { useWorkflowSelfTest } from '@/composables/useWorkflowSelfTest'
+import { validateObjectId } from '@/utils/objectId'
 import styles from './AgentWorkflowDesignerView.module.scss'
 
 const route = useRoute()
@@ -49,13 +50,14 @@ const workflowId = () => route.params.id as string
 
 async function load() {
   const id = workflowId()
-  if (!id || id === 'undefined') {
-    message.error('无效的工作流 ID')
+  const validation = validateObjectId(id, '工作流 ID')
+  if (!validation.valid) {
+    message.error(validation.error)
     router.replace({ name: 'agent-workflows' })
     return
   }
   try {
-    const data = await api.getWorkflow(id)
+    const data = await api.getWorkflow(validation.id)
     store.workflowId = data.id
     store.workflowName = data.name
     store.workflowDescription = data.description ?? ''
@@ -85,7 +87,13 @@ async function onSave(): Promise<boolean> {
       message.error(errors[0].message)
       return false
     }
-    await api.updateWorkflow(store.workflowId ?? workflowId(), {
+    const id = store.workflowId ?? workflowId()
+    const validation = validateObjectId(id, '工作流 ID')
+    if (!validation.valid) {
+      message.error(validation.error)
+      return false
+    }
+    await api.updateWorkflow(validation.id, {
       name: store.workflowName,
       description: store.workflowDescription,
       slug: store.workflowSlug.trim() || undefined,
@@ -115,15 +123,21 @@ async function onPublish() {
     const saved = await onSave()
     if (!saved) return
     await ElMessageBox.confirm('发布后将生成新版本，用于生产执行。', '发布工作流')
+    const id = workflowId()
+    const validation = validateObjectId(id, '工作流 ID')
+    if (!validation.valid) {
+      message.error(validation.error)
+      return
+    }
     // 使用 validateAndPublish：先预发布验证，通过后自动发布
-    const ok = await validateAndPublish(workflowId())
+    const ok = await validateAndPublish(validation.id)
     if (ok) {
-      const res = await api.getWorkflow(workflowId())
+      const res = await api.getWorkflow(validation.id)
       publishedVersion.value = res.publishedVersion
       if (res.slug) store.workflowSlug = res.slug
       if (res.invokeKeyMasked) store.invokeKeyMasked = res.invokeKeyMasked
       if (res.invokePath) store.invokePath = res.invokePath
-      aiStore.updateAgentWorkflowId(workflowId())
+      aiStore.updateAgentWorkflowId(validation.id)
       ElMessage.success(`已发布 v${res.publishedVersion}，已同步到对话中的 Agent 编排`)
       await loadVersions()
     }
@@ -168,10 +182,14 @@ async function onDryRun() {
 
 async function executeDryRun() {
   const id = workflowId()
-  if (!id) return
+  const validation = validateObjectId(id, '工作流 ID')
+  if (!validation.valid) {
+    message.error(validation.error)
+    return
+  }
   const saved = await onSave()
   if (!saved) return
-  const result = await dryRun(id, dryRunMessage.value || '你好')
+  const result = await dryRun(validation.id, dryRunMessage.value || '你好')
   dryRunResult.value = result.message
 }
 

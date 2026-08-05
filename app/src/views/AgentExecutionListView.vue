@@ -8,6 +8,7 @@ import type { AgentWorkflowExecution } from '@/types/agentWorkflow'
 import { getExecutionTriggerLabel } from '@/constants/workflowInvocation'
 import { watchRunningWorkflowExecutions } from '@/composables/useWorkflowExecutionStream'
 import * as api from '@/api/agentWorkflowApi'
+import { validateObjectId } from '@/utils/objectId'
 import styles from './AgentExecutionListView.module.scss'
 import PageShell from '@/components/common/PageShell.vue'
 
@@ -67,8 +68,13 @@ function syncWorkflowWatch() {
 async function load(opts?: { silent?: boolean }) {
   if (!opts?.silent) loading.value = true
   try {
+    const validation = validateObjectId(workflowId.value, '工作流 ID')
+    if (!validation.valid) {
+      ElMessage.error(validation.error)
+      return
+    }
     const res = await api.listExecutions({
-      workflowId: workflowId.value,
+      workflowId: validation.id,
       page: page.value,
       pageSize: pageSize.value,
     })

@@ -29,6 +29,7 @@ import type {
   AgentWorkflowNodeData,
 } from '@/types/agentWorkflow'
 import { resolveErrorText } from '@/constants/errorCodes'
+import { validateObjectId } from '@/utils/objectId'
 import { trackAi, AI_TELEMETRY_EVENTS } from '@/utils/telemetry'
 import styles from './WorkflowDebugView.module.scss'
 
@@ -61,7 +62,12 @@ const selectedNodeData = computed<AgentWorkflowNodeData | null>(() => {
 async function loadWorkflow() {
   loadingWorkflow.value = true
   try {
-    workflow.value = await api.getWorkflow(workflowId.value)
+    const validation = validateObjectId(workflowId.value, '工作流 ID')
+    if (!validation.valid) {
+      ElMessage.error(validation.error)
+      return
+    }
+    workflow.value = await api.getWorkflow(validation.id)
   } catch (err) {
     ElMessage.error(resolveErrorText(err, '加载工作流失败'))
   } finally {
@@ -87,8 +93,13 @@ async function runTest() {
       }
       input.file = await fileToWorkflowPayload(file)
     }
-    const exec = await api.executeWorkflow(workflowId.value, input, { trigger: 'manual' })
-    trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_DEBUG_RUN, { workflowId: workflowId.value })
+    const validation = validateObjectId(workflowId.value, '工作流 ID')
+    if (!validation.valid) {
+      ElMessage.error(validation.error)
+      return
+    }
+    const exec = await api.executeWorkflow(validation.id, input, { trigger: 'manual' })
+    trackAi(AI_TELEMETRY_EVENTS.WORKFLOW_DEBUG_RUN, { workflowId: validation.id })
     execution.value = exec
     pendingFile.value = null
     history.value.unshift({
