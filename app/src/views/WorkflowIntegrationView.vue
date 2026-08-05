@@ -5,15 +5,20 @@
  * 列出已发布 workflow，三方可在此：
  * ① 查看 Open API 契约（endpoint / 鉴权 / 请求体 / 响应）
  * ② 在线试调（POST /api/ai/workflows/invoke/:slug，X-Workflow-Key 鉴权）+ 轮询执行结果
- * ③ 一键复制 curl / JavaScript / Python 调用示例
+ * ③ waiting（HITL）时接入 Chat 同款 message / confirmQuestions 模板，Open API resume 后继续轮询
+ * ④ 一键复制 curl / JavaScript / Python 调用示例
+ * ⑤ 取消执行（Open API cancel）
  *
+ * 全链路走 Open API（X-Workflow-Key），不依赖 JWT。
  * 视图只做渲染：调用逻辑在 useWorkflowInvoke，API 在 workflowInvokeApi，示例生成在 workflowInvokeExamples。
  * 与 WorkflowDebugView（图结构调试）职责不同。
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
+import HitlConfirmQuestions from '@/components/agent-workflow/HitlConfirmQuestions.vue'
 import { BASE_URL } from '@/api/aiApi/base'
 import { listWorkflows, rotateWorkflowInvokeKey } from '@/api/agentWorkflowApi'
 import type { AgentWorkflowSummary } from '@/types/agentWorkflow'
@@ -31,7 +36,23 @@ const showKeyInExamples = ref(false)
 const activeTab = ref<'curl' | 'javascript' | 'python'>('curl')
 const activeResultTab = ref<'response' | 'output'>('response')
 
-const { invoking, response, execution, pollError, invoke: runInvoke } = useWorkflowInvoke()
+const hitlAnswers = ref<Record<string, string>>({})
+const hitlComment = ref('')
+const questionsRef = ref<InstanceType<typeof HitlConfirmQuestions> | null>(null)
+
+const {
+  invoking,
+  resuming,
+  cancelling,
+  response,
+  execution,
+  pollError,
+  pendingHitl,
+  invoke: runInvoke,
+  resumeHitl,
+  resumeHitlByMessage,
+  cancelExecution,
+} = useWorkflowInvoke()
 
 const selected = computed(() => workflows.value.find((w) => w.id === selectedId.value) ?? null)
 const slugOrId = computed(() => selected.value?.slug || selected.value?.id || '')
@@ -46,6 +67,43 @@ const codeExamples = computed(() => buildInvokeCodeExamples({
 }))
 
 const tabLabel = computed(() => (activeTab.value === 'curl' ? 'cURL' : activeTab.value))
+
+const statusTagType = computed(() => {
+  const status = execution.value?.status
+  if (status === 'success') return 'success'
+  if (status === 'error' || status === 'cancelled') return 'danger'
+  if (status === 'waiting') return 'warning'
+  return 'primary'
+})
+
+const isRunning = computed(() => {
+  const status = execution.value?.status
+  return status && !['success', 'error', 'cancelled', 'waiting'].includes(status)
+})
+
+const canSubmitHitl = computed(() => {
+  if (!pendingHitl.value) return false
+  if (pendingHitl.value.questions.length === 0) return true
+  return pendingHitl.value.questions
+    .filter((q) => q.required !== false)
+    .every((q) => hitlAnswers.value[q.id]?.trim())
+})
+
+watch(pendingHitl, (hitl) => {
+  if (!hitl) {
+    hitlAnswers.value = {}
+    hitlComment.value = ''
+    return
+  }
+  const next: Record<string, string> = {}
+  for (const q of hitl.questions) {
+    next[q.id] = hitlAnswers.value[q.id] ?? ''
+  }
+  hitlAnswers.value = next
+  if (hitl.message) {
+    activeResultTab.value = 'output'
+  }
+})
 
 async function loadWorkflows() {
   loadingWorkflows.value = true
@@ -81,8 +139,40 @@ async function fetchKey() {
   }
 }
 
-function onInvoke() {
+async function onInvoke() {
+  if (pendingHitl.value) {
+    const byKeyword = await resumeHitlByMessage(message.value)
+    if (byKeyword !== null) return
+    ElMessage.warning('当前等待人工确认：请在下方选择确认选项，或在输入框填写「确认」/「拒绝」')
+    return
+  }
   return runInvoke(slugOrId.value, invokeKey.value, message.value)
+}
+
+async function onApproveHitl() {
+  if (!pendingHitl.value) return
+  if (pendingHitl.value.questions.length > 0 && !(questionsRef.value?.canConfirm ?? false)) {
+    ElMessage.warning('请先回答所有必填问题')
+    return
+  }
+  await resumeHitl({
+    approved: true,
+    comment: hitlComment.value,
+    answers: hitlAnswers.value,
+  })
+}
+
+async function onRejectHitl() {
+  if (!pendingHitl.value) return
+  await resumeHitl({
+    approved: false,
+    comment: hitlComment.value || '人工拒绝',
+    answers: hitlAnswers.value,
+  })
+}
+
+async function onCancel() {
+  await cancelExecution('用户手动取消')
 }
 
 async function copy(text: string, label: string) {
@@ -98,8 +188,9 @@ onMounted(loadWorkflows)
 </script>
 
 <template>
-  <div class="integration-view">
-    <PageHeader title="集成测试" description="工作流 Open API 集成 Playground：在线试调、查看契约、复制 curl/JS/Python 示例，供三方快速接入">
+  <PageShell>
+    <div class="integration-view">
+    <PageHeader title="集成测试" subtitle="工作流 Open API 集成 Playground：在线试调、HITL 确认、取消执行、查看契约、复制 curl/JS/Python 示例，供三方快速接入">
       <template #actions>
         <el-button :loading="rotating" :disabled="!selectedId" @click="fetchKey">
           <AppIcon name="key" :size="14" /> 获取密钥
@@ -146,9 +237,62 @@ onMounted(loadWorkflows)
           <el-input v-model="message" type="textarea" :rows="3" />
         </div>
 
-        <el-button type="primary" :loading="invoking" :disabled="!selectedId" @click="onInvoke">
-          <AppIcon name="video-play" :size="14" /> 调用 Open API
-        </el-button>
+        <div class="action-row">
+          <el-button type="primary" :loading="invoking || resuming" :disabled="!selectedId" @click="onInvoke">
+            <AppIcon name="video-play" :size="14" />
+            {{ pendingHitl ? '用「确认/拒绝」继续' : '调用 Open API' }}
+          </el-button>
+          <el-button
+            v-if="isRunning"
+            type="warning"
+            :loading="cancelling"
+            @click="onCancel"
+          >
+            <AppIcon name="close" :size="14" /> 取消执行
+          </el-button>
+        </div>
+
+        <!-- HITL：复用 Chat message / confirmQuestions 模板 -->
+        <div v-if="pendingHitl" class="hitl-panel">
+          <el-alert
+            type="warning"
+            :closable="false"
+            show-icon
+            :title="`等待人工确认 · ${pendingHitl.nodeName}`"
+            :description="pendingHitl.message"
+          />
+
+          <HitlConfirmQuestions
+            v-if="pendingHitl.questions.length > 0"
+            ref="questionsRef"
+            v-model:answers="hitlAnswers"
+            :questions="pendingHitl.questions"
+          />
+
+          <el-input
+            v-model="hitlComment"
+            type="textarea"
+            :rows="2"
+            placeholder="审批备注（可选）；也可在上方输入框填「确认」/「拒绝」快捷继续"
+          />
+
+          <div class="hitl-actions">
+            <el-button
+              type="primary"
+              :loading="resuming"
+              :disabled="!canSubmitHitl"
+              @click="onApproveHitl"
+            >
+              <AppIcon name="check" :size="14" /> 确认继续
+            </el-button>
+            <el-button type="danger" :loading="resuming" @click="onRejectHitl">
+              <AppIcon name="close" :size="14" /> 拒绝
+            </el-button>
+          </div>
+          <p class="hitl-hint">
+            HITL 恢复走 Open API（X-Workflow-Key），三方可通过 <code>POST /invoke/executions/:id/resume</code> 恢复。
+          </p>
+        </div>
 
         <!-- 执行结果 -->
         <div v-if="response || execution || pollError" class="result">
@@ -159,7 +303,7 @@ onMounted(loadWorkflows)
             </el-tab-pane>
             <el-tab-pane :label="`执行结果${execution ? ' · ' + execution.status : ''}`" name="output">
               <div v-if="execution" class="exec-info">
-                <el-tag size="small" :type="execution.status === 'success' ? 'success' : execution.status === 'error' ? 'danger' : 'primary'">
+                <el-tag size="small" :type="statusTagType">
                   {{ execution.status }}
                 </el-tag>
                 <span class="meta-label">耗时:</span>
@@ -205,11 +349,14 @@ onMounted(loadWorkflows)
           <div class="contract-row"><span class="c-label">请求体</span><code>{ "input": { "message": "..." }, "trigger": "api" }</code></div>
           <div class="contract-row"><span class="c-label">响应</span><code>202 · { success, data: { executionId, status, execution } }</code></div>
           <div class="contract-row"><span class="c-label">轮询</span><code>GET /api/ai/workflows/invoke/executions/:executionId</code></div>
+          <div class="contract-row"><span class="c-label">HITL</span><code>POST /api/ai/workflows/invoke/executions/:id/resume</code>（X-Workflow-Key 鉴权）</div>
+          <div class="contract-row"><span class="c-label">取消</span><code>POST /api/ai/workflows/invoke/executions/:id/cancel</code>（X-Workflow-Key 鉴权）</div>
           <div class="contract-row"><span class="c-label">回调</span>支持 <code>callbackUrl</code> + <code>callbackSecret</code>（执行完成后回调）</div>
         </div>
       </el-card>
     </div>
-  </div>
+    </div>
+  </PageShell>
 </template>
 
 <style scoped>
@@ -222,6 +369,19 @@ onMounted(loadWorkflows)
 .meta-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 12px; }
 .meta-label { color: var(--el-text-color-secondary); }
 code { background: var(--el-fill-color-light, #f5f7fa); padding: 1px 6px; border-radius: 3px; font-size: 12px; }
+.action-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.hitl-panel {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid var(--el-color-warning-light-5);
+  border-radius: 8px;
+  background: var(--el-color-warning-light-9);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.hitl-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.hitl-hint { margin: 0; font-size: 12px; color: var(--el-text-color-secondary); line-height: 1.5; }
 .result { margin-top: 16px; }
 .result-alert { margin-bottom: 12px; }
 .code-block { background: #1e1e1e; color: #e0e0e0; padding: 12px; border-radius: 6px; font-size: 12px; line-height: 1.6; overflow-x: auto; max-height: 320px; white-space: pre-wrap; word-break: break-all; }

@@ -4,6 +4,7 @@
  */
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import CostTrendCard from '@/components/monitor/CostTrendCard.vue'
 import MonitorSummaryCard from '@/components/monitor/MonitorSummary.vue'
 import AgentDistribution from '@/components/monitor/AgentDistribution.vue'
@@ -69,7 +70,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :class="$style.dashboard" v-loading="loading">
+  <PageShell>
+    <div :class="$style.dashboard" v-loading="loading">
     <PageHeader
       title="Agent 性能监控"
       subtitle="观察成功率、时延与 Token，快速定位慢调用与失败链路"
@@ -315,11 +317,11 @@ onMounted(() => {
       <RecentCallsTable :metrics="filteredRecent" />
     </div>
   </div>
+</PageShell>
 </template>
 
 <style module>
 .dashboard {
-  padding: 0 24px 24px;
   min-height: 100%;
   background: var(--el-bg-color-page, #f5f7fa);
 }

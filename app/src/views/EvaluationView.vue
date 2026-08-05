@@ -13,6 +13,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import {
   listEvalDatasets,
   createEvalDataset,
@@ -333,8 +334,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div :class="styles.page">
-    <div :class="styles.scroll">
+  <PageShell>
       <PageHeader
         title="评测中心"
         subtitle="用测试集离线评测 workflow 质量，横向对比版本差异"
@@ -505,7 +505,6 @@ onUnmounted(() => {
           <p>选择两次完成的评测运行进行对比</p>
         </div>
       </div>
-    </div>
 
     <!-- 数据集编辑抽屉 -->
     <el-drawer v-model="drawerVisible" :title="editingDataset ? '编辑测试集' : '新建测试集'" size="70%">
@@ -564,5 +563,5 @@ onUnmounted(() => {
         </div>
       </div>
     </el-drawer>
-  </div>
+</PageShell>
 </template>

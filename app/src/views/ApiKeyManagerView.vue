@@ -22,6 +22,7 @@ import {
   type ApiKeyStatus,
 } from '@/api/apiKeyApi'
 import styles from './ApiKeyManagerView.module.scss'
+import PageShell from '@/components/common/PageShell.vue'
 
 const { t, locale } = useI18n()
 
@@ -161,8 +162,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :class="styles.page">
-    <div :class="styles.scroll">
+  <PageShell>
       <header :class="styles.header">
         <div :class="styles.titleRow">
           <div>
@@ -247,7 +247,6 @@ onMounted(() => {
           />
         </div>
       </div>
-    </div>
 
     <!-- 创建密钥对话框 -->
     <AppDialog
@@ -294,5 +293,5 @@ onMounted(() => {
         <el-button type="primary" @click="showKeyDialog = false">{{ t('apiKey.savedClose') }}</el-button>
       </template>
     </AppDialog>
-  </div>
+</PageShell>
 </template>

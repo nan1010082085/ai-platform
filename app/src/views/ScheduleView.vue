@@ -12,6 +12,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import { request } from '@/api/aiApi/base'
 import { resolveErrorText } from '@/constants/errorCodes'
 import styles from './ScheduleView.module.scss'
@@ -95,8 +96,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div :class="styles.page">
-    <div :class="styles.scroll">
+  <PageShell>
       <PageHeader
         title="调度管理"
         subtitle="查看已发布工作流的定时触发调度，监控下次执行时间"
@@ -181,6 +181,5 @@ onUnmounted(() => {
           </el-calendar>
         </div>
       </div>
-    </div>
-  </div>
+</PageShell>
 </template>

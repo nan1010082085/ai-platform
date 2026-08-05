@@ -8,6 +8,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import CardTable from '@/components/common/CardTable.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import { request } from '@/api/shared/request'
 import { trackAi, AI_TELEMETRY_EVENTS } from '@/utils/telemetry'
 import styles from './PluginMarketView.module.scss'
@@ -182,8 +183,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :class="styles.page">
-    <div :class="styles.scroll">
+  <PageShell>
       <header :class="styles.header">
         <div :class="styles.titleRow">
           <div>
@@ -304,6 +304,5 @@ onMounted(() => {
           <p>暂无插件</p>
         </div>
       </div>
-    </div>
-  </div>
+</PageShell>
 </template>

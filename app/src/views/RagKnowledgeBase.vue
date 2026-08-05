@@ -11,6 +11,7 @@ import { message, confirmDanger } from '@schema-platform/platform-shared/utils/m
 import { useDataLoading } from '@schema-platform/platform-shared/utils/useDataLoading'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import {
   getRagStatus,
   reindexAllRag,
@@ -190,7 +191,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :class="$style.dashboard" v-loading="loading">
+  <PageShell>
+    <div :class="$style.dashboard" v-loading="loading">
     <PageHeader
       title="RAG 知识库"
       subtitle="管理 Schema / 流程向量索引，验证语义召回，保障对话上下文质量"
@@ -353,11 +355,11 @@ onMounted(() => {
       @uploaded="loadStatus"
     />
   </div>
+</PageShell>
 </template>
 
 <style module>
 .dashboard {
-  padding: 0 24px 24px;
   min-height: 100%;
   background: var(--el-bg-color-page, #f5f7fa);
 }

@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import type { AgentWorkflowExecution } from '@/types/agentWorkflow'
-import { extractWorkflowChatResponse, extractWorkflowStreamingText, isWorkflowHitlApprovalMessage } from '@/utils/workflowChatResponse'
+import {
+  extractWorkflowChatResponse,
+  extractWorkflowStreamingText,
+  extractWorkflowWaitingHitl,
+  isWorkflowHitlApprovalMessage,
+} from '@/utils/workflowChatResponse'
 
 function makeExecution(partial: Partial<AgentWorkflowExecution>): AgentWorkflowExecution {
   return {
@@ -45,6 +50,40 @@ describe('workflowChatResponse', () => {
     expect(isWorkflowHitlApprovalMessage('确认')).toBe(true)
     expect(isWorkflowHitlApprovalMessage('拒绝')).toBe(false)
     expect(isWorkflowHitlApprovalMessage('请继续处理')).toBe(null)
+  })
+
+  it('extracts waiting hitl message and confirmQuestions template', () => {
+    const hitl = extractWorkflowWaitingHitl(makeExecution({
+      status: 'waiting',
+      nodeRecords: [{
+        nodeId: 'hitl-1',
+        nodeType: 'hitl',
+        nodeName: '人工确认需求',
+        status: 'waiting',
+        output: {
+          message: '请确认需求分析结果，确认后将按需求逐步构建',
+          confirmQuestions: [{
+            id: 'q1',
+            question: '是否确认需求？',
+            options: ['确认', '需要修改'],
+            required: true,
+          }],
+        },
+      }],
+    }))
+    expect(hitl).not.toBeNull()
+    expect(hitl?.nodeName).toBe('人工确认需求')
+    expect(hitl?.message).toContain('请确认需求分析结果')
+    expect(hitl?.questions).toEqual([{
+      id: 'q1',
+      question: '是否确认需求？',
+      options: ['确认', '需要修改'],
+      required: true,
+    }])
+  })
+
+  it('returns null when execution is not waiting', () => {
+    expect(extractWorkflowWaitingHitl(makeExecution({ status: 'success' }))).toBeNull()
   })
 
   it('reads partial streaming output from execution', () => {

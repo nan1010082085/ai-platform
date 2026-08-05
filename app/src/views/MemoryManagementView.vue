@@ -11,6 +11,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import { useAuthStore } from '@schema-platform/platform-shared/utils/stores/authStore'
 import { listMemory, deleteMemory, recallMemory, type MemoryItem, type MemoryNamespace } from '@/api/aiApi'
 
@@ -123,8 +124,9 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="memory-view">
-    <PageHeader title="长程记忆" description="用户的跨会话长程记忆：由 memory-* 节点与 chat 自动沉淀，按 namespace 分类，可被 memory-recall 召回">
+  <PageShell>
+    <div class="memory-view">
+    <PageHeader title="长程记忆" subtitle="用户的跨会话长程记忆：由 memory-* 节点与 chat 自动沉淀，按 namespace 分类，可被 memory-recall 召回">
       <template #actions>
         <el-button :loading="loading" @click="load">
           <AppIcon name="refresh" :size="14" /> 刷新
@@ -195,7 +197,8 @@ onMounted(load)
         </el-table-column>
       </el-table>
     </el-card>
-  </div>
+    </div>
+  </PageShell>
 </template>
 
 <style scoped>

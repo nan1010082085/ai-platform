@@ -15,6 +15,7 @@ import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas
 import AgentWorkflowPropertyPanel from '@/components/agent-workflow/AgentWorkflowPropertyPanel.vue'
 import * as api from '@/api/agentWorkflowApi'
 import { useAiStore } from '@/stores/ai'
+import { useWorkflowSelfTest } from '@/composables/useWorkflowSelfTest'
 import styles from './AgentWorkflowDesignerView.module.scss'
 
 const route = useRoute()
@@ -29,6 +30,20 @@ const publishedVersion = ref<string | null>(null)
 const hasRunningExecution = ref(false)
 const versions = ref<AgentWorkflowVersionEntry[]>([])
 const versionLoading = ref(false)
+
+// ── 自测 ──
+const {
+  testing: selfTesting,
+  currentResult: selfTestResult,
+  validateGraph,
+  prePublishCheck,
+  dryRun,
+  validateAndPublish,
+} = useWorkflowSelfTest()
+
+const showSelfTestDialog = ref(false)
+const dryRunMessage = ref('')
+const dryRunResult = ref<string | null>(null)
 
 const workflowId = () => route.params.id as string
 
@@ -100,19 +115,18 @@ async function onPublish() {
     const saved = await onSave()
     if (!saved) return
     await ElMessageBox.confirm('发布后将生成新版本，用于生产执行。', '发布工作流')
-    const res = await api.publishWorkflow(workflowId())
-    publishedVersion.value = res.version
-    if (res.slug) store.workflowSlug = res.slug
-    if (res.invokeKey) {
-      store.invokeKeyPlain = res.invokeKey
-      store.invokeKeyMasked = `${res.invokeKey.slice(0, 8)}****${res.invokeKey.slice(-4)}`
+    // 使用 validateAndPublish：先预发布验证，通过后自动发布
+    const ok = await validateAndPublish(workflowId())
+    if (ok) {
+      const res = await api.getWorkflow(workflowId())
+      publishedVersion.value = res.publishedVersion
+      if (res.slug) store.workflowSlug = res.slug
+      if (res.invokeKeyMasked) store.invokeKeyMasked = res.invokeKeyMasked
+      if (res.invokePath) store.invokePath = res.invokePath
+      aiStore.updateAgentWorkflowId(workflowId())
+      ElMessage.success(`已发布 v${res.publishedVersion}，已同步到对话中的 Agent 编排`)
+      await loadVersions()
     }
-    if (res.slug) {
-      store.invokePath = `/api/ai/workflows/invoke/${res.slug}`
-    }
-    aiStore.updateAgentWorkflowId(workflowId())
-    ElMessage.success(`已发布 v${res.version}，已同步到对话中的 Agent 编排`)
-    await loadVersions()
   } catch (e) {
     if (e !== 'cancel' && e !== 'close') {
       message.error(e instanceof Error ? e.message : '发布失败')
@@ -136,15 +150,29 @@ async function onDebug() {
 }
 
 function onValidate() {
-  const issues = validateAgentWorkflowGraph(store.getGraph())
-  if (!issues.length) {
+  const result = validateGraph(store.getGraph())
+  if (result.passed) {
     ElMessage.success('校验通过')
     return
   }
-  const errors = issues.filter((i) => i.level === 'error')
-  const text = issues.map((i) => i.message).join('；')
-  if (errors.length) ElMessage.error(text)
-  else ElMessage.warning(text)
+  const errors = result.issues.filter((i) => i.severity === 'error')
+  const text = result.issues.map((i) => `${i.severity === 'error' ? '❌' : '⚠️'} ${i.message}`).join('\n')
+  if (errors.length) ElMessage.error({ message: text, duration: 5000 })
+  else ElMessage.warning({ message: text, duration: 5000 })
+}
+
+async function onDryRun() {
+  showSelfTestDialog.value = true
+  dryRunResult.value = null
+}
+
+async function executeDryRun() {
+  const id = workflowId()
+  if (!id) return
+  const saved = await onSave()
+  if (!saved) return
+  const result = await dryRun(id, dryRunMessage.value || '你好')
+  dryRunResult.value = result.message
 }
 
 function onExecutions() {
@@ -282,5 +310,30 @@ onUnmounted(() => {
         <AgentWorkflowPropertyPanel />
       </div>
     </div>
+
+    <!-- 试运行对话框 -->
+    <el-dialog v-model="showSelfTestDialog" title="试运行 (Dry Run)" width="500px">
+      <el-input
+        v-model="dryRunMessage"
+        type="textarea"
+        :rows="3"
+        placeholder="输入测试消息（默认：你好）"
+      />
+      <div v-if="dryRunResult" style="margin-top: 12px;">
+        <el-alert
+          :type="dryRunResult.includes('成功') ? 'success' : 'warning'"
+          :title="dryRunResult"
+          :closable="false"
+          show-icon
+        />
+      </div>
+      <template #footer>
+        <el-button @click="showSelfTestDialog = false">关闭</el-button>
+        <el-button type="primary" :loading="selfTesting" @click="executeDryRun">
+          <AppIcon name="video-play" :size="14" />
+          执行试运行
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>

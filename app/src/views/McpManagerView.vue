@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * MCP 管理页面 - 浏览和测试 MCP 工具
+ * MCP 管理页面 - 浏览、测试、健康监控 MCP 工具
  */
 import { ref, computed, onMounted } from 'vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
@@ -12,6 +12,19 @@ import {
   type McpToolInfo,
   type McpTestResult,
 } from '@/api/aiApi/mcp'
+import { useMcpHealth } from '@/composables/useMcpHealth'
+
+// ── useMcpHealth ──
+const {
+  serverHealths,
+  totalTools,
+  unhealthyCount,
+  checking,
+  getToolMetric,
+  getSuccessRate,
+  pingAll,
+  checkTool,
+} = useMcpHealth()
 
 // ── 数据 ──
 const servers = ref<McpServerInfo[]>([])
@@ -22,7 +35,6 @@ const argsText = ref('{}')
 const testing = ref(false)
 const testResult = ref<McpTestResult | null>(null)
 const testError = ref<string | null>(null)
-const history = ref<Array<{ tool: string; server: string; success: boolean; duration: number; time: string }>>([])
 
 // ── 计算属性 ──
 const currentServer = computed(() => servers.value.find((s) => s.id === selectedServer.value))
@@ -31,16 +43,21 @@ const currentTool = computed(() => {
   return currentServer.value.tools.find((t) => t.name === selectedTool.value) ?? null
 })
 
-const totalTools = computed(() =>
-  servers.value.reduce((sum, s) => sum + s.tools.length, 0),
-)
+const currentMetric = computed(() => {
+  if (!selectedServer.value || !selectedTool.value) return null
+  return getToolMetric(selectedServer.value, selectedTool.value)
+})
+
+const currentSuccessRate = computed(() => {
+  if (!selectedServer.value || !selectedTool.value) return 0
+  return getSuccessRate(selectedServer.value, selectedTool.value)
+})
 
 // ── 方法 ──
 async function loadTools() {
   loading.value = true
   try {
     servers.value = await fetchMcpTools()
-    // 自动选第一个工具
     const first = servers.value.find((s) => s.tools.length > 0)
     if (first) {
       selectTool(first.id, first.tools[0].name)
@@ -58,7 +75,6 @@ function selectTool(serverId: string, toolName: string) {
   testResult.value = null
   testError.value = null
 
-  // 从 inputSchema 生成默认参数
   const server = servers.value.find((s) => s.id === serverId)
   const tool = server?.tools.find((t) => t.name === toolName)
   if (tool?.inputSchema?.properties) {
@@ -76,7 +92,6 @@ function selectTool(serverId: string, toolName: string) {
         defaults[key] = []
       }
     }
-    // 只填 required 字段 + 有默认值的字段，避免过多空值
     const required = tool.inputSchema.required ?? []
     const filtered: Record<string, unknown> = {}
     for (const key of Object.keys(defaults)) {
@@ -116,27 +131,18 @@ async function handleTest() {
   try {
     const result = await testMcpTool(selectedServer.value, selectedTool.value, args)
     testResult.value = result
-    history.value.unshift({
-      tool: result.tool,
-      server: result.server,
-      success: !result.isError,
-      duration: result.duration,
-      time: new Date().toLocaleTimeString(),
-    })
-    if (history.value.length > 20) history.value.pop()
+    // 记录到 useMcpHealth
+    await checkTool(selectedServer.value, selectedTool.value, args)
   } catch (err) {
     testError.value = err instanceof Error ? err.message : String(err)
-    history.value.unshift({
-      tool: selectedTool.value,
-      server: selectedServer.value,
-      success: false,
-      duration: 0,
-      time: new Date().toLocaleTimeString(),
-    })
-    if (history.value.length > 20) history.value.pop()
   } finally {
     testing.value = false
   }
+}
+
+async function handlePingAll() {
+  await pingAll()
+  message.success('批量健康检查完成')
 }
 
 function formatJson(data: unknown): string {
@@ -145,6 +151,12 @@ function formatJson(data: unknown): string {
   } catch {
     return String(data)
   }
+}
+
+function rateTagType(rate: number): string {
+  if (rate >= 80) return 'success'
+  if (rate >= 50) return 'warning'
+  return 'danger'
 }
 
 onMounted(() => {
@@ -162,17 +174,24 @@ onMounted(() => {
           MCP 管理
         </h2>
         <p :class="$style.subtitle">
-          浏览和测试 MCP 工具 · {{ servers.length }} 个 Server · {{ totalTools }} 个工具
+          {{ servers.length }} 个 Server · {{ totalTools }} 个工具
+          <span v-if="unhealthyCount > 0" :class="$style.unhealthy">· {{ unhealthyCount }} 个异常</span>
         </p>
       </div>
-      <el-button :loading="loading" @click="loadTools">
-        <AppIcon name="refresh-right" :size="14" />
-        刷新
-      </el-button>
+      <div :class="$style.headerActions">
+        <el-button :loading="checking" @click="handlePingAll">
+          <AppIcon name="refresh" :size="14" />
+          批量健康检查
+        </el-button>
+        <el-button :loading="loading" @click="loadTools">
+          <AppIcon name="refresh-right" :size="14" />
+          刷新
+        </el-button>
+      </div>
     </div>
 
     <div :class="$style.body">
-      <!-- 左侧：Server + 工具列表 -->
+      <!-- 左侧：Server + 工具列表（含健康指标） -->
       <div :class="$style.sidebar">
         <div v-loading="loading" :class="$style.serverList">
           <div
@@ -188,6 +207,8 @@ onMounted(() => {
               <span :class="$style.serverName">{{ server.id }}</span>
               <el-tag size="small" type="info">{{ server.tools.length }}</el-tag>
               <el-tag v-if="server.transport" size="small" type="info" effect="plain">{{ server.transport }}</el-tag>
+              <el-tag v-if="server.error" size="small" type="danger">异常</el-tag>
+              <el-tag v-else size="small" type="success">在线</el-tag>
             </div>
             <div v-if="server.error" :class="$style.serverError">
               <AppIcon name="warning-filled" :size="12" />
@@ -204,6 +225,17 @@ onMounted(() => {
             >
               <AppIcon name="arrow-right" :size="12" />
               <span :class="$style.toolName">{{ tool.name }}</span>
+              <span
+                v-if="getToolMetric(server.id, tool.name)"
+                :class="$style.toolMetric"
+              >
+                <el-tag :type="rateTagType(getSuccessRate(server.id, tool.name))" size="small" effect="plain">
+                  {{ getSuccessRate(server.id, tool.name) }}%
+                </el-tag>
+                <span :class="$style.toolDuration">
+                  {{ getToolMetric(server.id, tool.name)?.avgDurationMs ?? 0 }}ms
+                </span>
+              </span>
             </div>
           </div>
         </div>
@@ -212,13 +244,31 @@ onMounted(() => {
       <!-- 右侧：测试面板 -->
       <div :class="$style.panel">
         <template v-if="currentTool">
-          <!-- 工具信息 -->
+          <!-- 工具信息 + 健康指标 -->
           <div :class="$style.toolHeader">
             <div>
               <h3 :class="$style.toolTitle">{{ currentTool.name }}</h3>
               <p :class="$style.toolDesc">{{ currentTool.description || '无描述' }}</p>
             </div>
-            <el-tag size="small" type="info">{{ currentServer?.id }}</el-tag>
+            <div :class="$style.toolMeta">
+              <el-tag size="small" type="info">{{ currentServer?.id }}</el-tag>
+              <template v-if="currentMetric">
+                <el-tag :type="rateTagType(currentSuccessRate)" size="small">
+                  成功率 {{ currentSuccessRate }}%
+                </el-tag>
+                <span :class="$style.metaText">
+                  平均 {{ currentMetric.avgDurationMs }}ms · 共 {{ currentMetric.totalCalls }} 次
+                </span>
+              </template>
+            </div>
+          </div>
+
+          <!-- 最近错误 -->
+          <div v-if="currentMetric?.lastError" :class="$style.lastError">
+            <el-alert type="error" :closable="false" show-icon>
+              <template #title>最近错误</template>
+              {{ currentMetric.lastError }}
+            </el-alert>
           </div>
 
           <!-- 参数输入 -->
@@ -269,28 +319,6 @@ onMounted(() => {
             <pre v-if="testResult" :class="$style.resultBox">{{ formatJson(testResult.result) }}</pre>
             <pre v-if="testError" :class="[$style.resultBox, $style.resultError]">{{ testError }}</pre>
           </div>
-
-          <!-- 调用历史 -->
-          <div v-if="history.length > 0" :class="$style.section">
-            <div :class="$style.sectionLabel">
-              <AppIcon name="alarm-clock" :size="14" />
-              调用历史
-            </div>
-            <div :class="$style.historyList">
-              <div
-                v-for="(h, idx) in history"
-                :key="idx"
-                :class="$style.historyItem"
-              >
-                <el-tag :type="h.success ? 'success' : 'danger'" size="small" effect="plain">
-                  {{ h.success ? '✓' : '✗' }}
-                </el-tag>
-                <span :class="$style.historyTool">{{ h.tool }}</span>
-                <span :class="$style.historyTime">{{ h.time }}</span>
-                <span v-if="h.duration" :class="$style.historyDuration">{{ h.duration }}ms</span>
-              </div>
-            </div>
-          </div>
         </template>
 
         <div v-else :class="$style.empty">
@@ -317,6 +345,11 @@ onMounted(() => {
   align-items: flex-start;
 }
 
+.headerActions {
+  display: flex;
+  gap: 8px;
+}
+
 .title {
   display: flex;
   align-items: center;
@@ -333,6 +366,10 @@ onMounted(() => {
   margin: 4px 0 0;
 }
 
+.unhealthy {
+  color: var(--el-color-danger);
+}
+
 .body {
   display: flex;
   flex: 1;
@@ -341,7 +378,7 @@ onMounted(() => {
 }
 
 .sidebar {
-  width: 280px;
+  width: 300px;
   flex-shrink: 0;
   border: 1px solid var(--ai-border-light, #ebedf3);
   border-radius: 8px;
@@ -409,6 +446,18 @@ onMounted(() => {
   white-space: nowrap;
 }
 
+.toolMetric {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.toolDuration {
+  font-size: 11px;
+  color: var(--ai-text-secondary, #86909c);
+}
+
 .panel {
   flex: 1;
   min-width: 0;
@@ -423,7 +472,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--ai-border-light, #ebedf3);
 }
@@ -441,6 +490,22 @@ onMounted(() => {
   margin: 6px 0 0;
   line-height: 1.5;
   max-width: 600px;
+}
+
+.toolMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.metaText {
+  font-size: 12px;
+  color: var(--ai-text-secondary, #86909c);
+}
+
+.lastError {
+  margin-bottom: 16px;
 }
 
 .section {
@@ -541,36 +606,6 @@ onMounted(() => {
 .resultError {
   color: var(--el-color-danger);
   border-color: var(--el-color-danger-light-5);
-}
-
-.historyList {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.historyItem {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  font-size: 12px;
-  background: var(--ai-bg-gray, #f5f7fa);
-}
-
-.historyTool {
-  flex: 1;
-  color: var(--ai-text-regular, #4e5969);
-  font-family: 'SF Mono', Monaco, Consolas, monospace;
-}
-
-.historyTime {
-  color: var(--ai-text-secondary, #86909c);
-}
-
-.historyDuration {
-  color: var(--ai-text-secondary, #86909c);
 }
 
 .empty {

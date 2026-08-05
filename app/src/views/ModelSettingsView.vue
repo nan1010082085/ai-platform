@@ -12,6 +12,7 @@ import { onMounted } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import QuickAddPresets from '@/components/model-settings/QuickAddPresets.vue'
 import ProviderList from '@/components/model-settings/ProviderList.vue'
 import ProviderDialog from '@/components/model-settings/ProviderDialog.vue'
@@ -68,8 +69,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :class="styles.page">
-    <div :class="styles.scroll">
+  <PageShell>
       <!-- Header -->
       <PageHeader
         title="模型中心"
@@ -144,7 +144,6 @@ onMounted(() => {
           </div>
         </div>
       </div>
-    </div>
 
     <!-- Provider create/edit dialog -->
     <ProviderDialog
@@ -198,5 +197,5 @@ onMounted(() => {
         <el-button type="primary" @click="showTestDialog = false">关闭</el-button>
       </template>
     </AppDialog>
-  </div>
+</PageShell>
 </template>

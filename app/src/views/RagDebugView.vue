@@ -14,6 +14,7 @@ import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import { debugRagSearch } from '@/api/aiApi'
 import { resolveErrorText } from '@/constants/errorCodes'
 import type { RagDebugItem, RagDebugFilter, RagDebugResult } from '@/types'
@@ -145,8 +146,7 @@ function highlightSnippet(snippet: string, terms: string[]): Array<{ text: strin
 </script>
 
 <template>
-  <div :class="styles.page">
-    <div :class="styles.scroll">
+  <PageShell>
       <PageHeader
         title="检索调试"
         subtitle="对同一查询并行跑语义 / Rerank / Hybrid 三路检索，横向对比召回质量"
@@ -394,6 +394,5 @@ function highlightSnippet(snippet: string, terms: string[]): Array<{ text: strin
           </div>
         </div>
       </div>
-    </div>
-  </div>
+</PageShell>
 </template>

@@ -12,6 +12,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import NodeTraceList, { NODE_STATUS_TAG_TYPE, NODE_STATUS_LABELS } from '@/components/agent-workflow/NodeTraceList.vue'
 import AgentNodeExecutionDetail from '@/components/agent-workflow/AgentNodeExecutionDetail.vue'
 import * as api from '@/api/agentWorkflowApi'
@@ -169,8 +170,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div :class="styles.page">
-    <div :class="styles.scroll">
+  <PageShell>
       <PageHeader
         title="工作流调试"
         :subtitle="workflow ? `「${workflow.name}」自定义输入并查看节点级执行轨迹` : '加载工作流中...'"
@@ -293,6 +293,5 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
-    </div>
-  </div>
+</PageShell>
 </template>

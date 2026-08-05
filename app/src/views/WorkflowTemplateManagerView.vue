@@ -9,6 +9,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import { useAiLocale } from '@/composables/useAiLocale'
 import {
   listTemplates,
@@ -312,8 +313,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :class="styles.page">
-    <div :class="styles.scroll">
+  <PageShell>
       <PageHeader
         :title="t('workflowTemplates.title')"
         :subtitle="t('workflowTemplates.subtitle')"
@@ -507,7 +507,6 @@ onMounted(() => {
           </template>
         </div>
       </div>
-    </div>
 
     <!-- 新建/编辑抽屉 -->
     <el-drawer
@@ -589,5 +588,5 @@ onMounted(() => {
         </div>
       </div>
     </el-drawer>
-  </div>
+</PageShell>
 </template>

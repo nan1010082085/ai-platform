@@ -9,6 +9,7 @@ import { getExecutionTriggerLabel } from '@/constants/workflowInvocation'
 import { watchRunningWorkflowExecutions } from '@/composables/useWorkflowExecutionStream'
 import * as api from '@/api/agentWorkflowApi'
 import styles from './AgentExecutionListView.module.scss'
+import PageShell from '@/components/common/PageShell.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -159,8 +160,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div :class="styles.page">
-    <div :class="styles.scroll">
+  <PageShell>
       <div :class="styles.header">
         <div :class="styles.titleRow">
           <div>
@@ -245,6 +245,5 @@ onUnmounted(() => {
           />
         </div>
       </div>
-    </div>
-  </div>
+</PageShell>
 </template>

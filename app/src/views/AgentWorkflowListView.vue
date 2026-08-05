@@ -24,6 +24,7 @@ import {
 } from '@/composables/useWorkflowTemplates'
 import { useWorkflowActions } from '@/composables/useWorkflowActions'
 import styles from './AgentWorkflowListView.module.scss'
+import PageShell from '@/components/common/PageShell.vue'
 
 const searchInput = ref('')
 const bulkMode = ref(false)
@@ -178,8 +179,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div :class="styles.page">
-    <div :class="styles.scroll">
+  <PageShell>
       <!-- Header -->
       <div :class="styles.header">
         <div :class="styles.titleRow">
@@ -408,7 +408,6 @@ onMounted(load)
           </div>
         </div>
       </div>
-    </div>
 
     <AppDialog
       v-model="createDialogVisible"
@@ -450,5 +449,5 @@ onMounted(load)
       :template="previewTemplate"
       @use="onPreviewUse"
     />
-  </div>
+</PageShell>
 </template>

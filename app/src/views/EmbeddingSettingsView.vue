@@ -10,6 +10,7 @@ import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import {
   getEmbeddingConfig,
   updateEmbeddingConfig,
@@ -143,8 +144,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :class="styles.page">
-    <div :class="styles.scroll">
+  <PageShell>
       <PageHeader
         title="嵌入模型"
         subtitle="配置 RAG 检索等场景使用的向量嵌入模型（与对话 LLM 分开管理）。"
@@ -205,7 +205,6 @@ onMounted(() => {
           <span>嵌入模型用于向量检索；对话用的 LLM 请在「模型与连接」中管理。</span>
         </div>
       </div>
-    </div>
 
     <AppDialog
       v-model="showEmbeddingDialog"
@@ -282,5 +281,5 @@ onMounted(() => {
         </el-button>
       </template>
     </AppDialog>
-  </div>
+</PageShell>
 </template>

@@ -1,4 +1,18 @@
-import type { AgentWorkflowExecution } from '@/types/agentWorkflow'
+import type {
+  AgentHitlConfirmQuestion,
+  AgentNodeRecord,
+  AgentWorkflowExecution,
+} from '@/types/agentWorkflow'
+
+/** waiting 节点上的人工确认信息（message + confirmQuestions） */
+export interface WorkflowWaitingHitl {
+  executionId: string
+  waitingRecord: AgentNodeRecord
+  nodeName: string
+  /** HITL 提示文案，对应 output.message */
+  message: string
+  questions: AgentHitlConfirmQuestion[]
+}
 
 function extractTextFromOutput(output: unknown): string | null {
   if (output == null) return null
@@ -65,4 +79,40 @@ export function isWorkflowHitlApprovalMessage(content: string): boolean | null {
   if (/^(确认|继续|approve|yes|ok)$/i.test(trimmed)) return true
   if (/^(拒绝|取消|reject|no)$/i.test(trimmed)) return false
   return null
+}
+
+/**
+ * 从执行快照解析 HITL waiting 信息。
+ * 与 Chat 路径共用同一套 message / confirmQuestions 模板。
+ */
+export function extractWorkflowWaitingHitl(
+  exec: AgentWorkflowExecution,
+): WorkflowWaitingHitl | null {
+  if (exec.status !== 'waiting') return null
+  const waiting = exec.nodeRecords.find((record) => record.status === 'waiting')
+  if (!waiting) return null
+
+  const output = (waiting.output ?? {}) as Record<string, unknown>
+  const rawQuestions = Array.isArray(output.confirmQuestions) ? output.confirmQuestions : []
+  const questions: AgentHitlConfirmQuestion[] = rawQuestions
+    .filter((q): q is Record<string, unknown> => q != null && typeof q === 'object')
+    .map((q, i) => ({
+      id: String(q.id ?? `q${i + 1}`),
+      question: String(q.question ?? ''),
+      options: Array.isArray(q.options) ? q.options.map(String) : undefined,
+      required: q.required !== false,
+    }))
+
+  const message =
+    typeof output.message === 'string' && output.message.trim()
+      ? output.message
+      : '工作流等待人工确认，请回复「确认」继续或「拒绝」终止。'
+
+  return {
+    executionId: exec.id,
+    waitingRecord: waiting,
+    nodeName: waiting.nodeName || waiting.nodeId,
+    message,
+    questions,
+  }
 }

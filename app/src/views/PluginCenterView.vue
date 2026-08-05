@@ -9,6 +9,7 @@ import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import CardTable from '@/components/common/CardTable.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import PluginEditor from '@/components/plugins/PluginEditor.vue'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
 import { getExpertLegacyBadge, type ExpertAgentKind } from '@/constants/expertNodeTypes'
@@ -105,8 +106,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :class="styles.page">
-    <div :class="styles.scroll">
+  <PageShell>
       <PageHeader
         title="插件中心"
         subtitle="浏览已注册的专家、工具、MCP 服务器和技能"
@@ -303,7 +303,6 @@ onMounted(() => {
           生产安装插件包：<code>cd server && pnpm plugin:install --file dist/xxx.tgz</code>（可选 <code>--tenant &lt;id&gt;</code> 写入 tenants 目录）。
         </p>
       </div>
-    </div>
 
     <PluginEditor
       v-model:visible="editorVisible"
@@ -313,5 +312,5 @@ onMounted(() => {
       :data="editorData"
       @saved="load"
     />
-  </div>
+</PageShell>
 </template>
