@@ -1,8 +1,11 @@
 .content {
   flex: 1;
+  min-width: 0;
   min-height: 0;
+  width: 100%;
   display: grid;
-  grid-template-columns: 380px 1fr;
+  /* minmax(0,…) 防止子项 min-content（slider+输入框）撑破网格把右栏挤出视口 */
+  grid-template-columns: minmax(0, 400px) minmax(0, 1fr);
   gap: var(--ai-card-gap);
   align-items: stretch;
 }
@@ -18,7 +21,11 @@
 }
 
 .inputCard {
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
@@ -94,12 +101,27 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 
   label {
     font-size: 12px;
     color: var(--el-text-color-regular);
     width: 72px;
     flex-shrink: 0;
+  }
+
+  /* el-slider show-input 默认很宽，压缩数字框以免溢出卡片 */
+  :deep(.el-slider) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  :deep(.el-slider .el-input-number) {
+    width: 72px;
+  }
+
+  :deep(.el-select) {
+    min-width: 0;
   }
 }
 
