@@ -25,6 +25,16 @@ export interface EvaluationDataset {
   updatedAt: string
 }
 
+/** 评测用例对应的节点执行轨迹 */
+export interface EvaluationNodeTraceItem {
+  nodeId: string
+  nodeType: string
+  label?: string
+  status: string
+  durationMs?: number
+  error?: string
+}
+
 export interface EvaluationResultItem {
   testcaseId: string
   input: string
@@ -35,6 +45,8 @@ export interface EvaluationResultItem {
   tokens: number
   llmScore?: number | null
   error?: string
+  executionId?: string
+  nodeTrace?: EvaluationNodeTraceItem[]
 }
 
 export interface EvaluationRunSummary {

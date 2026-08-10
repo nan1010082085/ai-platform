@@ -17,6 +17,15 @@ import { request } from '@/api/aiApi/base'
 import { resolveErrorText } from '@/constants/errorCodes'
 import styles from './ScheduleView.module.scss'
 
+interface ScheduleRunStat {
+  id: string
+  status: string
+  startedAt: string | null
+  finishedAt: string | null
+  durationMs: number | null
+  error: string | null
+}
+
 interface ScheduleEntry {
   workflowId: string
   workflowName: string
@@ -25,6 +34,13 @@ interface ScheduleEntry {
   timezone: string
   enabled: boolean
   nextRuns: string[]
+  stats?: {
+    totalRuns: number
+    successRuns: number
+    errorRuns: number
+    successRate: number | null
+    lastRun: ScheduleRunStat | null
+  }
 }
 
 const router = useRouter()
@@ -99,7 +115,7 @@ onUnmounted(() => {
   <PageShell fill>
       <PageHeader
         title="调度管理"
-        subtitle="查看已发布工作流的定时触发调度，监控下次执行时间"
+        subtitle="查看已发布工作流的定时触发调度、下次执行时间与历史成功率"
       >
         <template #actions>
           <el-button size="small" :loading="loading" @click="loadSchedules">
@@ -157,6 +173,17 @@ onUnmounted(() => {
                 <span :class="styles.nextLabel">下次执行：</span>
                 <span v-if="s.nextRuns.length">{{ formatTime(s.nextRuns[0]) }}</span>
                 <span v-else :class="styles.muted">无</span>
+              </div>
+              <div v-if="s.stats" :class="styles.scheduleStats">
+                <span>共 {{ s.stats.totalRuns }} 次</span>
+                <span :class="styles.statOk">成功 {{ s.stats.successRuns }}</span>
+                <span :class="styles.statErr">失败 {{ s.stats.errorRuns }}</span>
+                <span v-if="s.stats.successRate != null">成功率 {{ s.stats.successRate }}%</span>
+                <span v-if="s.stats.lastRun" :class="styles.lastRun">
+                  最近：{{ s.stats.lastRun.status }}
+                  <template v-if="s.stats.lastRun.durationMs != null"> · {{ s.stats.lastRun.durationMs }}ms</template>
+                </span>
+                <span v-else :class="styles.muted">尚无 schedule 触发记录</span>
               </div>
             </div>
           </div>

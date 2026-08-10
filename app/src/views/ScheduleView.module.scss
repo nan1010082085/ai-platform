@@ -181,6 +181,27 @@
   color: var(--el-text-color-secondary);
 }
 
+.scheduleStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+}
+
+.statOk {
+  color: var(--el-color-success);
+}
+
+.statErr {
+  color: var(--el-color-danger);
+}
+
+.lastRun {
+  color: var(--el-text-color-regular);
+}
+
 .nextLabel {
   color: var(--el-text-color-secondary);
 }

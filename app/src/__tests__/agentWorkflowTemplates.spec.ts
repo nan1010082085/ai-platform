@@ -100,20 +100,30 @@ describe('agent workflow templates', () => {
     expect(validateAgentWorkflowGraph(batch).every((i) => i.level !== 'error')).toBe(true)
   })
 
-  it('includes multimodal templates using image/video generate nodes', () => {
+  it('includes multimodal templates producing copy/script via LLM', () => {
     const ids = AGENT_WORKFLOW_TEMPLATES.map((t) => t.id)
     expect(ids).toContain('multimodal-image-text')
     expect(ids).toContain('multimodal-video-promo')
 
     const imageText = createAgentWorkflowGraphByTemplate('multimodal-image-text')
-    expect(imageText.nodes.some((n) => n.type === 'image-generate')).toBe(true)
-    expect(imageText.nodes.some((n) => n.type === 'llm')).toBe(true)
+    expect(imageText.nodes.filter((n) => n.type === 'llm').length).toBeGreaterThanOrEqual(2)
     expect(validateAgentWorkflowGraph(imageText).every((i) => i.level !== 'error')).toBe(true)
 
     const videoPromo = createAgentWorkflowGraphByTemplate('multimodal-video-promo')
-    expect(videoPromo.nodes.some((n) => n.type === 'video-generate')).toBe(true)
-    expect(videoPromo.nodes.some((n) => n.type === 'llm')).toBe(true)
+    expect(videoPromo.nodes.filter((n) => n.type === 'llm').length).toBeGreaterThanOrEqual(2)
     expect(validateAgentWorkflowGraph(videoPromo).every((i) => i.level !== 'error')).toBe(true)
+  })
+
+  it('includes handoff and form-query demo templates', () => {
+    const ids = AGENT_WORKFLOW_TEMPLATES.map((t) => t.id)
+    expect(ids).toContain('handoff-demo')
+    expect(ids).toContain('form-query-demo')
+    const handoff = createAgentWorkflowGraphByTemplate('handoff-demo')
+    expect(handoff.nodes.some((n) => n.type === 'handoff')).toBe(true)
+    expect(validateAgentWorkflowGraph(handoff).every((i) => i.level !== 'error')).toBe(true)
+    const formQ = createAgentWorkflowGraphByTemplate('form-query-demo')
+    expect(formQ.nodes.some((n) => n.type === 'form-query')).toBe(true)
+    expect(validateAgentWorkflowGraph(formQ).every((i) => i.level !== 'error')).toBe(true)
   })
 
   it('cs-ticket-triage classifies then branches', () => {

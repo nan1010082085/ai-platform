@@ -442,6 +442,16 @@ onUnmounted(() => {
                 <div :class="styles.resultInput">{{ r.input }}</div>
                 <div v-if="r.error" :class="styles.resultError">{{ r.error }}</div>
                 <div v-else :class="styles.resultOutput">实际：{{ r.actualOutput.slice(0, 100) }}{{ r.actualOutput.length > 100 ? '…' : '' }}</div>
+                <div v-if="r.nodeTrace?.length" :class="styles.nodeTrace">
+                  <span
+                    v-for="(n, ni) in r.nodeTrace"
+                    :key="ni"
+                    :class="[styles.nodeChip, n.status === 'error' && styles.nodeChipFail, n.status === 'success' && styles.nodeChipOk]"
+                    :title="n.error || `${n.nodeType} ${n.durationMs ?? ''}ms`"
+                  >
+                    {{ n.label || n.nodeType || n.nodeId }}{{ n.durationMs != null ? ` ${n.durationMs}ms` : '' }}
+                  </span>
+                </div>
               </div>
               <span :class="styles.resultDuration">{{ r.durationMs }}ms</span>
             </div>
