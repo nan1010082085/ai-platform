@@ -228,7 +228,7 @@ function handleSelectStarterAgent(agent: AgentType): void {
       </div>
       <div :class="$style.headerActions">
         <el-tooltip :content="t('chat.conversationHistory')" placement="bottom" :show-after="300">
-          <button :class="$style.actionBtn" @click="emit('open-conversation-history')">
+          <button :class="$style.actionBtn" :aria-label="t('chat.conversationHistory')" @click="emit('open-conversation-history')">
             <AppIcon name="clock" :size="14" />
           </button>
         </el-tooltip>
@@ -245,6 +245,7 @@ function handleSelectStarterAgent(agent: AgentType): void {
               <button
                 type="button"
                 :class="[$style.actionBtn, { [$style.actionBtnActive]: !!selectedWorkflowId }]"
+                :aria-label="t('chat.agentWorkflow')"
               >
                 <AppIcon name="set-up" :size="14" />
               </button>
@@ -263,17 +264,17 @@ function handleSelectStarterAgent(agent: AgentType): void {
           </div>
         </el-popover>
         <el-tooltip :content="t('chat.chatSettings')" placement="bottom" :show-after="300">
-          <button :class="$style.actionBtn" @click="emit('open-settings')">
+          <button :class="$style.actionBtn" :aria-label="t('chat.chatSettings')" @click="emit('open-settings')">
             <AppIcon name="setting" :size="14" />
           </button>
         </el-tooltip>
         <el-tooltip :content="t('chat.clearChat')" placement="bottom" :show-after="300">
-          <button :class="$style.actionBtn" @click="emit('clear-messages')">
+          <button :class="$style.actionBtn" :aria-label="t('chat.clearChat')" @click="emit('clear-messages')">
             <AppIcon name="delete" :size="14" />
           </button>
         </el-tooltip>
         <el-tooltip :content="t('chat.newConversation')" placement="bottom" :show-after="300">
-          <button :class="[$style.actionBtn, $style.newConversationBtn]" @click="emit('new-conversation')">
+          <button :class="[$style.actionBtn, $style.newConversationBtn]" :aria-label="t('chat.newConversation')" @click="emit('new-conversation')">
             <AppIcon name="plus" :size="14" />
           </button>
         </el-tooltip>
@@ -423,6 +424,7 @@ function handleSelectStarterAgent(agent: AgentType): void {
                 type="button"
                 :class="[$style.ragBtn, { [$style.ragBtnActive]: ragVisible }]"
                 :disabled="disabled || loading"
+                :aria-label="t('chat.ragTooltip')"
                 @click="ragVisible = !ragVisible"
               >
                 <AppIcon name="box" :size="14" />
@@ -441,6 +443,7 @@ function handleSelectStarterAgent(agent: AgentType): void {
                 type="button"
                 :class="$style.fileBtn"
                 :disabled="disabled || loading || fileUploading > 0"
+                :aria-label="t('chat.uploadTooltip', { formats: DOCUMENT_FORMAT_LABEL })"
                 @click="triggerFileUpload"
               >
                 <AppIcon name="link" :size="14" />
@@ -461,7 +464,7 @@ function handleSelectStarterAgent(agent: AgentType): void {
               />
             </el-select>
             <el-tooltip v-if="loading" :content="t('chat.stopGenerate')" placement="top" :show-after="300">
-              <button type="button" :class="$style.stopBtn" @click="emit('stop')">
+              <button type="button" :class="$style.stopBtn" :aria-label="t('chat.stopGenerate')" @click="emit('stop')">
                 <AppIcon name="video-pause" :size="14" />
               </button>
             </el-tooltip>

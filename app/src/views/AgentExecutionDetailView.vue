@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import AgentNodeExecutionDetail from '@/components/agent-workflow/AgentNodeExecutionDetail.vue'
@@ -118,6 +118,15 @@ function stopWorkflowWatch() {
 
 async function stopExecution() {
   if (!execution.value || execution.value.status !== 'running') return
+  try {
+    await ElMessageBox.confirm('确定停止该执行？停止后不可继续当前运行。', '停止执行', {
+      type: 'warning',
+      confirmButtonText: '确认停止',
+      cancelButtonText: '取消',
+    })
+  } catch {
+    return
+  }
   cancelling.value = true
   try {
     execution.value = await api.cancelExecution(executionId())
@@ -274,7 +283,7 @@ function togglePanelExpand() {
     <!-- Toolbar -->
     <header :class="styles.toolbar">
       <div :class="styles.toolbarLeft">
-        <button :class="styles.iconBtn" title="返回执行记录" @click="router.push({ name: 'agent-workflow-executions', params: { id: execution.workflowId } })">
+        <button :class="styles.iconBtn" aria-label="返回执行记录" title="返回执行记录" @click="router.push({ name: 'agent-workflow-executions', params: { id: execution.workflowId } })">
           <AppIcon name="arrow-left" :size="14" />
         </button>
         <div :class="styles.divider" />

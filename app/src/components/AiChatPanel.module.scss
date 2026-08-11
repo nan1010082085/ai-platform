@@ -56,8 +56,8 @@
 }
 
 .roleBadge.workflow {
-  background: rgba(103, 58, 183, 0.12);
-  color: #673ab7;
+  background: var(--ai-color-purple-bg, rgba(103, 58, 183, 0.12));
+  color: var(--ai-color-purple, #673ab7);
 }
 
 .headerActions {
@@ -91,24 +91,29 @@
   color: var(--ai-color-primary, #00d4ff);
 }
 
+.actionBtn:focus-visible {
+  outline: 2px solid var(--ai-color-primary, #0060a2);
+  outline-offset: 2px;
+}
+
 .actionBtnActive {
-  background: rgba(103, 58, 183, 0.12);
-  color: #673ab7;
+  background: var(--ai-color-purple-bg, rgba(103, 58, 183, 0.12));
+  color: var(--ai-color-purple, #673ab7);
 }
 
 .actionBtnActive:hover {
-  background: rgba(103, 58, 183, 0.18);
-  color: #673ab7;
+  background: var(--ai-color-purple-bg, rgba(103, 58, 183, 0.18));
+  color: var(--ai-color-purple, #673ab7);
 }
 
 .newConversationBtn {
   background: var(--ai-color-primary, #0060A2);
-  color: #ffffff;
+  color: var(--ai-text-inverse, #ffffff);
 }
 
 .newConversationBtn:hover {
   background: var(--ai-color-primary-dark, #004d82);
-  color: #ffffff;
+  color: var(--ai-text-inverse, #ffffff);
 }
 
 .workflowPickerFooter {
@@ -511,6 +516,11 @@
   box-shadow: 0 0 8px rgba(255, 82, 82, 0.12);
 }
 
+.stopBtn:focus-visible {
+  outline: 2px solid var(--ai-color-primary, #0060a2);
+  outline-offset: 2px;
+}
+
 /* Hidden file input */
 .hiddenInput {
   display: none;
@@ -538,6 +548,11 @@
   border-color: rgba(0, 212, 255, 0.3);
   color: var(--ai-color-primary, #00d4ff);
   box-shadow: 0 0 8px rgba(0, 212, 255, 0.12);
+}
+
+.ragBtn:focus-visible {
+  outline: 2px solid var(--ai-color-primary, #0060a2);
+  outline-offset: 2px;
 }
 
 .ragBtnActive {
@@ -593,6 +608,11 @@
   border-color: rgba(0, 212, 255, 0.3);
   color: var(--ai-color-primary, #00d4ff);
   box-shadow: 0 0 8px rgba(0, 212, 255, 0.12);
+}
+
+.fileBtn:focus-visible {
+  outline: 2px solid var(--ai-color-primary, #0060a2);
+  outline-offset: 2px;
 }
 
 .fileBtn:disabled {

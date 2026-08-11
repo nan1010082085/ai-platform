@@ -9,6 +9,7 @@ import AppDialog from '@schema-platform/platform-shared/components/common/AppDia
 import AgentWorkflowTemplatePreviewDialog from '@/components/agent-workflow/AgentWorkflowTemplatePreviewDialog.vue'
 import WorkflowTemplateCard from '@/components/agent-workflow/WorkflowTemplateCard.vue'
 import WorkflowInvokeInfo from '@/components/WorkflowInvokeInfo.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import * as api from '@/api/agentWorkflowApi'
 import {
   TEMPLATE_ICONS,
@@ -176,23 +177,21 @@ onMounted(load)
 
 <template>
   <PageShell>
-      <!-- Header -->
-      <div :class="styles.header">
-        <div :class="styles.titleRow">
-          <div>
-            <h1>Agent 编排</h1>
-            <p :class="styles.subtitle">可视化编排 AI 工作流</p>
-          </div>
-          <div :class="styles.headerActions">
-            <el-button @click="onImport">
-              <AppIcon name="download" :size="14" style="margin-right: 4px" />
-              导入
-            </el-button>
-            <el-button type="primary" @click="onCreate">
-              <AppIcon name="plus" class="el-icon--left" :size="14" />新建
-            </el-button>
-          </div>
-        </div>
+      <PageHeader title="Agent 编排" subtitle="可视化编排 AI 工作流">
+        <template #actions>
+          <el-button @click="router.push({ name: 'agent-executions' })">
+            <AppIcon name="list" :size="14" style="margin-right: 4px" />
+            全部执行
+          </el-button>
+          <el-button @click="onImport">
+            <AppIcon name="download" :size="14" style="margin-right: 4px" />
+            导入
+          </el-button>
+          <el-button type="primary" @click="onCreate">
+            <AppIcon name="plus" class="el-icon--left" :size="14" />新建
+          </el-button>
+        </template>
+      </PageHeader>
 
         <!-- Filter bar -->
         <div :class="styles.toolbar">
@@ -235,7 +234,6 @@ onMounted(load)
             </el-button>
           </div>
         </div>
-      </div>
 
       <!-- Loading skeleton -->
       <div v-if="loading && workflows.length === 0 && !isTemplatesTab" :class="styles.content">

@@ -23,6 +23,7 @@ import {
 } from '@/api/apiKeyApi'
 import styles from './ApiKeyManagerView.module.scss'
 import PageShell from '@/components/common/PageShell.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 
 const { t, locale } = useI18n()
 
@@ -163,26 +164,18 @@ onMounted(() => {
 
 <template>
   <PageShell>
-      <header :class="styles.header">
-        <div :class="styles.titleRow">
-          <div>
-            <h1>{{ t('apiKey.title') }}</h1>
-            <p :class="styles.subtitle">
-              {{ t('apiKey.subtitle') }}
-            </p>
-          </div>
-          <div :class="styles.headerActions">
-            <el-button :loading="loading" @click="loadKeys">
-              <AppIcon name="refresh" :size="14" style="margin-right: 4px" />
-              {{ t('common.refresh') }}
-            </el-button>
-            <el-button type="primary" @click="openCreateDialog">
-              <AppIcon name="plus" :size="14" style="margin-right: 4px" />
-              {{ t('apiKey.create') }}
-            </el-button>
-          </div>
-        </div>
-      </header>
+      <PageHeader :title="t('apiKey.title')" :subtitle="t('apiKey.subtitle')">
+        <template #actions>
+          <el-button :loading="loading" @click="loadKeys">
+            <AppIcon name="refresh" :size="14" style="margin-right: 4px" />
+            {{ t('common.refresh') }}
+          </el-button>
+          <el-button type="primary" @click="openCreateDialog">
+            <AppIcon name="plus" :size="14" style="margin-right: 4px" />
+            {{ t('apiKey.create') }}
+          </el-button>
+        </template>
+      </PageHeader>
 
       <div :class="styles.content">
         <div :class="styles.summary">

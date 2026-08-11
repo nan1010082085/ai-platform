@@ -63,6 +63,11 @@ const routes = [
         component: () => import('./views/AgentWorkflowListView.vue'),
       },
       {
+        path: 'executions',
+        name: 'agent-executions',
+        component: () => import('./views/AgentExecutionListView.vue'),
+      },
+      {
         path: 'workflows/:id/executions',
         name: 'agent-workflow-executions',
         component: () => import('./views/AgentExecutionListView.vue'),

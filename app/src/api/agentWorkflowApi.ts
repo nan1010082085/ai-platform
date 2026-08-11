@@ -119,11 +119,15 @@ export function executeWorkflow(
 
 export function listExecutions(opts?: {
   workflowId?: string
+  status?: 'running' | 'success' | 'error' | 'waiting' | 'cancelled'
+  trigger?: 'manual' | 'webhook' | 'chat' | 'api' | 'schedule'
   page?: number
   pageSize?: number
 }): Promise<{ items: AgentWorkflowExecution[]; total: number; page: number; pageSize: number }> {
   const params = new URLSearchParams()
   if (opts?.workflowId) params.set('workflowId', opts.workflowId)
+  if (opts?.status) params.set('status', opts.status)
+  if (opts?.trigger) params.set('trigger', opts.trigger)
   if (opts?.page) params.set('page', String(opts.page))
   if (opts?.pageSize) params.set('pageSize', String(opts.pageSize))
   const qs = params.toString()

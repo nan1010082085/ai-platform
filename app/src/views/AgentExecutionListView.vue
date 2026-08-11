@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import TableRowActions, { type TableRowAction } from '@/components/common/TableRowActions.vue'
 import type { AgentWorkflowExecution } from '@/types/agentWorkflow'
@@ -11,10 +11,12 @@ import * as api from '@/api/agentWorkflowApi'
 import { validateObjectId } from '@/utils/objectId'
 import styles from './AgentExecutionListView.module.scss'
 import PageShell from '@/components/common/PageShell.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
+const loadError = ref<string | null>(null)
 const cancellingId = ref<string | null>(null)
 const items = ref<AgentWorkflowExecution[]>([])
 const total = ref(0)
@@ -23,6 +25,29 @@ const pageSize = ref(20)
 let stopWorkflowWatch: (() => void) | null = null
 
 const workflowId = computed(() => route.params.id as string)
+const isGlobal = computed(() => route.name === 'agent-executions')
+
+// 筛选
+const filterStatus = ref<string>('')
+const filterTrigger = ref<string>('')
+
+const STATUS_OPTIONS = [
+  { label: '全部状态', value: '' },
+  { label: '执行中', value: 'running' },
+  { label: '成功', value: 'success' },
+  { label: '失败', value: 'error' },
+  { label: '待确认', value: 'waiting' },
+  { label: '已取消', value: 'cancelled' },
+]
+
+const TRIGGER_OPTIONS = [
+  { label: '全部来源', value: '' },
+  { label: '手动', value: 'manual' },
+  { label: '对话', value: 'chat' },
+  { label: 'Webhook', value: 'webhook' },
+  { label: 'API', value: 'api' },
+  { label: '定时', value: 'schedule' },
+]
 
 type TagType = 'success' | 'info' | 'warning' | 'danger' | 'primary'
 const statusType: Record<string, TagType> = {
@@ -67,23 +92,31 @@ function syncWorkflowWatch() {
 
 async function load(opts?: { silent?: boolean }) {
   if (!opts?.silent) loading.value = true
+  loadError.value = null
   try {
-    const validation = validateObjectId(workflowId.value, '工作流 ID')
-    if (!validation.valid) {
-      ElMessage.error(validation.error)
-      return
+    let wfId: string | undefined
+    if (!isGlobal.value) {
+      const validation = validateObjectId(workflowId.value, '工作流 ID')
+      if (!validation.valid) {
+        ElMessage.error(validation.error)
+        return
+      }
+      wfId = validation.id
     }
     const res = await api.listExecutions({
-      workflowId: validation.id,
+      workflowId: wfId,
+      status: filterStatus.value || undefined,
+      trigger: filterTrigger.value || undefined,
       page: page.value,
       pageSize: pageSize.value,
     })
     items.value = res.items
     total.value = res.total
     syncWorkflowWatch()
-  } catch {
+  } catch (e) {
     items.value = []
     total.value = 0
+    loadError.value = e instanceof Error ? e.message : '加载失败'
     stopWorkflowWatch?.()
     stopWorkflowWatch = null
   } finally {
@@ -98,6 +131,11 @@ function onPageChange(p: number) {
 
 function onPageSizeChange(size: number) {
   pageSize.value = size
+  page.value = 1
+  load()
+}
+
+function onFilterChange() {
   page.value = 1
   load()
 }
@@ -123,6 +161,15 @@ function formatTime(iso: string): string {
 }
 
 async function stopExecution(id: string) {
+  try {
+    await ElMessageBox.confirm('确定停止该执行？停止后不可继续当前运行。', '停止执行', {
+      type: 'warning',
+      confirmButtonText: '确认停止',
+      cancelButtonText: '取消',
+    })
+  } catch {
+    return
+  }
   cancellingId.value = id
   try {
     await api.cancelExecution(id)
@@ -167,30 +214,48 @@ onUnmounted(() => {
 
 <template>
   <PageShell>
-      <div :class="styles.header">
-        <div :class="styles.titleRow">
-          <div>
-            <h1>执行记录</h1>
-            <p :class="styles.subtitle">工作流的全部执行历史</p>
-          </div>
-          <div :class="styles.headerActions">
-            <el-button @click="router.push({ name: 'agent-workflow-executions', params: { id: workflowId } })">
-              返回
-            </el-button>
-            <el-button type="primary" @click="router.push({ name: 'agent-workflow-designer', params: { id: workflowId } })">
-              打开设计器
-            </el-button>
-          </div>
-        </div>
+      <PageHeader
+        :title="isGlobal ? '全部执行记录' : '执行记录'"
+        :subtitle="isGlobal ? '所有工作流的执行历史' : '工作流的全部执行历史'"
+      >
+        <template #actions>
+          <el-button @click="router.push({ name: 'agent-workflows' })">
+            返回
+          </el-button>
+          <el-button v-if="!isGlobal" type="primary" @click="router.push({ name: 'agent-workflow-designer', params: { id: workflowId } })">
+            打开设计器
+          </el-button>
+        </template>
+      </PageHeader>
+      <div :class="styles.filters">
+        <el-select v-model="filterStatus" :class="styles.filterSelect" @change="onFilterChange">
+          <el-option v-for="opt in STATUS_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
+        </el-select>
+        <el-select v-model="filterTrigger" :class="styles.filterSelect" @change="onFilterChange">
+          <el-option v-for="opt in TRIGGER_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
+        </el-select>
       </div>
 
       <div :class="styles.content">
+        <div v-if="loadError" :class="styles.errorState">
+          <AppIcon name="warning-filled" :size="32" />
+          <p>{{ loadError }}</p>
+          <el-button type="primary" size="small" @click="load()">重试</el-button>
+        </div>
         <el-table
+          v-else
           v-loading="loading"
           :data="items"
           :class="styles.table"
           stripe
         >
+          <el-table-column v-if="isGlobal" label="工作流" min-width="160" show-overflow-tooltip>
+            <template #default="{ row }">
+              <router-link :to="{ name: 'agent-workflow-executions', params: { id: row.workflowId } }" :class="styles.workflowLink">
+                {{ row.workflowName || '-' }}
+              </router-link>
+            </template>
+          </el-table-column>
           <el-table-column label="执行 ID" min-width="260" show-overflow-tooltip>
             <template #default="{ row }">
               <span :class="styles.execId">{{ row.id }}</span>
@@ -231,7 +296,7 @@ onUnmounted(() => {
             <div :class="styles.empty">
               <AppIcon name="list" :size="48" />
               <p>暂无执行记录</p>
-              <el-button type="primary" size="small" @click="router.push({ name: 'agent-workflow-designer', params: { id: workflowId } })">
+              <el-button v-if="!isGlobal" type="primary" size="small" @click="router.push({ name: 'agent-workflow-designer', params: { id: workflowId } })">
                 去测试执行
               </el-button>
             </div>
