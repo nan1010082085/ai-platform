@@ -91,7 +91,7 @@ function handleSettingsSelect(path: string) {
     <header v-if="!shouldHideSubAppMenu" :class="$style.topbar">
       <div :class="$style.topbarLeft">
         <el-tooltip v-if="isShellEmbedded" :content="t('layout.homeTooltip')" placement="bottom">
-          <button :class="$style.homeBtn" :title="t('layout.homeTitle')" @click="goToShellHome">
+          <button :class="$style.homeBtn" :title="t('layout.homeTitle')" :aria-label="t('layout.homeTitle')" @click="goToShellHome">
             <AppIcon name="home-filled" :size="18" />
           </button>
         </el-tooltip>

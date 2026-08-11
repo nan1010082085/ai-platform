@@ -2,7 +2,7 @@
   <div :class="styles.toolbar">
     <!-- Left: back + title -->
     <div :class="styles.left">
-      <button :class="styles.iconBtn" title="返回列表" @click="goToList">
+      <button :class="styles.iconBtn" title="返回列表" aria-label="返回列表" @click="goToList">
         <AppIcon name="arrow-left" :size="14" />
       </button>
       <div :class="styles.divider" />
@@ -21,7 +21,8 @@
       <el-tooltip :content="showLeftPanel ? '隐藏节点面板' : '显示节点面板'" placement="bottom">
         <button
           :class="[styles.iconBtn, { [styles.iconBtnActive]: showLeftPanel }]"
-          title="节点面板"
+          :title="showLeftPanel ? '隐藏节点面板' : '显示节点面板'"
+          :aria-label="showLeftPanel ? '隐藏节点面板' : '显示节点面板'"
           @click="$emit('toggle-left-panel')"
         >
           <AppIcon name="grid" :size="14" />
@@ -30,7 +31,8 @@
       <el-tooltip :content="showRightPanel ? '隐藏属性面板' : '显示属性面板'" placement="bottom">
         <button
           :class="[styles.iconBtn, { [styles.iconBtnActive]: showRightPanel }]"
-          title="属性面板"
+          :title="showRightPanel ? '隐藏属性面板' : '显示属性面板'"
+          :aria-label="showRightPanel ? '隐藏属性面板' : '显示属性面板'"
           @click="$emit('toggle-right-panel')"
         >
           <AppIcon name="setting" :size="14" />
@@ -47,7 +49,7 @@
           />
         </div>
         <template #reference>
-          <button :class="styles.iconBtn" title="连线样式">
+          <button :class="styles.iconBtn" title="连线样式" aria-label="连线样式">
             <AppIcon name="connection" :size="14" />
           </button>
         </template>
@@ -56,6 +58,7 @@
         <button
           :class="[styles.iconBtn, { [styles.iconBtnDanger]: canDeleteSelection }]"
           :title="deleteTitle"
+          :aria-label="deleteTitle"
           :disabled="!canDeleteSelection"
           @click="$emit('delete-selection')"
         >
@@ -63,7 +66,7 @@
         </button>
       </el-tooltip>
       <el-tooltip content="执行记录" placement="bottom">
-        <button :class="styles.iconBtn" title="执行记录" @click="$emit('executions')">
+        <button :class="styles.iconBtn" title="执行记录" aria-label="执行记录" @click="$emit('executions')">
           <AppIcon name="list" :size="14" />
         </button>
       </el-tooltip>
@@ -80,7 +83,7 @@
           </div>
         </div>
         <template #reference>
-          <button :class="styles.iconBtn" title="快捷键帮助">
+          <button :class="styles.iconBtn" title="快捷键帮助" aria-label="快捷键帮助">
             <AppIcon name="question-filled" :size="14" />
           </button>
         </template>
@@ -92,13 +95,13 @@
       <el-popover placement="bottom" :width="400" trigger="click" @show="$emit('version-history')">
         <slot name="version-popover" />
         <template #reference>
-          <button :class="styles.iconBtn" title="版本历史">
+          <button :class="styles.iconBtn" title="版本历史" aria-label="版本历史">
             <AppIcon name="clock" :size="14" />
           </button>
         </template>
       </el-popover>
       <el-tooltip content="校验工作流" placement="bottom">
-        <button :class="styles.iconBtn" title="校验" @click="$emit('validate')">
+        <button :class="styles.iconBtn" title="校验" aria-label="校验工作流" @click="$emit('validate')">
           <AppIcon name="circle-check" :size="14" />
         </button>
       </el-tooltip>

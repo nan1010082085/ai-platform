@@ -2,6 +2,7 @@
 /**
  * Agent 性能监控面板
  */
+import { ElMessage } from 'element-plus'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import PageShell from '@/components/common/PageShell.vue'
@@ -60,8 +61,12 @@ async function loadNodeTypeStats() {
   nodeTypeLoading.value = true
   try {
     nodeTypeStats.value = await getNodeTypeStats()
-  } catch { /* ignore */ }
-  nodeTypeLoading.value = false
+  } catch (e) {
+    nodeTypeStats.value = []
+    ElMessage.error(e instanceof Error ? e.message : '加载节点类型统计失败')
+  } finally {
+    nodeTypeLoading.value = false
+  }
 }
 
 onMounted(() => {

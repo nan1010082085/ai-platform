@@ -29,6 +29,7 @@ const panelExpanded = ref(false)
 const hitlDialogVisible = ref(false)
 const hitlDialog = ref<InstanceType<typeof ExecutionHITLDialog> | null>(null)
 const cancelling = ref(false)
+const loadError = ref<string | null>(null)
 let unsubscribeWorkflow: (() => void) | null = null
 
 const TERMINAL_STATUSES = new Set(['success', 'error', 'waiting', 'cancelled'])
@@ -164,6 +165,11 @@ async function loadExecutionGraph(exec: AgentWorkflowExecution) {
 }
 
 onMounted(async () => {
+  await bootstrap()
+})
+
+async function bootstrap() {
+  loadError.value = null
   try {
     const exec = await api.getExecution(executionId())
     execution.value = exec
@@ -174,9 +180,14 @@ onMounted(async () => {
       openHitlDialog('approve')
     }
   } catch (err) {
+    loadError.value = err instanceof Error ? err.message : '加载执行记录失败'
     console.error('[exec] load failed', err)
   }
-})
+}
+
+async function retryLoad() {
+  await bootstrap()
+}
 
 onUnmounted(() => {
   stopWorkflowWatch()
@@ -292,7 +303,15 @@ function togglePanelExpand() {
 </script>
 
 <template>
-  <div v-if="execution" :class="styles.page">
+  <div v-if="loadError" :class="styles.errorPage">
+    <AppIcon name="warning-filled" :size="32" />
+    <p>{{ loadError }}</p>
+    <div :class="styles.errorActions">
+      <el-button @click="router.push(backToExecutions)">返回列表</el-button>
+      <el-button type="primary" @click="retryLoad">重试</el-button>
+    </div>
+  </div>
+  <div v-else-if="execution" :class="styles.page">
     <!-- Toolbar -->
     <header :class="styles.toolbar">
       <div :class="styles.toolbarLeft">

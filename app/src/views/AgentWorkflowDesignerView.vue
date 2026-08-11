@@ -216,12 +216,16 @@ function onDeleteSelection() {
   }
 }
 
+const versionsLoadError = ref<string | null>(null)
+
 async function loadVersions() {
   versionLoading.value = true
+  versionsLoadError.value = null
   try {
     versions.value = await api.listWorkflowVersions(workflowId())
-  } catch {
+  } catch (e) {
     versions.value = []
+    versionsLoadError.value = e instanceof Error ? e.message : '加载版本历史失败'
   } finally {
     versionLoading.value = false
   }
@@ -297,6 +301,7 @@ onUnmounted(() => {
             </el-button>
           </div>
           <div v-if="versionLoading" :class="styles.versionLoading">加载中...</div>
+          <div v-else-if="versionsLoadError" :class="styles.versionEmpty">{{ versionsLoadError }}</div>
           <div v-else-if="versions.length === 0" :class="styles.versionEmpty">暂无版本记录</div>
           <div v-else :class="styles.versionList">
             <div

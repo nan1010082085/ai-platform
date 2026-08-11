@@ -47,8 +47,8 @@ describe('AgentWorkflowToolbar', () => {
   it('emits panel toggle events', async () => {
     const wrapper = mountToolbar()
     const buttons = wrapper.findAll('button')
-    const leftToggle = buttons.find((b) => b.attributes('title') === '节点面板')
-    const rightToggle = buttons.find((b) => b.attributes('title') === '属性面板')
+    const leftToggle = buttons.find((b) => b.attributes('aria-label')?.includes('节点面板'))
+    const rightToggle = buttons.find((b) => b.attributes('aria-label')?.includes('属性面板'))
     expect(leftToggle).toBeTruthy()
     expect(rightToggle).toBeTruthy()
     await leftToggle!.trigger('click')

@@ -224,3 +224,28 @@
 :global(.slideUp-leave-to) {
   transform: translateY(100%);
 }
+
+// ---- Error state ----
+.errorPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 16px;
+  color: var(--text-color-secondary);
+  background: var(--bg-color-page);
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    max-width: 400px;
+    text-align: center;
+  }
+}
+
+.errorActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}

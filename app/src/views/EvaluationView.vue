@@ -88,8 +88,9 @@ async function loadWorkflows() {
   try {
     const list = await listWorkflows()
     workflows.value = list.map((w) => ({ id: w.id, name: w.name, status: w.status }))
-  } catch {
-    // 静默：工作流加载失败不阻塞界面
+  } catch (err) {
+    workflows.value = []
+    ElMessage.error(resolveErrorText(err, '加载工作流列表失败'))
   }
 }
 
