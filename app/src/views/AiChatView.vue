@@ -13,6 +13,7 @@ import { useChatConfigStore } from '@/stores/chatConfig'
 import { bridge } from '@/utils/bridge'
 import type { AgentType, ChatSettings, MentionReference, RagSearchResult } from '@/types'
 import { storeToRefs } from 'pinia'
+import { ElMessageBox } from 'element-plus'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import { connect as connectSocket } from '@schema-platform/platform-shared/socket'
 import AiChatPanel from '@/components/AiChatPanel.vue'
@@ -59,7 +60,16 @@ async function handleSelectConversation(id: string): Promise<void> {
   }
 }
 
-function handleDeleteConversation(id: string): void {
+async function handleDeleteConversation(id: string): Promise<void> {
+  try {
+    await ElMessageBox.confirm('确定删除该对话历史？此操作不可撤销。', '删除对话', {
+      type: 'warning',
+      confirmButtonText: '确认删除',
+      cancelButtonText: '取消',
+    })
+  } catch {
+    return
+  }
   store.removeConversation(id).catch((e) => message.error('删除对话失败：' + (e instanceof Error ? e.message : '未知错误')))
 }
 
@@ -115,7 +125,16 @@ function handleNewConversation(): void {
   store.clearConversation()
 }
 
-function handleClearMessages(): void {
+async function handleClearMessages(): Promise<void> {
+  try {
+    await ElMessageBox.confirm('确定清空当前对话消息？此操作不可撤销。', '清空对话', {
+      type: 'warning',
+      confirmButtonText: '确认清空',
+      cancelButtonText: '取消',
+    })
+  } catch {
+    return
+  }
   store.clearConversation()
 }
 

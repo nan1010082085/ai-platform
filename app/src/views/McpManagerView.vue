@@ -5,6 +5,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
+import PageShell from '@/components/common/PageShell.vue'
 import {
   testMcpTool,
   type McpTestResult,
@@ -24,6 +26,11 @@ const {
   pingAll,
   checkTool,
 } = useMcpHealth()
+
+const headerSubtitle = computed(() => {
+  const base = `${servers.value.length} 个 Server · ${totalTools.value} 个工具`
+  return unhealthyCount.value > 0 ? `${base} · ${unhealthyCount.value} 个异常` : base
+})
 
 // ── 数据 ──
 const selectedServer = ref('')
@@ -159,20 +166,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :class="$style.container">
-    <!-- Header -->
-    <div :class="$style.header">
-      <div>
-        <h2 :class="$style.title">
-          <AppIcon name="set-up" :size="20" />
-          MCP 管理
-        </h2>
-        <p :class="$style.subtitle">
-          {{ servers.length }} 个 Server · {{ totalTools }} 个工具
-          <span v-if="unhealthyCount > 0" :class="$style.unhealthy">· {{ unhealthyCount }} 个异常</span>
-        </p>
-      </div>
-      <div :class="$style.headerActions">
+  <PageShell fill>
+    <div :class="$style.container">
+    <PageHeader title="MCP 管理" :subtitle="headerSubtitle">
+      <template #actions>
         <el-button :loading="checking" @click="handlePingAll">
           <AppIcon name="refresh" :size="14" />
           批量健康检查
@@ -181,8 +178,8 @@ onMounted(() => {
           <AppIcon name="refresh-right" :size="14" />
           刷新
         </el-button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <div :class="$style.body">
       <!-- 左侧：Server + 工具列表（含健康指标） -->
@@ -321,15 +318,16 @@ onMounted(() => {
         </div>
       </div>
     </div>
-  </div>
+    </div>
+  </PageShell>
 </template>
 
 <style module>
 .container {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  padding: 16px;
+  flex: 1;
+  min-height: 0;
   gap: 16px;
 }
 

@@ -9,6 +9,7 @@ import { getExecutionTriggerLabel } from '@/constants/workflowInvocation'
 import { watchRunningWorkflowExecutions } from '@/composables/useWorkflowExecutionStream'
 import * as api from '@/api/agentWorkflowApi'
 import { validateObjectId } from '@/utils/objectId'
+import { buildExecutionDetailQuery } from '@/utils/executionNavigation'
 import styles from './AgentExecutionListView.module.scss'
 import PageShell from '@/components/common/PageShell.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -197,7 +198,12 @@ function rowActions(row: AgentWorkflowExecution): TableRowAction[] {
     key: 'detail',
     label: '详情',
     type: 'primary',
-    onClick: () => router.push({ name: 'agent-execution-detail', params: { id: row.id } }),
+    onClick: () =>
+      router.push({
+        name: 'agent-execution-detail',
+        params: { id: row.id },
+        query: buildExecutionDetailQuery(isGlobal.value),
+      }),
   })
   return actions
 }

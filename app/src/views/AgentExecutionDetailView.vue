@@ -13,6 +13,9 @@ import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas
 import * as api from '@/api/agentWorkflowApi'
 import { getExecutionTriggerLabel } from '@/constants/workflowInvocation'
 import { subscribeWorkflowExecution } from '@/composables/useWorkflowExecutionStream'
+import {
+  resolveExecutionDetailBackTo,
+} from '@/utils/executionNavigation'
 import styles from './AgentExecutionDetailView.module.scss'
 
 const route = useRoute()
@@ -31,6 +34,16 @@ let unsubscribeWorkflow: (() => void) | null = null
 const TERMINAL_STATUSES = new Set(['success', 'error', 'waiting', 'cancelled'])
 
 const executionId = () => route.params.id as string
+
+/**
+ * 从全局执行列表进入时带 ?from=global，返回应回到全部执行，而非单工作流列表。
+ */
+const backToExecutions = computed(() =>
+  resolveExecutionDetailBackTo({
+    fromGlobal: route.query.from === 'global',
+    workflowId: execution.value?.workflowId,
+  }),
+)
 
 const tabOptions = [
   { label: '节点记录', value: 'records' },
@@ -283,7 +296,12 @@ function togglePanelExpand() {
     <!-- Toolbar -->
     <header :class="styles.toolbar">
       <div :class="styles.toolbarLeft">
-        <button :class="styles.iconBtn" aria-label="返回执行记录" title="返回执行记录" @click="router.push({ name: 'agent-workflow-executions', params: { id: execution.workflowId } })">
+        <button
+          :class="styles.iconBtn"
+          aria-label="返回执行记录"
+          title="返回执行记录"
+          @click="router.push(backToExecutions)"
+        >
           <AppIcon name="arrow-left" :size="14" />
         </button>
         <div :class="styles.divider" />
@@ -306,6 +324,7 @@ function togglePanelExpand() {
         <button
           :class="[styles.iconBtn, { [styles.iconBtnActive]: panelOpen }]"
           :title="panelOpen ? '收起底部面板' : '展开底部面板'"
+          :aria-label="panelOpen ? '收起底部面板' : '展开底部面板'"
           @click="togglePanel"
         >
           <AppIcon name="data-line" :size="14" />
@@ -349,6 +368,7 @@ function togglePanelExpand() {
         <button
           :class="styles.panelExpandBtn"
           :title="panelExpanded ? '收起面板' : '展开面板'"
+          :aria-label="panelExpanded ? '收起面板' : '展开面板'"
           @click="togglePanelExpand"
         >
           <AppIcon :name="panelExpanded ? 'arrow-down' : 'arrow-up'" :size="12" />

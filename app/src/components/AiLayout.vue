@@ -26,20 +26,37 @@ const primaryNav = computed(() => [
   { path: '/monitor', label: t('layout.nav.monitor'), icon: 'data-line' },
 ])
 
-// 设置项：收进右上角下拉
-const settingsNav = computed(() => [
-  { path: '/settings/models', label: t('layout.nav.models'), icon: 'connection' },
-  { path: '/settings/embedding', label: t('layout.nav.embedding'), icon: 'collection' },
-  { path: '/memory', label: t('layout.nav.memory'), icon: 'data-board' },
-  { path: '/integration', label: t('layout.nav.integration'), icon: 'link' },
-  { path: '/settings/keys', label: t('layout.nav.keys'), icon: 'key' },
-  { path: '/settings/templates', label: t('layout.nav.templates'), icon: 'document-checked' },
-  { path: '/debug/routing', label: t('layout.nav.routingDebug'), icon: 'search' },
-  { path: '/debug/rag', label: t('layout.nav.ragDebug'), icon: 'filter' },
-  { path: '/mcp', label: t('layout.nav.mcp'), icon: 'set-up' },
-  { path: '/evaluation', label: t('layout.nav.evaluation'), icon: 'data-analysis' },
-  { path: '/schedules', label: t('layout.nav.schedules'), icon: 'alarm-clock' },
+// 设置项：收进右上角下拉，按组分隔
+type SettingsGroup = 'config' | 'integration' | 'ops'
+
+interface SettingsNavItem {
+  path: string
+  label: string
+  icon: string
+  group: SettingsGroup
+}
+
+const settingsNav = computed<SettingsNavItem[]>(() => [
+  { path: '/settings/models', label: t('layout.nav.models'), icon: 'cpu', group: 'config' },
+  { path: '/settings/embedding', label: t('layout.nav.embedding'), icon: 'collection', group: 'config' },
+  { path: '/settings/templates', label: t('layout.nav.templates'), icon: 'document-checked', group: 'config' },
+  { path: '/memory', label: t('layout.nav.memory'), icon: 'data-board', group: 'config' },
+  { path: '/integration', label: t('layout.nav.integration'), icon: 'link', group: 'integration' },
+  { path: '/settings/keys', label: t('layout.nav.keys'), icon: 'key', group: 'integration' },
+  { path: '/mcp', label: t('layout.nav.mcp'), icon: 'set-up', group: 'integration' },
+  { path: '/schedules', label: t('layout.nav.schedules'), icon: 'alarm-clock', group: 'ops' },
+  { path: '/evaluation', label: t('layout.nav.evaluation'), icon: 'data-analysis', group: 'ops' },
+  { path: '/debug/routing', label: t('layout.nav.routingDebug'), icon: 'search', group: 'ops' },
+  { path: '/debug/rag', label: t('layout.nav.ragDebug'), icon: 'filter', group: 'ops' },
 ])
+
+const settingsGroups = computed(() => {
+  const groupOrder: SettingsGroup[] = ['config', 'integration', 'ops']
+  return groupOrder.map((id) => ({
+    id,
+    items: settingsNav.value.filter((item) => item.group === id),
+  }))
+})
 
 const languageLabel = computed(() =>
   locale.value === 'zh-CN' ? t('layout.switchToEn') : t('layout.switchToZh'),
@@ -48,6 +65,7 @@ const languageLabel = computed(() =>
 const activeNav = computed(() => {
   if (route.path === '/') return '/'
   if (route.path.startsWith('/workflows') || route.path.startsWith('/executions')) return '/workflows'
+  if (route.path.startsWith('/plugins')) return '/plugins'
   if (route.path.startsWith('/settings/models')) return '/settings/models'
   if (route.path.startsWith('/settings/embedding')) return '/settings/embedding'
   if (route.path.startsWith('/settings/templates')) return '/settings/templates'
@@ -110,14 +128,19 @@ function handleSettingsSelect(path: string) {
           </button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item
-                v-for="item in settingsNav"
-                :key="item.path"
-                :command="item.path"
-              >
-                <AppIcon :name="item.icon" :size="16" />
-                <span :class="$style.dropdownLabel">{{ item.label }}</span>
-              </el-dropdown-item>
+              <template v-for="(group, gi) in settingsGroups" :key="group.id">
+                <el-dropdown-item disabled :divided="gi > 0" :class="$style.dropdownGroupTitle">
+                  {{ t(`layout.settingsGroup.${group.id}`) }}
+                </el-dropdown-item>
+                <el-dropdown-item
+                  v-for="item in group.items"
+                  :key="item.path"
+                  :command="item.path"
+                >
+                  <AppIcon :name="item.icon" :size="16" />
+                  <span :class="$style.dropdownLabel">{{ item.label }}</span>
+                </el-dropdown-item>
+              </template>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -276,6 +299,13 @@ function handleSettingsSelect(path: string) {
 
 .dropdownLabel {
   margin-left: 6px;
+}
+
+.dropdownGroupTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-secondary);
+  cursor: default;
 }
 
 .main {

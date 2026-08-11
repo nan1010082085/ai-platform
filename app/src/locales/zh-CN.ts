@@ -23,6 +23,11 @@ export default {
     language: '语言',
     switchToEn: 'English',
     switchToZh: '中文',
+    settingsGroup: {
+      config: '配置',
+      integration: '集成',
+      ops: '运维与调试',
+    },
     nav: {
       chat: 'AI 对话',
       workflows: 'Agent 编排',

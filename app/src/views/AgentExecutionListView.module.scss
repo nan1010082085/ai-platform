@@ -29,6 +29,16 @@
   flex-shrink: 0;
 }
 
+.filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.filterSelect {
+  width: 160px;
+}
+
 // ---- Content ----
 .content {
   padding: 0;
@@ -47,6 +57,14 @@
 }
 
 // ---- Cells ----
+.workflowLink {
+  color: var(--el-color-primary);
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .execId {
   font-family: var(--font-family-mono, monospace);
   font-size: 12px;
@@ -57,6 +75,19 @@
   font-family: var(--font-family-mono, monospace);
   font-size: 12px;
   color: var(--text-color-secondary);
+}
+
+// ---- Error State ----
+.errorState {
+  padding: 60px 24px;
+  text-align: center;
+  color: var(--el-color-danger);
+
+  p {
+    margin: 12px 0 16px;
+    font-size: 14px;
+    color: var(--text-color-regular);
+  }
 }
 
 // ---- Empty ----
