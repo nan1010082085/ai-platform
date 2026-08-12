@@ -8,10 +8,21 @@
 
 **Tech Stack:** Vue 3 + TypeScript + Element Plus + CSS Module + Vitest；图标一律 `AppIcon`（`platform-shared/utils/iconRegistry.ts`）。
 
-**Source audit:** [ai-app-uiux-audit.canvas.tsx](/Users/yangdongnan/.cursor/projects/Users-yangdongnan-work-schema-platform-ai/canvases/ai-app-uiux-audit.canvas.tsx)
+**Source audit:**
+- 首轮：[ai-app-uiux-audit.canvas.tsx](/Users/yangdongnan/.cursor/projects/Users-yangdongnan-work-schema-platform-ai/canvases/ai-app-uiux-audit.canvas.tsx)
+- 整体走查（2026-08-11）：[ai-app-uiux-overall.canvas.tsx](/Users/yangdongnan/.cursor/projects/Users-yangdongnan-work-schema-platform-ai/canvases/ai-app-uiux-overall.canvas.tsx)
 
-## Global Constraints
+## Progress（对照整体走查）
 
+| 里程碑 | Tasks | 状态 |
+|--------|-------|------|
+| M1 止血 | 1–5 | **已完成** |
+| M2 产品闭环 | 6、8 | **已完成**（FullscreenChrome 改为删除，详情保留自建 toolbar + `from=global`） |
+| M3 一致性 | 7、9、10 | **已完成**（Evaluation 外层 label 已有；Chat token 试点已做） |
+| **M4 全屏页打磨** | **11–13** | **已完成**（commit `84416f2`）；Task 14 P3 仅跟踪 |
+| 清理 | theme-tech 死文件 | **已完成**（commit `310009f`） |
+
+---
 - 禁止修改 `server/`、禁止跨项目改 `platform-shared`（除非 Task 需要新图标且用户批准切到 platform-shared）
 - 禁止编造未注册 AppIcon 名；缺图标先扩展 `iconRegistry.ts`
 - 危险操作确认文案用中文，复用 `ElMessageBox.confirm`（与 `useWorkflowActions` / `useModelCenter` 一致）
@@ -31,8 +42,10 @@
 | 设置导航 | `app/src/components/AiLayout.vue`、`app/src/locales/zh-CN.ts` / `en.ts` |
 | 孤儿页 | `app/src/router.ts`、`app/src/views/PluginMarketView.vue`（挂路由或删除，二选一） |
 | 页面壳 | `AgentWorkflowListView.vue`、`AgentExecutionListView.vue`、`ApiKeyManagerView.vue`、`McpManagerView.vue` + 各自 scss |
-| a11y | `app/src/components/AiChatPanel.vue` |
+| a11y | `app/src/components/AiChatPanel.vue`、`AgentWorkflowToolbar.vue`、`AiLayout.vue` |
 | 全局执行入口（关联债） | `app/src/router.ts`、`AgentExecutionListView.vue`、`AgentWorkflowListView.vue`、`app/src/api/agentWorkflowApi.ts`（server 已支持 `status`/`trigger`） |
+| 执行导航 | `app/src/utils/executionNavigation.ts`、`app/src/__tests__/executionNavigation.spec.ts` |
+| 静默失败收口 | `AiMonitorView.vue`、`EvaluationView.vue`、`AgentWorkflowDesignerView.vue` |
 
 ---
 
@@ -706,52 +719,287 @@ git commit -m "style(ai): Chat 面板硬编码色收敛到主题变量"
 
 ---
 
+# M4 — 整体走查新增（全屏页打磨）
+
+> 来源：2026-08-11 整体走查（B+）。M1–M3 行为项已闭环；下列为仍开放的 P1/P2（P3 移动端/全量 hex 仍排除）。
+
+### Task 11: 执行详情加载失败态（P1）
+
+**Files:**
+- Modify: `app/src/views/AgentExecutionDetailView.vue`
+- Modify: `app/src/views/AgentExecutionDetailView.module.scss`（错误态样式，可对齐 List 的 `errorState`）
+- Create 或扩展: `app/src/__tests__/AgentExecutionDetailView.spec.ts`（可选；至少补导航/失败文案断言）
+
+**Interfaces:**
+- Consumes: `api.getExecution`、`backToExecutions` / `resolveExecutionDetailBackTo`
+- Produces: `loadError: Ref<string | null>`；失败时不留白，展示错误 + 重试 + 返回
+
+- [ ] **Step 1: 复现路径**
+
+人为让 `getExecution` 抛错（断网或 mock reject）→ 确认当前仅 `console.error`，模板 `v-if="execution"` 导致空白。
+
+- [ ] **Step 2: 增加 loadError 状态**
+
+```ts
+const loadError = ref<string | null>(null)
+
+onMounted(async () => {
+  loadError.value = null
+  try {
+    const exec = await api.getExecution(executionId())
+    execution.value = exec
+    startWorkflowWatch()
+    await loadExecutionGraph(exec)
+    await load()
+    if (execution.value?.status === 'waiting') {
+      openHitlDialog('approve')
+    }
+  } catch (err) {
+    loadError.value = err instanceof Error ? err.message : '加载执行记录失败'
+    console.error('[exec] load failed', err)
+  }
+})
+
+async function retryLoad() {
+  loadError.value = null
+  execution.value = null
+  // 复用 onMounted 主体，或抽 `bootstrap()`
+  await bootstrap()
+}
+```
+
+- [ ] **Step 3: 模板错误态（与成功态互斥）**
+
+```vue
+<div v-if="loadError" :class="styles.errorPage">
+  <AppIcon name="warning-filled" :size="32" />
+  <p>{{ loadError }}</p>
+  <div :class="styles.errorActions">
+    <el-button @click="router.push(backToExecutions)">返回列表</el-button>
+    <el-button type="primary" @click="retryLoad">重试</el-button>
+  </div>
+</div>
+<div v-else-if="execution" :class="styles.page">
+  <!-- 既有 toolbar / 画布 -->
+</div>
+```
+
+`backToExecutions` 在 `execution` 为空时已由 `resolveExecutionDetailBackTo` 回退到 `agent-executions`（缺 workflowId）。
+
+- [ ] **Step 4: 手测**
+
+非法 id / 断网 → 见错误与重试；重试成功 → 进入正常详情；点返回 → 列表。
+
+- [ ] **Step 5: Commit（可选）**
+
+```bash
+git commit -m "fix(ai): 执行详情加载失败展示错误态与重试"
+```
+
+---
+
+### Task 12: 设计器 Toolbar + Layout homeBtn a11y（P2）
+
+**Files:**
+- Modify: `app/src/components/agent-workflow/AgentWorkflowToolbar.vue`
+- Modify: `app/src/components/agent-workflow/AgentWorkflowToolbar.module.scss`（补 `:focus-visible`，对齐 Chat）
+- Modify: `app/src/components/AiLayout.vue`（`homeBtn`）
+
+**Interfaces:**
+- Consumes: 既有 `title` / tooltip 文案作 `aria-label`
+- Produces: 每个 icon-only 按钮同时具备 `aria-label`（与 `title` 同文或更完整）
+
+- [ ] **Step 1: Toolbar 按钮清单**
+
+至少覆盖：返回列表、节点面板、属性面板、连线样式、删除、执行记录、快捷键、版本历史、校验。示例：
+
+```vue
+<button
+  :class="styles.iconBtn"
+  title="返回列表"
+  aria-label="返回列表"
+  @click="goToList"
+>
+```
+
+有 `el-tooltip` 的按钮：`aria-label` 用与 tooltip 一致的动态文案（如「隐藏节点面板」/「显示节点面板」）。
+
+- [ ] **Step 2: focus-visible**
+
+```scss
+.iconBtn:focus-visible {
+  outline: 2px solid var(--ai-color-primary, #0060a2);
+  outline-offset: 2px;
+}
+```
+
+- [ ] **Step 3: Layout homeBtn**
+
+```vue
+<button
+  :class="$style.homeBtn"
+  :title="t('layout.homeTitle')"
+  :aria-label="t('layout.homeTitle')"
+  @click="goToShellHome"
+>
+```
+
+- [ ] **Step 4: 键盘 Tab 扫过设计器顶栏与（嵌入态）Layout 首页按钮**
+
+- [ ] **Step 5: Commit（可选）**
+
+```bash
+git commit -m "a11y(ai): 设计器工具栏与 Layout 首页按钮 aria-label"
+```
+
+---
+
+### Task 13: 静默 catch 改为可见失败（P2）
+
+**Files:**
+- Modify: `app/src/views/AiMonitorView.vue`（`loadNodeTypeStats`）
+- Modify: `app/src/views/EvaluationView.vue`（`loadWorkflows`）
+- Modify: `app/src/views/AgentWorkflowDesignerView.vue`（`listWorkflowVersions` 失败）
+
+**Interfaces:**
+- Consumes: `ElMessage.error` 或页面内 `*Error` ref + 空态文案
+- Produces: 用户能区分「无数据」与「加载失败」
+
+- [ ] **Step 1: Monitor — 节点类型统计**
+
+```ts
+async function loadNodeTypeStats() {
+  nodeTypeLoading.value = true
+  try {
+    nodeTypeStats.value = await getNodeTypeStats()
+  } catch (e) {
+    nodeTypeStats.value = []
+    ElMessage.error(e instanceof Error ? e.message : '加载节点类型统计失败')
+  } finally {
+    nodeTypeLoading.value = false
+  }
+}
+```
+
+若图表区有空态，失败时可加一行「统计加载失败」；最低要求 toast。
+
+- [ ] **Step 2: Evaluation — 工作流列表**
+
+```ts
+async function loadWorkflows() {
+  try {
+    const list = await listWorkflows()
+    workflows.value = list.map((w) => ({ id: w.id, name: w.name, status: w.status }))
+  } catch (err) {
+    workflows.value = []
+    ElMessage.error(resolveErrorText(err, '加载工作流列表失败'))
+  }
+}
+```
+
+- [ ] **Step 3: Designer — 版本历史**
+
+引入 `versionsError` 或复用 toast：
+
+```ts
+const versionsLoadError = ref<string | null>(null)
+
+try {
+  versionsLoadError.value = null
+  versions.value = await api.listWorkflowVersions(workflowId())
+} catch (e) {
+  versions.value = []
+  versionsLoadError.value = e instanceof Error ? e.message : '加载版本历史失败'
+}
+```
+
+模板：
+
+```vue
+<div v-if="versionsLoadError" …>{{ versionsLoadError }}</div>
+<div v-else-if="versions.length === 0" …>暂无版本记录</div>
+```
+
+- [ ] **Step 4: 手测三处失败路径（mock / 断 API）**
+
+- [ ] **Step 5: Commit（可选）**
+
+```bash
+git commit -m "fix(ai): Monitor/评测/版本历史加载失败可见反馈"
+```
+
+---
+
+### Task 14: P3 登记（本里程碑不做，仅跟踪）
+
+下列项在整体走查中确认为债，**M4 不实施**，避免范围膨胀：
+
+| 项 | 说明 | 建议专项 |
+|----|------|----------|
+| 移动端 @media | Layout / Chat / Designer 无断点 | 「桌面优先」文档声明 + 日后移动专项 |
+| 裸 hex 收敛 | 组件层仍约百余处非 token | 主题收敛专项（按目录分批） |
+| Evaluation 表内 placeholder | 抽屉外层已有 label；单元格内可保留 | 低优先 |
+| Debug 清空历史无确认 | WorkflowDebug / RoutingDebug | 与 Chat 确认模式对齐时可做 |
+| 画布删节点无确认 | 设计器常见交互 | 默认不做 |
+| Sidebar icon-only a11y | `AiSidebarView` | 可随 Toolbar a11y 顺手，非 M4 必做 |
+| `theme-tech.scss` 死文件 | 疑似未 import | 清理专项时删除或重新挂载 |
+
+---
+
 ## 执行顺序与依赖
 
 ```text
-Task 1 (返回) ──┐
-Task 2 (错误态) ─┼─► Task 8 (全局列表复用 ListView，依赖 1/2 稳定)
-Task 3 (确认) ───┘
-Task 4 (设置分组)     可并行
-Task 5 (PluginMarket) 可并行
-Task 6 (全屏契约)     建议在 1 之后；与 8 的 backTo 协调
-Task 7 (PageShell)    可与 8 并行，注意 ListView 冲突时串行
-Task 9 (a11y)         可并行
-Task 10 (色值试点)    最后，避免与大改 UI 冲突
+【已完成】
+Task 1–13（M1–M4 实施项）+ theme-tech 死文件清理
+
+【跟踪】
+Task 14 (P3 登记) — 移动端 / 裸 hex / Debug 确认等，另开专项
 ```
 
 **建议里程碑**
-- **M1（止血）**: Task 1–5  
-- **M2（产品闭环）**: Task 6 + 8  
-- **M3（一致性）**: Task 7 + 9 + 10  
+- **M1（止血）**: Task 1–5 → 已完成  
+- **M2（产品闭环）**: Task 6 + 8 → 已完成  
+- **M3（一致性）**: Task 7 + 9 + 10 → 已完成  
+- **M4（全屏页打磨）**: Task 11–13 → **已完成**；Task 14 跟踪  
 
 ---
 
 ## Self-review
 
-| 审计项 | 对应 Task |
-|--------|-----------|
-| P0 返回自指 | Task 1 |
-| P0 Layout 断裂 | Task 6（契约，不强行嵌 Layout） |
-| P1 设置过载 | Task 4 |
-| P1 PluginMarket | Task 5 |
-| P1 无确认 | Task 3 |
-| P1 静默空表 | Task 2 |
-| P2 PageShell | Task 7 |
-| P2 aria | Task 9 |
-| P2 表单 label | Task 9（一页试点） |
-| P2 硬编码色 | Task 10（试点） |
-| P2 响应式 | **本计划不做**（声明桌面优先；另开专项） |
-| 全局执行+筛选 | Task 8（审计后续产品项） |
+| 审计项 | 对应 Task | 状态 |
+|--------|-----------|------|
+| P0 返回自指 | Task 1 | 已完成 |
+| P0 Layout 断裂 | Task 6 / `from=global` | 已完成（不强行嵌 Layout） |
+| P1 设置过载 | Task 4 | 已完成 |
+| P1 PluginMarket | Task 5 | 已完成 |
+| P1 无确认 | Task 3 | 已完成 |
+| P1 静默空表 | Task 2 | 已完成 |
+| P2 PageShell | Task 7 | 已完成 |
+| P2 Chat aria | Task 9 | 已完成 |
+| P2 硬编码色试点 | Task 10 | 已完成 |
+| 全局执行+筛选 | Task 8 | 已完成 |
+| **P1 详情加载空白** | **Task 11** | **已完成** |
+| **P2 Toolbar / homeBtn a11y** | **Task 12** | **已完成** |
+| **P2 静默 catch** | **Task 13** | **已完成** |
+| P2 响应式 | Task 14 | 排除 / 专项 |
+| P3 裸 hex / Debug 确认等 | Task 14 | 排除 / 专项 |
 
-无 TBD/占位步骤；响应式明确排除以免范围膨胀。
+无 TBD/占位步骤；响应式与全量色值明确排除。
 
 ---
 
 ## 验证清单（整包）
 
-- [ ] `cd app && pnpm test`（或至少本计划新增/修改的 spec）
-- [ ] `cd app && pnpm build`
-- [ ] 手测：工作流列表 ↔ 执行列表 ↔ 详情 ↔ 设计器 返回路径
-- [ ] 手测：设置下拉分组；清空对话取消；停止执行取消
-- [ ] 手测：`/executions` 筛选 status=waiting / trigger=webhook
+### M1–M3（回归）
+
+- [x] 工作流列表 ↔ 执行列表 ↔ 详情（含 `from=global`）↔ 设计器 返回路径
+- [x] 设置下拉分组；清空对话取消；停止执行取消
+- [x] `/executions` 筛选 status / trigger
+- [x] Chat 顶栏 aria-label；无 plugin-market 断链
+
+### M4（新增）
+
+- [x] 执行详情非法 id / 失败：错误文案 + 重试 + 返回
+- [x] 设计器顶栏 Tab 可达，读屏可读按钮名；Layout homeBtn 有 aria-label
+- [x] Monitor 节点统计 / 评测工作流下拉 / 版本历史：失败可见，不与空数据混淆
+- [ ] `cd app && pnpm exec vitest run`（相关 spec）+ `pnpm build`（提交前按需）
