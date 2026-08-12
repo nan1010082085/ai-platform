@@ -507,86 +507,84 @@ onMounted(() => {
           </template>
         </div>
       </div>
+  </PageShell>
 
-    <!-- 新建/编辑抽屉 -->
-    <el-drawer
-      v-model="drawerVisible"
-      :title="editing ? t('workflowTemplates.editTitle') : t('workflowTemplates.createTitle')"
-      size="60%"
-    >
-      <div :class="styles.drawerBody">
-        <div :class="styles.formRow">
-          <label :class="styles.formLabel">{{ t('workflowTemplates.fieldTemplateId') }}</label>
-          <el-input
-            v-model="form.templateId"
-            :placeholder="t('workflowTemplates.fieldTemplateIdPlaceholder')"
-            :disabled="editing"
-            size="small"
-          />
-          <span :class="styles.formHint">{{ t('workflowTemplates.fieldTemplateIdHint') }}</span>
-        </div>
-
-        <div :class="styles.formRow">
-          <label :class="styles.formLabel">{{ t('workflowTemplates.fieldName') }}</label>
-          <el-input v-model="form.name" :placeholder="t('workflowTemplates.fieldNamePlaceholder')" size="small" />
-        </div>
-
-        <div :class="styles.formRow">
-          <label :class="styles.formLabel">{{ t('workflowTemplates.fieldDescription') }}</label>
-          <el-input
-            v-model="form.description"
-            type="textarea"
-            :rows="2"
-            :placeholder="t('workflowTemplates.fieldDescriptionPlaceholder')"
-            size="small"
-          />
-        </div>
-
-        <div :class="styles.formRow">
-          <label :class="styles.formLabel">{{ t('workflowTemplates.fieldCategory') }}</label>
-          <el-select v-model="form.category" size="small" style="width: 200px">
-            <el-option
-              v-for="opt in CATEGORY_OPTIONS"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
-        </div>
-
-        <div :class="styles.formRow">
-          <label :class="styles.formLabel">{{ t('workflowTemplates.fieldIcon') }}</label>
-          <el-input v-model="form.icon" :placeholder="t('workflowTemplates.fieldIconPlaceholder')" size="small" />
-          <span :class="styles.formHint">{{ t('workflowTemplates.fieldIconHint') }}</span>
-        </div>
-
-        <div :class="styles.formRow">
-          <label :class="styles.formLabel">{{ t('workflowTemplates.fieldTags') }}</label>
-          <el-input v-model="form.tags" :placeholder="t('workflowTemplates.fieldTagsPlaceholder')" size="small" />
-        </div>
-
-        <div :class="styles.formRow">
-          <label :class="styles.formLabel">{{ t('workflowTemplates.fieldGraph') }}</label>
-          <el-input
-            v-model="form.graph"
-            type="textarea"
-            :rows="16"
-            :placeholder="'{&quot;nodes&quot;: [], &quot;edges&quot;: []}'"
-            :class="styles.graphEditor"
-            size="small"
-          />
-          <span :class="styles.formHint">{{ t('workflowTemplates.fieldGraphHint') }}</span>
-        </div>
-
-        <div v-if="formError" style="color: var(--el-color-danger); font-size: 13px">{{ formError }}</div>
-
-        <div :class="styles.drawerFooter">
-          <el-button @click="drawerVisible = false">{{ t('common.cancel') }}</el-button>
-          <el-button type="primary" :loading="saving" @click="save">
-            {{ t('common.confirm') }}
-          </el-button>
-        </div>
+  <!-- 抽屉放在 PageShell 外，避免 fill 末子 flex:1 落到 drawer 上 -->
+  <el-drawer
+    v-model="drawerVisible"
+    :title="editing ? t('workflowTemplates.editTitle') : t('workflowTemplates.createTitle')"
+    size="60%"
+  >
+    <div :class="styles.drawerBody">
+      <div :class="styles.formRow">
+        <label :class="styles.formLabel">{{ t('workflowTemplates.fieldTemplateId') }}</label>
+        <el-input
+          v-model="form.templateId"
+          :placeholder="t('workflowTemplates.fieldTemplateIdPlaceholder')"
+          :disabled="editing"
+          size="small"
+        />
+        <span :class="styles.formHint">{{ t('workflowTemplates.fieldTemplateIdHint') }}</span>
       </div>
-    </el-drawer>
-</PageShell>
+
+      <div :class="styles.formRow">
+        <label :class="styles.formLabel">{{ t('workflowTemplates.fieldName') }}</label>
+        <el-input v-model="form.name" :placeholder="t('workflowTemplates.fieldNamePlaceholder')" size="small" />
+      </div>
+
+      <div :class="styles.formRow">
+        <label :class="styles.formLabel">{{ t('workflowTemplates.fieldDescription') }}</label>
+        <el-input
+          v-model="form.description"
+          type="textarea"
+          :rows="3"
+          :placeholder="t('workflowTemplates.fieldDescriptionPlaceholder')"
+        />
+      </div>
+
+      <div :class="styles.formRow">
+        <label :class="styles.formLabel">{{ t('workflowTemplates.fieldCategory') }}</label>
+        <el-select v-model="form.category" size="small" style="width: 200px">
+          <el-option
+            v-for="opt in CATEGORY_OPTIONS"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
+          />
+        </el-select>
+      </div>
+
+      <div :class="styles.formRow">
+        <label :class="styles.formLabel">{{ t('workflowTemplates.fieldIcon') }}</label>
+        <el-input v-model="form.icon" :placeholder="t('workflowTemplates.fieldIconPlaceholder')" size="small" />
+        <span :class="styles.formHint">{{ t('workflowTemplates.fieldIconHint') }}</span>
+      </div>
+
+      <div :class="styles.formRow">
+        <label :class="styles.formLabel">{{ t('workflowTemplates.fieldTags') }}</label>
+        <el-input v-model="form.tags" :placeholder="t('workflowTemplates.fieldTagsPlaceholder')" size="small" />
+      </div>
+
+      <div :class="styles.formRow">
+        <label :class="styles.formLabel">{{ t('workflowTemplates.fieldGraph') }}</label>
+        <el-input
+          v-model="form.graph"
+          type="textarea"
+          :rows="16"
+          :placeholder="'{&quot;nodes&quot;: [], &quot;edges&quot;: []}'"
+          :class="styles.graphEditor"
+        />
+        <span :class="styles.formHint">{{ t('workflowTemplates.fieldGraphHint') }}</span>
+      </div>
+
+      <div v-if="formError" style="color: var(--el-color-danger); font-size: 13px">{{ formError }}</div>
+
+      <div :class="styles.drawerFooter">
+        <el-button @click="drawerVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="save">
+          {{ t('common.confirm') }}
+        </el-button>
+      </div>
+    </div>
+  </el-drawer>
 </template>
