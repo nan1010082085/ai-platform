@@ -134,6 +134,12 @@ const routes = [
     name: 'sidebar',
     component: () => import('./views/AiSidebarView.vue'),
   },
+  {
+    path: '/shared/:shareId',
+    name: 'shared-conversation',
+    component: () => import('./views/SharedConversationView.vue'),
+    meta: { public: true },
+  },
 ]
 
 function inferRouteBase(): string {

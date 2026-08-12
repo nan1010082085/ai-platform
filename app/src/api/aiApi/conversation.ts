@@ -146,3 +146,18 @@ export async function unshareConversation(conversationId: string): Promise<void>
     method: 'DELETE',
   })
 }
+
+/** 获取分享对话（公开接口，无需鉴权） */
+export async function getSharedConversation(shareId: string): Promise<{
+  id: string
+  title: string
+  messages: Array<{
+    role: string
+    content: string
+    thinking?: string
+    tip?: string
+    timestamp: string
+  }>
+}> {
+  return request(`/ai/conversations/shared/${encodeURIComponent(shareId)}`)
+}

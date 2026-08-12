@@ -45,14 +45,21 @@ async function handleBulkDelete() {
   } catch { return }
   bulkDeleting.value = true
   let success = 0
+  let failed = 0
   for (const id of selectedIds.value) {
     try {
       await api.deleteWorkflow(id)
       success++
-    } catch { /* skip */ }
+    } catch {
+      failed++
+    }
   }
   bulkDeleting.value = false
-  ElMessage.success(`已删除 ${success} 个工作流`)
+  if (failed === 0) {
+    ElMessage.success(`已删除 ${success} 个工作流`)
+  } else {
+    ElMessage.warning(`已删除 ${success} 个，失败 ${failed} 个`)
+  }
   selectedIds.value.clear()
   bulkMode.value = false
   await load()

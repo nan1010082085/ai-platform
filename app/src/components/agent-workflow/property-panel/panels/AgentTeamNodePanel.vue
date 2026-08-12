@@ -6,6 +6,7 @@
  * 复用 AgentLoopNodePanel 的模型选择 + 工具多选范式。
  */
 import { computed, ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import SectionToggle from '../SectionToggle.vue'
 import FieldRow from '../FieldRow.vue'
@@ -32,7 +33,10 @@ onMounted(async () => {
   try {
     const all = await listWorkflows()
     publishedWorkflows.value = all.filter((w) => w.status === 'published')
-  } catch { /* ignore */ }
+  } catch (e) {
+    publishedWorkflows.value = []
+    ElMessage.error(e instanceof Error ? e.message : '加载工作流列表失败')
+  }
 })
 
 const toolOptions = computed(() =>

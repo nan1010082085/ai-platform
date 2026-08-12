@@ -6,6 +6,7 @@
  * 与 agent-loop 的 workflow: 工具调用区别：工具调用是"拿结果回主循环"，handoff 是"目标接管"。
  */
 import { ref, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import SectionToggle from '../SectionToggle.vue'
 import FieldRow from '../FieldRow.vue'
 import { listWorkflows } from '@/api/agentWorkflowApi'
@@ -21,7 +22,10 @@ onMounted(async () => {
   try {
     const all = await listWorkflows()
     publishedWorkflows.value = all.filter((w) => w.status === 'published')
-  } catch { /* ignore */ }
+  } catch (e) {
+    publishedWorkflows.value = []
+    ElMessage.error(e instanceof Error ? e.message : '加载工作流列表失败')
+  }
 })
 
 const selectedId = computed(() => String(props.node.data?.handoffTargetWorkflowId ?? ''))

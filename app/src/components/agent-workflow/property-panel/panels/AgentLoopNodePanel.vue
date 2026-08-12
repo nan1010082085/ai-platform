@@ -5,6 +5,7 @@
  * LLM 自主循环调工具：配置模型、可用工具（平台工具 + 子 workflow）、最大迭代、系统提示、输入来源。
  */
 import { ref, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import SectionToggle from '../SectionToggle.vue'
 import FieldRow from '../FieldRow.vue'
 import ModelOptionSelect from '@/components/ModelOptionSelect.vue'
@@ -26,7 +27,10 @@ onMounted(async () => {
   try {
     const all = await listWorkflows()
     publishedWorkflows.value = all.filter((w) => w.status === 'published')
-  } catch { /* ignore */ }
+  } catch (e) {
+    publishedWorkflows.value = []
+    ElMessage.error(e instanceof Error ? e.message : '加载工作流列表失败')
+  }
 })
 
 const allTools = computed(() => getToolsForPanel())

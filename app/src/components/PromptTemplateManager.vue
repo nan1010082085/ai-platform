@@ -36,8 +36,12 @@ async function load() {
   loading.value = true
   try {
     templates.value = await getPromptTemplates()
-  } catch { /* ignore */ }
-  loading.value = false
+  } catch (e) {
+    templates.value = []
+    ElMessage.error(e instanceof Error ? e.message : '加载 Prompt 模板失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(load)
