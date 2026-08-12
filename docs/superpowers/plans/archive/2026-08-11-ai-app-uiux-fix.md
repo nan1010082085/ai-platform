@@ -1,5 +1,9 @@
 # AI App UI/UX 修复 Implementation Plan
 
+> **状态: 🗄 ARCHIVED / CLOSED（2026-08-12）**  
+> 勿再据此开工。活跃计划 → [../2026-08-12-ai-app-uiux-m5.md](../2026-08-12-ai-app-uiux-m5.md)  
+> 本文仅作 M1–M4 历史归档（含走查对照进度）；M5 任务正文已迁出，勿在此更新。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 按 UI/UX 审计结论，先止血导航/确认/错误反馈，再统一页面壳与基础可访问性，不重做视觉品牌。
@@ -21,7 +25,7 @@
 | M3 一致性 | 7、9、10 | **已完成**（Evaluation 外层 label 已有；Chat token 试点已做） |
 | **M4 全屏页打磨** | **11–13** | **已完成**（commit `84416f2`）；Task 14 P3 仅跟踪 |
 | 清理 | theme-tech 死文件 | **已完成**（commit `310009f`） |
-| **M5 边角闭环** | **15–18** | Task 16 **已完成**；15 / 17 / 18 **待做** |
+| **M5 边角闭环** | **15–18** | 已迁出 → [../2026-08-12-ai-app-uiux-m5.md](../2026-08-12-ai-app-uiux-m5.md) |
 
 ---
 - 禁止修改 `server/`、禁止跨项目改 `platform-shared`（除非 Task 需要新图标且用户批准切到 platform-shared）

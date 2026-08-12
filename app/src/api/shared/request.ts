@@ -31,6 +31,11 @@ export interface RequestOptions {
    * 用于对接不使用统一信封的端点（如 /ai/debug/* 调试路由）。
    */
   raw?: boolean
+  /**
+   * 公开接口：401 时不刷新 token、不跳登录，直接抛 ApiError。
+   * 用于分享页等免登录场景，避免失效 token 把访客踢到登录页。
+   */
+  public?: boolean
 }
 
 // ---- Error class ----
@@ -158,7 +163,7 @@ export async function request<T>(url: string, options: RequestOptions = {}): Pro
 }
 
 async function doRequest<T>(url: string, options: RequestOptions, retried: boolean): Promise<T> {
-  const { method, body, headers: extraHeaders, signal, raw } = options
+  const { method, body, headers: extraHeaders, signal, raw, public: isPublic } = options
 
   const headers: Record<string, string> = {
     ...buildAuthHeaders(extraHeaders),
@@ -184,6 +189,9 @@ async function doRequest<T>(url: string, options: RequestOptions, retried: boole
 
   // --- 401: refresh + retry once before giving up ---
   if (response.status === 401) {
+    if (isPublic) {
+      throw await extractError(response)
+    }
     if (!retried && (await attemptTokenRefresh())) {
       return doRequest<T>(url, options, true)
     }

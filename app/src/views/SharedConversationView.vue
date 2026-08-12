@@ -3,41 +3,62 @@
  * SharedConversationView — 分享对话只读展示页
  *
  * 通过 shareId 加载分享的对话，展示消息列表。
- * 公开路由，无需登录。
+ * 路由 meta.public；401 不跳登录（见 request.public）。
+ * 注意：生产环境 server `/api/ai` 全局鉴权仍可能要求登录，前端已适配错误态。
  */
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AiMessage from '@/components/AiMessage.vue'
 import { getSharedConversation } from '@/api/aiApi/conversation'
-import type { StepData } from '@/types'
 
 const route = useRoute()
 const loading = ref(false)
 const loadError = ref<string | null>(null)
-const title = ref('')
+const title = ref('分享的对话')
 const messages = ref<Array<{
   role: 'user' | 'assistant'
   content: string
   thinking?: string
-  timestamp: string
-  steps?: StepData[]
 }>>([])
 
 const shareId = route.params.shareId as string
 
+/**
+ * 从服务端分享载荷推导标题（当前 API 无 title 字段）
+ */
+function resolveTitle(data: {
+  title?: string
+  activeAgent?: string
+  messages: Array<{ role: string; content: string }>
+}): string {
+  if (data.title?.trim()) return data.title.trim()
+  const firstUser = data.messages.find((m) => m.role === 'user' && m.content?.trim())
+  if (firstUser) {
+    const text = firstUser.content.trim()
+    return text.length > 40 ? `${text.slice(0, 40)}…` : text
+  }
+  if (data.activeAgent) return `分享的对话 · ${data.activeAgent}`
+  return '分享的对话'
+}
+
 async function load() {
+  if (!shareId) {
+    loadError.value = '分享链接无效'
+    return
+  }
   loading.value = true
   loadError.value = null
   try {
     const data = await getSharedConversation(shareId)
-    title.value = data.title || '分享的对话'
-    messages.value = data.messages.map((m) => ({
-      role: m.role as 'user' | 'assistant',
-      content: m.content,
-      thinking: m.thinking,
-      timestamp: m.timestamp,
-    }))
+    title.value = resolveTitle(data)
+    messages.value = (data.messages ?? [])
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+        thinking: m.thinking,
+      }))
   } catch (e) {
     loadError.value = e instanceof Error ? e.message : '加载分享对话失败'
   } finally {
@@ -66,6 +87,11 @@ onMounted(load)
     <div v-else-if="loadError" class="shared-error">
       <AppIcon name="warning-filled" :size="32" />
       <p>{{ loadError }}</p>
+      <el-button type="primary" @click="load">重试</el-button>
+    </div>
+
+    <div v-else-if="!messages.length" class="shared-error">
+      <p>暂无消息</p>
     </div>
 
     <div v-else class="shared-messages">

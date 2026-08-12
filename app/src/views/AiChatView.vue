@@ -21,6 +21,7 @@ import AiChatSettings from '@/components/AiChatSettings.vue'
 import ConversationDrawer from '@/components/ConversationDrawer.vue'
 import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
 import { usePublishedAgentWorkflowsStore } from '@/stores/publishedAgentWorkflows'
+import { buildSharedConversationUrl } from '@/utils/shareUrl'
 
 const store = useAiStore()
 const chatConfigStore = useChatConfigStore()
@@ -87,7 +88,7 @@ function handleUpdateSettingsVisible(val: boolean): void {
 async function handleShareConversation(id: string): Promise<void> {
   try {
     const result = await import('@/api/aiApi').then((m) => m.shareConversation(id))
-    const url = `${window.location.origin}/ai/shared/${result.shareId}`
+    const url = buildSharedConversationUrl(result.shareId)
     await navigator.clipboard.writeText(url)
     message.success('分享链接已复制到剪贴板')
   } catch (err) {

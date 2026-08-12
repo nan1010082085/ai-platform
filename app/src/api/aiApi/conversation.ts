@@ -7,6 +7,7 @@ import type {
   Conversation,
 } from '@/types'
 import { request } from './base'
+import { request as sharedRequest } from '@/api/shared/request'
 import { requestBlob, triggerBlobDownload } from '@/api/shared/blobRequest'
 
 export type ExportFormat = 'json' | 'markdown' | 'html'
@@ -147,17 +148,20 @@ export async function unshareConversation(conversationId: string): Promise<void>
   })
 }
 
-/** 获取分享对话（公开接口，无需鉴权） */
+/** 获取分享对话（公开页调用；401 不跳登录） */
 export async function getSharedConversation(shareId: string): Promise<{
   id: string
-  title: string
+  title?: string
+  activeAgent?: string
   messages: Array<{
     role: string
     content: string
     thinking?: string
     tip?: string
-    timestamp: string
+    timestamp?: string
   }>
 }> {
-  return request(`/ai/conversations/shared/${encodeURIComponent(shareId)}`)
+  return sharedRequest(`/ai/conversations/shared/${encodeURIComponent(shareId)}`, {
+    public: true,
+  })
 }
