@@ -156,7 +156,7 @@ function formatDate(iso: string | undefined): string {
 
   <div :class="styles.modelTableWrap" v-loading="modelsLoading">
     <el-table :data="paginatedModels" stripe>
-      <el-table-column prop="name" label="名称" width="120" show-overflow-tooltip>
+      <el-table-column prop="name" label="名称" min-width="100" show-overflow-tooltip>
         <template #default="{ row }">
           <span>{{ row.name }}</span>
           <el-tag
@@ -170,21 +170,21 @@ function formatDate(iso: string | undefined): string {
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="model" label="模型标识" width="140" show-overflow-tooltip>
+      <el-table-column prop="model" label="模型标识" min-width="110" show-overflow-tooltip>
         <template #default="{ row }">
           <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px">
             {{ row.model }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="参数摘要" min-width="130">
+      <el-table-column label="参数摘要" min-width="140">
         <template #default="{ row }">
           <span style="font-size: 12px; color: var(--text-color-secondary)">
             {{ paramSummary(row.parameters) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="能力" width="150">
+      <el-table-column label="能力" min-width="120">
         <template #default="{ row }">
           <el-tag
             v-for="cap in (row.capabilities ?? ['chat'])"
@@ -222,7 +222,7 @@ function formatDate(iso: string | undefined): string {
           <span v-else style="font-size: 12px; color: var(--text-color-placeholder)">未测试</span>
         </template>
       </el-table-column>
-      <el-table-column label="更新时间" width="115">
+      <el-table-column label="更新时间" min-width="110">
         <template #default="{ row }">
           <span style="font-size: 12px; color: var(--text-color-secondary)">
             {{ formatDate(row.updatedAt) }}
