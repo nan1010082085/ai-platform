@@ -156,7 +156,7 @@ function formatDate(iso: string | undefined): string {
 
   <div :class="styles.modelTableWrap" v-loading="modelsLoading">
     <el-table :data="paginatedModels" stripe>
-      <el-table-column prop="name" label="名称" min-width="130">
+      <el-table-column prop="name" label="名称" width="120" show-overflow-tooltip>
         <template #default="{ row }">
           <span>{{ row.name }}</span>
           <el-tag
@@ -170,14 +170,14 @@ function formatDate(iso: string | undefined): string {
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="model" label="模型标识" min-width="150">
+      <el-table-column prop="model" label="模型标识" width="140" show-overflow-tooltip>
         <template #default="{ row }">
           <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px">
             {{ row.model }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="参数摘要" width="130">
+      <el-table-column label="参数摘要" min-width="130">
         <template #default="{ row }">
           <span style="font-size: 12px; color: var(--text-color-secondary)">
             {{ paramSummary(row.parameters) }}

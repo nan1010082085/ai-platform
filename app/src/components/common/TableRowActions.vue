@@ -71,7 +71,7 @@ function onCommand(key: string) {
     >
       <el-button link type="primary" size="small">
         更多
-        <AppIcon name="more-filled" :size="14" style="margin-left: 2px" />
+        <AppIcon name="arrow-down" :size="12" style="margin-left: 2px" />
       </el-button>
       <template #dropdown>
         <el-dropdown-menu>
