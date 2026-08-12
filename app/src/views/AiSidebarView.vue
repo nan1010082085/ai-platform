@@ -336,6 +336,7 @@ function handleHostData(data: Record<string, unknown>) {
             <el-button
               :class="$style.historyBtn"
               title="历史记录"
+              aria-label="历史记录"
               link
             >
               <AppIcon name="clock" :size="14" />
@@ -365,6 +366,7 @@ function handleHostData(data: Record<string, unknown>) {
         <el-button
           :class="$style.historyBtn"
           title="新对话"
+          aria-label="新对话"
           link
           @click="store.clearConversation()"
         >
@@ -382,6 +384,7 @@ function handleHostData(data: Record<string, unknown>) {
             <el-button
               :class="[$style.historyBtn, { [$style.workflowBtnActive]: !!selectedWorkflowId }]"
               title="Agent 编排"
+              aria-label="Agent 编排"
               link
             >
               <AppIcon name="set-up" :size="14" />
@@ -477,6 +480,7 @@ function handleHostData(data: Record<string, unknown>) {
                 :class="$style.stopBtn"
                 type="danger"
                 link
+                aria-label="停止生成"
                 @click="handleStop"
               >
                 <AppIcon name="video-pause" :size="14" />

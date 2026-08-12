@@ -21,6 +21,7 @@
 | M3 一致性 | 7、9、10 | **已完成**（Evaluation 外层 label 已有；Chat token 试点已做） |
 | **M4 全屏页打磨** | **11–13** | **已完成**（commit `84416f2`）；Task 14 P3 仅跟踪 |
 | 清理 | theme-tech 死文件 | **已完成**（commit `310009f`） |
+| **M5 边角闭环** | **15–18** | Task 16 **已完成**；15 / 17 / 18 **待做** |
 
 ---
 - 禁止修改 `server/`、禁止跨项目改 `platform-shared`（除非 Task 需要新图标且用户批准切到 platform-shared）
@@ -941,7 +942,7 @@ git commit -m "fix(ai): Monitor/评测/版本历史加载失败可见反馈"
 | Evaluation 表内 placeholder | 抽屉外层已有 label；单元格内可保留 | 低优先 |
 | Debug 清空历史无确认 | WorkflowDebug / RoutingDebug | 与 Chat 确认模式对齐时可做 |
 | 画布删节点无确认 | 设计器常见交互 | 默认不做 |
-| Sidebar icon-only a11y | `AiSidebarView` | 可随 Toolbar a11y 顺手，非 M4 必做 |
+| Sidebar icon-only a11y | `AiSidebarView` | → **M5 Task 16 已完成** |
 | `theme-tech.scss` 死文件 | 疑似未 import | 清理专项时删除或重新挂载 |
 
 ---
@@ -961,6 +962,7 @@ Task 14 (P3 登记) — 移动端 / 裸 hex / Debug 确认等，另开专项
 - **M2（产品闭环）**: Task 6 + 8 → 已完成  
 - **M3（一致性）**: Task 7 + 9 + 10 → 已完成  
 - **M4（全屏页打磨）**: Task 11–13 → **已完成**；Task 14 跟踪  
+- **M5（边角闭环）**: Task 16 → **已完成**；Task 15 / 17 / 18 → 待做  
 
 ---
 
@@ -1003,3 +1005,173 @@ Task 14 (P3 登记) — 移动端 / 裸 hex / Debug 确认等，另开专项
 - [x] 设计器顶栏 Tab 可达，读屏可读按钮名；Layout homeBtn 有 aria-label
 - [x] Monitor 节点统计 / 评测工作流下拉 / 版本历史：失败可见，不与空数据混淆
 - [ ] `cd app && pnpm exec vitest run`（相关 spec）+ `pnpm build`（提交前按需）
+
+---
+
+# M5 — M4 后复审新增（边角闭环）
+
+> 来源：2026-08-12 复审（总评 A-）。M4 抽查均 pass；下列为仍开放项。
+
+### Task 15: 对话分享页路由闭环（P1）
+
+**Files:**
+- Create: `app/src/views/SharedConversationView.vue`（只读展示分享对话）
+- Modify: `app/src/router.ts` — 增加 public 路由 `shared/:shareId`
+- Modify: `app/src/api/aiApi/conversation.ts` — 若尚无则补 `getSharedConversation(shareId)`
+- Modify: `app/src/views/AiChatView.vue` — 分享 URL 与路由 base 对齐（`/shared/:id` 或带 `VITE_ROUTE_BASE`）
+
+**Interfaces:**
+- Consumes: 已有后端 `GET /api/ai/conversations/shared/:shareId`（`server/src/ai/routes.ts`）
+- Produces: 复制链接可打开只读页；`meta: { public: true }` 免登录
+
+- [ ] **Step 1: API 客户端**
+
+```ts
+export async function getSharedConversation(shareId: string): Promise<{
+  id: string
+  title: string
+  messages: unknown[]
+  // 按服务端实际字段对齐
+}> {
+  return request(`/ai/conversations/shared/${encodeURIComponent(shareId)}`)
+}
+```
+
+确认 `request` 对 public 接口不强制 token（或单独用无鉴权 fetch）。
+
+- [ ] **Step 2: 路由**
+
+```ts
+{
+  path: '/shared/:shareId',
+  name: 'shared-conversation',
+  component: () => import('./views/SharedConversationView.vue'),
+  meta: { public: true },
+},
+```
+
+- [ ] **Step 3: SharedConversationView**
+
+加载 shareId → 渲染标题 + 消息只读列表（可复用消息渲染器只读模式）；失败展示错误态；无需套 AiLayout 或套最简壳。
+
+- [ ] **Step 4: 修正复制 URL**
+
+```ts
+const base = import.meta.env.BASE_URL?.replace(/\/$/, '') || ''
+const url = `${window.location.origin}${base}/shared/${result.shareId}`
+```
+
+- [ ] **Step 5: 手测复制链接 → 无痕窗口打开 → 可见消息**
+
+- [ ] **Step 6: Commit（可选）**
+
+```bash
+git commit -m "feat(ai): 对话分享公开页与路由闭环"
+```
+
+---
+
+### Task 16: AiSidebarView icon-only a11y（P2）
+
+**Files:**
+- Modify: `app/src/views/AiSidebarView.vue`
+
+**Interfaces:**
+- Consumes: 既有 `title` 文案
+- Produces: 历史 / 新对话 / Agent 编排 / 停止生成 均有 `aria-label`
+
+- [x] **Step 1: 补 aria-label**（历史 / 新对话 / Agent 编排 / 停止生成）
+- [x] **Step 2: 与 Chat 顶栏同一模式（title + aria-label）**
+- [ ] **Step 3: Commit（可选）**
+
+```bash
+git commit -m "a11y(ai): Sidebar 顶栏操作按钮 aria-label"
+```
+
+---
+
+### Task 17: 属性面板 / Prompt 模板加载失败可见（P2）
+
+**Files:**
+- Modify: `app/src/components/PromptTemplateManager.vue`
+- Modify: `app/src/components/agent-workflow/property-panel/panels/HandoffNodePanel.vue`
+- Modify: `app/src/components/agent-workflow/property-panel/panels/AgentLoopNodePanel.vue`
+- Modify: `app/src/components/agent-workflow/property-panel/panels/AgentTeamNodePanel.vue`（同类 ignore）
+
+**Interfaces:**
+- Consumes: `ElMessage.error`
+- Produces: 失败 toast；下拉不静默成「无数据」
+
+- [ ] **Step 1: PromptTemplateManager**
+
+`catch { /* ignore */ }` → `ElMessage.error(...)` + 保持空列表。
+
+- [ ] **Step 2: Handoff / AgentLoop / AgentTeam**
+
+加载已发布工作流失败时 toast，避免空下拉被误读为「没有已发布流」。
+
+- [ ] **Step 3: 手测断 API 时各面板**
+
+- [ ] **Step 4: Commit（可选）**
+
+```bash
+git commit -m "fix(ai): 模板与属性面板工作流列表加载失败可见"
+```
+
+---
+
+### Task 18: 批量删除部分失败反馈（P2）
+
+**Files:**
+- Modify: `app/src/views/AgentWorkflowListView.vue`（批量删除循环）
+
+**Interfaces:**
+- Produces: toast 区分「全部成功」与「成功 N / 失败 M」
+
+- [ ] **Step 1: 累计 fail 数**
+
+```ts
+let success = 0
+let failed = 0
+for (const id of [...]) {
+  try {
+    await api.deleteWorkflow(id)
+    success++
+  } catch {
+    failed++
+  }
+}
+if (failed === 0) ElMessage.success(`已删除 ${success} 个`)
+else ElMessage.warning(`已删除 ${success} 个，失败 ${failed} 个`)
+```
+
+- [ ] **Step 2: 手测混合成功/失败**
+
+- [ ] **Step 3: Commit（可选）**
+
+```bash
+git commit -m "fix(ai): 批量删除工作流展示部分失败数量"
+```
+
+---
+
+### Task 14 补充（P3，仍不实施）
+
+| 项 | 说明 |
+|----|------|
+| 评测轮询失败静默停表 | EvaluationView `startPolling` catch |
+| 调度首载失败像空列表 | ScheduleView |
+| Debug 清空无确认 | 低优先 |
+| AiConversationList 死代码 | 无引用，清理专项 |
+| 移动端 / 裸 hex | 不变 |
+
+---
+
+**M5 执行顺序**
+
+```text
+Task 15 (分享页)     P1，优先
+Task 16 (Sidebar a11y) 可与 15 并行
+Task 17 (面板静默)   可并行
+Task 18 (批量删反馈) 可并行
+```
