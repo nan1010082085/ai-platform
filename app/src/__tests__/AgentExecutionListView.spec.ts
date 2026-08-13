@@ -7,7 +7,7 @@ import { createRouter, createMemoryHistory } from 'vue-router'
 import AgentExecutionListView from '@/views/AgentExecutionListView.vue'
 
 vi.mock('@/api/agentWorkflowApi', () => ({
-  listExecutions: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 20 }),
+  listExecutions: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 10 }),
   cancelExecution: vi.fn(),
 }))
 
@@ -51,7 +51,7 @@ describe('AgentExecutionListView', () => {
       items: [],
       total: 0,
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
     })
 
     const router = createRouter({
@@ -88,6 +88,7 @@ describe('AgentExecutionListView', () => {
           ElTable: true,
           ElTableColumn: true,
           ElPagination: true,
+          AppPagination: true,
           ElSelect: true,
           ElOption: true,
           ElTag: true,
@@ -110,7 +111,7 @@ describe('AgentExecutionListView', () => {
       items: [],
       total: 0,
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
     })
 
     const router = createRouter({
@@ -145,6 +146,7 @@ describe('AgentExecutionListView', () => {
           ElTable: true,
           ElTableColumn: true,
           ElPagination: true,
+          AppPagination: true,
           ElSelect: true,
           ElOption: true,
           ElTag: true,
@@ -163,7 +165,7 @@ describe('AgentExecutionListView', () => {
       items: [],
       total: 0,
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
     })
 
     const router = createRouter({
@@ -198,6 +200,7 @@ describe('AgentExecutionListView', () => {
           ElTable: true,
           ElTableColumn: true,
           ElPagination: true,
+          AppPagination: true,
           ElSelect: true,
           ElOption: true,
           ElTag: true,
@@ -213,7 +216,7 @@ describe('AgentExecutionListView', () => {
     const api = await import('@/api/agentWorkflowApi')
     vi.mocked(api.listExecutions)
       .mockRejectedValueOnce(new Error('network'))
-      .mockResolvedValueOnce({ items: [], total: 0, page: 1, pageSize: 20 })
+      .mockResolvedValueOnce({ items: [], total: 0, page: 1, pageSize: 10 })
 
     const router = createRouter({
       history: createMemoryHistory(),
@@ -244,6 +247,7 @@ describe('AgentExecutionListView', () => {
           ElTable: true,
           ElTableColumn: true,
           ElPagination: true,
+          AppPagination: true,
           ElSelect: true,
           ElOption: true,
           ElTag: true,

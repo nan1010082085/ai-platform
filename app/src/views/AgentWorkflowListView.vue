@@ -19,6 +19,8 @@ import {
 import { useWorkflowActions } from '@/composables/useWorkflowActions'
 import styles from './AgentWorkflowListView.module.scss'
 import PageShell from '@/components/common/PageShell.vue'
+import AppPagination from '@/components/common/AppPagination.vue'
+import { useClientPagination } from '@/composables/useClientPagination'
 
 const router = useRouter()
 const searchInput = ref('')
@@ -139,6 +141,14 @@ const filteredWorkflows = computed(() => {
     )
   }
   return list
+})
+
+const {
+  currentPage,
+  pageSize,
+  pagedItems: pagedWorkflows,
+} = useClientPagination(filteredWorkflows, {
+  resetOn: [activeTab, searchInput, sortBy],
 })
 
 const isEmpty = computed(
@@ -315,7 +325,7 @@ onMounted(load)
       <div v-else :class="styles.content">
         <div :class="styles.cards">
           <div
-            v-for="(item, idx) in filteredWorkflows"
+            v-for="(item, idx) in pagedWorkflows"
             :key="item.id"
             :class="[styles.card, bulkMode && selectedIds.has(item.id) && styles.cardSelected]"
             :style="{ animationDelay: `${idx * 0.04}s` }"
@@ -330,6 +340,7 @@ onMounted(load)
             </div>
             <div :class="styles.cardBody">
               <h3 :class="styles.cardName">{{ item.name }}</h3>
+              <p v-if="item.description" :class="styles.cardDesc">{{ item.description }}</p>
               <div :class="styles.cardMeta">
                 <el-tag size="small" :type="item.status === 'published' ? 'success' : 'info'">
                   {{ item.status === 'published' ? '已发布' : '草稿' }}
@@ -407,6 +418,13 @@ onMounted(load)
               :workflow-slug="item.slug"
             />
           </div>
+        </div>
+        <div v-if="filteredWorkflows.length > 0">
+          <AppPagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :total="filteredWorkflows.length"
+          />
         </div>
       </div>
 

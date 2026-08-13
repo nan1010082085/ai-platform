@@ -69,20 +69,19 @@
       </el-table-column>
     </el-table>
 
-    <div :class="$style.pagination">
-      <el-pagination
-        :current-page="currentPage"
-        :page-size="pageSize"
-        :total="total"
-        layout="total, prev, pager, next"
-        @current-change="handlePageChange"
-      />
-    </div>
+    <AppPagination
+      :current-page="currentPage"
+      :page-size="pageSize"
+      :total="total"
+      @current-change="handlePageChange"
+      @size-change="handlePageSizeChange"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import AppPagination from '@/components/common/AppPagination.vue'
 import type { AgentMetric } from '@/types'
 
 defineProps<{
@@ -95,6 +94,7 @@ defineProps<{
 const emit = defineEmits<{
   filterChange: [agent?: string, status?: 'success' | 'failed']
   pageChange: [page: number]
+  sizeChange: [size: number]
 }>()
 
 const selectedAgent = ref<string | undefined>()
@@ -106,6 +106,10 @@ function handleFilterChange(): void {
 
 function handlePageChange(page: number): void {
   emit('pageChange', page)
+}
+
+function handlePageSizeChange(size: number): void {
+  emit('sizeChange', size)
 }
 
 function agentTagType(agent: string): '' | 'success' | 'warning' | 'danger' {
@@ -169,12 +173,6 @@ function formatDuration(ms: number): string {
 .error {
   color: var(--el-color-danger);
   font-size: 12px;
-}
-
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
 }
 
 :global(.text-success) {

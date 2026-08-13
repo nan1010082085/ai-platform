@@ -270,6 +270,13 @@ function onKeyDown(e: KeyboardEvent) {
       <template v-for="item in AGENT_PALETTE_ITEMS" :key="item.type" #[`node-${item.type}`]="nodeProps">
         <AgentFlowNode v-bind="nodeProps" />
       </template>
+      <!-- tool / expert 来自插件中心动态注入，不在 AGENT_PALETTE_ITEMS，需单独注册槽位 -->
+      <template #node-tool="nodeProps">
+        <AgentFlowNode v-bind="nodeProps" />
+      </template>
+      <template #node-expert="nodeProps">
+        <AgentFlowNode v-bind="nodeProps" />
+      </template>
       <template #edge-agent-edge="edgeProps">
         <AgentFlowEdge v-bind="edgeProps" />
       </template>

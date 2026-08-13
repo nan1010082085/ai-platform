@@ -58,22 +58,20 @@
       </div>
     </div>
 
-    <div v-if="total > pageSize" :class="$style.pagination">
-      <el-pagination
-        :current-page="currentPage"
-        :page-size="pageSize"
-        :total="total"
-        layout="prev, pager, next"
-        small
-        @current-change="handlePageChange"
-      />
-    </div>
+    <AppPagination
+      :current-page="currentPage"
+      :page-size="pageSize"
+      :total="total"
+      @current-change="handlePageChange"
+      @size-change="handlePageSizeChange"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import AppPagination from '@/components/common/AppPagination.vue'
 import type { AgentAlert } from '@/types'
 import { formatMonitorTime, formatMonitorDuration } from '@/utils/monitorFormat'
 
@@ -86,6 +84,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   pageChange: [page: number]
+  sizeChange: [size: number]
 }>()
 
 type Filter = 'all' | 'failure' | 'slow' | 'high_token'
@@ -105,6 +104,10 @@ const visibleAlerts = computed(() => {
 
 function handlePageChange(page: number): void {
   emit('pageChange', page)
+}
+
+function handlePageSizeChange(size: number): void {
+  emit('sizeChange', size)
 }
 
 function typeLabel(type: AgentAlert['alertType']): string {
@@ -260,12 +263,5 @@ function typeTag(type: AgentAlert['alertType']): 'danger' | 'warning' | 'info' {
   font-size: 11px;
   color: var(--el-text-color-secondary);
   margin-top: 4px;
-}
-
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
-  flex-shrink: 0;
 }
 </style>

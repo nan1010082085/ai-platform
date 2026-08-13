@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import TableRowActions, { type TableRowAction } from '@/components/common/TableRowActions.vue'
+import AppPagination from '@/components/common/AppPagination.vue'
+import { useClientPagination } from '@/composables/useClientPagination'
 import type { Provider } from '@/api/providerApi'
 import type { Model, ModelParameters } from '@/api/modelApi'
 import styles from '@/views/ModelSettingsView.module.scss'
@@ -17,12 +19,12 @@ const props = defineProps<{
 }>()
 
 // Pagination
-const currentPage = ref(1)
-const pageSize = ref(10)
-const paginatedModels = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return props.models.slice(start, start + pageSize.value)
-})
+const modelsSource = computed(() => props.models)
+const {
+  currentPage,
+  pageSize,
+  pagedItems: paginatedModels,
+} = useClientPagination(modelsSource)
 
 function getTestStatus(modelId: string): ModelTestStatus | undefined {
   return props.modelTestStatus?.get(modelId)
@@ -246,14 +248,10 @@ function formatDate(iso: string | undefined): string {
     </div>
 
     <!-- Pagination -->
-    <div v-if="models.length > pageSize" :class="styles.paginationWrap">
-      <el-pagination
-        v-model:current-page="currentPage"
-        :page-size="pageSize"
-        :total="models.length"
-        layout="total, prev, pager, next"
-        small
-      />
-    </div>
+    <AppPagination
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :total="models.length"
+    />
   </div>
 </template>

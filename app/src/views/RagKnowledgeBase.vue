@@ -5,7 +5,7 @@
  * 布局对齐 Agent 性能监控：dashboard 顶栏 + 摘要卡片 + 双列面板 + 全宽表格
  */
 
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message, confirmDanger } from '@schema-platform/platform-shared/utils/message'
 import { useDataLoading } from '@schema-platform/platform-shared/utils/useDataLoading'
@@ -25,8 +25,9 @@ import RagSummary from '@/components/rag/RagSummary.vue'
 import RagSearchPanel from '@/components/rag/RagSearchPanel.vue'
 import RagUploadDialog from '@/components/rag/RagUploadDialog.vue'
 import RagIndexOverview from '@/components/rag/RagIndexOverview.vue'
+import AppPagination from '@/components/common/AppPagination.vue'
+import { useClientPagination } from '@/composables/useClientPagination'
 
-const INDEX_PAGE_SIZE = 20
 const router = useRouter()
 
 const { loading, withLoading: withStatusLoading } = useDataLoading({ timeout: 15000 })
@@ -44,8 +45,6 @@ const searchLoading = ref(false)
 const searchResults = ref<RagSearchResult[]>([])
 const searchPerformed = ref(false)
 
-const indexPage = ref(1)
-
 const uploadDialogVisible = ref(false)
 
 const healthPercent = computed(() => {
@@ -58,15 +57,19 @@ const healthPercent = computed(() => {
 
 const unindexedSchemas = computed(() => status.value?.unindexedSchemas ?? [])
 
-const paginatedUnindexed = computed(() => {
-  const start = (indexPage.value - 1) * INDEX_PAGE_SIZE
-  return unindexedSchemas.value.slice(start, start + INDEX_PAGE_SIZE)
+const {
+  currentPage: indexPage,
+  pageSize: indexPageSize,
+  pagedItems: paginatedUnindexed,
+} = useClientPagination(unindexedSchemas)
+
+watch(indexPage, () => {
+  selectedIds.value.clear()
 })
 
-function handleIndexPageChange(page: number): void {
-  indexPage.value = page
+watch(indexPageSize, () => {
   selectedIds.value.clear()
-}
+})
 
 function toggleBulkMode(): void {
   bulkMode.value = !bulkMode.value
@@ -135,10 +138,6 @@ function openUploadDialog(): void {
 async function loadStatus(): Promise<void> {
   await withStatusLoading(async () => {
     status.value = await getRagStatus()
-    const maxPage = Math.max(1, Math.ceil((status.value?.unindexedSchemas.length ?? 0) / INDEX_PAGE_SIZE))
-    if (indexPage.value > maxPage) {
-      indexPage.value = maxPage
-    }
   })
 }
 
@@ -337,17 +336,11 @@ onMounted(() => {
         </el-table-column>
       </el-table>
 
-      <div v-if="unindexedSchemas.length > 0" :class="$style.pagination">
-        <el-pagination
-          v-model:current-page="indexPage"
-          :page-size="INDEX_PAGE_SIZE"
-          :total="unindexedSchemas.length"
-          layout="total, prev, pager, next"
-          small
-          background
-          @current-change="handleIndexPageChange"
-        />
-      </div>
+      <AppPagination
+        v-model:current-page="indexPage"
+        v-model:page-size="indexPageSize"
+        :total="unindexedSchemas.length"
+      />
     </div>
 
     <RagUploadDialog
@@ -456,12 +449,6 @@ onMounted(() => {
 
 .table {
   width: 100%;
-}
-
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
 }
 
 @media (max-width: 900px) {

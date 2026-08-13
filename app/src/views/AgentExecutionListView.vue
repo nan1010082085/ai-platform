@@ -13,6 +13,8 @@ import { buildExecutionDetailQuery } from '@/utils/executionNavigation'
 import styles from './AgentExecutionListView.module.scss'
 import PageShell from '@/components/common/PageShell.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import AppPagination from '@/components/common/AppPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,7 +24,7 @@ const cancellingId = ref<string | null>(null)
 const items = ref<AgentWorkflowExecution[]>([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(DEFAULT_PAGE_SIZE)
 let stopWorkflowWatch: (() => void) | null = null
 
 const workflowId = computed(() => route.params.id as string)
@@ -309,18 +311,13 @@ onUnmounted(() => {
           </template>
         </el-table>
 
-        <div v-if="total > 0" :class="styles.pagination">
-          <el-pagination
-            :current-page="page"
-            :page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next"
-            background
-            @current-change="onPageChange"
-            @size-change="onPageSizeChange"
-          />
-        </div>
+        <AppPagination
+          v-model:current-page="page"
+          v-model:page-size="pageSize"
+          :total="total"
+          @current-change="onPageChange"
+          @size-change="onPageSizeChange"
+        />
       </div>
 </PageShell>
 </template>

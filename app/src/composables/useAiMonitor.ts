@@ -19,6 +19,7 @@ import type {
   PluginMetricSummary,
 } from '@/types'
 import { normalizeDateValue } from '@/utils/monitorFormat'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 
 const AUTO_REFRESH_INTERVAL = 30000
 
@@ -89,7 +90,7 @@ export function useAiMonitor() {
   const alerts = ref<AgentAlert[]>([])
   const alertsTotal = ref(0)
   const alertsPage = ref(1)
-  const alertsPageSize = 20
+  const alertsPageSize = ref(DEFAULT_PAGE_SIZE)
   const autoRefreshOn = ref(true)
   const lastRefreshedAt = ref<Date | null>(null)
 
@@ -98,7 +99,7 @@ export function useAiMonitor() {
   const pluginRecentMetrics = ref<PluginMetric[]>([])
   const pluginRecentTotal = ref(0)
   const pluginRecentPage = ref(1)
-  const pluginRecentPageSize = 20
+  const pluginRecentPageSize = ref(DEFAULT_PAGE_SIZE)
 
   const selectedAgent = ref('')
   const selectedOperation = ref('')
@@ -199,7 +200,7 @@ export function useAiMonitor() {
   })
 
   async function loadAlerts(page = alertsPage.value): Promise<void> {
-    const data = await getMonitorAlerts({ page, pageSize: alertsPageSize })
+    const data = await getMonitorAlerts({ page, pageSize: alertsPageSize.value })
     alerts.value = data.items.map(normalizeAlert)
     alertsTotal.value = data.total
     alertsPage.value = data.page
@@ -212,10 +213,10 @@ export function useAiMonitor() {
         getMonitorSummary(selectedHours.value),
         getMonitorStats(),
         getMonitorRecent({ limit: 100 }),
-        getMonitorAlerts({ page: 1, pageSize: alertsPageSize }),
+        getMonitorAlerts({ page: 1, pageSize: alertsPageSize.value }),
         getPluginMetricSummary(selectedHours.value),
         getPluginMetricStats(),
-        getPluginMetricRecent({ page: 1, pageSize: pluginRecentPageSize }),
+        getPluginMetricRecent({ page: 1, pageSize: pluginRecentPageSize.value }),
       ])
 
       summary.value = summaryData
@@ -255,6 +256,12 @@ export function useAiMonitor() {
     } finally {
       loading.value = false
     }
+  }
+
+  async function handleAlertPageSizeChange(size: number): Promise<void> {
+    alertsPageSize.value = size
+    alertsPage.value = 1
+    await handleAlertPageChange(1)
   }
 
   function startAutoRefresh(): void {
@@ -307,6 +314,7 @@ export function useAiMonitor() {
     refreshedLabel,
     handleRefresh,
     handleAlertPageChange,
+    handleAlertPageSizeChange,
     getAgentLabel,
     getOperationLabel,
     getPluginTypeLabel,

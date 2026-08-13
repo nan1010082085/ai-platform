@@ -79,6 +79,7 @@ const stubs = {
   ElTable: { template: '<div class="el-table-stub"><slot /></div>', props: ['data', 'stripe'] },
   ElTableColumn: { template: '<span />', props: ['prop', 'label', 'minWidth', 'width', 'fixed'] },
   ElPagination: { template: '<div />', props: ['currentPage', 'pageSize', 'total', 'layout'] },
+  AppPagination: { template: '<div data-testid="app-pagination" />', props: ['currentPage', 'pageSize', 'total'] },
   ElTag: { template: '<span><slot /></span>', props: ['type', 'size'] },
   ElForm: { template: '<form><slot /></form>' },
   ElFormItem: {
@@ -103,7 +104,7 @@ describe('ApiKeyManagerView', () => {
       items: sampleKeys,
       total: 2,
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
       totalPages: 1,
     })
   })
@@ -111,7 +112,7 @@ describe('ApiKeyManagerView', () => {
   it('loads keys on mount and displays page title', async () => {
     const wrapper = mountView()
     await flushPromises()
-    expect(mockGetApiKeys).toHaveBeenCalledWith({ page: 1, pageSize: 20 })
+    expect(mockGetApiKeys).toHaveBeenCalledWith({ page: 1, pageSize: 10 })
     expect(wrapper.text()).toContain('我的集成密钥')
     expect(wrapper.text()).toContain('创建和管理 API 密钥')
     wrapper.unmount()
@@ -130,7 +131,7 @@ describe('ApiKeyManagerView', () => {
       items: [],
       total: 0,
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
       totalPages: 0,
     })
 

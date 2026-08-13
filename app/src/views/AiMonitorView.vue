@@ -52,6 +52,7 @@ const {
   refreshedLabel,
   handleRefresh,
   handleAlertPageChange,
+  handleAlertPageSizeChange,
 } = useAiMonitor()
 
 const nodeTypeStats = ref<NodeTypeStat[]>([])
@@ -142,6 +143,7 @@ onMounted(() => {
         :current-page="alertsPage"
         :page-size="alertsPageSize"
         @page-change="handleAlertPageChange"
+        @size-change="handleAlertPageSizeChange"
       />
     </div>
 

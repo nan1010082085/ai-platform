@@ -49,6 +49,10 @@ const globalStubs = {
   'el-table': ElTableStub,
   'el-table-column': ElTableColumnStub,
   'el-pagination': ElPaginationStub,
+  AppPagination: {
+    props: ['currentPage', 'pageSize', 'total'],
+    template: '<div v-if="total > 0" class="el-pagination-stub" data-testid="app-pagination" />',
+  },
   AppDialog: { template: '<div v-if="modelValue"><slot /><slot name="footer" /></div>', props: ['modelValue', 'title', 'width', 'closeOnClickModal'] },
   'el-upload': { template: '<div><slot /></div>' },
   'el-checkbox': { template: '<input type="checkbox" />' },

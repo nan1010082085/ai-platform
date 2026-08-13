@@ -71,6 +71,9 @@ const EP_STUBS = {
     emits: ['update:modelValue'],
   },
   'el-icon': { template: '<span><slot /></span>' },
+  'el-pagination': { template: '<div data-testid="pagination" />' },
+  'el-checkbox': { template: '<input type="checkbox" />' },
+  AppPagination: { template: '<div data-testid="app-pagination" />', props: ['currentPage', 'pageSize', 'total'] },
 }
 
 // Stub child components

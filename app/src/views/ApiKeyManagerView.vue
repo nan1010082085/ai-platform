@@ -24,13 +24,15 @@ import {
 import styles from './ApiKeyManagerView.module.scss'
 import PageShell from '@/components/common/PageShell.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import AppPagination from '@/components/common/AppPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 
 const { t, locale } = useI18n()
 
 const keys = ref<ApiKeyItem[]>([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(DEFAULT_PAGE_SIZE)
 const loading = ref(false)
 
 // 创建表单
@@ -57,6 +59,12 @@ async function loadKeys(): Promise<void> {
 
 function handlePageChange(newPage: number): void {
   page.value = newPage
+  void loadKeys()
+}
+
+function handlePageSizeChange(size: number): void {
+  pageSize.value = size
+  page.value = 1
   void loadKeys()
 }
 
@@ -230,15 +238,13 @@ onMounted(() => {
           </div>
         </CardTable>
 
-        <div v-if="total > pageSize" :class="styles.pagination">
-          <el-pagination
-            :current-page="page"
-            :page-size="pageSize"
-            :total="total"
-            layout="prev, pager, next"
-            @current-change="handlePageChange"
-          />
-        </div>
+        <AppPagination
+          v-model:current-page="page"
+          v-model:page-size="pageSize"
+          :total="total"
+          @current-change="handlePageChange"
+          @size-change="handlePageSizeChange"
+        />
       </div>
 
     <!-- 创建密钥对话框 -->
