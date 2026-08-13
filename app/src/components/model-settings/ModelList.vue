@@ -112,6 +112,7 @@ const CAPABILITY_LABELS: Record<string, string> = {
   image: '图像',
   video: '视频',
   audio: '音频',
+  vision: '图像理解',
 }
 
 function capabilityLabel(cap: string): string {

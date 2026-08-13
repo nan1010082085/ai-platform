@@ -398,11 +398,20 @@ function handleHostData(data: Record<string, unknown>) {
         </el-popover>
       </div>
       <div :class="$style.headerRight">
-        <!-- WebSocket 状态 -->
-        <div :class="[$style.wsStatus, wsConnected ? $style.wsConnected : $style.wsDisconnected]">
-          <span :class="$style.wsDot" />
-          <span>{{ wsConnected ? '已连接' : '未连接' }}</span>
-        </div>
+        <!-- WebSocket 状态：仅圆点，文案放 tooltip -->
+        <el-tooltip
+          :content="wsConnected ? 'WS 已连接' : 'WS 未连接'"
+          placement="bottom"
+          :show-after="300"
+        >
+          <div
+            :class="[$style.wsStatus, wsConnected ? $style.wsConnected : $style.wsDisconnected]"
+            role="status"
+            :aria-label="wsConnected ? 'WS 已连接' : 'WS 未连接'"
+          >
+            <span :class="$style.wsDot" />
+          </div>
+        </el-tooltip>
       </div>
     </div>
 

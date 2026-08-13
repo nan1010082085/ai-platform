@@ -1,6 +1,9 @@
 import type { ProviderPreset } from './types'
 
-/** 与 server seed / modelProviderEnv 对齐的供应商预设 */
+/**
+ * 供应商预设。
+ * 默认模型的 capabilities 在此显式声明，不按 model id 运行时推断。
+ */
 export const PROVIDER_PRESETS: ProviderPreset[] = [
   {
     type: 'deepseek',
@@ -9,9 +12,20 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     color: '#4D6BFE',
     defaultBaseUrl: 'https://api.deepseek.com',
     website: 'https://platform.deepseek.com',
-    description: 'DeepSeek V4，中文能力强，高性价比',
+    description: 'DeepSeek V4，中文能力强，高性价比（V4 Flash/Pro 支持视觉多模态）',
     placeholderApiKey: 'sk-...',
-    defaultModels: ['deepseek-v4-flash', 'deepseek-v4-pro'],
+    defaultModels: [
+      {
+        model: 'deepseek-v4-flash',
+        name: 'DeepSeek V4 Flash',
+        capabilities: ['chat', 'vision'],
+      },
+      {
+        model: 'deepseek-v4-pro',
+        name: 'DeepSeek V4 Pro',
+        capabilities: ['chat', 'vision'],
+      },
+    ],
   },
   {
     type: 'mimo',
@@ -22,7 +36,13 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     website: 'https://platform.xiaomimimo.com',
     description: '小米 Mimo，OpenAI 兼容接口',
     placeholderApiKey: 'tp-...',
-    defaultModels: ['mimo-v2.5'],
+    defaultModels: [
+      {
+        model: 'mimo-v2.5',
+        name: 'Mimo v2.5',
+        capabilities: ['chat'],
+      },
+    ],
   },
   {
     type: 'openai',
@@ -33,6 +53,17 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     website: 'https://platform.openai.com',
     description: 'GPT-4o / GPT-4 系列',
     placeholderApiKey: 'sk-...',
-    defaultModels: ['gpt-4o', 'gpt-4o-mini'],
+    defaultModels: [
+      {
+        model: 'gpt-4o',
+        name: 'GPT-4o',
+        capabilities: ['chat', 'vision'],
+      },
+      {
+        model: 'gpt-4o-mini',
+        name: 'GPT-4o mini',
+        capabilities: ['chat', 'vision'],
+      },
+    ],
   },
 ]

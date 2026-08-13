@@ -394,11 +394,11 @@
 .connStatus {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 500;
+  justify-content: center;
+  padding: 3px;
+  border-radius: 999px;
+  line-height: 0;
+  cursor: default;
 }
 
 .connDot {

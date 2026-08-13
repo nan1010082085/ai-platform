@@ -200,31 +200,61 @@ function handleSelectStarterAgent(agent: AgentType): void {
         <span :class="[$style.roleBadge, selectedWorkflowId ? $style.workflow : $style[selectedAgent]]">
           {{ selectedAgentLabel }}
         </span>
-        <span
+        <el-tooltip
           v-if="currentStreamStatus === 'connecting'"
-          :class="[$style.connStatus, $style.connConnecting]"
+          :content="t('chat.connecting')"
+          placement="bottom"
+          :show-after="300"
         >
-          <span :class="$style.connDot" />
-          {{ t('chat.connecting') }}
-        </span>
-        <span
+          <span
+            :class="[$style.connStatus, $style.connConnecting]"
+            role="status"
+            :aria-label="t('chat.connecting')"
+          >
+            <span :class="$style.connDot" />
+          </span>
+        </el-tooltip>
+        <el-tooltip
           v-else-if="currentStreamStatus === 'reconnecting'"
-          :class="[$style.connStatus, $style.connReconnecting]"
+          :content="t('chat.reconnecting', { current: retryCount, max: maxRetries })"
+          placement="bottom"
+          :show-after="300"
         >
-          <span :class="$style.connDot" />
-          {{ t('chat.reconnecting', { current: retryCount, max: maxRetries }) }}
-        </span>
-        <span
+          <span
+            :class="[$style.connStatus, $style.connReconnecting]"
+            role="status"
+            :aria-label="t('chat.reconnecting', { current: retryCount, max: maxRetries })"
+          >
+            <span :class="$style.connDot" />
+          </span>
+        </el-tooltip>
+        <el-tooltip
           v-else-if="currentStreamStatus === 'disconnected'"
-          :class="[$style.connStatus, $style.connDisconnected]"
+          :content="t('chat.disconnected')"
+          placement="bottom"
+          :show-after="300"
         >
-          <span :class="$style.connDot" />
-          {{ t('chat.disconnected') }}
-        </span>
-        <span :class="[$style.connStatus, wsConnected ? $style.connConnected : $style.connDisconnected]">
-          <span :class="$style.connDot" />
-          {{ wsConnected ? 'WS 已连接' : 'WS 未连接' }}
-        </span>
+          <span
+            :class="[$style.connStatus, $style.connDisconnected]"
+            role="status"
+            :aria-label="t('chat.disconnected')"
+          >
+            <span :class="$style.connDot" />
+          </span>
+        </el-tooltip>
+        <el-tooltip
+          :content="wsConnected ? 'WS 已连接' : 'WS 未连接'"
+          placement="bottom"
+          :show-after="300"
+        >
+          <span
+            :class="[$style.connStatus, wsConnected ? $style.connConnected : $style.connDisconnected]"
+            role="status"
+            :aria-label="wsConnected ? 'WS 已连接' : 'WS 未连接'"
+          >
+            <span :class="$style.connDot" />
+          </span>
+        </el-tooltip>
       </div>
       <div :class="$style.headerActions">
         <el-tooltip :content="t('chat.conversationHistory')" placement="bottom" :show-after="300">

@@ -158,13 +158,14 @@ export function useModelCenter() {
     if (!preset?.defaultModels.length) return
     const existing = await listModels(providerId)
     const existingIds = new Set(existing.map((m) => m.model))
-    for (const modelId of preset.defaultModels) {
-      if (existingIds.has(modelId)) continue
+    for (const item of preset.defaultModels) {
+      if (existingIds.has(item.model)) continue
       await createModel({
-        name: modelId,
+        name: item.name,
         providerId,
-        model: modelId,
+        model: item.model,
         parameters: { temperature: 0.7, maxTokens: 4096 },
+        capabilities: item.capabilities,
         isDefault: false,
         isActive: true,
       })
