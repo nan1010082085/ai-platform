@@ -9,11 +9,15 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import AppUserPanel from '@schema-platform/platform-shared/components/common/AppUserPanel.vue'
+import { useAuthStore } from '@schema-platform/platform-shared/utils/stores/authStore'
+import { stopTokenRefreshSchedule } from '@schema-platform/platform-shared/utils/authSession'
 import { useShellEmbed } from '@/composables/useShellEmbed'
 import { useAiLocale } from '@/composables/useAiLocale'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const { isShellEmbedded, shouldHideSubAppMenu, goToShellHome } = useShellEmbed()
 const { t, locale, toggleLocale } = useAiLocale()
 
@@ -82,6 +86,15 @@ const settingsActive = computed(() =>
 
 function handleSettingsSelect(path: string) {
   router.push(path)
+}
+
+/**
+ * 退出登录并跳转登录页
+ */
+function handleLogout() {
+  stopTokenRefreshSchedule()
+  authStore.reset()
+  void router.push({ name: 'login' })
 }
 </script>
 
@@ -154,6 +167,12 @@ function handleSettingsSelect(path: string) {
         >
           <AppIcon name="flag" :size="16" />
         </button>
+
+        <AppUserPanel
+          :user="authStore.user"
+          placement="bottom-end"
+          @logout="handleLogout"
+        />
       </div>
     </header>
 
