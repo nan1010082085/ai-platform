@@ -12,13 +12,14 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     color: '#4D6BFE',
     defaultBaseUrl: 'https://api.deepseek.com',
     website: 'https://platform.deepseek.com',
-    description: 'DeepSeek V4，中文能力强，高性价比',
+    description: 'DeepSeek V4，中文能力强，高性价比（V4 Flash 支持图像理解）',
     placeholderApiKey: 'sk-...',
     defaultModels: [
       {
         model: 'deepseek-v4-flash',
         name: 'DeepSeek V4 Flash',
-        capabilities: ['chat'],
+        /** 多模态图像理解 */
+        capabilities: ['chat', 'vision'],
       },
       {
         model: 'deepseek-v4-pro',
@@ -40,6 +41,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
       {
         model: 'mimo-v2.5',
         name: 'Mimo v2.5',
+        /** 多模态图像理解 */
         capabilities: ['chat', 'vision'],
       },
     ],
