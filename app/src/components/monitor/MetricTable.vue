@@ -81,7 +81,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import AppPagination from '@/components/common/AppPagination.vue'
+import AppPagination from '@schema-platform/platform-shared/components/common/AppPagination.vue'
 import type { AgentMetric } from '@/types'
 
 defineProps<{

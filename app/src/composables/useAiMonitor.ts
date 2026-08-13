@@ -19,7 +19,7 @@ import type {
   PluginMetricSummary,
 } from '@/types'
 import { normalizeDateValue } from '@/utils/monitorFormat'
-import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
+import { DEFAULT_PAGE_SIZE } from '@schema-platform/platform-shared/utils/pagination'
 
 const AUTO_REFRESH_INTERVAL = 30000
 

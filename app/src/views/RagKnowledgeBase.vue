@@ -25,8 +25,8 @@ import RagSummary from '@/components/rag/RagSummary.vue'
 import RagSearchPanel from '@/components/rag/RagSearchPanel.vue'
 import RagUploadDialog from '@/components/rag/RagUploadDialog.vue'
 import RagIndexOverview from '@/components/rag/RagIndexOverview.vue'
-import AppPagination from '@/components/common/AppPagination.vue'
-import { useClientPagination } from '@/composables/useClientPagination'
+import AppPagination from '@schema-platform/platform-shared/components/common/AppPagination.vue'
+import { useClientPagination } from '@schema-platform/platform-shared/utils/useClientPagination'
 
 const router = useRouter()
 

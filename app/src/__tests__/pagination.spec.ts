@@ -4,9 +4,9 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { ref } from 'vue'
-import AppPagination from '@/components/common/AppPagination.vue'
-import { useClientPagination } from '@/composables/useClientPagination'
-import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGINATION_LAYOUT } from '@/constants/pagination'
+import AppPagination from '@schema-platform/platform-shared/components/common/AppPagination.vue'
+import { useClientPagination } from '@schema-platform/platform-shared/utils/useClientPagination'
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS, PAGINATION_LAYOUT } from '@schema-platform/platform-shared/utils/pagination'
 
 describe('pagination constants', () => {
   it('defaults to 10 with unified sizes/layout', () => {

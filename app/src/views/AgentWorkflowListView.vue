@@ -19,8 +19,8 @@ import {
 import { useWorkflowActions } from '@/composables/useWorkflowActions'
 import styles from './AgentWorkflowListView.module.scss'
 import PageShell from '@/components/common/PageShell.vue'
-import AppPagination from '@/components/common/AppPagination.vue'
-import { useClientPagination } from '@/composables/useClientPagination'
+import AppPagination from '@schema-platform/platform-shared/components/common/AppPagination.vue'
+import { useClientPagination } from '@schema-platform/platform-shared/utils/useClientPagination'
 
 const router = useRouter()
 const searchInput = ref('')

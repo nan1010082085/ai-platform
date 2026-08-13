@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@schema-platform/platform-shared/utils/stores/authStore'
 import { guardAuthenticatedRoute } from '@schema-platform/platform-shared/utils/authSession'
+import { resolvePostLoginNavigation } from '@schema-platform/platform-shared/utils/authPaths'
 
 const isQiankun = () => !!window.__POWERED_BY_QIANKUN__
 
@@ -177,12 +178,14 @@ export function createAiRouter(routeBase?: string) {
       if (to.name === 'login' && !isQiankun()) {
         const authStore = useAuthStore()
         if (authStore.accessToken && authStore.user) {
-          let redirect = (to.query.redirect as string) || '/'
-          const base = import.meta.env.BASE_URL || '/'
-          if (base !== '/' && redirect.startsWith(base)) {
-            redirect = '/' + redirect.slice(base.length)
+          const redirect = (to.query.redirect as string) || '/'
+          const base = import.meta.env.BASE_URL || import.meta.env.VITE_ROUTE_BASE || '/'
+          const nav = resolvePostLoginNavigation(redirect, base)
+          if (nav.mode === 'location') {
+            window.location.assign(nav.href)
+            return false
           }
-          return { path: redirect }
+          return { path: nav.path }
         }
       }
       return true

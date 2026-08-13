@@ -24,8 +24,8 @@ import {
 import styles from './ApiKeyManagerView.module.scss'
 import PageShell from '@/components/common/PageShell.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
-import AppPagination from '@/components/common/AppPagination.vue'
-import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
+import AppPagination from '@schema-platform/platform-shared/components/common/AppPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@schema-platform/platform-shared/utils/pagination'
 
 const { t, locale } = useI18n()
 

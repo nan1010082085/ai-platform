@@ -71,7 +71,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import AppPagination from '@/components/common/AppPagination.vue'
+import AppPagination from '@schema-platform/platform-shared/components/common/AppPagination.vue'
 import type { AgentAlert } from '@/types'
 import { formatMonitorTime, formatMonitorDuration } from '@/utils/monitorFormat'
 

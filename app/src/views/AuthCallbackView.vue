@@ -14,6 +14,7 @@ import {
   startTokenRefreshSchedule,
   bootstrapAuthSession,
 } from '@schema-platform/platform-shared/utils/authSession'
+import { resolvePostLoginNavigation } from '@schema-platform/platform-shared/utils/authPaths'
 import { useAuthStore } from '@schema-platform/platform-shared/utils/stores/authStore'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 
@@ -38,17 +39,14 @@ onMounted(async () => {
     await bootstrapAuthSession()
     startTokenRefreshSchedule(tokens.expiresIn)
 
-    let redirect = route.query.redirect as string | undefined
-
-    // 避免路径重复：如果 redirect 以 router base 开头，去掉 base 前缀
-    if (redirect) {
-      const base = import.meta.env.BASE_URL || '/'
-      if (base !== '/' && redirect.startsWith(base)) {
-        redirect = '/' + redirect.slice(base.length)
-      }
+    const redirect = route.query.redirect as string | undefined
+    const base = import.meta.env.BASE_URL || import.meta.env.VITE_ROUTE_BASE || '/'
+    const nav = resolvePostLoginNavigation(redirect || '/', base)
+    if (nav.mode === 'location') {
+      window.location.assign(nav.href)
+      return
     }
-
-    await router.replace(redirect || '/')
+    await router.replace(nav.path)
   } catch (err) {
     statusText.value =
       err instanceof SSOError ? `登录失败：${err.message}` : '登录失败，请重试'
