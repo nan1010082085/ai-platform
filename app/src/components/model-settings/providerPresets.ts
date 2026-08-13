@@ -12,18 +12,18 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     color: '#4D6BFE',
     defaultBaseUrl: 'https://api.deepseek.com',
     website: 'https://platform.deepseek.com',
-    description: 'DeepSeek V4，中文能力强，高性价比（V4 Flash/Pro 支持视觉多模态）',
+    description: 'DeepSeek V4，中文能力强，高性价比',
     placeholderApiKey: 'sk-...',
     defaultModels: [
       {
         model: 'deepseek-v4-flash',
         name: 'DeepSeek V4 Flash',
-        capabilities: ['chat', 'vision'],
+        capabilities: ['chat'],
       },
       {
         model: 'deepseek-v4-pro',
         name: 'DeepSeek V4 Pro',
-        capabilities: ['chat', 'vision'],
+        capabilities: ['chat'],
       },
     ],
   },
@@ -34,13 +34,13 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     color: '#FF6B35',
     defaultBaseUrl: 'https://token-plan-cn.xiaomimimo.com/v1',
     website: 'https://platform.xiaomimimo.com',
-    description: '小米 Mimo，OpenAI 兼容接口',
+    description: '小米 Mimo，OpenAI 兼容接口（mimo-v2.5 支持图像理解）',
     placeholderApiKey: 'tp-...',
     defaultModels: [
       {
         model: 'mimo-v2.5',
         name: 'Mimo v2.5',
-        capabilities: ['chat'],
+        capabilities: ['chat', 'vision'],
       },
     ],
   },
