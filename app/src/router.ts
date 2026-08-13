@@ -9,7 +9,7 @@ const routes = [
     path: '/login',
     name: 'login',
     component: () => import('@schema-platform/platform-shared/components/auth/LoginView.vue'),
-    props: { title: 'AI 助手', subtitle: '智能 Schema/Flow 生成' },
+    props: { title: '智能体平台', subtitle: '智能 Schema/Flow 生成' },
     meta: { public: true },
   },
   {
