@@ -416,17 +416,17 @@ function togglePanelExpand() {
           <!-- 实时（节点级流式输出 + 节点事件） -->
           <template v-else-if="activeTab === 'streaming'">
             <div :class="styles.streamPanel">
-              <!-- 当前节点 streamingOutput -->
-              <div v-if="nodeStream.current" :class="styles.streamBlock">
-                <div :class="styles.streamHeader">
-                  <span :class="styles.streamNode">
-                    {{ nodeStream.current.nodeId }}
-                  </span>
-                  <span :class="styles.streamType">{{ nodeStream.current.nodeType }}</span>
-                  <span :class="styles.streamTime">{{ nodeStream.current.updatedAt }}</span>
+              <!-- 活跃流式节点（per-node streamingOutputs，可同时多个） -->
+              <template v-if="nodeStream.activeNodes.length > 0">
+                <div v-for="node in nodeStream.activeNodes" :key="node.nodeId" :class="styles.streamBlock">
+                  <div :class="styles.streamHeader">
+                    <span :class="styles.streamNode">{{ node.nodeId }}</span>
+                    <span :class="styles.streamType">{{ node.nodeType }}</span>
+                    <span :class="styles.streamTime">{{ node.updatedAt }}</span>
+                  </div>
+                  <pre :class="styles.streamText">{{ node.text }}</pre>
                 </div>
-                <pre :class="styles.streamText">{{ nodeStream.current.text }}</pre>
-              </div>
+              </template>
               <div v-else :class="styles.empty">等待节点开始执行…</div>
 
               <!-- 节点事件统计 -->

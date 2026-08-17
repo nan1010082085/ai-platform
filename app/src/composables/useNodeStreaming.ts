@@ -1,12 +1,11 @@
 /**
- * useNodeStreaming — 节点级实时流式订阅（复用 server 现有的 streamingOutput + workflow:node-event）。
+ * useNodeStreaming — 节点级实时流式订阅。
  *
- * 服务端已有能力：
- * - `setStreamingOutput`：按 executionId + nodeId 写 streamingOutput 字段（LLM 输出、agent-loop 进度）
- * - `emitWorkflowNodeEvent`：per-node 事件（tool-call / flow_started / approval_analyzed 等）
- * - `workflow:event` 全量快照（含 streamingOutput 字段）
+ * 消费两种数据源：
+ * - `workflow:event` 快照（含 streamingOutputs per-node map + 向后兼容 streamingOutput）
+ * - `workflow:node-event` per-node 事件（tool-call / progress / dsh_session_started 等）
  *
- * 前端原未消费这些信号——本 composable 把它们桥接为 Vue 响应式状态。
+ * 返回每个正在流式输出的节点状态 + 已收集的 node-event 事件流。
  */
 
 import { ref, watch, onScopeDispose, type Ref } from 'vue'
@@ -24,13 +23,14 @@ export interface NodeStreamState {
   nodeId: string
   nodeType: string
   text: string
-  updatedAt: string | null
-  events: WorkflowNodeEvent[]
+  updatedAt: string
 }
 
 /** 一次执行的节点级流状态 */
 export interface ExecutionStreamState {
-  /** streamingOutput（server 推送的全量快照中提取） */
+  /** 正在流式输出的所有节点（per-node map，可同时多个） */
+  activeNodes: NodeStreamState[]
+  /** 向后兼容：最近一条流式输出（单一节点，chat 消费链路仍在用） */
   current: NodeStreamState | null
   /** 已收集的 node-event 事件（按时间追加） */
   nodeEvents: WorkflowNodeEvent[]
@@ -47,6 +47,7 @@ export function useExecutionNodeStream(executionId: Ref<string | null>): {
   stop: () => void
 } {
   const stream = ref<ExecutionStreamState>({
+    activeNodes: [],
     current: null,
     nodeEvents: [],
     eventCounts: {},
@@ -57,17 +58,39 @@ export function useExecutionNodeStream(executionId: Ref<string | null>): {
 
   function handleEvent(data: WorkflowEvent) {
     if (!executionId.value || data.executionId !== executionId.value) return
-    const so = data.execution.streamingOutput
-    if (so) {
-      stream.value.current = {
-        nodeId: so.nodeId,
-        nodeType: so.nodeType,
-        text: so.text,
-        updatedAt: so.updatedAt,
-      }
+
+    // 优先用 streamingOutputs（per-node map，多节点并发流式）
+    const streamingOutputs = data.execution.streamingOutputs
+    if (streamingOutputs && Object.keys(streamingOutputs).length > 0) {
+      const activeNodes: NodeStreamState[] = Object.entries(streamingOutputs).map(
+        ([nodeId, entry]) => ({
+          nodeId,
+          nodeType: entry.nodeType,
+          text: entry.text,
+          updatedAt: entry.updatedAt,
+        }),
+      )
+      stream.value.activeNodes = activeNodes
+      // current 取最新的一条（向后兼容）
+      const latest = activeNodes.reduce((a, b) =>
+        (a.updatedAt > b.updatedAt ? a : b),
+      )
+      stream.value.current = latest
     } else {
-      // streamingOutput 被 clear（节点完成）
-      stream.value.current = null
+      // 回退到 streamingOutput（向后兼容单一节点）
+      const so = data.execution.streamingOutput
+      if (so) {
+        stream.value.current = {
+          nodeId: so.nodeId,
+          nodeType: so.nodeType,
+          text: so.text,
+          updatedAt: so.updatedAt,
+        }
+        stream.value.activeNodes = [stream.value.current]
+      } else {
+        stream.value.current = null
+        stream.value.activeNodes = []
+      }
     }
   }
 
@@ -84,7 +107,7 @@ export function useExecutionNodeStream(executionId: Ref<string | null>): {
   function start() {
     stop()
     if (!executionId.value) return
-    stream.value = { current: null, nodeEvents: [], eventCounts: {} }
+    stream.value = { activeNodes: [], current: null, nodeEvents: [], eventCounts: {} }
     offEvent = subscribeWorkflowExecution(executionId.value, handleEvent)
     offNodeEvent = onWorkflowNodeEvent(handleNodeEvent)
   }
