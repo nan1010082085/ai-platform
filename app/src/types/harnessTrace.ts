@@ -1,7 +1,7 @@
 /**
  * DSH 会话轨迹读模型（platform.nodeTrace 投影的协议类型）。
  *
- * 与 ai/harness 的 trajectory-forward 插件（zod schema）一一对应；
+ * 与 harness 的 trajectory-forward 插件（zod schema）一一对应；
  * 事件映射见 ai/docs/design/dsh-cordis-integration.md §5.8。
  *
  * 字段约定：可选字段恒存在，未发生时为 null（对齐 zod nullable 语义）。

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Harness 轨迹查看（M6 v1）— 连接 ai/harness 服务的调试视图。
+ * Harness 轨迹查看（M6 v1）— 连接 harness 服务的调试视图。
  *
  * 能力：创建会话 -> 发送消息（SSE 实时事件流）-> platform.nodeTrace 轨迹投影渲染。
  * 这是 DSH 轨迹进 workflow 日志（设计文档 §5.8）的前端第一落点：
@@ -94,7 +94,7 @@ function stepSummary(tool: { name: string; arguments: string; isError: boolean |
 
 <template>
   <PageShell>
-    <PageHeader title="Harness 轨迹" subtitle="连接 ai/harness 服务：会话、SSE 事件流与 platform.nodeTrace 投影">
+    <PageHeader title="Harness 轨迹" subtitle="连接 harness 服务：会话、SSE 事件流与 platform.nodeTrace 投影">
       <template #actions>
         <el-button type="primary" :loading="busy" @click="createSession">
           <AppIcon name="plus" :size="14" style="margin-right: 4px" />

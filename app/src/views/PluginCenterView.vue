@@ -334,7 +334,7 @@ onMounted(() => {
                 <p>日 RMB 预算: {{ runtimeView.harness.gateway.budgetRmbDaily ?? 10 }} 元</p>
               </div>
               <div v-else :class="styles.serviceDetails">
-                <p>harness 服务未启动或不可达（{{ runtimeView.harness.error ?? '请单独部署 ai/harness' }}）</p>
+                <p>harness 服务未启动或不可达（{{ runtimeView.harness.error ?? '请单独部署 harness 服务' }}）</p>
               </div>
             </div>
           </div>

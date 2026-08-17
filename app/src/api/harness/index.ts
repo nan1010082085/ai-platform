@@ -1,7 +1,7 @@
 /**
- * Harness 客户端聚合（M6 v1）：ai/app -> ai/harness 服务的类型化调用。
+ * Harness 客户端聚合（M6 v1）：ai/app -> harness 服务的类型化调用。
  *
- * 端点约定（ai/harness README）：
+ * 端点约定（harness README）：
  * - POST /session/start -> { sessionId }
  * - POST /session/:id/message { content } -> { text, reason }
  * - GET  /session/:id/trace -> { sessionId, asOfSeq, trace }
