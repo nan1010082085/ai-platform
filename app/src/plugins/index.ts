@@ -28,7 +28,7 @@ export {
 export { builtinLayers, mergeLayers } from './config/layers'
 export type { ChatToolsLayer, PluginHostLayers, PartialLayers } from './config/layers'
 export { registryToolToDef, registryToolsToDefs } from './registry-adapter'
-export type { RegistryToolSummary } from './registry-adapter'
+export type { PluginToolSummary as RegistryToolSummary } from '@/api/pluginApi'
 export { platformSkillToDef, platformSkillsToDefs } from './skill-adapter'
 export type { SkillDef, PlatformSkillSummary } from './skill-adapter'
 export type { ToolCategory, ToolDef, ToolGroup } from './plugins/chat-tools/types'

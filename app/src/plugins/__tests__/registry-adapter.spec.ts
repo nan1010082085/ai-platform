@@ -3,10 +3,11 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { registryToolsToDefs, registryToolToDef, type RegistryToolSummary } from '@/plugins'
+import { registryToolsToDefs, registryToolToDef } from '@/plugins'
+import type { PluginToolSummary } from '@/api/pluginApi'
 import { SCHEMA_SEARCH } from '@schema-platform/platform-shared/ai/toolNames'
 
-const baseSummary = (overrides: Partial<RegistryToolSummary> = {}): RegistryToolSummary => ({
+const baseSummary = (overrides: Partial<PluginToolSummary> = {}): PluginToolSummary => ({
   name: 'custom__tool',
   kind: 'http',
   ...overrides,
