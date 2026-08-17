@@ -8,7 +8,7 @@
  */
 
 import { Service, type Context } from '@deepseek-ai/cordis'
-import { platformSkillToDef, type SkillDef, type PlatformSkillSummary } from '../../skill-adapter'
+import { platformSkillToDef, platformSkillsToDefs, type SkillDef, type PlatformSkillSummary } from '../../skill-adapter'
 
 export class SkillDefsService extends Service {
   private overlay = new Map<string, SkillDef>()
