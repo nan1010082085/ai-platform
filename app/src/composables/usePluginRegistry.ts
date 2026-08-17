@@ -2,21 +2,22 @@ import { ref, computed } from 'vue'
 import { fetchPluginRegistry, type PluginExpertSummary, type PluginToolSummary, type PluginSkillSummary, type PluginMcpServerSummary } from '@/api/pluginApi'
 import { fetchTenants, type TenantInfo } from '@/api/tenantApi'
 import { useAuth } from '@schema-platform/platform-shared/utils/useAuth'
-import type { AgentPaletteItem } from '@/constants/agentNodes'
+import type { AgentPaletteItem } from '@/plugins'
 import type { AgentNodeType } from '@/types/agentWorkflow'
 import {
+  ensurePluginHost,
   getBuiltInTool,
   getToolsByCategory,
-  resolveToolCategory,
+  registryToolsToDefs,
   TOOL_CATEGORY_LABELS,
-  type BuiltInToolDef,
   type ToolCategory,
-} from '@/constants/agentTools'
-import { getToolDisplayLabel } from '@schema-platform/platform-shared/ai/toolNames'
+  type ToolDef,
+} from '@/plugins'
 
 const experts = ref<PluginExpertSummary[]>([])
 const skills = ref<PluginSkillSummary[]>([])
 const tools = ref<PluginToolSummary[]>([])
+const toolDefs = ref<ToolDef[]>([])
 const mcpServers = ref<PluginMcpServerSummary[]>([])
 const loaded = ref(false)
 const loading = ref(false)
@@ -49,38 +50,23 @@ const TOOL_NS_ICON: Record<string, string> = {
   industry: 'office-building',
 }
 
-function toolPaletteItem(tool: PluginToolSummary): AgentPaletteItem {
-  const def = registryToolToDef(tool)
-  const ns = tool.name.includes('__') ? tool.name.split('__')[0] : tool.kind
-  const categoryHint = TOOL_CATEGORY_LABELS[def.category] ?? def.category
+function toolPaletteItem(tool: ToolDef): AgentPaletteItem {
+  const ns = tool.name.includes('__') ? tool.name.split('__')[0] : tool.category
+  const categoryHint = TOOL_CATEGORY_LABELS[tool.category] ?? tool.category
   const sourceHint = tool.source ? ` · ${tool.source}` : ''
   return {
     type: 'tool' as AgentNodeType,
-    label: def.label,
-    icon: TOOL_NS_ICON[ns] ?? (tool.kind === 'graph' ? 'cpu' : 'setting'),
+    label: tool.label,
+    icon: TOOL_NS_ICON[ns] ?? (tool.category === 'langgraph' ? 'cpu' : 'setting'),
     category: 'tools',
     description: `${categoryHint}${sourceHint}`,
     defaultData: {
-      label: def.label,
+      label: tool.label,
       toolName: tool.name,
     },
   }
 }
 
-function registryToolToDef(tool: PluginToolSummary): BuiltInToolDef {
-  const builtin = getBuiltInTool(tool.name)
-  const category = (tool.category as ToolCategory | undefined)
-    ?? builtin?.category
-    ?? resolveToolCategory(tool.name)
-    ?? (tool.kind === 'graph' ? 'langgraph' : tool.kind === 'http' ? 'workflow' : undefined)
-  return {
-    name: tool.name,
-    label: tool.label ?? builtin?.label ?? getToolDisplayLabel(tool.name),
-    description: builtin?.description ?? tool.description ?? TOOL_CATEGORY_LABELS[category ?? 'langgraph'] ?? tool.name,
-    argsHint: tool.argsHint ?? builtin?.argsHint ?? '{}',
-    category: category ?? 'langgraph',
-  }
-}
 
 function expertPaletteItem(expert: PluginExpertSummary): AgentPaletteItem {
   const legacy = expert.legacyAgentKey ?? ''
@@ -98,7 +84,7 @@ function expertPaletteItem(expert: PluginExpertSummary): AgentPaletteItem {
 }
 
 export function usePluginRegistry() {
-  const toolPaletteItems = computed(() => tools.value.map(toolPaletteItem))
+  const toolPaletteItems = computed(() => toolDefs.value.map(toolPaletteItem))
 
   const expertPaletteItems = computed(() =>
     experts.value
@@ -117,6 +103,16 @@ export function usePluginRegistry() {
       skills.value = data.skills
       tools.value = data.tools
       mcpServers.value = data.mcpServers
+      const host = await ensurePluginHost()
+      host.chatTools.setOverlay(registryToolsToDefs(data.tools))
+      toolDefs.value = host.chatTools.listOverlay()
+      // 动态节点条目同步进 nodeTypes 服务（palette 扩展点，M6 智能体节点同源注册）
+      host.nodeTypes.setDynamic([
+        ...toolDefs.value.map(toolPaletteItem),
+        ...experts.value
+          .filter((e) => !e.runtime?.length || e.runtime.includes('workflow'))
+          .map(expertPaletteItem),
+      ])
       loaded.value = true
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err)
@@ -156,18 +152,18 @@ export function usePluginRegistry() {
     return LEGACY_EXPERT_COLOR[legacy] ?? '#9B59B6'
   }
 
-  function getToolsForPanel(category?: ToolCategory): BuiltInToolDef[] {
+  function getToolsForPanel(category?: ToolCategory): ToolDef[] {
     const fromRegistry = (category
-      ? tools.value.filter((t) => registryToolToDef(t).category === category)
+      ? tools.value.filter((t) => registryToolsToDefs([t])[0].category === category)
       : tools.value
-    ).map(registryToolToDef)
+    ).map((t) => registryToolsToDefs([t])[0])
     if (fromRegistry.length > 0) return fromRegistry
-    return category ? getToolsByCategory(category) : tools.value.map(registryToolToDef)
+    return category ? getToolsByCategory(category) : registryToolsToDefs(tools.value)
   }
 
-  function resolveToolDef(name: string): BuiltInToolDef | undefined {
+  function resolveToolDef(name: string): ToolDef | undefined {
     const fromRegistry = tools.value.find((t) => t.name === name)
-    if (fromRegistry) return registryToolToDef(fromRegistry)
+    if (fromRegistry) return registryToolsToDefs([fromRegistry])[0]
     return getBuiltInTool(name)
   }
 

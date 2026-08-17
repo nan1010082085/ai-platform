@@ -1,0 +1,121 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--sfp-bg-secondary, #f7f8fa);
+  border-radius: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.label {
+  flex-shrink: 0;
+  color: var(--sfp-text-secondary, #909399);
+  font-size: 13px;
+}
+
+.mono {
+  font-family: var(--sfp-font-mono, 'SFMono-Regular', Consolas, monospace);
+  font-size: 12px;
+  color: var(--sfp-text-primary, #303133);
+  word-break: break-all;
+}
+
+.error {
+  color: #f56c6c;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(280px, 2fr) minmax(360px, 3fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.column {
+  padding: 16px;
+  background: var(--sfp-bg-secondary, #f7f8fa);
+  border-radius: 8px;
+  min-height: 320px;
+}
+
+.columnTitle {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.eventList {
+  max-height: 420px;
+  overflow: auto;
+}
+
+.eventRow {
+  display: flex;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: 12px;
+}
+
+.eventSeq {
+  width: 40px;
+  flex-shrink: 0;
+  color: var(--sfp-text-secondary, #909399);
+  font-family: var(--sfp-font-mono, 'SFMono-Regular', Consolas, monospace);
+  text-align: right;
+}
+
+.eventType {
+  font-family: var(--sfp-font-mono, 'SFMono-Regular', Consolas, monospace);
+  word-break: break-all;
+}
+
+.turnTitle {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.toolList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.toolRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+  font-size: 12px;
+}
+
+.toolArgs {
+  color: var(--sfp-text-secondary, #909399);
+  font-family: var(--sfp-font-mono, 'SFMono-Regular', Consolas, monospace);
+  word-break: break-all;
+}
+
+.toolMeta {
+  color: var(--sfp-text-secondary, #909399);
+  font-size: 11px;
+}
+
+.assistantText {
+  margin: 6px 0;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.hint {
+  color: var(--sfp-text-secondary, #909399);
+  font-size: 12px;
+}

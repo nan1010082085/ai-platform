@@ -5,6 +5,10 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import AiMessage from '@/components/AiMessage.vue'
+import { ensurePluginHost } from '@/plugins'
+
+// 渲染分发出走 Cordis renderers 服务，spec 图内启动宿主（同步装载）
+ensurePluginHost()
 
 // Mock pdfjs-dist to avoid DOMMatrix not defined in jsdom
 vi.mock('pdfjs-dist', () => ({

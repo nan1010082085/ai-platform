@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import { AGENT_PALETTE_ITEMS, AGENT_NODE_COLORS } from '@/constants/agentNodes'
+import { AGENT_PALETTE_ITEMS, AGENT_NODE_COLORS } from '@/plugins'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
 import type { AgentNodeType } from '@/types/agentWorkflow'
-import type { AgentPaletteItem } from '@/constants/agentNodes'
+import type { AgentPaletteItem } from '@/plugins'
 import styles from './AgentWorkflowPalette.module.scss'
 
 const { expertPaletteItems, toolPaletteItems, load, expertColor } = usePluginRegistry()

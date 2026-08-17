@@ -7,7 +7,7 @@ import {
   resolveToolCategory,
   TOOL_CATEGORY_LABELS,
   type ToolCategory,
-} from '@/constants/agentTools'
+} from '@/plugins'
 
 export function isToolNodeType(type: string): type is 'tool' {
   return type === 'tool'

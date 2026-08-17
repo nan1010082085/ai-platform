@@ -18,6 +18,7 @@ import { initCapabilityPlatformAuth } from '@schema-platform/platform-shared/uti
 import { registerAiApiTokenProvider } from './setupCapabilityAuth'
 import { readStoredLocale } from './composables/useAiLocale'
 import { disposeAiTelemetry, initAiTelemetry } from './utils/telemetry'
+import { ensurePluginHost } from '@/plugins'
 import zhCN from './locales/zh-CN'
 import enUS from './locales/en-US'
 
@@ -28,6 +29,7 @@ let disposeRouteSync: (() => void) | null = null
 let currentRouteBase: string | undefined
 
 function render() {
+  void ensurePluginHost()
   router = createAiRouter(currentRouteBase)
   const pinia = createPinia()
   app = createApp(AppRoot)

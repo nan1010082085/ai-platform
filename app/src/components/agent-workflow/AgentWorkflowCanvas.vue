@@ -11,7 +11,7 @@ import { useAgentWorkflowDesignerStore } from '@/stores/agentWorkflowDesigner'
 import AgentFlowNode from './nodes/AgentFlowNode.vue'
 import AgentFlowEdge from './edges/AgentFlowEdge.vue'
 import type { AgentNodeType } from '@/types/agentWorkflow'
-import { AGENT_PALETTE_ITEMS } from '@/constants/agentNodes'
+import { AGENT_PALETTE_ITEMS } from '@/plugins'
 import styles from './AgentWorkflowCanvas.module.scss'
 import { EDGE_LINE_STYLE_KEY } from '@/types/edgeLineStyle'
 

@@ -104,6 +104,11 @@ const routes = [
         component: () => import('./views/WorkflowDebugView.vue'),
       },
       {
+        path: 'debug/harness',
+        name: 'harness-debug',
+        component: () => import('./views/HarnessTraceView.vue'),
+      },
+      {
         path: 'debug/rag',
         name: 'rag-debug',
         component: () => import('./views/RagDebugView.vue'),

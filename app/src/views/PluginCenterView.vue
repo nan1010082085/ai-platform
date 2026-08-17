@@ -12,12 +12,13 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import PageShell from '@/components/common/PageShell.vue'
 import PluginEditor from '@/components/plugins/PluginEditor.vue'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
+import { usePluginRuntime } from '@/composables/usePluginRuntime'
 import { getExpertLegacyBadge, type ExpertAgentKind } from '@/constants/expertNodeTypes'
 import { getToolDisplayLabel } from '@schema-platform/platform-shared/ai/toolNames'
 import type { PluginLocalLayer } from '@/api/pluginApi'
 import styles from './PluginCenterView.module.scss'
 
-type LayerTab = 'experts' | 'tools' | 'mcp' | 'skills'
+type LayerTab = 'experts' | 'tools' | 'mcp' | 'skills' | 'runtime'
 type ToolKindTab = 'all' | 'mcp' | 'graph' | 'http'
 
 const layerTabs = [
@@ -25,6 +26,7 @@ const layerTabs = [
   { label: '工具 Tools', value: 'tools' as LayerTab },
   { label: 'MCP Server', value: 'mcp' as LayerTab },
   { label: '技能 Skills', value: 'skills' as LayerTab },
+  { label: '运行时 Runtime', value: 'runtime' as LayerTab },
 ]
 
 const toolKindTabs = [
@@ -41,6 +43,8 @@ const {
   experts, skills, tools, mcpServers, loading, error, load,
   tenants, tenantsLoading, selectedTenantId, loadTenants, setTenant,
 } = usePluginRegistry()
+
+const { view: runtimeView } = usePluginRuntime()
 
 const editorVisible = ref(false)
 const editorTitle = ref('')
@@ -296,6 +300,30 @@ onMounted(() => {
             </el-table-column>
           </el-table>
           <p v-if="!filteredSkills.length && !loading" :class="styles.hint">暂无 Skill 声明（可在 config/plugins/skills/ 添加）</p>
+        </CardTable>
+
+        <CardTable v-show="activeLayer === 'runtime'">
+          <el-table :data="runtimeView.toolGroups" stripe>
+            <el-table-column prop="label" label="分类" width="180" />
+            <el-table-column label="工具（名称 · 来源层）" min-width="420">
+              <template #default="{ row }">
+                <div :class="styles.tagRow">
+                  <el-tag v-for="t in row.tools" :key="t.name" size="small" :type="t.source === 'patch' ? 'danger' : t.source === 'registry' ? 'success' : undefined">
+                    {{ t.name }}<template v-if="t.source"> · {{ t.source }}</template>
+                  </el-tag>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="数量" width="90">
+              <template #default="{ row }">{{ row.tools.length }}</template>
+            </el-table-column>
+          </el-table>
+          <p :class="styles.hint">
+            工具分层：内置 {{ runtimeView.toolLayers.builtin }} · registry overlay {{ runtimeView.toolLayers.overlay }} · 本地 patch {{ runtimeView.toolLayers.patch }}（合并后 {{ runtimeView.toolLayers.total }}，同名 patch 优先）
+          </p>
+          <p :class="styles.hint">
+            节点类型：内置 {{ runtimeView.nodeTypeBuiltin }} · 动态注册 {{ runtimeView.nodeTypeDynamic }}；消息渲染器：{{ runtimeView.rendererCount }}（Cordis 服务，随宿主生命周期装载）
+          </p>
         </CardTable>
 
         <p :class="styles.hint">

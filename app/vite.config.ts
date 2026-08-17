@@ -50,7 +50,15 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       cors: true,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      proxy: createDevApiProxy(proxyTarget),
+      proxy: {
+        ...createDevApiProxy(proxyTarget),
+        // ai/harness 本地服务（M6 v1）：SSE 直通，不做响应自处理
+        '/schema-platform/harness': {
+          target: 'http://127.0.0.1:5310',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/schema-platform\/harness/, ''),
+        },
+      },
     },
   }
 })

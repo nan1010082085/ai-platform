@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import TruncatedTooltipText from '@/components/agent-workflow/property-panel/TruncatedTooltipText.vue'
-import { AGENT_NODE_COLORS, getPaletteItem } from '@/constants/agentNodes'
+import { AGENT_NODE_COLORS, getPaletteItem } from '@/plugins'
 import type { AgentNodeRecord, AgentNodeType, AgentWorkflowNodeData } from '@/types/agentWorkflow'
 import {
   getAgentNodePreviewSections,

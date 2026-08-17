@@ -31,6 +31,8 @@ export const ERROR_CODE_TEXT: Record<string, string> = {
   workflow_hitl_expired: '人工确认已超时，执行已自动取消',
   workflow_callback_failed: '回调通知失败，但执行已完成',
   workflow_rate_limited: '调用频率超限，请稍后重试',
+  // LLM 日成本额度
+  DAILY_QUOTA_EXCEEDED: '今日 LLM 额度已用尽，请明日再试或联系管理员提升额度',
   // MCP
   mcp_tool_unavailable: 'MCP 工具不可用，服务可能未启动',
   mcp_tool_timeout: 'MCP 工具调用超时',

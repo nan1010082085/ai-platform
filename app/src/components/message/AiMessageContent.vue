@@ -2,14 +2,18 @@
 /**
  * AiMessageContent — 消息内容调度器
  *
- * 使用 RendererRegistry 查找匹配的渲染器，通过 Vue <component :is="...">
- * 动态渲染每个 step。文档附件/摘要单独由 DocumentRenderer 处理。
+ * 通过 Cordis renderers 服务（@/plugins 宿主）查找匹配的渲染器，
+ * 使用 Vue <component :is="..."> 动态渲染每个 step。文档附件/摘要单独由 DocumentRenderer 处理。
  * 同时处理用户消息（气泡、图片网格）和助手消息（步骤卡片）。
  */
 
 import { computed, ref } from 'vue'
 import { ElImageViewer } from 'element-plus'
-import { getRenderer } from './RendererRegistry'
+import { getPluginHost } from '@/plugins'
+
+function getRenderer(step: StepData) {
+  return getPluginHost().renderers.getRenderer(step)
+}
 import DocumentRenderer from './renderers/DocumentRenderer.vue'
 import DocumentAttachmentCard from '@/components/document/DocumentAttachmentCard.vue'
 import DocumentSummaryCard from '@/components/document/DocumentSummaryCard.vue'

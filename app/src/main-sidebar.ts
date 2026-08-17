@@ -20,8 +20,10 @@ import './styles/ai-theme-bridge.scss'
 
 import AiSidebarView from './views/AiSidebarView.vue'
 import { registerAiApiTokenProvider } from './setupCapabilityAuth'
+import { ensurePluginHost } from '@/plugins'
 
 async function mountSidebar(): Promise<void> {
+  await ensurePluginHost()
   const app = createApp(AiSidebarView)
   const pinia = createPinia()
   app.use(pinia)

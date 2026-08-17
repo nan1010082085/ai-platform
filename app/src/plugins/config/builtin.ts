@@ -1,6 +1,7 @@
 /**
- * Agent 工作流工具节点 — Registry 未加载时的 argsHint / category 回退。
- * 中文 label 权威来源：`server/config/plugins/tools/*.json` + `getToolDisplayLabel`。
+ * 内置层（builtin bundle）：工具清单数据 + 纯同步查找函数。
+ * 迁移自 `constants/agentTools.ts`（迁完即删，禁双轨）。
+ * 语义：Registry 未加载时的 argsHint / category 回退。
  */
 
 import {
@@ -31,54 +32,29 @@ import {
   normalizeToolName,
   getToolDisplayLabel,
 } from '@schema-platform/platform-shared/ai/toolNames'
-
-export type ToolCategory =
-  | 'mcp-schema'
-  | 'mcp-flow'
-  | 'mcp-widget'
-  | 'mcp-rag'
-  | 'mcp-industry'
-  | 'langgraph'
-  | 'workflow'
-
-export interface BuiltInToolDef {
-  name: string
-  label: string
-  description: string
-  /** 参数提示，展示在面板上帮助用户填写 JSON */
-  argsHint: string
-  category: ToolCategory
-}
-
-export const TOOL_CATEGORY_LABELS: Record<ToolCategory, string> = {
-  'mcp-schema': 'MCP · Schema',
-  'mcp-flow': 'MCP · Flow',
-  'mcp-widget': 'MCP · Widget',
-  'mcp-rag': 'MCP · RAG',
-  'mcp-industry': 'MCP · Industry',
-  langgraph: 'LangGraph 专有',
-  workflow: '工作流专用',
-}
+import type { ToolCategory, ToolDef, ToolGroup } from '../plugins/chat-tools/types'
+import { TOOL_CATEGORY_LABELS, TOOL_CATEGORY_ORDER } from '../plugins/chat-tools/types'
 
 function builtinTool(
   name: string,
   category: ToolCategory,
   description: string,
   argsHint: string,
-): BuiltInToolDef {
+): ToolDef {
   return {
     name,
     label: getToolDisplayLabel(name),
     description,
     argsHint,
     category,
+    source: 'builtin',
   }
 }
 
 /**
  * Registry 未加载时的回退清单（label 来自 ai-shared TOOL_DISPLAY_LABELS）。
  */
-export const BUILT_IN_TOOLS: BuiltInToolDef[] = [
+export const BUILT_IN_TOOLS: ToolDef[] = [
   // ── MCP Schema ──
   builtinTool(SCHEMA_SEARCH, 'mcp-schema', '按关键词搜索平台 Schema 实例', '{"keyword":"表单","limit":5}'),
   builtinTool(SCHEMA_SEARCH_PUBLISHED, 'mcp-schema', '搜索已发布的 Schema', '{"keyword":"表单","limit":5}'),
@@ -107,26 +83,14 @@ export const BUILT_IN_TOOLS: BuiltInToolDef[] = [
   builtinTool('http_request', 'workflow', '发起自定义 HTTP 请求（工作流专用，非 MCP）', '{"method":"GET","url":"https://api.example.com","headers":{}}'),
 ]
 
-const TOOL_CATEGORY_ORDER: ToolCategory[] = [
-  'mcp-schema',
-  'mcp-flow',
-  'mcp-widget',
-  'mcp-rag',
-  'mcp-industry',
-  'langgraph',
-  'workflow',
-]
+export const BUILT_IN_TOOL_NAMES = BUILT_IN_TOOLS.map((t) => t.name)
 
-/** 按 MCP 域分组，供编排器工具节点选择器使用 */
-export function getGroupedBuiltInTools(): Array<{ category: ToolCategory; label: string; tools: BuiltInToolDef[] }> {
-  return TOOL_CATEGORY_ORDER.map((category) => ({
-    category,
-    label: TOOL_CATEGORY_LABELS[category],
-    tools: BUILT_IN_TOOLS.filter((t) => t.category === category),
-  })).filter((g) => g.tools.length > 0)
+export function getBuiltInTool(name: string): ToolDef | undefined {
+  const normalized = normalizeToolName(name)
+  return BUILT_IN_TOOLS.find((t) => t.name === normalized || t.name === name)
 }
 
-export function getToolsByCategory(category: ToolCategory): BuiltInToolDef[] {
+export function getToolsByCategory(category: ToolCategory): ToolDef[] {
   return BUILT_IN_TOOLS.filter((t) => t.category === category)
 }
 
@@ -134,9 +98,13 @@ export function resolveToolCategory(toolName: string): ToolCategory | undefined 
   return getBuiltInTool(toolName)?.category
 }
 
-export function getBuiltInTool(name: string): BuiltInToolDef | undefined {
-  const normalized = normalizeToolName(name)
-  return BUILT_IN_TOOLS.find((t) => t.name === normalized || t.name === name)
+/** 按 MCP 域分组，供编排器工具节点选择器使用 */
+export function getGroupedBuiltInTools(): ToolGroup[] {
+  return TOOL_CATEGORY_ORDER
+    .map((category) => ({
+      category,
+      label: TOOL_CATEGORY_LABELS[category],
+      tools: BUILT_IN_TOOLS.filter((t) => t.category === category),
+    }))
+    .filter((g) => g.tools.length > 0)
 }
-
-export const BUILT_IN_TOOL_NAMES = BUILT_IN_TOOLS.map((t) => t.name)

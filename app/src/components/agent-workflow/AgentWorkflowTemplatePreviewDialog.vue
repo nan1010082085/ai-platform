@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas.vue'
 import { useAgentWorkflowDesignerStore } from '@/stores/agentWorkflowDesigner'
-import { getPaletteItem } from '@/constants/agentNodes'
+import { getPaletteItem } from '@/plugins'
 import type {
   AgentNodeType,
   AgentWorkflowGraph,

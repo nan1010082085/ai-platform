@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, shallowRef } from 'vue'
 import type { Node, Edge } from '@vue-flow/core'
 import type { AgentWorkflowGraph, AgentNodeType, AgentWorkflowNodeData, AgentNodeRecord } from '@/types/agentWorkflow'
-import { getPaletteItem } from '@/constants/agentNodes'
+import { getPaletteItem } from '@/plugins'
 import { resolveEdgeRuntimeState } from '@/utils/edgeRuntimeState'
 import {
   type EdgeLineStyle,

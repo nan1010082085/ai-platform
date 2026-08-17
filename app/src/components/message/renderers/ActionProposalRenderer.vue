@@ -2,7 +2,7 @@
 /**
  * ActionProposalRenderer — 行动方案步骤渲染器
  *
- * 封装 ActionProposalCard，提供与 RendererRegistry 一致的 step 驱动接口。
+ * 封装 ActionProposalCard，提供与 Cordis renderers 服务一致的 step 驱动接口。
  */
 
 import type { StepData } from '@/types'

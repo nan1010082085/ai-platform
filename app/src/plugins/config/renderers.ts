@@ -1,129 +1,38 @@
 /**
- * 消息渲染器注册表
- *
- * 统一管理所有 StepData 渲染器的注册、查找与排序。
- * 各渲染器按 priority 升序匹配，第一个 matcher 返回 true 的渲染器胜出。
+ * 内置渲染器预设（builtin bundle）：组件导入 + 预设注册表数据。
+ * 迁移自 components/message/RendererRegistry.ts（迁完即删，禁双轨）。
  */
 
-import { type Component } from 'vue'
+import type { MessageRenderer } from '../plugins/renderers/types'
+import ImageGenerateRenderer from '@/components/message/renderers/ImageGenerateRenderer.vue'
+import PptGenerateRenderer from '@/components/message/renderers/PptGenerateRenderer.vue'
+import RequirementRenderer from '@/components/message/renderers/RequirementRenderer.vue'
+import ActionProposalRenderer from '@/components/message/renderers/ActionProposalRenderer.vue'
+import ImageInlineRenderer from '@/components/message/renderers/ImageInlineRenderer.vue'
+import DocumentAttachmentRenderer from '@/components/message/renderers/DocumentAttachmentRenderer.vue'
+import DocumentSummaryRenderer from '@/components/message/renderers/DocumentSummaryRenderer.vue'
+import WorkflowExecutionRenderer from '@/components/message/renderers/WorkflowExecutionRenderer.vue'
+import CodeRenderer from '@/components/message/renderers/CodeRenderer.vue'
+import ArtifactRenderer from '@/components/message/renderers/ArtifactRenderer.vue'
+import ThinkingRenderer from '@/components/message/renderers/ThinkingRenderer.vue'
+import ToolCallRenderer from '@/components/message/renderers/ToolCallRenderer.vue'
+import SchemaResultRenderer from '@/components/message/renderers/SchemaResultRenderer.vue'
+import FlowResultRenderer from '@/components/message/renderers/FlowResultRenderer.vue'
+import TextRenderer from '@/components/message/renderers/TextRenderer.vue'
+import SubWorkflowRenderer from '@/components/message/renderers/SubWorkflowRenderer.vue'
+import AgentHandoffRenderer from '@/components/message/renderers/AgentHandoffRenderer.vue'
+import CostUsageRenderer from '@/components/message/renderers/CostUsageRenderer.vue'
+import ApprovalRenderer from '@/components/message/renderers/ApprovalRenderer.vue'
+import VariableChangeRenderer from '@/components/message/renderers/VariableChangeRenderer.vue'
+import ErrorRecoveryRenderer from '@/components/message/renderers/ErrorRecoveryRenderer.vue'
 import type { StepData } from '@/types'
 
-// 同步导入所有渲染器（替代 defineAsyncComponent 以避免测试中的异步时序问题）
-import ImageGenerateRenderer from './renderers/ImageGenerateRenderer.vue'
-import PptGenerateRenderer from './renderers/PptGenerateRenderer.vue'
-import RequirementRenderer from './renderers/RequirementRenderer.vue'
-import ActionProposalRenderer from './renderers/ActionProposalRenderer.vue'
-import ImageInlineRenderer from './renderers/ImageInlineRenderer.vue'
-import DocumentAttachmentRenderer from './renderers/DocumentAttachmentRenderer.vue'
-import DocumentSummaryRenderer from './renderers/DocumentSummaryRenderer.vue'
-import WorkflowExecutionRenderer from './renderers/WorkflowExecutionRenderer.vue'
-import CodeRenderer from './renderers/CodeRenderer.vue'
-import ArtifactRenderer from './renderers/ArtifactRenderer.vue'
-import ThinkingRenderer from './renderers/ThinkingRenderer.vue'
-import ToolCallRenderer from './renderers/ToolCallRenderer.vue'
-import SchemaResultRenderer from './renderers/SchemaResultRenderer.vue'
-import FlowResultRenderer from './renderers/FlowResultRenderer.vue'
-import TextRenderer from './renderers/TextRenderer.vue'
-import SubWorkflowRenderer from './renderers/SubWorkflowRenderer.vue'
-import AgentHandoffRenderer from './renderers/AgentHandoffRenderer.vue'
-import CostUsageRenderer from './renderers/CostUsageRenderer.vue'
-import ApprovalRenderer from './renderers/ApprovalRenderer.vue'
-import VariableChangeRenderer from './renderers/VariableChangeRenderer.vue'
-import ErrorRecoveryRenderer from './renderers/ErrorRecoveryRenderer.vue'
-
-/**
- * 尚未加入 StepType 联合的渲染器类型，matcher 中用此函数安全判断。
- * 当 StepType 扩展后，此辅助函数可移除。
- */
+/** 尚未加入 StepType 联合的渲染器类型，matcher 中用此函数安全判断。 */
 function isStepType(step: StepData, type: string): boolean {
   return step.type === (type as StepData['type'])
 }
 
-// ---- 接口定义 ----
-
-export interface MessageRenderer {
-  /** 渲染器类型标识（唯一键） */
-  type: string
-  /** Vue 组件 */
-  component: Component
-  /** 匹配逻辑：判断该渲染器是否处理当前步骤 */
-  matcher: (step: StepData) => boolean
-  /** 优先级（数字越小越优先） */
-  priority: number
-  /** 该渲染器可能触发的事件 */
-  emitEvents?: string[]
-}
-
-// ---- 内部状态 ----
-
-/** 已注册渲染器列表（按 priority 升序排列） */
-const renderers: MessageRenderer[] = []
-
-/** 按 type 建立索引，用于快速注销 */
-const rendererIndex = new Map<string, MessageRenderer>()
-
-// ---- 内部工具 ----
-
-/** 按 priority 升序插入，保持有序 */
-function insertSorted(renderer: MessageRenderer): void {
-  const idx = renderers.findIndex((r) => r.priority > renderer.priority)
-  if (idx === -1) {
-    renderers.push(renderer)
-  } else {
-    renderers.splice(idx, 0, renderer)
-  }
-}
-
-/** 从有序列表和索引中移除 */
-function removeByType(type: string): MessageRenderer | undefined {
-  const existing = rendererIndex.get(type)
-  if (!existing) return undefined
-  const idx = renderers.indexOf(existing)
-  if (idx !== -1) renderers.splice(idx, 1)
-  rendererIndex.delete(type)
-  return existing
-}
-
-// ---- 公开 API ----
-
-/**
- * 注册一个渲染器。
- * 如果已存在同 type 的渲染器，先移除旧的再插入新的。
- */
-export function registerRenderer(renderer: MessageRenderer): void {
-  removeByType(renderer.type)
-  rendererIndex.set(renderer.type, renderer)
-  insertSorted(renderer)
-}
-
-/**
- * 按 type 注销渲染器。
- */
-export function unregisterRenderer(type: string): void {
-  removeByType(type)
-}
-
-/**
- * 按优先级查找第一个匹配 step 的渲染器。
- * 未匹配到返回 null。
- */
-export function getRenderer(step: StepData): MessageRenderer | null {
-  for (const r of renderers) {
-    if (r.matcher(step)) return r
-  }
-  return null
-}
-
-/**
- * 返回当前所有已注册渲染器的副本（按 priority 升序）。
- */
-export function getAllRenderers(): MessageRenderer[] {
-  return [...renderers]
-}
-
-// ---- 预置渲染器 ----
-
-const presetRenderers: MessageRenderer[] = [
+export const presetRenderers: MessageRenderer[] = [
   {
     type: 'image_generate',
     component: ImageGenerateRenderer,
@@ -275,8 +184,3 @@ const presetRenderers: MessageRenderer[] = [
     emitEvents: ['error-retry', 'error-skip', 'error-rollback'],
   },
 ]
-
-// 自动注册所有预置渲染器
-for (const renderer of presetRenderers) {
-  registerRenderer(renderer)
-}

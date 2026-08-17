@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { useAgentNodePropertyPanel } from '@/composables/useAgentNodePropertyPanel'
-import { AGENT_PALETTE_ITEMS, getPaletteItem } from '@/constants/agentNodes'
+import { AGENT_PALETTE_ITEMS, getPaletteItem } from '@/plugins'
 
 describe('useAgentNodePropertyPanel', () => {
   const { getPanelComponent, getNodeTypeLabel } = useAgentNodePropertyPanel()

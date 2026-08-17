@@ -5,6 +5,10 @@ import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import AiStepCard from '@/components/AiStepCard.vue'
+import { ensurePluginHost } from '@/plugins'
+
+// 渲染分发出走 Cordis renderers 服务，spec 图内启动宿主（同步装载）
+ensurePluginHost()
 
 // Mock marked to return predictable HTML
 vi.mock('marked', () => ({

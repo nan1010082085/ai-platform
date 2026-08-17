@@ -1,5 +1,5 @@
 import type { AgentNodeRecord, AgentNodeType, AgentWorkflowNodeData } from '@/types/agentWorkflow'
-import { getPaletteItem, AGENT_NODE_COLORS } from '@/constants/agentNodes'
+import { getPaletteItem, AGENT_NODE_COLORS } from '@/plugins'
 import {
   getAgentNodePreviewSections,
   type AgentNodePreviewRow,
