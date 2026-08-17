@@ -38,10 +38,18 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       cssCodeSplit: false,
+      chunkSizeWarningLimit: 600,
       rollupOptions: {
         input: {
           main: fileURLToPath(new URL('./index.html', import.meta.url)),
           sidebar: fileURLToPath(new URL('./index-sidebar.html', import.meta.url)),
+        },
+        output: {
+          format: 'es',
+          manualChunks: {
+            'element-plus': ['element-plus', '@element-plus/icons-vue'],
+            'vue-vendor': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
+          },
         },
       },
     },
