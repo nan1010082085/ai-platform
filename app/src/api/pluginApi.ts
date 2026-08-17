@@ -3,13 +3,10 @@
  *
  * 使用 platform-shared apiClient（自动 401 refresh + retry）。
  * 租户过滤：通过 X-Tenant-Id header 传递 tenantId，服务端 registry 自动按租户合并 overlay。
+ * 始终走 apiClient（不做裸 axios 绕路），保证 token refresh 和错误处理统一。
  */
 
-import axios from 'axios'
 import { apiClient } from '@schema-platform/platform-shared/utils/apiClient'
-
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/schema-platform/api'
-const ACCESS_TOKEN_KEY = 'sfp_access_token'
 
 export interface PluginExpertSummary {
   id: string
@@ -61,18 +58,9 @@ export async function fetchPluginRegistry(tenantId?: string): Promise<PluginRegi
     return apiClient.get<PluginRegistrySnapshot>('/ai/plugins')
   }
   // 带租户过滤：通过 X-Tenant-Id header 让服务端 registry 加载对应租户 overlay
-  const token = localStorage.getItem(ACCESS_TOKEN_KEY)
-  const resp = await axios.get<{ success: boolean; data: PluginRegistrySnapshot }>(
-    `${BASE_URL}/ai/plugins`,
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        'X-Tenant-Id': tenantId,
-      },
-    },
-  )
-  return resp.data.data
+  return apiClient.get<PluginRegistrySnapshot>('/ai/plugins', {
+    headers: { 'X-Tenant-Id': tenantId },
+  })
 }
 
 export type PluginLocalLayer = 'mcp' | 'tools' | 'experts' | 'skills'

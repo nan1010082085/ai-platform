@@ -73,15 +73,15 @@ describe('pluginApi', () => {
     expect(apiClient.get).toHaveBeenCalledWith('/ai/plugins')
   })
 
-  it('fetchPluginRegistry with tenantId uses axios with X-Tenant-Id header', async () => {
+  it('fetchPluginRegistry with tenantId uses apiClient with X-Tenant-Id header', async () => {
     const snapshot = { experts: [{ id: 'e1', label: 'E1', tools: [], skills: [] }], skills: [], tools: [], mcpServers: [] }
-    vi.mocked(axios.get).mockResolvedValue({ data: { success: true, data: snapshot } })
+    vi.mocked(apiClient.get).mockResolvedValue(snapshot)
 
     const result = await fetchPluginRegistry('t1')
     expect(result).toEqual(snapshot)
-    const [url, config] = vi.mocked(axios.get).mock.calls[0]!
-    expect(url).toContain('/ai/plugins')
-    expect((config as { headers: Record<string, string> }).headers['X-Tenant-Id']).toBe('t1')
+    expect(apiClient.get).toHaveBeenCalledWith('/ai/plugins', {
+      headers: { 'X-Tenant-Id': 't1' },
+    })
   })
 
   it('updatePluginLocalConfig PUTs payload via apiClient', async () => {

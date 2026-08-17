@@ -113,6 +113,8 @@ export function usePluginRegistry() {
           .filter((e) => !e.runtime?.length || e.runtime.includes('workflow'))
           .map(expertPaletteItem),
       ])
+      // skills 同步进 skillDefs 服务（DSH SKILL.md 契约，M4 能力接线）
+      host.skillDefs.syncFromRegistry(data.skills)
       loaded.value = true
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err)

@@ -7,18 +7,21 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { ChatToolsService } from './plugins/chat-tools'
 import type { NodeTypesService } from './plugins/node-types'
 import type { RenderersService } from './plugins/renderers'
+import type { SkillDefsService } from './plugins/skill-defs'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
     chatTools: ChatToolsService
     nodeTypes: NodeTypesService
     renderers: RenderersService
+    skillDefs: SkillDefsService
   }
 
   interface Events {
     'chatTools/changed': void
     'nodeTypes/changed': void
     'renderers/changed': void
+    'skillDefs/changed': void
   }
 }
 

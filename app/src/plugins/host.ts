@@ -7,6 +7,7 @@ import { Context } from '@deepseek-ai/cordis'
 import { chatToolsPlugin } from './plugins/chat-tools'
 import { nodeTypesPlugin } from './plugins/node-types'
 import { renderersPlugin } from './plugins/renderers'
+import { skillDefsPlugin } from './plugins/skill-defs'
 import { builtinLayers, mergeLayers, type PartialLayers } from './config/layers'
 
 let root: Context | null = null
@@ -25,6 +26,7 @@ export async function startPluginHost(layers?: PartialLayers): Promise<Context> 
   ctx.plugin(chatToolsPlugin, merged.chatTools)
   ctx.plugin(nodeTypesPlugin)
   ctx.plugin(renderersPlugin)
+  ctx.plugin(skillDefsPlugin)
   bootPromise = Promise.resolve(ctx)
   return bootPromise
 }
