@@ -303,7 +303,45 @@ onMounted(() => {
         </CardTable>
 
         <CardTable v-show="activeLayer === 'runtime'">
-          <el-table :data="runtimeView.toolGroups" stripe>
+          <div :class="styles.runtimeGrid">
+            <!-- Cordis 服务状态 -->
+            <div :class="styles.serviceCard" v-for="svc in runtimeView.services" :key="svc.name">
+              <div :class="styles.serviceHeader">
+                <span :class="styles.serviceName">{{ svc.name }}</span>
+                <el-tag :type="svc.status === 'running' ? 'success' : 'danger'" size="small">
+                  {{ svc.status === 'running' ? '运行中' : '异常' }}
+                </el-tag>
+              </div>
+              <ul :class="styles.serviceDetails">
+                <li v-for="d in svc.details" :key="d">{{ d }}</li>
+              </ul>
+            </div>
+
+            <!-- Harness 连接状态 -->
+            <div :class="styles.serviceCard">
+              <div :class="styles.serviceHeader">
+                <span :class="styles.serviceName">harness（Agent 运行时）</span>
+                <el-tag
+                  :type="runtimeView.harness.reachable ? 'success' : 'warning'"
+                  size="small"
+                >
+                  {{ runtimeView.harness.reachable ? '已连接' : '未连接' }}
+                </el-tag>
+              </div>
+              <div v-if="runtimeView.harness.reachable && runtimeView.harness.gateway" :class="styles.serviceDetails">
+                <p>活跃租户: {{ runtimeView.harness.gateway.tenants ?? 0 }}</p>
+                <p>活跃会话: {{ runtimeView.harness.gateway.sessions ?? 0 }}</p>
+                <p>日 RMB 预算: {{ runtimeView.harness.gateway.budgetRmbDaily ?? 10 }} 元</p>
+              </div>
+              <div v-else :class="styles.serviceDetails">
+                <p>harness 服务未启动或不可达（{{ runtimeView.harness.error ?? '请单独部署 ai/harness' }}）</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 工具分类树 -->
+          <h4 :class="styles.runtimeSectionTitle">工具分类（三层合并后 {{ runtimeView.toolLayers.total }}）</h4>
+          <el-table :data="runtimeView.toolGroups" stripe size="small">
             <el-table-column prop="label" label="分类" width="180" />
             <el-table-column label="工具（名称 · 来源层）" min-width="420">
               <template #default="{ row }">
@@ -319,10 +357,10 @@ onMounted(() => {
             </el-table-column>
           </el-table>
           <p :class="styles.hint">
-            工具分层：内置 {{ runtimeView.toolLayers.builtin }} · registry overlay {{ runtimeView.toolLayers.overlay }} · 本地 patch {{ runtimeView.toolLayers.patch }}（合并后 {{ runtimeView.toolLayers.total }}，同名 patch 优先）
+            分层：内置 {{ runtimeView.toolLayers.builtin }} · registry overlay {{ runtimeView.toolLayers.overlay }} · 本地 patch {{ runtimeView.toolLayers.patch }}（同名 patch 优先）
           </p>
           <p :class="styles.hint">
-            节点类型：内置 {{ runtimeView.nodeTypeBuiltin }} · 动态注册 {{ runtimeView.nodeTypeDynamic }}；消息渲染器：{{ runtimeView.rendererCount }}（Cordis 服务，随宿主生命周期装载）
+            节点类型：内置 {{ runtimeView.nodeTypeBuiltin }} · 动态注册 {{ runtimeView.nodeTypeDynamic }}；渲染器：{{ runtimeView.rendererCount }}（priority 匹配）
           </p>
         </CardTable>
 

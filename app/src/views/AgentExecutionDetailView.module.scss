@@ -249,3 +249,113 @@
   gap: 12px;
   margin-top: 8px;
 }
+
+// ---- Streaming tab ----
+.streamPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
+}
+
+.streamBlock {
+  background: var(--el-fill-color-light, #f7f8fa);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-light, #e4e7ed);
+}
+
+.streamHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.streamNode {
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+  color: var(--el-text-color-primary, #303133);
+}
+
+.streamType {
+  color: var(--el-text-color-secondary, #909399);
+}
+
+.streamTime {
+  margin-left: auto;
+  color: var(--el-text-color-secondary, #909399);
+}
+
+.streamText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--el-text-color-primary, #303133);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.streamStats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--el-text-color-secondary, #909399);
+}
+
+.streamTag {
+  margin: 0;
+}
+
+.streamEvents {
+  background: var(--el-fill-color-light, #f7f8fa);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-light, #e4e7ed);
+}
+
+.streamEventsTitle {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--el-text-color-secondary, #909399);
+}
+
+.streamEvent {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter, #f0f0f0);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.streamEventType {
+  flex-shrink: 0;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+  color: var(--el-color-primary, #409eff);
+}
+
+.streamEventNode {
+  flex-shrink: 0;
+  color: var(--el-text-color-secondary, #909399);
+  font-family: var(--font-mono, monospace);
+}
+
+.streamEventText {
+  flex: 1;
+  color: var(--el-text-color-primary, #303133);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

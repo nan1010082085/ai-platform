@@ -13,6 +13,7 @@ import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas
 import * as api from '@/api/agentWorkflowApi'
 import { getExecutionTriggerLabel } from '@/constants/workflowInvocation'
 import { subscribeWorkflowExecution } from '@/composables/useWorkflowExecutionStream'
+import { useExecutionNodeStream } from '@/composables/useNodeStreaming'
 import {
   resolveExecutionDetailBackTo,
 } from '@/utils/executionNavigation'
@@ -23,7 +24,7 @@ const router = useRouter()
 const store = useAgentWorkflowDesignerStore()
 const execution = ref<AgentWorkflowExecution | null>(null)
 const selectedRecord = ref<AgentNodeRecord | null>(null)
-const activeTab = ref<'records' | 'logs' | 'detail' | 'variables'>('records')
+const activeTab = ref<'records' | 'streaming' | 'logs' | 'detail' | 'variables'>('records')
 const panelOpen = ref(true)
 const panelExpanded = ref(false)
 const hitlDialogVisible = ref(false)
@@ -46,8 +47,12 @@ const backToExecutions = computed(() =>
   }),
 )
 
+const executionIdRef = computed(() => executionId())
+const { stream: nodeStream } = useExecutionNodeStream(executionIdRef)
+
 const tabOptions = [
   { label: '节点记录', value: 'records' },
+  { label: '实时', value: 'streaming' },
   { label: '日志', value: 'logs' },
   { label: '节点详情', value: 'detail' },
   { label: '变量检视', value: 'variables' },
@@ -406,6 +411,53 @@ function togglePanelExpand() {
               :selected-node-id="selectedRecord?.nodeId"
               @select="selectRecord"
             />
+          </template>
+
+          <!-- 实时（节点级流式输出 + 节点事件） -->
+          <template v-else-if="activeTab === 'streaming'">
+            <div :class="styles.streamPanel">
+              <!-- 当前节点 streamingOutput -->
+              <div v-if="nodeStream.current" :class="styles.streamBlock">
+                <div :class="styles.streamHeader">
+                  <span :class="styles.streamNode">
+                    {{ nodeStream.current.nodeId }}
+                  </span>
+                  <span :class="styles.streamType">{{ nodeStream.current.nodeType }}</span>
+                  <span :class="styles.streamTime">{{ nodeStream.current.updatedAt }}</span>
+                </div>
+                <pre :class="styles.streamText">{{ nodeStream.current.text }}</pre>
+              </div>
+              <div v-else :class="styles.empty">等待节点开始执行…</div>
+
+              <!-- 节点事件统计 -->
+              <div v-if="Object.keys(nodeStream.eventCounts).length > 0" :class="styles.streamStats">
+                <span>事件统计：</span>
+                <el-tag
+                  v-for="(count, type) in nodeStream.eventCounts"
+                  :key="type"
+                  size="small"
+                  :class="styles.streamTag"
+                >
+                  {{ type }} ×{{ count }}
+                </el-tag>
+              </div>
+
+              <!-- 最近 node-event 事件流 -->
+              <div v-if="nodeStream.nodeEvents.length > 0" :class="styles.streamEvents">
+                <div :class="styles.streamEventsTitle">最近事件（{{ nodeStream.nodeEvents.length }}）</div>
+                <div
+                  v-for="(evt, idx) in nodeStream.nodeEvents.slice(-20).reverse()"
+                  :key="idx"
+                  :class="styles.streamEvent"
+                >
+                  <span :class="styles.streamEventType">{{ evt.eventType }}</span>
+                  <span :class="styles.streamEventNode">{{ evt.nodeId ?? '' }}</span>
+                  <span :class="styles.streamEventText">
+                    {{ evt.text ?? (evt.toolName ? `${evt.toolName}(${String(evt.toolArgs ?? '').slice(0, 60)})` : '') }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </template>
 
           <!-- 日志 -->

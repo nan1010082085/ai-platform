@@ -165,7 +165,7 @@ function handleLogout() {
           :aria-label="languageLabel"
           @click="toggleLocale"
         >
-          <AppIcon name="flag" :size="16" />
+          <AppIcon name="chat-dot-round" :size="16" />
         </button>
 
         <AppUserPanel

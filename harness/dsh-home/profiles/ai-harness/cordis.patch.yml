@@ -27,6 +27,8 @@
 
     - id: ai-platform-tools
       name: '@ai-harness/platform-tools'
+      config:
+        workflowBaseUrl: http://127.0.0.1:3001
 
     - id: ai-trajectory-forward
       name: '@ai-harness/trajectory-forward'

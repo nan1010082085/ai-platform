@@ -43,7 +43,7 @@ export function apply(ctx, config = {}) {
       description: '调用平台已发布的 Agent Workflow（确定性流水线），返回执行结果 JSON。',
       parameters: {
         workflowId: { type: 'string', required: true, description: '已发布的 workflow id' },
-        input: { type: 'object', description: 'workflow 输入（如 { message: ... }）' },
+        input: { type: 'object', additionalProperties: true, description: 'workflow 输入（如 { message: ... }）' },
       },
       output: {
         schema: { type: 'object', additionalProperties: true },
