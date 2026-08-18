@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ChatSettings } from '@/types'
 import { checkAIHealth, type AIHealthResponse } from '@/api/aiApi'
+import { checkHarnessHealth } from '@/api/harness'
 import { useModelOptions } from '@/composables/useModelOptions'
 import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
 import ModelOptionSelect from '@/components/ModelOptionSelect.vue'
@@ -27,6 +28,8 @@ const { modelOptions, providerGroups, loading: modelsLoading, loadModelOptions }
 const localSettings = ref<ChatSettings>(JSON.parse(JSON.stringify(props.settings)))
 const healthData = ref<AIHealthResponse | null>(null)
 const healthLoading = ref(false)
+const harnessHealth = ref<{ ok: boolean; gateway?: Record<string, unknown> } | null>(null)
+const harnessLoading = ref(false)
 
 async function fetchHealth(): Promise<void> {
   healthLoading.value = true
@@ -39,10 +42,22 @@ async function fetchHealth(): Promise<void> {
   }
 }
 
+async function fetchHarnessHealth(): Promise<void> {
+  harnessLoading.value = true
+  try {
+    harnessHealth.value = await checkHarnessHealth()
+  } catch {
+    harnessHealth.value = null
+  } finally {
+    harnessLoading.value = false
+  }
+}
+
 watch(() => props.visible, (val) => {
   if (val) {
     localSettings.value = JSON.parse(JSON.stringify(props.settings))
     fetchHealth()
+    fetchHarnessHealth()
     void loadModelOptions()
   }
 })
@@ -95,6 +110,31 @@ function handleSave(): void {
             </div>
           </div>
         </template>
+      </SectionToggle>
+
+      <SectionToggle title="运行模式" :count="1">
+        <FieldRow label="对话后端" hint="Server = WebSocket 直连；Harness = DSH Agent 运行时">
+          <el-radio-group v-model="localSettings.chatMode">
+            <el-radio-button value="server">
+              Server
+            </el-radio-button>
+            <el-radio-button value="harness" :disabled="!harnessHealth?.ok">
+              Harness
+            </el-radio-button>
+          </el-radio-group>
+        </FieldRow>
+        <div v-if="harnessLoading" :class="styles.statusRow">
+          <span :class="[styles.statusDot, styles.statusChecking]" />
+          <span>检测 harness 服务...</span>
+        </div>
+        <div v-else-if="harnessHealth?.ok" :class="styles.statusRow">
+          <span :class="[styles.statusDot, styles.statusOk]" />
+          <span>harness 已连接（{{ harnessHealth.gateway?.sessions ?? 0 }} 个活跃会话）</span>
+        </div>
+        <div v-else :class="styles.statusRow">
+          <span :class="[styles.statusDot, styles.statusError]" />
+          <span>harness 未连接</span>
+        </div>
       </SectionToggle>
 
       <SectionToggle title="模型" :count="1">

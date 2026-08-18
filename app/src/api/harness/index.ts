@@ -88,4 +88,25 @@ export async function subscribeHarnessEvents(
   }
 }
 
+
+export interface HarnessHealthResponse {
+  ok: boolean
+  profile: string
+  gateway?: {
+    tenants: number
+    sessions: number
+    sessionsPerTenant: number
+    budgetTokens: number
+    budgetWorkUnits: number
+    budgetRmbDaily: number
+    dailyRmbSessions: number
+  }
+}
+
+export async function checkHarnessHealth(): Promise<HarnessHealthResponse> {
+  const resp = await fetch(BASE + '/healthz', { headers: authHeaders() })
+  if (!resp.ok) throw new Error('harness health HTTP ' + resp.status)
+  return (await resp.json()) as HarnessHealthResponse
+}
+
 export type { AgentNodeTrace, AgentNodeTraceToolCall }

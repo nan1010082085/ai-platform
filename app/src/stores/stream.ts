@@ -24,6 +24,12 @@ import {
   emitChatResume,
   onChatEvent,
 } from '@schema-platform/platform-shared/socket'
+import {
+  startHarnessSession,
+  sendHarnessMessage,
+  subscribeHarnessEvents,
+  type HarnessSessionEvent,
+} from '@/api/harness'
 import { trackAi, reportAiError, AI_TELEMETRY_EVENTS } from '@/utils/telemetry'
 
 export const useStreamStore = defineStore('stream', () => {
@@ -48,6 +54,12 @@ export const useStreamStore = defineStore('stream', () => {
   let activeDoneResolve: (() => void) | null = null
   /** 标记当前流是否被用户主动停止 */
   let streamStopped = false
+
+  // ---- Harness 状态 ----
+  /** 当前 harness 会话 ID */
+  let harnessSessionId: string | null = null
+  /** harness SSE 退订函数 */
+  let harnessUnsubscribe: (() => void) | null = null
 
   // ---- Types ----
 
@@ -103,6 +115,16 @@ export const useStreamStore = defineStore('stream', () => {
       documentAttachments?: MessageDocumentAttachment[]
     },
   ): Promise<void> {
+    const ctx = handlers.getContext()
+    const chatMode = ctx.chatSettings.chatMode ?? 'server'
+
+    // Harness 模式：通过 HTTP Session API 走 harness
+    if (chatMode === 'harness') {
+      await executeHarnessStream(content, assistantIndex, handlers, ctx)
+      return
+    }
+
+    // Server 模式：通过 WebSocket 走 server（原有逻辑）
     let attempts = 0
 
     while (attempts <= MAX_AUTO_RETRIES) {
@@ -163,9 +185,6 @@ export const useStreamStore = defineStore('stream', () => {
           console.error('[stream] Event handler error:', err)
         }
       })
-
-      // 获取上下文
-      const ctx = handlers.getContext()
 
       // 发送消息
       emitChatSend({
@@ -329,6 +348,115 @@ export const useStreamStore = defineStore('stream', () => {
     }
   }
 
+
+  /**
+   * Harness 模式执行：通过 HTTP Session API 走 harness 服务
+   */
+  async function executeHarnessStream(
+    content: string,
+    assistantIndex: number,
+    handlers: {
+      onStreamEvent: (event: StreamEvent, assistantIndex: number) => void
+      onDone: (conversationId?: string) => void
+      getContext: () => {
+        context: ChatContext
+        chatSettings: ChatSettings
+        currentSchema: Widget[] | null
+        currentFlow: FlowGraph | null
+        currentConversationId: string | null
+      }
+    },
+    ctx: ReturnType<typeof handlers.getContext>,
+  ): Promise<void> {
+    streamStatus.value = 'connecting'
+    streamStopped = false
+
+    try {
+      // 创建或复用 harness 会话
+      if (!harnessSessionId) {
+        harnessSessionId = await startHarnessSession()
+      }
+
+      // 订阅 SSE 事件
+      if (harnessUnsubscribe) {
+        harnessUnsubscribe()
+        harnessUnsubscribe = null
+      }
+
+      let doneEventReceived = false
+      const donePromise = new Promise<void>((resolve) => {
+        activeDoneResolve = resolve
+      })
+
+      harnessUnsubscribe = await subscribeHarnessEvents(harnessSessionId, (events) => {
+        for (const event of events) {
+          if (doneEventReceived) return
+
+          // 将 harness 事件转换为 StreamEvent
+          const streamEvent: StreamEvent = {
+            type: event.type === 'message' ? 'content' : event.type,
+            content: typeof event.data?.text === 'string' ? event.data.text : undefined,
+            toolCalls: event.data?.toolCalls as StreamEvent['toolCalls'],
+          }
+
+          if (event.type === 'done' || event.type === 'end') {
+            doneEventReceived = true
+            activeDoneResolve?.()
+          }
+
+          try {
+            handlers.onStreamEvent(streamEvent, assistantIndex)
+          } catch (err) {
+            console.error('[stream] Harness event handler error:', err)
+          }
+        }
+      })
+
+      streamStatus.value = 'connected'
+
+      // 发送消息
+      const outcome = await sendHarnessMessage(harnessSessionId, content)
+
+      // 等待 SSE done 事件（带超时）
+      const timeoutPromise = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          if (!doneEventReceived) {
+            doneEventReceived = true
+            resolve()
+          }
+        }, STREAM_TIMEOUT_MS)
+      })
+      await Promise.race([donePromise, timeoutPromise])
+
+      // 清理
+      if (harnessUnsubscribe) {
+        harnessUnsubscribe()
+        harnessUnsubscribe = null
+      }
+      activeDoneResolve = null
+      streamStatus.value = 'idle'
+
+      handlers.onDone(ctx.currentConversationId ?? undefined)
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err)
+      error.value = errorMsg
+      streamStatus.value = 'idle'
+      trackAi(AI_TELEMETRY_EVENTS.WS_RETRY_FAIL, { attempts: 0, error: errorMsg })
+      handlers.onDone(ctx.currentConversationId ?? undefined)
+    }
+  }
+
+  /**
+   * 清理 harness 会话
+   */
+  function cleanupHarness(): void {
+    if (harnessUnsubscribe) {
+      harnessUnsubscribe()
+      harnessUnsubscribe = null
+    }
+    harnessSessionId = null
+  }
+
   return {
     // state
     streamStatus,
@@ -340,6 +468,7 @@ export const useStreamStore = defineStore('stream', () => {
     MAX_AUTO_RETRIES,
     // actions
     cancelCurrent,
+    cleanupHarness,
     stopGeneration,
     executeStream,
     executeResume,

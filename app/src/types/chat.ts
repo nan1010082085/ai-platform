@@ -29,7 +29,11 @@ export type ReplyStyle = 'concise' | 'detailed'
 export type CodeCommentMode = 'yes' | 'no'
 export type HistorySummaryMode = 'auto' | 'manual'
 
+export type ChatMode = 'server' | 'harness'
+
 export interface ChatSettings {
+  /** 聊天模式：server（WebSocket）或 harness（HTTP Session API） */
+  chatMode: ChatMode
   /** 回复语言 */
   replyLanguage: ReplyLanguage
   /** 回复风格 */
