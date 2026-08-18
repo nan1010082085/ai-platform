@@ -12,6 +12,7 @@ import {
   deleteConversation,
   publish,
 } from '@/api/aiApi'
+import { aiLog } from '@schema-platform/platform-shared/utils/logger'
 
 export const useConversationStore = defineStore('conversation', () => {
   // ---- State ----
@@ -28,8 +29,9 @@ export const useConversationStore = defineStore('conversation', () => {
   async function loadConversations(): Promise<void> {
     try {
       conversations.value = await getConversations()
+      aiLog.info('Conversations loaded', { count: conversations.value.length })
     } catch (err) {
-      console.warn('[conversation] loadConversations failed', err)
+      aiLog.error('loadConversations failed', err)
     }
   }
 

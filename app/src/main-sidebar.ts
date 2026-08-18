@@ -15,6 +15,7 @@ import {
   bootstrapAuthSession,
   initCapabilityPlatformAuth,
 } from '@schema-platform/platform-shared/utils/authSession'
+import { aiLog } from '@schema-platform/platform-shared/utils/logger'
 import './global.scss'
 import './styles/ai-theme-bridge.scss'
 
@@ -23,6 +24,7 @@ import { registerAiApiTokenProvider } from './setupCapabilityAuth'
 import { ensurePluginHost } from '@/plugins'
 
 async function mountSidebar(): Promise<void> {
+  aiLog.lifecycle('sidebar bootstrap')
   await ensurePluginHost()
   const app = createApp(AiSidebarView)
   const pinia = createPinia()
@@ -34,11 +36,12 @@ async function mountSidebar(): Promise<void> {
   setupElementPlus(app)
   await bootstrapAuthSession()
   app.mount('#ai-app')
+  aiLog.success('sidebar mounted')
   window.parent.postMessage({ type: 'ai:ready' }, '*')
 }
 
 void mountSidebar().catch((err) => {
-  console.error('[ai-sidebar] mount failed', err)
+  aiLog.error('sidebar mount failed', err)
   window.parent.postMessage({ type: 'ai:ready' }, '*')
 })
 

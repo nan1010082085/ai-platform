@@ -17,6 +17,7 @@ import { handleStreamEvent } from './ai/events'
 import { createWorkflowModule } from './ai/workflow'
 import { createRequirementModule } from './ai/requirement'
 import { createAiActions } from './ai/actions'
+import { aiLog } from '@schema-platform/platform-shared/utils/logger'
 
 import { useConversationStore } from './conversation'
 import { useStreamStore } from './stream'
@@ -113,7 +114,7 @@ export const useAiStore = defineStore('ai', () => {
       })
     } catch (err) {
       streamStore.loading = false
-      console.error('[ai] respondInterrupt failed', err)
+      aiLog.error('respondInterrupt failed', err)
     }
   }
 
