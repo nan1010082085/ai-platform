@@ -138,10 +138,16 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
     console.log('[usePluginRuntime] view.value.harness:', JSON.stringify(view.value.harness))
   }
 
-  // 服务变更事件桥接
-  const offTools = host.on('chatTools/changed', () => { view.value = build() })
-  const offNodes = host.on('nodeTypes/changed', () => { view.value = build() })
-  const offRenderers = host.on('renderers/changed', () => { view.value = build() })
+  // 服务变更事件桥接（保留 harness 状态，不被 build() 重置）
+  const rebuildPreservingHarness = () => {
+    const prev = view.value.harness
+    const next = build()
+    next.harness = prev
+    view.value = next
+  }
+  const offTools = host.on('chatTools/changed', () => { console.log('[usePluginRuntime] chatTools/changed fired'); rebuildPreservingHarness() })
+  const offNodes = host.on('nodeTypes/changed', () => { console.log('[usePluginRuntime] nodeTypes/changed fired'); rebuildPreservingHarness() })
+  const offRenderers = host.on('renderers/changed', () => { console.log('[usePluginRuntime] renderers/changed fired'); rebuildPreservingHarness() })
 
   if (getCurrentScope()) {
     onScopeDispose(() => {
