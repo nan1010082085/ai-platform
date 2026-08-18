@@ -127,8 +127,11 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
 
   const refresh = async () => {
     const next = build()
-    next.harness = await checkHarnessHealth()
+    const h = await checkHarnessHealth()
+    console.log('[usePluginRuntime] harness result:', JSON.stringify(h))
+    next.harness = h
     view.value = next
+    console.log('[usePluginRuntime] view.value.harness:', JSON.stringify(view.value.harness))
   }
 
   // 服务变更事件桥接
