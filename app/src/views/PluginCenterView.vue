@@ -44,7 +44,7 @@ const {
   tenants, tenantsLoading, selectedTenantId, loadTenants, setTenant,
 } = usePluginRegistry()
 
-const { view: runtimeView } = usePluginRuntime()
+const { view: runtimeView, refresh: refreshRuntime } = usePluginRuntime()
 
 const editorVisible = ref(false)
 const editorTitle = ref('')
@@ -106,6 +106,7 @@ const filteredSkills = computed(() =>
 onMounted(() => {
   void load()
   void loadTenants()
+  void refreshRuntime()
 })
 </script>
 
@@ -116,7 +117,7 @@ onMounted(() => {
         subtitle="浏览已注册的专家、工具、MCP 服务器和技能"
       >
         <template #actions>
-          <el-button :loading="loading" @click="load">
+          <el-button :loading="loading" @click="load(); refreshRuntime()">
             <AppIcon name="refresh" :size="14" style="margin-right: 4px" />
             刷新
           </el-button>
