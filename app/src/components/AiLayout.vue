@@ -127,18 +127,19 @@ function handleLogout() {
       </nav>
 
       <div :class="$style.topbarRight">
-        <el-dropdown trigger="click" @command="handleSettingsSelect">
-          <button
-            type="button"
-            :class="[
-              $style.iconBtn,
-              settingsActive && $style.navItemActive,
-            ]"
-            :title="t('layout.settings')"
-            :aria-label="t('layout.settings')"
-          >
-            <AppIcon name="setting" :size="16" />
-          </button>
+        <el-tooltip :content="t('layout.settings')" placement="bottom">
+          <el-dropdown trigger="click" @command="handleSettingsSelect">
+            <button
+              type="button"
+              :class="[
+                $style.iconBtn,
+                settingsActive && $style.navItemActive,
+              ]"
+              :title="t('layout.settings')"
+              :aria-label="t('layout.settings')"
+            >
+              <AppIcon name="setting" :size="16" />
+            </button>
           <template #dropdown>
             <el-dropdown-menu>
               <template v-for="(group, gi) in settingsGroups" :key="group.id">
@@ -157,16 +158,19 @@ function handleLogout() {
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        </el-tooltip>
 
-        <button
-          type="button"
-          :class="$style.iconBtn"
-          :title="languageLabel"
-          :aria-label="languageLabel"
-          @click="toggleLocale"
-        >
-          <AppIcon name="chat-dot-round" :size="16" />
-        </button>
+        <el-tooltip :content="languageLabel" placement="bottom">
+          <button
+            type="button"
+            :class="$style.iconBtn"
+            :title="languageLabel"
+            :aria-label="languageLabel"
+            @click="toggleLocale"
+          >
+            <AppIcon name="chat-dot-round" :size="16" />
+          </button>
+        </el-tooltip>
 
         <AppUserPanel
           :user="authStore.user"
