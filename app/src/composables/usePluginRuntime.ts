@@ -126,8 +126,9 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
   const view = ref<PluginRuntimeView>(build())
 
   const refresh = async () => {
-    view.value = build()
-    view.value.harness = await checkHarnessHealth()
+    const next = build()
+    next.harness = await checkHarnessHealth()
+    view.value = next
   }
 
   // 服务变更事件桥接
