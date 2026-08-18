@@ -16,8 +16,23 @@ import {
 } from '../../config/nodeTypes'
 import type { AgentNodeType } from '@/types/agentWorkflow'
 
+const NODE_DISABLED_KEY = 'sfp_nodeTypes_disabled'
+
+function loadNodeDisabled(): Set<string> {
+  try {
+    const raw = localStorage.getItem(NODE_DISABLED_KEY)
+    if (!raw) return new Set()
+    return new Set(JSON.parse(raw) as string[])
+  } catch { return new Set() }
+}
+
+function saveNodeDisabled(set: Set<string>): void {
+  try { localStorage.setItem(NODE_DISABLED_KEY, JSON.stringify([...set])) } catch { /* quota */ }
+}
+
 export class NodeTypesService extends Service {
   private dynamic: AgentPaletteItem[] = []
+  private disabled = loadNodeDisabled()
 
   constructor(ctx: Context) {
     super(ctx, 'nodeTypes')
@@ -40,14 +55,44 @@ export class NodeTypesService extends Service {
     return [...this.dynamic]
   }
 
+  /** 启用节点类型 */
+  enable(type: string): void {
+    this.disabled.delete(type)
+    saveNodeDisabled(this.disabled)
+    this.notify()
+  }
+
+  /** 禁用节点类型（不删除数据，仅从 list() 过滤） */
+  disable(type: string): void {
+    this.disabled.add(type)
+    saveNodeDisabled(this.disabled)
+    this.notify()
+  }
+
+  /** 查询是否禁用 */
+  isDisabled(type: string): boolean {
+    return this.disabled.has(type)
+  }
+
+  /** 设置启用/禁用 */
+  setEnabled(type: string, enabled: boolean): void {
+    if (enabled) this.enable(type)
+    else this.disable(type)
+  }
+
+  /** 全量 palette（含已禁用，供 UI 展示启停状态） */
+  listAll(): AgentPaletteItem[] {
+    return [...AGENT_PALETTE_ITEMS, ...this.dynamic]
+  }
+
   /** 按类型查找：动态层优先，回落内置目录（含 expert/tool 兜底） */
   get(type: AgentNodeType): AgentPaletteItem | undefined {
     return this.dynamic.find((item) => item.type === type) ?? getBuiltInPaletteItem(type)
   }
 
-  /** 全量 palette = 内置目录 + 动态层 */
+  /** 全量 palette = 内置目录 + 动态层，过滤已禁用 */
   list(): AgentPaletteItem[] {
-    return [...AGENT_PALETTE_ITEMS, ...this.dynamic]
+    return [...AGENT_PALETTE_ITEMS, ...this.dynamic].filter((item) => !this.disabled.has(item.type))
   }
 
   private notify(): void {

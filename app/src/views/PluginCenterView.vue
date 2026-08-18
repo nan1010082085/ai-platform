@@ -13,6 +13,7 @@ import PageShell from '@/components/common/PageShell.vue'
 import PluginEditor from '@/components/plugins/PluginEditor.vue'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
 import { usePluginRuntime } from '@/composables/usePluginRuntime'
+import { getPluginHost } from '@/plugins'
 import { getExpertLegacyBadge, type ExpertAgentKind } from '@/constants/expertNodeTypes'
 import { getToolDisplayLabel } from '@schema-platform/platform-shared/ai/toolNames'
 import type { PluginLocalLayer } from '@/api/pluginApi'
@@ -51,6 +52,34 @@ const editorTitle = ref('')
 const editorLayer = ref<PluginLocalLayer>('experts')
 const editorFileId = ref('')
 const editorData = ref<unknown>({})
+
+/** 工具启停 toggle */
+function toggleTool(name: string, enabled: boolean): void {
+  getPluginHost().chatTools.setEnabled(name, enabled)
+  refreshRuntime()
+}
+
+/** 节点类型启停 toggle */
+function toggleNodeType(type: string, enabled: boolean): void {
+  getPluginHost().nodeTypes.setEnabled(type, enabled)
+  refreshRuntime()
+}
+
+/** 渲染器启停 toggle */
+function toggleRenderer(type: string, enabled: boolean): void {
+  getPluginHost().renderers.setEnabled(type, enabled)
+  refreshRuntime()
+}
+
+/** 查询工具是否禁用 */
+function isToolDisabled(name: string): boolean {
+  return getPluginHost().chatTools.isDisabled(name)
+}
+
+/** 查询节点类型是否禁用 */
+function isNodeTypeDisabled(type: string): boolean {
+  return getPluginHost().nodeTypes.isDisabled(type)
+}
 
 function openEditor(layer: PluginLocalLayer, fileId: string, label: string, data: unknown): void {
   editorLayer.value = layer
@@ -247,6 +276,15 @@ onMounted(() => {
                 <span :class="styles.mono">{{ row.argsHint || '—' }}</span>
               </template>
             </el-table-column>
+            <el-table-column label="状态" width="80" fixed="right">
+              <template #default="{ row }">
+                <el-switch
+                  :model-value="!isToolDisabled(row.name)"
+                  size="small"
+                  @change="(v: boolean) => toggleTool(row.name, v)"
+                />
+              </template>
+            </el-table-column>
             <el-table-column label="操作" width="80" fixed="right">
               <template #default="{ row }">
                 <el-button link type="primary" size="small" @click="openEditor('tools', row.name, row.label || row.name, row)">
@@ -363,6 +401,33 @@ onMounted(() => {
           <p :class="styles.hint">
             节点类型：内置 {{ runtimeView.nodeTypeBuiltin }} · 动态注册 {{ runtimeView.nodeTypeDynamic }}；渲染器：{{ runtimeView.rendererCount }}（priority 匹配）
           </p>
+
+          <!-- 已禁用项管理 -->
+          <h4 :class="styles.runtimeSectionTitle">启停管理</h4>
+          <el-table :data="runtimeView.toolGroups" stripe size="small">
+            <el-table-column prop="label" label="分类" width="180" />
+            <el-table-column label="工具（名称 · 状态）" min-width="420">
+              <template #default="{ row }">
+                <div :class="styles.tagRow">
+                  <span v-for="t in row.tools" :key="t.name" :class="styles.toggleTag">
+                    <el-tag
+                      size="small"
+                      :type="isToolDisabled(t.name) ? 'info' : (t.source === 'patch' ? 'danger' : t.source === 'registry' ? 'success' : undefined)"
+                      :effect="isToolDisabled(t.name) ? 'plain' : undefined"
+                    >
+                      {{ t.name }}
+                    </el-tag>
+                    <el-switch
+                      :model-value="!isToolDisabled(t.name)"
+                      size="small"
+                      style="margin-left: 4px"
+                      @change="(v: boolean) => toggleTool(t.name, v)"
+                    />
+                  </span>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
         </CardTable>
 
         <p :class="styles.hint">

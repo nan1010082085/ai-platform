@@ -20,10 +20,26 @@ import {
   type ToolGroup,
 } from './types'
 
+const DISABLED_STORAGE_KEY = 'sfp_chatTools_disabled'
+
+function loadDisabledSet(): Set<string> {
+  try {
+    const raw = localStorage.getItem(DISABLED_STORAGE_KEY)
+    if (!raw) return new Set()
+    return new Set(JSON.parse(raw) as string[])
+  } catch { return new Set() }
+}
+
+function saveDisabledSet(set: Set<string>): void {
+  try { localStorage.setItem(DISABLED_STORAGE_KEY, JSON.stringify([...set])) } catch { /* quota */ }
+}
+
 export class ChatToolsService extends Service {
   private base = new Map<string, ToolDef>()
   private overlay = new Map<string, ToolDef>()
   private patch = new Map<string, ToolDef>()
+  /** 前端禁用集（持久化到 localStorage，仅影响 list/getByCategory 输出，不删除数据） */
+  private disabled = loadDisabledSet()
 
   constructor(ctx: Context) {
     super(ctx, 'chatTools')
@@ -62,6 +78,38 @@ export class ChatToolsService extends Service {
     return this.get(name)?.category
   }
 
+  /** 启用工具（从 disabled 集移除） */
+  enable(name: string): void {
+    const normalized = normalizeToolName(name)
+    this.disabled.delete(normalized)
+    saveDisabledSet(this.disabled)
+    this.notify()
+  }
+
+  /** 禁用工具（加入 disabled 集，不删除数据） */
+  disable(name: string): void {
+    const normalized = normalizeToolName(name)
+    this.disabled.add(normalized)
+    saveDisabledSet(this.disabled)
+    this.notify()
+  }
+
+  /** 查询工具是否被禁用 */
+  isDisabled(name: string): boolean {
+    return this.disabled.has(normalizeToolName(name))
+  }
+
+  /** 所有被禁用的工具名 */
+  listDisabled(): string[] {
+    return [...this.disabled]
+  }
+
+  /** 批量设置启用/禁用（UI toggle 批量操作） */
+  setEnabled(name: string, enabled: boolean): void {
+    if (enabled) this.enable(name)
+    else this.disable(name)
+  }
+
   /** 内置层清单 */
   listBase(): ToolDef[] {
     return [...this.base.values()]
@@ -77,8 +125,14 @@ export class ChatToolsService extends Service {
     return [...this.patch.values()]
   }
 
-  /** 全量清单（patch ∪ overlay ∪ base，同名高层优先） */
+  /** 全量清单（patch ∪ overlay ∪ base，同名高层优先），过滤已禁用 */
   list(): ToolDef[] {
+    const merged = new Map([...this.base, ...this.overlay, ...this.patch])
+    return [...merged.values()].filter((t) => !this.disabled.has(t.name))
+  }
+
+  /** 全量清单（含已禁用，供 UI 展示启停状态） */
+  listAll(): ToolDef[] {
     const merged = new Map([...this.base, ...this.overlay, ...this.patch])
     return [...merged.values()]
   }

@@ -19,6 +19,7 @@ export interface ToolLayerStats {
   overlay: number
   patch: number
   total: number
+  disabled: number
 }
 
 export interface CordisServiceStatus {
@@ -79,6 +80,7 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
     const nodeTypeDynamic = nodeTypes.listDynamic()
     const allRenderers = renderers.getAllRenderers()
 
+    const disabledCount = chatTools.listDisabled().length
     return {
       services: [
         {
@@ -89,6 +91,7 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
             `overlay: ${overlayTools.length} registry`,
             `patch: ${patchTools.length} 本地覆盖`,
             `合并后: ${allTools.length} 工具`,
+            `已禁用: ${disabledCount}`,
           ],
         },
         {
@@ -114,6 +117,7 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
         overlay: overlayTools.length,
         patch: patchTools.length,
         total: allTools.length,
+        disabled: disabledCount,
       },
       toolGroups: chatTools.groupedByCategory('all'),
       nodeTypeBuiltin: nodeTypeList.length - nodeTypeDynamic.length,

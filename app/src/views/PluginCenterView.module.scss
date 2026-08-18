@@ -53,6 +53,12 @@
   gap: 4px;
 }
 
+.toggleTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .legacyBadge {
   --badge-accent: #909399;
   display: inline-flex;

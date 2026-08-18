@@ -483,6 +483,24 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
       chartType: 'auto',
     },
   },
+  {
+    type: 'autonomous-agent',
+    label: '自主智能体',
+    icon: 'magic-stick',
+    category: 'ai',
+    description: 'DSH harness 驱动的自主智能体：独立推理、调用工具、可中断等待人工审批',
+    defaultData: {
+      label: '自主智能体',
+      agentTaskPrompt: '{{$input.message}}',
+      agentAllowedTools: [],
+      agentMaxTurns: 10,
+      agentTokenBudget: 100000,
+      agentTimeoutSeconds: 300,
+      agentInterruptible: false,
+      agentInterruptMessage: '智能体需要您的确认',
+      agentOutputSource: 'lastMessage',
+    },
+  },
 ]
 
 export const AGENT_NODE_COLORS: Record<string, string> = {
@@ -525,6 +543,7 @@ export const AGENT_NODE_COLORS: Record<string, string> = {
   'form-query': '#00D4FF',
   'anomaly-detect': '#E6A23C',
   'chart-generate': '#909399',
+  'autonomous-agent': '#E040FB',
 }
 
 export function getPaletteItem(type: AgentNodeType): AgentPaletteItem | undefined {

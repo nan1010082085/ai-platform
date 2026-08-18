@@ -176,15 +176,15 @@ src/plugins/
 
 ### 5.4 门禁条件（方向 C 正式开发前必须满足）
 
-实施状态（2026-08，M5 轮更新）：
+实施状态（2026-08-18，M6 轮更新）：
 
 - [x] **会话级隔离 POC 通过**：`harness/scripts/smoke-isolation.mjs` 实测单进程并发双会话——SSE 帧归属正确（异会话帧即失败）、轨迹投影各自独立、并发下工具路径正常、优雅退出
 - [x] **租户级隔离 v1 落地**：`tenant-gateway` 插件——Bearer→tenant 解析（allowlist POC / verifyUrl 内省）、每租户会话配额（429）、按会话 token+工作量双预算（402 BUDGET_EXCEEDED）、SSE 短时效票据（多票据并发订阅）；`smoke-budget.mjs` 验收通过
 - [x] **租户鉴权生产化**：server 新增 `POST /api/ai/auth/introspect`（复用 jwt.verify + refresh 拒 + 黑名单，`tokenIntrospect.spec` 5/5）；harness tenant-gateway 接入 verifyUrl（`AI_HARNESS_VERIFY_URL`，内省缓存 TTL=JWT exp/60s + 负缓存 10s，allowlist 直通不打扰内省）；deploy.sh 生产启动注入内省端点；`smoke-introspect.mjs` 验收通过（tenantId 解析/缓存/allowlist 直通/401/全链路）
-- [ ] **部署形态确认**：推荐 C-1 独立服务（`ai/harness` 新部署目标）——需用户拍板
+- [x] **部署形态确认（已确认 C-1）**：`ai/harness` 独立部署，DSH profile + pm2 管理，端口 5310；deploy 脚本已就绪（`pack.sh --target harness` + `deploy.sh --target harness`）
 - [x] **部署脚本 harness target**：`deploy/pack.sh --target harness`（stage_harness 打包，实测产物 `harness-*.tar.gz` 53M 含完整运行时依赖）+ `deploy/deploy.sh --target harness`（pnpm install + pm2 `ai-harness` 进程，DSH_HOME 指向 dsh-home）
 - [x] **SSE 正式票据鉴权**：`POST /events-ticket`（Bearer）签发 5 分钟短时效票据，`GET /events?ticket=` 连接；每会话多票据并发订阅；query token 明文通道已移除
-- [ ] **智能体节点/HITL 映射**：nodeTypes 动态层注册口已就绪；节点执行需 server 侧 executor 配合（跨项目立项项），契约见 §5.6 agent-as-node
+- [x] **智能体节点/HITL 映射（前端就绪）**：autonomous-agent 节点类型已注册（palette + NodeData 字段 + HITL store 扩展）；nodeTypes 动态层注册口已就绪；节点执行需 server 侧 executor 配合（跨项目立项项），契约见 §5.6 agent-as-node
 
 ### 5.5 harness 服务形态（落地为 `ai/harness` 新子包）
 
@@ -267,7 +267,7 @@ DSH 的 Trajectory 是**会话事件日志**的投影渲染：按轮次组织的
 | **M5 方向 C 立项** | 完成 §5.4 门禁；`ai/harness` 最小 POC（DSH Host + JWT + 单租户会话 + 1 个平台工具，§5.5） | POC 跑通可编程 agent 会话与并发 | 按评审 |
 | **M6 方向 C 接入** | `api/harness/` 前端聚合 + HarnessTraceView（轨迹渲染）+ dev 代理（v1 已交付）；设计器"自主智能体节点"与 HITL 映射依赖 server/ 配合，注册口（nodeTypes 动态层）已就绪，列立项后项 | v1：api 客户端 4 测试 + 轨迹视图 + 940 回归；立项后：智能体节点/HITL | 立项后 |
 
-实施状态（2026-08）：M0 ✅ · M1 ✅ · M2 ✅（§4.2 范围修正：attachments/mcpHealth 评估后排除）· M3 ✅（运行时 tab，patch 层 UI 简化为只读可见）· M4 ✅ · M5 门禁清单 ✅（待用户三项决策：租户级隔离、部署形态、deploy 脚本）· M6 v1 ✅（智能体节点 + HITL 映射列立项后项）。
+实施状态（2026-08-18）：M0 ✅ · M1 ✅ · M2 ✅（§4.2 范围修正：attachments/mcpHealth 评估后排除）· M3 ✅（运行时 tab，patch 层 UI 简化为只读可见）· M4 ✅ · M5 门禁清单 ✅（三项决策已全部确认：部署形态 C-1、智能体节点前端就绪、PluginCenter 启停升级完成）· M6 v1 ✅。
 
 ---
 
@@ -290,11 +290,11 @@ DSH 的 Trajectory 是**会话事件日志**的投影渲染：按轮次组织的
 - **bundle / patch**：插件组合包 / 配置补丁层，按序叠加。
 - **registry overlay**：服务端下发的插件元数据层，等价 DSH 的用户 patch 层语义。
 
-## 9. 开放问题（待用户决策）
+## 9. 开放问题（已决策 2026-08-18）
 
-1. 方向 C 部署形态：C-1 独立服务 vs 让 server 项目组内嵌（C-2）。
-2. server/ 现有 agent workflow 的长期定位：保留、迁移到 DSH、还是共存灰度。
-3. 现有 `PluginCenterView` 是否顺势升级为"插件树 + 启停开关"（M3 之后），还是保持只读目录。
+1. **✅ 部署形态**：确认 C-1 独立服务（ai/harness 独立部署，pm2 管理，端口 5310）。
+2. **✅ 智能体节点/HITL**：前端先做 autonomous-agent 节点注册口 + HITL store 扩展；server 侧 executor 改造列立项后项。
+3. **✅ PluginCenter 启停**：已升级为可启停插件树（chatTools/nodeTypes/renderers 各 Service 增加 enable/disable + localStorage 持久化 + PluginCenterView toggle switch）。
 
 ## 10. 账号级每日 RMB 额度（10 元/日，双闸）
 
