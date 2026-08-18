@@ -22,11 +22,11 @@ type LayerTab = 'experts' | 'tools' | 'mcp' | 'skills' | 'runtime'
 type ToolKindTab = 'all' | 'mcp' | 'graph' | 'http'
 
 const layerTabs = [
+  { label: '运行时 Runtime', value: 'runtime' as LayerTab },
   { label: '专家 Experts', value: 'experts' as LayerTab },
   { label: '工具 Tools', value: 'tools' as LayerTab },
   { label: 'MCP Server', value: 'mcp' as LayerTab },
   { label: '技能 Skills', value: 'skills' as LayerTab },
-  { label: '运行时 Runtime', value: 'runtime' as LayerTab },
 ]
 
 const toolKindTabs = [
@@ -36,7 +36,7 @@ const toolKindTabs = [
   { label: 'HTTP', value: 'http' as ToolKindTab },
 ]
 
-const activeLayer = ref<LayerTab>('experts')
+const activeLayer = ref<LayerTab>('runtime')
 const activeToolKind = ref<ToolKindTab>('all')
 const searchInput = ref('')
 const {
