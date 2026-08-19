@@ -28,14 +28,17 @@
 
 | Task | Wave | Pri | 标题 | 状态 |
 |------|------|-----|------|------|
-| T1 | A | P0 | Harness SSE→StreamEvent + 消费 outcome | `- [x]` |
-| T2 | A | P0 | harness finally 收尾 loading/status | `- [x]` |
-| T3 | A | P0 | 暴露 harnessSessionId；stop 清 SSE | `- [x]` |
+| T1 | A | P0 | Harness SSE→StreamEvent + 消费 outcome | `- [x]` 热修：全文 set + outcome 立即结束（缺 stream.harness.spec → P2） |
+| T2 | A | P0 | harness finally 收尾 loading/status | `- [x]` 热修：传入 messages，修 ReferenceError |
+| T3 | A | P0 | 暴露 harnessSessionId；stop 清 SSE | `- [x]` 热修：cancelCurrent 共用 dispose |
 | T4 | B | P0 | 轨迹绑真实 session；无会话禁用 | `- [x]` |
 | T5 | B | P0 | TracePanel Loading/图标/错误态 | `- [x]` |
 | T6 | C | P1 | HITL agent **隔离**（已决策） | `- [x]` |
-| T7 | C | P1 | PluginRuntime 去 log + 启停 listAll | `- [x]` |
-| T8 | C | P2 | UX：语言按钮 / harness 菜单 / interrupt i18n | `- [x]` |
+| T7 | C | P1 | PluginRuntime 去 log + 启停 listAll | `- [~]` partial（Cordis 服务卡恒 running） |
+| T8 | C | P2 | UX：语言按钮 / harness 菜单 / interrupt i18n | `- [~]` partial（locale 键 / disabled 样式） |
+
+> 全量走查 2026-08-19：总评 **A-**。计划原全部 [x]，上表已按实审回写。详见 Canvas `ai-app-full-audit-2026-08-19`。
+
 
 ---
 

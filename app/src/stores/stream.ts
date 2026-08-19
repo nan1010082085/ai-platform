@@ -68,7 +68,19 @@ export const useStreamStore = defineStore('stream', () => {
   // ---- Actions ----
 
   /**
-   * 取消正在进行的请求
+   * 退订 harness SSE 并结束当前等待（cancel / stop / 收尾共用）
+   */
+  function disposeHarnessSubscription(): void {
+    if (harnessUnsubscribe) {
+      harnessUnsubscribe()
+      harnessUnsubscribe = null
+    }
+    activeDoneResolve?.()
+    activeDoneResolve = null
+  }
+
+  /**
+   * 取消正在进行的请求（server WS + harness SSE）
    */
   function cancelCurrent(): void {
     emitChatCancel()
@@ -76,6 +88,7 @@ export const useStreamStore = defineStore('stream', () => {
       unsubscribeChatEvent()
       unsubscribeChatEvent = null
     }
+    disposeHarnessSubscription()
   }
 
   /**
@@ -88,13 +101,7 @@ export const useStreamStore = defineStore('stream', () => {
       unsubscribeChatEvent()
       unsubscribeChatEvent = null
     }
-    // T3: 停止时也清理 harness SSE 订阅
-    if (harnessUnsubscribe) {
-      harnessUnsubscribe()
-      harnessUnsubscribe = null
-    }
-    activeDoneResolve?.()
-    activeDoneResolve = null
+    disposeHarnessSubscription()
     retryCount.value = 0
     lastMessagePayload.value = null
   }
@@ -125,7 +132,7 @@ export const useStreamStore = defineStore('stream', () => {
 
     // Harness 模式：通过 HTTP Session API 走 harness
     if (chatMode === 'harness') {
-      await executeHarnessStream(content, assistantIndex, handlers, ctx)
+      await executeHarnessStream(content, assistantIndex, messages, handlers, ctx)
       return
     }
 
@@ -372,6 +379,7 @@ export const useStreamStore = defineStore('stream', () => {
   async function executeHarnessStream(
     content: string,
     assistantIndex: number,
+    messages: AIMessage[],
     handlers: {
       onStreamEvent: (event: StreamEvent, assistantIndex: number) => void
       onDone: (conversationId?: string) => void
@@ -388,6 +396,18 @@ export const useStreamStore = defineStore('stream', () => {
     streamStatus.value = 'connecting'
     streamStopped = false
 
+    let doneEventReceived = false
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+    /**
+     * assistant/message 是全文快照（非 token delta），直接覆盖 content，避免 text_delta 追加重复。
+     */
+    function setAssistantContent(text: string): void {
+      const msg = messages[assistantIndex]
+      if (!msg || !text) return
+      msg.content = text
+    }
+
     try {
       // 创建或复用 harness 会话
       if (!harnessSessionId.value) {
@@ -400,7 +420,6 @@ export const useStreamStore = defineStore('stream', () => {
         harnessUnsubscribe = null
       }
 
-      let doneEventReceived = false
       const donePromise = new Promise<void>((resolve) => {
         activeDoneResolve = resolve
       })
@@ -409,39 +428,39 @@ export const useStreamStore = defineStore('stream', () => {
         for (const event of events) {
           if (doneEventReceived) return
 
-          // 对齐 runner-http 事件映射：
-          // assistant/message → text_delta（文本增量，对齐 handleStreamEvent 的 text_delta case）
-          // turn/end → done（结束等待）
+          // 对齐 runner-http：assistant/message（全文）/ turn/end（结束）
           if (event.type === 'assistant/message') {
-            const text = textFromAssistantMessage(event.data)
-            if (text) {
-              handlers.onStreamEvent({ type: 'text_delta', content: text } as StreamEvent, assistantIndex)
-            }
+            setAssistantContent(textFromAssistantMessage(event.data))
           } else if (event.type === 'turn/end') {
             doneEventReceived = true
             handlers.onStreamEvent({ type: 'done' }, assistantIndex)
             activeDoneResolve?.()
           }
-          // 其他事件（turn/start 等）忽略，不阻断
         }
       })
 
       streamStatus.value = 'connected'
 
-      // 发送消息
+      // 发送消息（HTTP 在轮次停稳后返回）
       const outcome = await sendHarnessMessage(harnessSessionId.value!, content)
 
-      // 若 SSE 未收到 turn/end，用 HTTP outcome 的文本兜底（避免只靠 SSE）
-      if (!doneEventReceived && outcome.text) {
-        handlers.onStreamEvent({ type: 'text_delta', content: outcome.text } as StreamEvent, assistantIndex)
+      // 无 turn/end 时：用 outcome 补全文（仅当仍为空），并立即结束等待
+      if (!doneEventReceived) {
+        if (outcome.text && !messages[assistantIndex]?.content) {
+          setAssistantContent(outcome.text)
+        }
+        doneEventReceived = true
+        activeDoneResolve?.()
       }
 
-      // 等待 SSE done 事件（带超时）
+      // 等待结束（通常 outcome 路径已 resolve；仍保留超时兜底）
       const timeoutPromise = new Promise<void>((resolve) => {
-        setTimeout(() => {
-          if (!doneEventReceived) {
+        timeoutId = setTimeout(() => {
+          if (!doneEventReceived && !streamStopped) {
             error.value = 'Stream timeout'
             doneEventReceived = true
+            resolve()
+          } else {
             resolve()
           }
         }, STREAM_TIMEOUT_MS)
@@ -452,7 +471,7 @@ export const useStreamStore = defineStore('stream', () => {
       error.value = errorMsg
       trackAi(AI_TELEMETRY_EVENTS.WS_RETRY_FAIL, { attempts: 0, error: errorMsg })
     } finally {
-      // T2: 统一收尾 — 无论成功/失败/超时
+      if (timeoutId) clearTimeout(timeoutId)
       loading.value = false
       streamStatus.value = 'idle'
       activeDoneResolve = null

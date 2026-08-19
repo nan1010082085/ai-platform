@@ -6,7 +6,7 @@ UI/UX 与实现计划索引。走查 Canvas 证据保留，不单独删除。
 
 | 文档 | 说明 | 状态 |
 |------|------|------|
-| [2026-08-19-harness-trace-rating-fix.md](./2026-08-19-harness-trace-rating-fix.md) | Harness 流 + 轨迹 P0；T6 HITL **隔离**已锁定 → 目标 A- / A | 开放 · 交 Claude |
+| [2026-08-19-harness-trace-rating-fix.md](./2026-08-19-harness-trace-rating-fix.md) | Harness/轨迹修复 → 已达 **A-**；残留 P1（outcome 结束/全文替换/`cancelCurrent`）冲 A | **A- 收口** · 残留开放 |
 
 ## 已关闭
 
@@ -19,6 +19,9 @@ UI/UX 与实现计划索引。走查 Canvas 证据保留，不单独删除。
 
 | Canvas | 说明 |
 |--------|------|
+| `ai-app-full-audit-2026-08-19.canvas.tsx` | 全量走查（代码+Task+UX）· 总评 A- |
+| `ai-app-rating-fix-regression.canvas.tsx` | 评级修复回归 |
+| `ai-app-rating-fix-tasks.canvas.tsx` | T1–T8 任务板 |
 | `ai-app-code-uiux-2026-08-19.canvas.tsx` | 2026-08-19 代码+UIUX 走查（B+ / Harness C+） |
 | `ai-app-uiux-audit.canvas.tsx` | 首轮静态审计 |
 | `ai-app-uiux-reaudit.canvas.tsx` | 计划对照复审 |
