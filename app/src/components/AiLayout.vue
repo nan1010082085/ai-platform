@@ -52,6 +52,7 @@ const settingsNav = computed<SettingsNavItem[]>(() => [
   { path: '/evaluation', label: t('layout.nav.evaluation'), icon: 'data-analysis', group: 'ops' },
   { path: '/debug/routing', label: t('layout.nav.routingDebug'), icon: 'search', group: 'ops' },
   { path: '/debug/rag', label: t('layout.nav.ragDebug'), icon: 'filter', group: 'ops' },
+  { path: '/debug/harness', label: t('layout.nav.harnessTrace', 'Harness 轨迹'), icon: 'data-line', group: 'ops' },
 ])
 
 const settingsGroups = computed(() => {
@@ -163,12 +164,12 @@ function handleLogout() {
         <el-tooltip :content="languageLabel" placement="bottom">
           <button
             type="button"
-            :class="$style.iconBtn"
+            :class="$style.langBtn"
             :title="languageLabel"
             :aria-label="languageLabel"
             @click="toggleLocale"
           >
-            <AppIcon name="chat-dot-round" :size="16" />
+            {{ locale === 'zh-CN' ? '中' : 'EN' }}
           </button>
         </el-tooltip>
 
@@ -316,6 +317,29 @@ function handleLogout() {
 }
 
 .iconBtn:hover {
+  background: var(--ai-bg-gray, #F5F7FA);
+  color: var(--ai-text-primary, #333333);
+}
+
+.langBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ai-text-secondary, #666666);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.langBtn:hover {
   background: var(--ai-bg-gray, #F5F7FA);
   color: var(--ai-text-primary, #333333);
 }

@@ -39,7 +39,10 @@ export interface PluginRuntimeView {
   services: CordisServiceStatus[]
   // 分层统计
   toolLayers: ToolLayerStats
+  /** 工具分类树（过滤禁用） */
   toolGroups: ToolGroup[]
+  /** 启停管理用：含禁用项，禁用后仍可见可再开 */
+  toolGroupsAll: ToolGroup[]
   nodeTypeBuiltin: number
   nodeTypeDynamic: number
   rendererCount: number
@@ -120,6 +123,7 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
         disabled: disabledCount,
       },
       toolGroups: chatTools.groupedByCategory('all'),
+      toolGroupsAll: chatTools.groupedByCategoryAll(),
       nodeTypeBuiltin: nodeTypeList.length - nodeTypeDynamic.length,
       nodeTypeDynamic: nodeTypeDynamic.length,
       rendererCount: allRenderers.length,
@@ -132,10 +136,8 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
   const refresh = async () => {
     const next = build()
     const h = await checkHarnessHealth()
-    console.log('[usePluginRuntime] harness result:', JSON.stringify(h))
     next.harness = h
     view.value = next
-    console.log('[usePluginRuntime] view.value.harness:', JSON.stringify(view.value.harness))
   }
 
   // 服务变更事件桥接（保留 harness 状态，不被 build() 重置）
@@ -145,9 +147,9 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
     next.harness = prev
     view.value = next
   }
-  const offTools = host.on('chatTools/changed', () => { console.log('[usePluginRuntime] chatTools/changed fired'); rebuildPreservingHarness() })
-  const offNodes = host.on('nodeTypes/changed', () => { console.log('[usePluginRuntime] nodeTypes/changed fired'); rebuildPreservingHarness() })
-  const offRenderers = host.on('renderers/changed', () => { console.log('[usePluginRuntime] renderers/changed fired'); rebuildPreservingHarness() })
+  const offTools = host.on('chatTools/changed', () => { rebuildPreservingHarness() })
+  const offNodes = host.on('nodeTypes/changed', () => { rebuildPreservingHarness() })
+  const offRenderers = host.on('renderers/changed', () => { rebuildPreservingHarness() })
 
   if (getCurrentScope()) {
     onScopeDispose(() => {

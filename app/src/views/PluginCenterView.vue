@@ -404,7 +404,7 @@ onMounted(() => {
 
           <!-- 已禁用项管理 -->
           <h4 :class="styles.runtimeSectionTitle">启停管理</h4>
-          <el-table :data="runtimeView.toolGroups" stripe size="small">
+          <el-table :data="runtimeView.toolGroupsAll" stripe size="small">
             <el-table-column prop="label" label="分类" width="180" />
             <el-table-column label="工具（名称 · 状态）" min-width="420">
               <template #default="{ row }">
@@ -428,6 +428,7 @@ onMounted(() => {
               </template>
             </el-table-column>
           </el-table>
+          <p :class="styles.hint">仅本机 UI 过滤，不影响服务端工具。</p>
         </CardTable>
 
         <p :class="styles.hint">

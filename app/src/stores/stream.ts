@@ -56,8 +56,8 @@ export const useStreamStore = defineStore('stream', () => {
   let streamStopped = false
 
   // ---- Harness 状态 ----
-  /** 当前 harness 会话 ID */
-  let harnessSessionId: string | null = null
+  /** 当前 harness 会话 ID（暴露给轨迹面板等消费方） */
+  const harnessSessionId = ref<string | null>(null)
   /** harness SSE 退订函数 */
   let harnessUnsubscribe: (() => void) | null = null
 
@@ -87,6 +87,11 @@ export const useStreamStore = defineStore('stream', () => {
     if (unsubscribeChatEvent) {
       unsubscribeChatEvent()
       unsubscribeChatEvent = null
+    }
+    // T3: 停止时也清理 harness SSE 订阅
+    if (harnessUnsubscribe) {
+      harnessUnsubscribe()
+      harnessUnsubscribe = null
     }
     activeDoneResolve?.()
     activeDoneResolve = null
@@ -350,6 +355,18 @@ export const useStreamStore = defineStore('stream', () => {
 
 
   /**
+   * 从 harness assistant/message 事件中提取文本（对齐 runner-http summarize）。
+   */
+  function textFromAssistantMessage(data?: Record<string, unknown>): string {
+    const message = data?.message as { content?: Array<{ type: string; text?: string }> } | undefined
+    if (!message?.content) return ''
+    return message.content
+      .filter((b) => b.type === 'text' && b.text)
+      .map((b) => b.text!)
+      .join('')
+  }
+
+  /**
    * Harness 模式执行：通过 HTTP Session API 走 harness 服务
    */
   async function executeHarnessStream(
@@ -373,8 +390,8 @@ export const useStreamStore = defineStore('stream', () => {
 
     try {
       // 创建或复用 harness 会话
-      if (!harnessSessionId) {
-        harnessSessionId = await startHarnessSession()
+      if (!harnessSessionId.value) {
+        harnessSessionId.value = await startHarnessSession()
       }
 
       // 订阅 SSE 事件
@@ -388,60 +405,64 @@ export const useStreamStore = defineStore('stream', () => {
         activeDoneResolve = resolve
       })
 
-      harnessUnsubscribe = await subscribeHarnessEvents(harnessSessionId, (events) => {
+      harnessUnsubscribe = await subscribeHarnessEvents(harnessSessionId.value, (events) => {
         for (const event of events) {
           if (doneEventReceived) return
 
-          // 将 harness 事件转换为 StreamEvent
-          const streamEvent: StreamEvent = {
-            type: event.type === 'message' ? 'content' : event.type,
-            content: typeof event.data?.text === 'string' ? event.data.text : undefined,
-            toolCalls: event.data?.toolCalls as StreamEvent['toolCalls'],
-          }
-
-          if (event.type === 'done' || event.type === 'end') {
+          // 对齐 runner-http 事件映射：
+          // assistant/message → text_delta（文本增量，对齐 handleStreamEvent 的 text_delta case）
+          // turn/end → done（结束等待）
+          if (event.type === 'assistant/message') {
+            const text = textFromAssistantMessage(event.data)
+            if (text) {
+              handlers.onStreamEvent({ type: 'text_delta', content: text } as StreamEvent, assistantIndex)
+            }
+          } else if (event.type === 'turn/end') {
             doneEventReceived = true
+            handlers.onStreamEvent({ type: 'done' }, assistantIndex)
             activeDoneResolve?.()
           }
-
-          try {
-            handlers.onStreamEvent(streamEvent, assistantIndex)
-          } catch (err) {
-            console.error('[stream] Harness event handler error:', err)
-          }
+          // 其他事件（turn/start 等）忽略，不阻断
         }
       })
 
       streamStatus.value = 'connected'
 
       // 发送消息
-      const outcome = await sendHarnessMessage(harnessSessionId, content)
+      const outcome = await sendHarnessMessage(harnessSessionId.value!, content)
+
+      // 若 SSE 未收到 turn/end，用 HTTP outcome 的文本兜底（避免只靠 SSE）
+      if (!doneEventReceived && outcome.text) {
+        handlers.onStreamEvent({ type: 'text_delta', content: outcome.text } as StreamEvent, assistantIndex)
+      }
 
       // 等待 SSE done 事件（带超时）
       const timeoutPromise = new Promise<void>((resolve) => {
         setTimeout(() => {
           if (!doneEventReceived) {
+            error.value = 'Stream timeout'
             doneEventReceived = true
             resolve()
           }
         }, STREAM_TIMEOUT_MS)
       })
       await Promise.race([donePromise, timeoutPromise])
-
-      // 清理
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err)
+      error.value = errorMsg
+      trackAi(AI_TELEMETRY_EVENTS.WS_RETRY_FAIL, { attempts: 0, error: errorMsg })
+    } finally {
+      // T2: 统一收尾 — 无论成功/失败/超时
+      loading.value = false
+      streamStatus.value = 'idle'
+      activeDoneResolve = null
       if (harnessUnsubscribe) {
         harnessUnsubscribe()
         harnessUnsubscribe = null
       }
-      activeDoneResolve = null
-      streamStatus.value = 'idle'
-
-      handlers.onDone(ctx.currentConversationId ?? undefined)
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err)
-      error.value = errorMsg
-      streamStatus.value = 'idle'
-      trackAi(AI_TELEMETRY_EVENTS.WS_RETRY_FAIL, { attempts: 0, error: errorMsg })
+      if (messages[assistantIndex]?.status === 'streaming') {
+        messages[assistantIndex].status = 'received'
+      }
       handlers.onDone(ctx.currentConversationId ?? undefined)
     }
   }
@@ -454,7 +475,7 @@ export const useStreamStore = defineStore('stream', () => {
       harnessUnsubscribe()
       harnessUnsubscribe = null
     }
-    harnessSessionId = null
+    harnessSessionId.value = null
   }
 
   return {
@@ -464,6 +485,7 @@ export const useStreamStore = defineStore('stream', () => {
     lastMessagePayload,
     loading,
     error,
+    harnessSessionId,
     // constants
     MAX_AUTO_RETRIES,
     // actions

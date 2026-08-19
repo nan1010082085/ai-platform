@@ -6,7 +6,7 @@ UI/UX 与实现计划索引。走查 Canvas 证据保留，不单独删除。
 
 | 文档 | 说明 | 状态 |
 |------|------|------|
-| — | 当前无活跃 UI/UX 实施计划 | 评分 **A**（2026-08-12） |
+| [2026-08-19-harness-trace-rating-fix.md](./2026-08-19-harness-trace-rating-fix.md) | Harness 流 + 轨迹 P0；T6 HITL **隔离**已锁定 → 目标 A- / A | 开放 · 交 Claude |
 
 ## 已关闭
 
@@ -19,6 +19,7 @@ UI/UX 与实现计划索引。走查 Canvas 证据保留，不单独删除。
 
 | Canvas | 说明 |
 |--------|------|
+| `ai-app-code-uiux-2026-08-19.canvas.tsx` | 2026-08-19 代码+UIUX 走查（B+ / Harness C+） |
 | `ai-app-uiux-audit.canvas.tsx` | 首轮静态审计 |
 | `ai-app-uiux-reaudit.canvas.tsx` | 计划对照复审 |
 | `ai-app-uiux-overall.canvas.tsx` | 整体走查（历史 B+） |

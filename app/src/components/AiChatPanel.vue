@@ -12,6 +12,7 @@ import DocumentPreviewDrawer from './document/DocumentPreviewDrawer.vue'
 import ChatMessageList from './chat/ChatMessageList.vue'
 import AgentWorkflowPicker from '@/components/AgentWorkflowPicker.vue'
 import { useAiStore } from '@/stores/ai'
+import { useStreamStore } from '@/stores/stream'
 import { usePublishedAgentWorkflows } from '@/composables/usePublishedAgentWorkflows'
 import { useShellEmbed } from '@/composables/useShellEmbed'
 import { useSmartSuggestions } from '@/composables/useSmartSuggestions'
@@ -39,10 +40,11 @@ const mentionInputRef = ref<InstanceType<typeof AiMentionInput>>()
 const ragVisible = ref(false)
 const workflowPickerVisible = ref(false)
 const store = useAiStore()
+const streamStore = useStreamStore()
 const interruptFeedback = ref('')
 const router = useRouter()
 const tracePanelVisible = ref(false)
-const { trace, loading: traceLoading, startTracking, stopTracking } = useAgentTrace()
+const { trace, loading: traceLoading, error: traceError, startTracking, stopTracking, refreshTrace } = useAgentTrace()
 const { shouldHideSubAppMenu } = useShellEmbed()
 const { loadPublishedWorkflows, getWorkflowName } = usePublishedAgentWorkflows()
 
@@ -198,9 +200,12 @@ function handleSelectStarterAgent(agent: AgentType): void {
 function toggleTracePanel(): void {
   tracePanelVisible.value = !tracePanelVisible.value
   if (tracePanelVisible.value) {
-    // Start tracking with current session (using a placeholder session ID for now)
-    // In real implementation, this should be connected to the actual harness session
-    startTracking('current-session')
+    const sessionId = streamStore.harnessSessionId
+    if (!sessionId) {
+      tracePanelVisible.value = false
+      return
+    }
+    void startTracking(sessionId)
   } else {
     stopTracking()
   }
@@ -308,9 +313,14 @@ function toggleTracePanel(): void {
             </button>
           </div>
         </el-popover>
-        <el-tooltip content="Agent 轨迹" placement="bottom" :show-after="300">
+        <el-tooltip
+          :content="streamStore.harnessSessionId ? 'Agent 轨迹' : '当前无 Harness 会话'"
+          placement="bottom"
+          :show-after="300"
+        >
           <button
             :class="[$style.actionBtn, { [$style.actionBtnActive]: tracePanelVisible }]"
+            :disabled="!streamStore.harnessSessionId"
             aria-label="Agent 轨迹"
             @click="toggleTracePanel"
           >
@@ -399,7 +409,7 @@ function toggleTracePanel(): void {
           v-model="interruptFeedback"
           type="textarea"
           :rows="2"
-          :placeholder="'输入反馈后回车发送，或点击确认/跳过'"
+          :placeholder="t('chat.interruptPlaceholder', '输入反馈后回车发送，或点击确认/跳过')"
           @keydown.ctrl.enter="() => { store.respondInterrupt(true, interruptFeedback); interruptFeedback = '' }"
         />
       </div>
@@ -417,7 +427,9 @@ function toggleTracePanel(): void {
         <AgentTracePanel
           :trace="trace"
           :loading="traceLoading"
-          session-id="current-session"
+          :error="traceError"
+          :session-id="streamStore.harnessSessionId ?? ''"
+          @retry="refreshTrace"
         />
       </div>
     </transition>

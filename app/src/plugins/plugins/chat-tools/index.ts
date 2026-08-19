@@ -153,6 +153,18 @@ export class ChatToolsService extends Service {
       .filter((group) => group.tools.length > 0)
   }
 
+  /** 分类分组（含已禁用项，供启停管理 UI） */
+  groupedByCategoryAll(): ToolGroup[] {
+    const tools = this.listAll()
+    return TOOL_CATEGORY_ORDER
+      .map((category) => ({
+        category,
+        label: TOOL_CATEGORY_LABELS[category],
+        tools: tools.filter((tool) => tool.category === category),
+      }))
+      .filter((group) => group.tools.length > 0)
+  }
+
   private find(map: Map<string, ToolDef>, name: string): ToolDef | undefined {
     const normalized = normalizeToolName(name)
     for (const def of map.values()) {

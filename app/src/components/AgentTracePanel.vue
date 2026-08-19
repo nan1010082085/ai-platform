@@ -9,21 +9,25 @@
  * - 支持实时更新
  */
 
-import { ref, computed, watch, onUnmounted } from 'vue'
-import { ElEmpty, ElTag, ElTimeline, ElTimelineItem, ElCard, ElCollapse, ElCollapseItem } from 'element-plus'
+import { ref, computed } from 'vue'
+import { ElEmpty, ElTag, ElTimeline, ElTimelineItem, ElCard, ElCollapse, ElCollapseItem, ElButton } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import type { AgentNodeTrace, AgentNodeTraceToolCall, AgentNodeTraceTurn, AgentNodeTraceMessage } from '@/types/harnessTrace'
 
 interface Props {
   trace: AgentNodeTrace | null
   loading?: boolean
+  error?: string | null
   sessionId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
+  error: null,
   sessionId: '',
 })
+
+const emit = defineEmits<{ retry: [] }>()
 
 // 工具调用状态颜色
 function getToolCallStatus(tool: AgentNodeTraceToolCall): 'success' | 'danger' | 'warning' | 'info' {
@@ -90,8 +94,15 @@ const activeCollapse = ref<string[]>([])
     <div :class="$style.content">
       <!-- 加载状态 -->
       <div v-if="loading" :class="$style.loading">
-        <el-icon class="is-loading" :size="24"><Loading /></el-icon>
+        <AppIcon name="loading" :size="24" class="is-loading" />
         <span>加载轨迹中...</span>
+      </div>
+
+      <!-- 错误状态 -->
+      <div v-else-if="error" :class="$style.errorState">
+        <AppIcon name="warning-filled" :size="24" :class="$style.errorIcon" />
+        <span :class="$style.errorText">{{ error }}</span>
+        <ElButton size="small" @click="emit('retry')">重试</ElButton>
       </div>
 
       <!-- 空状态 -->
@@ -165,7 +176,7 @@ const activeCollapse = ref<string[]>([])
             <!-- 该轮次的消息 -->
             <div v-if="messagesByTurn.has(turn.turn)" :class="$style.messages">
               <div :class="$style.sectionTitle">
-                <AppIcon name="chat-line-square" :size="12" />
+                <AppIcon name="chat-line-round" :size="12" />
                 <span>中间消息</span>
               </div>
               <div
@@ -228,6 +239,27 @@ const activeCollapse = ref<string[]>([])
   gap: 12px;
   height: 200px;
   color: var(--el-text-color-secondary);
+}
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 200px;
+  color: var(--el-color-danger);
+}
+
+.errorIcon {
+  color: var(--el-color-danger);
+}
+
+.errorText {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  text-align: center;
+  max-width: 200px;
 }
 
 .traceContent {

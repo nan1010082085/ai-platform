@@ -65,7 +65,9 @@ export function useAgentTrace(options: UseAgentTraceOptions = {}) {
       unsubscribe = await subscribeHarnessEvents(sessionId, (events) => {
         liveEvents.value = [...liveEvents.value, ...events]
         // 收到新事件时自动刷新轨迹
-        refreshTrace(sessionId).catch(() => {})
+        refreshTrace(sessionId).catch((err) => {
+          error.value = err instanceof Error ? err.message : String(err)
+        })
       })
     } catch (err) {
       console.error('[useAgentTrace] Failed to subscribe events:', err)
@@ -92,7 +94,9 @@ export function useAgentTrace(options: UseAgentTraceOptions = {}) {
       stopAutoRefresh()
       refreshTimer = setInterval(() => {
         if (currentSessionId) {
-          refreshTrace(currentSessionId).catch(() => {})
+          refreshTrace(currentSessionId).catch((err) => {
+            error.value = err instanceof Error ? err.message : String(err)
+          })
         }
       }, autoRefreshInterval)
     }
