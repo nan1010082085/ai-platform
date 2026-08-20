@@ -409,7 +409,7 @@ function toggleTracePanel(): void {
           v-model="interruptFeedback"
           type="textarea"
           :rows="2"
-          :placeholder="t('chat.interruptPlaceholder', '输入反馈后回车发送，或点击确认/跳过')"
+          :placeholder="t('chat.interruptPlaceholder')"
           @keydown.ctrl.enter="() => { store.respondInterrupt(true, interruptFeedback); interruptFeedback = '' }"
         />
       </div>

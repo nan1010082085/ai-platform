@@ -96,6 +96,17 @@
   outline-offset: 2px;
 }
 
+.actionBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  color: var(--ai-text-hint, #999999);
+}
+
+.actionBtn:disabled:hover {
+  background: transparent;
+  color: var(--ai-text-hint, #999999);
+}
+
 .actionBtnActive {
   background: var(--ai-color-purple-bg, rgba(103, 58, 183, 0.12));
   color: var(--ai-color-purple, #673ab7);

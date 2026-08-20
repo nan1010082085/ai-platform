@@ -69,6 +69,16 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
   ensurePluginHost()
   const host = getPluginHost()
 
+  /** 探测单个服务可用性 */
+  function probeService(name: string, probe: () => string[]): CordisServiceStatus {
+    try {
+      const details = probe()
+      return { name, status: 'running', details }
+    } catch (err) {
+      return { name, status: 'error', details: [err instanceof Error ? err.message : String(err)] }
+    }
+  }
+
   function build(): PluginRuntimeView {
     const chatTools = host.chatTools
     const nodeTypes = host.nodeTypes
@@ -86,34 +96,22 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
     const disabledCount = chatTools.listDisabled().length
     return {
       services: [
-        {
-          name: 'chatTools（工具注册表）',
-          status: 'running',
-          details: [
-            `base: ${baseTools.length} 内置`,
-            `overlay: ${overlayTools.length} registry`,
-            `patch: ${patchTools.length} 本地覆盖`,
-            `合并后: ${allTools.length} 工具`,
-            `已禁用: ${disabledCount}`,
-          ],
-        },
-        {
-          name: 'nodeTypes（节点类型）',
-          status: 'running',
-          details: [
-            `内置: ${nodeTypeList.length - nodeTypeDynamic.length}`,
-            `动态注册: ${nodeTypeDynamic.length}`,
-            `合计: ${nodeTypeList.length}`,
-          ],
-        },
-        {
-          name: 'renderers（渲染器）',
-          status: 'running',
-          details: [
-            `已注册: ${allRenderers.length}`,
-            `优先级范围: ${allRenderers[0]?.priority ?? 0} - ${allRenderers[allRenderers.length - 1]?.priority ?? 0}`,
-          ],
-        },
+        probeService('chatTools（工具注册表）', () => [
+          `base: ${baseTools.length} 内置`,
+          `overlay: ${overlayTools.length} registry`,
+          `patch: ${patchTools.length} 本地覆盖`,
+          `合并后: ${allTools.length} 工具`,
+          `已禁用: ${disabledCount}`,
+        ]),
+        probeService('nodeTypes（节点类型）', () => [
+          `内置: ${nodeTypeList.length - nodeTypeDynamic.length}`,
+          `动态注册: ${nodeTypeDynamic.length}`,
+          `合计: ${nodeTypeList.length}`,
+        ]),
+        probeService('renderers（渲染器）', () => [
+          `已注册: ${allRenderers.length}`,
+          `优先级范围: ${allRenderers[0]?.priority ?? 0} - ${allRenderers[allRenderers.length - 1]?.priority ?? 0}`,
+        ]),
       ],
       toolLayers: {
         builtin: baseTools.length,

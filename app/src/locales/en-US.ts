@@ -40,6 +40,7 @@ export default {
       evaluation: 'Evaluation',
       schedules: 'Schedules',
       templates: 'Templates',
+      harnessTrace: 'Harness Trace',
     },
   },
   chat: {
@@ -76,6 +77,7 @@ export default {
     flowPreview: 'Flow preview',
     confirmPublish: 'Confirm publish',
     openInEditor: 'Open in editor',
+    interruptPlaceholder: 'Type feedback and press Enter, or click confirm/skip',
   },
   apiKey: {
     title: 'Integration API Keys',

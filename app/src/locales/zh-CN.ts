@@ -45,6 +45,7 @@ export default {
       evaluation: '评测中心',
       schedules: '调度管理',
       templates: '模板管理',
+      harnessTrace: 'Harness 轨迹',
     },
   },
   chat: {
@@ -81,6 +82,7 @@ export default {
     flowPreview: '流程预览',
     confirmPublish: '确认发布',
     openInEditor: '在编辑器中打开',
+    interruptPlaceholder: '输入反馈后回车发送，或点击确认/跳过',
   },
   apiKey: {
     title: '我的集成密钥',

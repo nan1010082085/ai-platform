@@ -70,6 +70,7 @@ export function useAgentTrace(options: UseAgentTraceOptions = {}) {
         })
       })
     } catch (err) {
+      error.value = err instanceof Error ? err.message : String(err)
       console.error('[useAgentTrace] Failed to subscribe events:', err)
     }
   }
