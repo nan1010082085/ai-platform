@@ -59,12 +59,11 @@ cd shared && pnpm build  # tsc 编译
 
 ## 插件体系规则（DSH / Cordis 融合，M0 落地）
 
-依据：`ai/docs/design/dsh-cordis-integration.md`。app 侧适配层在 `app/src/plugins/`，运行时服务在 `harness/`。
+依据：`ai/docs/design/dsh-cordis-integration.md`。app 侧适配层在 `app/src/plugins/`。
 
 1. **适配层唯一出口**：业务代码只允许 `import ... from '@/plugins'`，禁止直接 import `@deepseek-ai/cordis` 或 `@deepseek-ai/dsh-*`。cordis API 变更只影响适配层内部。
 2. **版本锁定**：`@deepseek-ai/*`（cordis 4.0.1 / dsh 0.1.0-rc.6）一律精确版本（无 `^`）；升级必须逐包读 changelog 评审后统一升，禁止顺手升级。
 3. **静态插件 / 动态数据**：插件（代码）只在 profile `cordis.patch.yml` / 宿主启动时静态装载；工具、workflow、skill 是数据，由插件运行时动态注册（`chatTools.setOverlay` / `ctx.tools.register`）。workflow 永远是数据不是插件；浏览器端禁止 loader 运行时动态 import。
 4. **禁双轨**：扩展点迁移到 Cordis Service 后必须删除旧常量/旧实现，迁移期间逐个回归 `__tests__`，行为不变。
-5. **server/ 隔离**：app、harness 均不得修改 `server/`；跨项目改动（`shared/platform-shared/`、deploy 脚本、其他子项目）先告知用户再动。
-6. **轨迹契约**：DSH 会话轨迹经 `platform.nodeTrace` 投影（zod schema，`harness/plugins/trajectory-forward`）折叠；协议类型见 `app/src/types/harnessTrace.ts`，与投影 schema 保持一一对应，改 schema 必须同步改类型并升 `stateVersion`。
+5. **server/ 隔离**：app 不得修改 `server/`；跨项目改动（`shared/platform-shared/`、deploy 脚本、其他子项目）先告知用户再动。
 

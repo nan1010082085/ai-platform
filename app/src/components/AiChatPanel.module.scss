@@ -793,12 +793,14 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: 360px;
+  width: min(440px, 92vw);
   z-index: 100;
   background: var(--ai-bg-white, #FFFFFF);
   border-left: 1px solid var(--ai-border-light, #EBEDF3);
   box-shadow: -4px 0 12px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Slide transition */

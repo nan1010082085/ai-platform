@@ -355,27 +355,6 @@ onMounted(() => {
                 <li v-for="d in svc.details" :key="d">{{ d }}</li>
               </ul>
             </div>
-
-            <!-- Harness 连接状态 -->
-            <div :class="styles.serviceCard">
-              <div :class="styles.serviceHeader">
-                <span :class="styles.serviceName">harness（Agent 运行时）</span>
-                <el-tag
-                  :type="runtimeView.harness.reachable ? 'success' : 'warning'"
-                  size="small"
-                >
-                  {{ runtimeView.harness.reachable ? '已连接' : '未连接' }}
-                </el-tag>
-              </div>
-              <div v-if="runtimeView.harness.reachable && runtimeView.harness.gateway" :class="styles.serviceDetails">
-                <p>活跃租户: {{ runtimeView.harness.gateway.tenants ?? 0 }}</p>
-                <p>活跃会话: {{ runtimeView.harness.gateway.sessions ?? 0 }}</p>
-                <p>日 RMB 预算: {{ runtimeView.harness.gateway.budgetRmbDaily ?? 10 }} 元</p>
-              </div>
-              <div v-else :class="styles.serviceDetails">
-                <p>harness 服务未启动或不可达（{{ runtimeView.harness.error ?? '请单独部署 harness 服务' }}）</p>
-              </div>
-            </div>
           </div>
 
           <!-- 工具分类树 -->

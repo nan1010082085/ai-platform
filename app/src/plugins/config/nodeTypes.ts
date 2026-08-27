@@ -488,7 +488,7 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
     label: '自主智能体',
     icon: 'magic-stick',
     category: 'ai',
-    description: 'DSH harness 驱动的自主智能体：独立推理、调用工具、可中断等待人工审批',
+    description: '自主智能体：独立推理、调用工具、可中断等待人工审批',
     defaultData: {
       label: '自主智能体',
       agentTaskPrompt: '{{$input.message}}',

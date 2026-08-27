@@ -1,11 +1,10 @@
 /**
  * usePluginRuntime — Cordis 运行时视图（PluginCenterView 的"运行时"tab 数据源）。
  *
- * 只读暴露三个服务的分层状态 + harness 连接健康：
+ * 只读暴露三个服务的分层状态：
  * - chatTools：builtin / registry overlay / 前端 patch 三层清单与分类分组
  * - nodeTypes：内置目录 + 动态注册条目
  * - renderers：已注册渲染器清单
- * - harness：服务可达性 / 版本 / 网关统计
  *
  * 响应式桥接：订阅三个服务的变更事件，组件 scope 内自动退订。
  */
@@ -28,12 +27,6 @@ export interface CordisServiceStatus {
   details: string[]
 }
 
-export interface HarnessStatus {
-  reachable: boolean
-  gateway: Record<string, unknown> | null
-  error: string | null
-}
-
 export interface PluginRuntimeView {
   // Cordis 服务状态
   services: CordisServiceStatus[]
@@ -46,23 +39,6 @@ export interface PluginRuntimeView {
   nodeTypeBuiltin: number
   nodeTypeDynamic: number
   rendererCount: number
-  // harness 连接
-  harness: HarnessStatus
-}
-
-/** 探测 harness 可达性（GET /healthz） */
-async function checkHarnessHealth(): Promise<HarnessStatus> {
-  const base = import.meta.env.VITE_HARNESS_BASE_URL as string | undefined ?? '/schema-platform/harness'
-  try {
-    const resp = await fetch(`${base}/healthz`, {
-      signal: AbortSignal.timeout(3000),
-    })
-    if (!resp.ok) return { reachable: false, gateway: null, error: `HTTP ${resp.status}` }
-    const data = await resp.json()
-    return { reachable: true, gateway: data.gateway ?? null, error: null }
-  } catch (err) {
-    return { reachable: false, gateway: null, error: err instanceof Error ? err.message : String(err) }
-  }
 }
 
 export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () => void } {
@@ -125,29 +101,22 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
       nodeTypeBuiltin: nodeTypeList.length - nodeTypeDynamic.length,
       nodeTypeDynamic: nodeTypeDynamic.length,
       rendererCount: allRenderers.length,
-      harness: { reachable: false, gateway: null, error: null }, // 异步刷新
     }
   }
 
   const view = ref<PluginRuntimeView>(build())
 
-  const refresh = async () => {
-    const next = build()
-    const h = await checkHarnessHealth()
-    next.harness = h
-    view.value = next
+  const refresh = () => {
+    view.value = build()
   }
 
-  // 服务变更事件桥接（保留 harness 状态，不被 build() 重置）
-  const rebuildPreservingHarness = () => {
-    const prev = view.value.harness
-    const next = build()
-    next.harness = prev
-    view.value = next
+  // 服务变更事件桥接
+  const rebuild = () => {
+    view.value = build()
   }
-  const offTools = host.on('chatTools/changed', () => { rebuildPreservingHarness() })
-  const offNodes = host.on('nodeTypes/changed', () => { rebuildPreservingHarness() })
-  const offRenderers = host.on('renderers/changed', () => { rebuildPreservingHarness() })
+  const offTools = host.on('chatTools/changed', () => { rebuild() })
+  const offNodes = host.on('nodeTypes/changed', () => { rebuild() })
+  const offRenderers = host.on('renderers/changed', () => { rebuild() })
 
   if (getCurrentScope()) {
     onScopeDispose(() => {

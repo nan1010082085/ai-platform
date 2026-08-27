@@ -1,8 +1,8 @@
 # AI App Harness / 轨迹评级修复 — 实施计划（交 Claude）
 
-> **状态:** 开放 · 决策已锁定  
+> **状态:** ✅ CLOSED / 评分 A（2026-08-20）  
 > **范围:** 仅 `ai/app`（禁止改 `server/`、`harness/`）  
-> **证据:** 走查 Canvas `ai-app-code-uiux-2026-08-19`  
+> **证据:** Canvas `ai-app-reaudit-2026-08-20` · HEAD `36e16a6`  
 > **设计:** `docs/design/dsh-cordis-integration.md` §5.6 / §5.8 / §9
 
 **Goal:** 消掉 2026-08-19 走查 P0；Harness 对话 + 聊天内轨迹可演示；目标 **A-**（无开放 P0），再冲 **A**。
@@ -28,16 +28,17 @@
 
 | Task | Wave | Pri | 标题 | 状态 |
 |------|------|-----|------|------|
-| T1 | A | P0 | Harness SSE→StreamEvent + 消费 outcome | `- [x]` 热修：全文 set + outcome 立即结束（缺 stream.harness.spec → P2） |
-| T2 | A | P0 | harness finally 收尾 loading/status | `- [x]` 热修：传入 messages，修 ReferenceError |
-| T3 | A | P0 | 暴露 harnessSessionId；stop 清 SSE | `- [x]` 热修：cancelCurrent 共用 dispose |
+| T1 | A | P0 | Harness SSE→StreamEvent + 消费 outcome | `- [x]` |
+| T2 | A | P0 | harness finally 收尾 loading/status | `- [x]` |
+| T3 | A | P0 | 暴露 harnessSessionId；stop/cancel 清 SSE | `- [x]` |
 | T4 | B | P0 | 轨迹绑真实 session；无会话禁用 | `- [x]` |
 | T5 | B | P0 | TracePanel Loading/图标/错误态 | `- [x]` |
 | T6 | C | P1 | HITL agent **隔离**（已决策） | `- [x]` |
-| T7 | C | P1 | PluginRuntime 去 log + 启停 listAll | `- [~]` partial（Cordis 服务卡恒 running） |
-| T8 | C | P2 | UX：语言按钮 / harness 菜单 / interrupt i18n | `- [~]` partial（locale 键 / disabled 样式） |
+| T7 | C | P1 | PluginRuntime 去 log + listAll + probe 健康态 | `- [x]` |
+| T8 | C | P2 | UX：语言 / harness 菜单 / locale / disabled | `- [x]` |
+| T9 | C | P2 | stream.harness.spec.ts | `- [x]`（8 tests） |
 
-> 全量走查 2026-08-19：总评 **A-**。计划原全部 [x]，上表已按实审回写。详见 Canvas `ai-app-full-audit-2026-08-19`。
+> **重新走查 2026-08-20（HEAD 36e16a6）：总评 A。** 无开放 P0/P1。残留仅 P3 硬编码文案等。详见 Canvas `ai-app-reaudit-2026-08-20`。
 
 
 ---

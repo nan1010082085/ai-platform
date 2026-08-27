@@ -52,7 +52,6 @@ const settingsNav = computed<SettingsNavItem[]>(() => [
   { path: '/evaluation', label: t('layout.nav.evaluation'), icon: 'data-analysis', group: 'ops' },
   { path: '/debug/routing', label: t('layout.nav.routingDebug'), icon: 'search', group: 'ops' },
   { path: '/debug/rag', label: t('layout.nav.ragDebug'), icon: 'filter', group: 'ops' },
-  { path: '/debug/harness', label: t('layout.nav.harnessTrace'), icon: 'data-line', group: 'ops' },
 ])
 
 const settingsGroups = computed(() => {

@@ -1,22 +1,21 @@
 /**
- * @poc — DSH 智能体中断 API
+ * @poc — 智能体中断 API
  *
- * 待 M7（server executor + harness interrupt HTTP）再接线。
+ * 待 M7（server executor + interrupt HTTP）再接线。
  * 禁止 Chat UI / stream 消费此模块。
  *
  * 保留实现：M7 接线时直接使用，无需重写。
  *
  * M7 接线前置：
  * - server：autonomous-agent executor + 中断事件（nodeId/sessionId/subagentId）
- * - harness：continue + interrupt HTTP
  * - 前端：执行详情优先接线，再考虑 Chat
  */
 
 import { ref, computed } from 'vue'
 
-/** DSH 智能体中断（harness continuable subagent 语义） */
+/** 智能体中断 */
 export interface PendingAgentInterrupt {
-  /** harness 会话 ID */
+  /** 会话 ID */
   sessionId: string
   /** 工作流节点 ID（关联到设计器中的 autonomous-agent 节点） */
   nodeId: string

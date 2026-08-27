@@ -40,7 +40,6 @@ export default {
       evaluation: 'Evaluation',
       schedules: 'Schedules',
       templates: 'Templates',
-      harnessTrace: 'Harness Trace',
     },
   },
   chat: {

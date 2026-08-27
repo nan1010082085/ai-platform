@@ -24,12 +24,6 @@ import {
   emitChatResume,
   onChatEvent,
 } from '@schema-platform/platform-shared/socket'
-import {
-  startHarnessSession,
-  sendHarnessMessage,
-  subscribeHarnessEvents,
-  type HarnessSessionEvent,
-} from '@/api/harness'
 import { trackAi, reportAiError, AI_TELEMETRY_EVENTS } from '@/utils/telemetry'
 
 export const useStreamStore = defineStore('stream', () => {
@@ -55,12 +49,6 @@ export const useStreamStore = defineStore('stream', () => {
   /** 标记当前流是否被用户主动停止 */
   let streamStopped = false
 
-  // ---- Harness 状态 ----
-  /** 当前 harness 会话 ID（暴露给轨迹面板等消费方） */
-  const harnessSessionId = ref<string | null>(null)
-  /** harness SSE 退订函数 */
-  let harnessUnsubscribe: (() => void) | null = null
-
   // ---- Types ----
 
   type StreamConnectionStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting'
@@ -68,19 +56,7 @@ export const useStreamStore = defineStore('stream', () => {
   // ---- Actions ----
 
   /**
-   * 退订 harness SSE 并结束当前等待（cancel / stop / 收尾共用）
-   */
-  function disposeHarnessSubscription(): void {
-    if (harnessUnsubscribe) {
-      harnessUnsubscribe()
-      harnessUnsubscribe = null
-    }
-    activeDoneResolve?.()
-    activeDoneResolve = null
-  }
-
-  /**
-   * 取消正在进行的请求（server WS + harness SSE）
+   * 取消正在进行的请求
    */
   function cancelCurrent(): void {
     emitChatCancel()
@@ -88,7 +64,8 @@ export const useStreamStore = defineStore('stream', () => {
       unsubscribeChatEvent()
       unsubscribeChatEvent = null
     }
-    disposeHarnessSubscription()
+    activeDoneResolve?.()
+    activeDoneResolve = null
   }
 
   /**
@@ -101,7 +78,8 @@ export const useStreamStore = defineStore('stream', () => {
       unsubscribeChatEvent()
       unsubscribeChatEvent = null
     }
-    disposeHarnessSubscription()
+    activeDoneResolve?.()
+    activeDoneResolve = null
     retryCount.value = 0
     lastMessagePayload.value = null
   }
@@ -130,13 +108,7 @@ export const useStreamStore = defineStore('stream', () => {
     const ctx = handlers.getContext()
     const chatMode = ctx.chatSettings.chatMode ?? 'server'
 
-    // Harness 模式：通过 HTTP Session API 走 harness
-    if (chatMode === 'harness') {
-      await executeHarnessStream(content, assistantIndex, messages, handlers, ctx)
-      return
-    }
-
-    // Server 模式：通过 WebSocket 走 server（原有逻辑）
+    // Server 模式：通过 WebSocket 走 server
     let attempts = 0
 
     while (attempts <= MAX_AUTO_RETRIES) {
@@ -360,143 +332,6 @@ export const useStreamStore = defineStore('stream', () => {
     }
   }
 
-
-  /**
-   * 从 harness assistant/message 事件中提取文本（对齐 runner-http summarize）。
-   */
-  function textFromAssistantMessage(data?: Record<string, unknown>): string {
-    const message = data?.message as { content?: Array<{ type: string; text?: string }> } | undefined
-    if (!message?.content) return ''
-    return message.content
-      .filter((b) => b.type === 'text' && b.text)
-      .map((b) => b.text!)
-      .join('')
-  }
-
-  /**
-   * Harness 模式执行：通过 HTTP Session API 走 harness 服务
-   */
-  async function executeHarnessStream(
-    content: string,
-    assistantIndex: number,
-    messages: AIMessage[],
-    handlers: {
-      onStreamEvent: (event: StreamEvent, assistantIndex: number) => void
-      onDone: (conversationId?: string) => void
-      getContext: () => {
-        context: ChatContext
-        chatSettings: ChatSettings
-        currentSchema: Widget[] | null
-        currentFlow: FlowGraph | null
-        currentConversationId: string | null
-      }
-    },
-    ctx: ReturnType<typeof handlers.getContext>,
-  ): Promise<void> {
-    streamStatus.value = 'connecting'
-    streamStopped = false
-
-    let doneEventReceived = false
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
-
-    /**
-     * assistant/message 是全文快照（非 token delta），直接覆盖 content，避免 text_delta 追加重复。
-     */
-    function setAssistantContent(text: string): void {
-      const msg = messages[assistantIndex]
-      if (!msg || !text) return
-      msg.content = text
-    }
-
-    try {
-      // 创建或复用 harness 会话
-      if (!harnessSessionId.value) {
-        harnessSessionId.value = await startHarnessSession()
-      }
-
-      // 订阅 SSE 事件
-      if (harnessUnsubscribe) {
-        harnessUnsubscribe()
-        harnessUnsubscribe = null
-      }
-
-      const donePromise = new Promise<void>((resolve) => {
-        activeDoneResolve = resolve
-      })
-
-      harnessUnsubscribe = await subscribeHarnessEvents(harnessSessionId.value, (events) => {
-        for (const event of events) {
-          if (doneEventReceived) return
-
-          // 对齐 runner-http：assistant/message（全文）/ turn/end（结束）
-          if (event.type === 'assistant/message') {
-            setAssistantContent(textFromAssistantMessage(event.data))
-          } else if (event.type === 'turn/end') {
-            doneEventReceived = true
-            handlers.onStreamEvent({ type: 'done' }, assistantIndex)
-            activeDoneResolve?.()
-          }
-        }
-      })
-
-      streamStatus.value = 'connected'
-
-      // 发送消息（HTTP 在轮次停稳后返回）
-      const outcome = await sendHarnessMessage(harnessSessionId.value!, content)
-
-      // 无 turn/end 时：用 outcome 补全文（仅当仍为空），并立即结束等待
-      if (!doneEventReceived) {
-        if (outcome.text && !messages[assistantIndex]?.content) {
-          setAssistantContent(outcome.text)
-        }
-        doneEventReceived = true
-        activeDoneResolve?.()
-      }
-
-      // 等待结束（通常 outcome 路径已 resolve；仍保留超时兜底）
-      const timeoutPromise = new Promise<void>((resolve) => {
-        timeoutId = setTimeout(() => {
-          if (!doneEventReceived && !streamStopped) {
-            error.value = 'Stream timeout'
-            doneEventReceived = true
-            resolve()
-          } else {
-            resolve()
-          }
-        }, STREAM_TIMEOUT_MS)
-      })
-      await Promise.race([donePromise, timeoutPromise])
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err)
-      error.value = errorMsg
-      trackAi(AI_TELEMETRY_EVENTS.WS_RETRY_FAIL, { attempts: 0, error: errorMsg })
-    } finally {
-      if (timeoutId) clearTimeout(timeoutId)
-      loading.value = false
-      streamStatus.value = 'idle'
-      activeDoneResolve = null
-      if (harnessUnsubscribe) {
-        harnessUnsubscribe()
-        harnessUnsubscribe = null
-      }
-      if (messages[assistantIndex]?.status === 'streaming') {
-        messages[assistantIndex].status = 'received'
-      }
-      handlers.onDone(ctx.currentConversationId ?? undefined)
-    }
-  }
-
-  /**
-   * 清理 harness 会话
-   */
-  function cleanupHarness(): void {
-    if (harnessUnsubscribe) {
-      harnessUnsubscribe()
-      harnessUnsubscribe = null
-    }
-    harnessSessionId.value = null
-  }
-
   return {
     // state
     streamStatus,
@@ -504,12 +339,10 @@ export const useStreamStore = defineStore('stream', () => {
     lastMessagePayload,
     loading,
     error,
-    harnessSessionId,
     // constants
     MAX_AUTO_RETRIES,
     // actions
     cancelCurrent,
-    cleanupHarness,
     stopGeneration,
     executeStream,
     executeResume,

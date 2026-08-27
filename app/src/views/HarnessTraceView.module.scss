@@ -119,3 +119,22 @@
   color: var(--sfp-text-secondary, #909399);
   font-size: 12px;
 }
+
+.traceColumn {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.traceColumn .columnTitle {
+  margin: 16px 16px 0;
+}
+
+.traceEmbed {
+  flex: 1;
+  min-height: 360px;
+  margin-top: 8px;
+  border-top: 1px solid var(--sfp-border-light, #ebedf3);
+  overflow: hidden;
+}

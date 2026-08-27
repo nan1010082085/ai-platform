@@ -6,7 +6,13 @@ UI/UX 与实现计划索引。走查 Canvas 证据保留，不单独删除。
 
 | 文档 | 说明 | 状态 |
 |------|------|------|
-| [2026-08-19-harness-trace-rating-fix.md](./2026-08-19-harness-trace-rating-fix.md) | Harness/轨迹修复 → 已达 **A-**；残留 P1（outcome 结束/全文替换/`cancelCurrent`）冲 A | **A- 收口** · 残留开放 |
+| — | 当前无必须实施的评级修复项 | 评分 **A**（2026-08-20） |
+
+## 近期收口
+
+| 文档 | 说明 | 状态 |
+|------|------|------|
+| [2026-08-19-harness-trace-rating-fix.md](./2026-08-19-harness-trace-rating-fix.md) | Harness/轨迹 T1–T9 → **A** | 收口 · 残留仅 P3 |
 
 ## 已关闭
 
@@ -19,7 +25,8 @@ UI/UX 与实现计划索引。走查 Canvas 证据保留，不单独删除。
 
 | Canvas | 说明 |
 |--------|------|
-| `ai-app-full-audit-2026-08-19.canvas.tsx` | 全量走查（代码+Task+UX）· 总评 A- |
+| `ai-app-reaudit-2026-08-20.canvas.tsx` | 重新走查 · 总评 A |
+| `ai-app-full-audit-2026-08-19.canvas.tsx` | 全量走查（代码+Task+UX）· 历史 A- |
 | `ai-app-rating-fix-regression.canvas.tsx` | 评级修复回归 |
 | `ai-app-rating-fix-tasks.canvas.tsx` | T1–T8 任务板 |
 | `ai-app-code-uiux-2026-08-19.canvas.tsx` | 2026-08-19 代码+UIUX 走查（B+ / Harness C+） |

@@ -45,7 +45,6 @@ export default {
       evaluation: '评测中心',
       schedules: '调度管理',
       templates: '模板管理',
-      harnessTrace: 'Harness 轨迹',
     },
   },
   chat: {

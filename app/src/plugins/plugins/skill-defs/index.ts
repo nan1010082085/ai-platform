@@ -2,7 +2,7 @@
  * SkillDefs Cordis Service：技能注册表（DSH SKILL.md 契约对齐）。
  *
  * 把平台 registry 的 skills 快照转成 DSH SKILL.md 兼容的 SkillDef，
- * 供前端展示 + 未来 harness 直接消费同一数据源。
+ * 供前端展示。
  *
  * 分层：overlay（registry 快照，含租户过滤）+ patch（前端本地覆盖）
  */

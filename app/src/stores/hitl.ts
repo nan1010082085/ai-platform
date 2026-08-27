@@ -5,8 +5,8 @@
  *
  * Chat UI 唯一正式路径：pendingInterrupt（server 侧 workflow 引擎暂停节点）。
  *
- * DSH 智能体中断 API 已隔离到 `hitl.agent.poc.ts`（@poc — 未接线）。
- * 待 M7（server executor + harness interrupt HTTP）再接线；禁止 Chat 消费。
+ * 智能体中断 API 已隔离到 `hitl.agent.poc.ts`（@poc — 未接线）。
+ * 待 M7（server executor + interrupt HTTP）再接线；禁止 Chat 消费。
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'

@@ -26,8 +26,6 @@ import {
   type AiChatPanelEmits,
 } from './chat/chatPanelTypes'
 import type { AgentType, MentionReference } from '@/types'
-import AgentTracePanel from './AgentTracePanel.vue'
-import { useAgentTrace } from '@/composables/useAgentTrace'
 
 export type { AiChatPanelProps }
 
@@ -44,7 +42,6 @@ const streamStore = useStreamStore()
 const interruptFeedback = ref('')
 const router = useRouter()
 const tracePanelVisible = ref(false)
-const { trace, loading: traceLoading, error: traceError, startTracking, stopTracking, refreshTrace } = useAgentTrace()
 const { shouldHideSubAppMenu } = useShellEmbed()
 const { loadPublishedWorkflows, getWorkflowName } = usePublishedAgentWorkflows()
 
@@ -199,16 +196,6 @@ function handleSelectStarterAgent(agent: AgentType): void {
 
 function toggleTracePanel(): void {
   tracePanelVisible.value = !tracePanelVisible.value
-  if (tracePanelVisible.value) {
-    const sessionId = streamStore.harnessSessionId
-    if (!sessionId) {
-      tracePanelVisible.value = false
-      return
-    }
-    void startTracking(sessionId)
-  } else {
-    stopTracking()
-  }
 }
 </script>
 
@@ -313,20 +300,6 @@ function toggleTracePanel(): void {
             </button>
           </div>
         </el-popover>
-        <el-tooltip
-          :content="streamStore.harnessSessionId ? 'Agent 轨迹' : '当前无 Harness 会话'"
-          placement="bottom"
-          :show-after="300"
-        >
-          <button
-            :class="[$style.actionBtn, { [$style.actionBtnActive]: tracePanelVisible }]"
-            :disabled="!streamStore.harnessSessionId"
-            aria-label="Agent 轨迹"
-            @click="toggleTracePanel"
-          >
-            <AppIcon name="data-line" :size="14" />
-          </button>
-        </el-tooltip>
         <el-tooltip :content="t('chat.chatSettings')" placement="bottom" :show-after="300">
           <button :class="$style.actionBtn" :aria-label="t('chat.chatSettings')" @click="emit('open-settings')">
             <AppIcon name="setting" :size="14" />
@@ -420,19 +393,6 @@ function toggleTracePanel(): void {
         </el-button>
       </div>
     </div>
-
-        <!-- Agent 轨迹面板 -->
-    <transition name="slide">
-      <div v-if="tracePanelVisible" :class="$style.tracePanelWrapper">
-        <AgentTracePanel
-          :trace="trace"
-          :loading="traceLoading"
-          :error="traceError"
-          :session-id="streamStore.harnessSessionId ?? ''"
-          @retry="refreshTrace"
-        />
-      </div>
-    </transition>
 
     <div :class="$style.inputArea">
       <AiRagSearch
