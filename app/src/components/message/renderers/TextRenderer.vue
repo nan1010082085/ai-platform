@@ -1,7 +1,10 @@
 <script setup lang="ts">
+/**
+ * TextRenderer — Markdown 正文渲染
+ * 渲染引擎收敛到 @apform-ui/core renderMarkdown
+ */
 import { computed } from 'vue'
-import { marked } from 'marked'
-import DOMPurify from 'dompurify'
+import { renderMarkdown } from '@apform-ui/core'
 
 const props = defineProps<{
   /** Markdown / plain text content */
@@ -14,34 +17,19 @@ const emit = defineEmits<{
   copy: []
 }>()
 
-// ---- Markdown rendering ----
-
-/**
- * Render Markdown to sanitized HTML.
- * - Uses `marked` with `breaks: true` for GFM-style line breaks.
- * - Wraps <table> in a scrollable container for horizontal overflow.
- * - Sanitizes via DOMPurify, preserving the `class` attribute for tableScroll.
- */
-function renderMarkdown(raw: string): string {
-  if (!raw) return ''
-  const rawHtml = marked.parse(raw, { breaks: true }) as string
-  // Wrap <table> in a horizontally scrollable div
-  const wrapped = rawHtml
-    .replace(/<table>/g, '<div class="tableScroll"><table>')
-    .replace(/<\/table>/g, '</table></div>')
-  return DOMPurify.sanitize(wrapped, { ADD_ATTR: ['class'] })
-}
-
 const renderedHtml = computed(() => renderMarkdown(props.content))
 
-// ---- Copy ----
-
+/**
+ * 复制原文到剪贴板
+ */
 function handleCopy(): void {
   if (props.content) {
     navigator.clipboard.writeText(props.content)
   }
   emit('copy')
 }
+
+defineExpose({ handleCopy })
 </script>
 
 <template>

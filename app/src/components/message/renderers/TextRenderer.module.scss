@@ -7,6 +7,7 @@
 }
 
 /* ---- Table scroll wrapper ---- */
+.markdownContent :global(.table-scroll),
 .markdownContent :global(.tableScroll) {
   overflow-x: auto;
   margin: 8px 0 12px;

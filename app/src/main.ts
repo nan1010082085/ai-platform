@@ -1,9 +1,13 @@
 import 'element-plus/dist/index.css'
+import '@apform-ui/core/design-tokens.css'
 import '@schema-platform/platform-shared/styles/theme.scss'
 import '@google/model-viewer' // register <model-viewer> custom element
 import '@schema-platform/platform-shared/styles/css-variables.scss'
 import './styles/ai-theme-bridge.scss'
 import './styles/graphEdgeStates.scss'
+
+// FieldRow / HintText / SectionToggle 等 core 组件样式
+import '@apform-ui/core/style.css'
 
 import { createApp, type App } from 'vue'
 import { createPinia } from 'pinia'
