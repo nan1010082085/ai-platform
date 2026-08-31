@@ -1,11 +1,10 @@
 <script setup lang="ts">
+import { PageShell, PageHeader } from '@apform-ui/core'
 /**
  * Agent 性能监控面板
  */
 import { ElMessage } from 'element-plus'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import PageShell from '@/components/common/PageShell.vue'
 import CostTrendCard from '@/components/monitor/CostTrendCard.vue'
 import MonitorSummaryCard from '@/components/monitor/MonitorSummary.vue'
 import AgentDistribution from '@/components/monitor/AgentDistribution.vue'

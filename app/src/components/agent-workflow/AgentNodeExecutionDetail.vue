@@ -244,7 +244,7 @@ async function copyJson(label: string, value: unknown) {
       <div :class="styles.sectionHeader">
         <div :class="styles.sectionTitle">输入数据</div>
         <button :class="styles.copyBtn" type="button" @click="copyJson('输入数据', record.input)">
-          复制
+          <AppIcon name="copy-document" :size="12" />
         </button>
       </div>
       <pre :class="[styles.jsonPre, expanded && styles.jsonPreExpanded]">{{ formatJson(record.input) }}</pre>
@@ -254,7 +254,7 @@ async function copyJson(label: string, value: unknown) {
       <div :class="styles.sectionHeader">
         <div :class="styles.sectionTitle">输出数据</div>
         <button :class="styles.copyBtn" type="button" @click="copyJson('输出数据', record.output)">
-          复制
+          <AppIcon name="copy-document" :size="12" />
         </button>
       </div>
       <pre :class="[styles.jsonPre, expanded && styles.jsonPreExpanded]">{{ formatJson(record.output) }}</pre>

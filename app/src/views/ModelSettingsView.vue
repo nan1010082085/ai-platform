@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PageShell, PageHeader } from '@apform-ui/core'
 /**
  * 模型中心 - 供应商 + 模型两级管理
  *
@@ -11,8 +12,6 @@
 import { onMounted } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import PageShell from '@/components/common/PageShell.vue'
 import QuickAddPresets from '@/components/model-settings/QuickAddPresets.vue'
 import ProviderList from '@/components/model-settings/ProviderList.vue'
 import ProviderDialog from '@/components/model-settings/ProviderDialog.vue'

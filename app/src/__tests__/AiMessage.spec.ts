@@ -87,7 +87,7 @@ describe('AiMessage', () => {
       },
     })
     // Loading placeholder contains AiLoadingDots
-    expect(wrapper.findComponent({ name: 'AiLoadingDots' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'LoadingDots' }).exists()).toBe(true)
   })
 
   describe('F2: rAF-batched content rendering for assistant text step', () => {

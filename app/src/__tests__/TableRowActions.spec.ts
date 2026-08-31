@@ -1,7 +1,7 @@
+import { TableRowActions, type TableRowAction } from '@apform-ui/core'
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
-import TableRowActions, { type TableRowAction } from '@/components/common/TableRowActions.vue'
 
 vi.mock('@schema-platform/platform-shared/components/common/AppIcon.vue', () => ({
   default: defineComponent({

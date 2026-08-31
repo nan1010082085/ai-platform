@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PageShell, PageHeader } from '@apform-ui/core'
 /**
  * WorkflowIntegrationView - 工作流集成测试 Playground
  *
@@ -16,8 +17,6 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import PageShell from '@/components/common/PageShell.vue'
 import HitlConfirmQuestions from '@/components/agent-workflow/HitlConfirmQuestions.vue'
 import { BASE_URL } from '@/api/aiApi/base'
 import { listWorkflows, rotateWorkflowInvokeKey } from '@/api/agentWorkflowApi'

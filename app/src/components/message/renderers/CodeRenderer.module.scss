@@ -28,17 +28,15 @@
 .copyBtn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
   border: 1px solid var(--ai-border-light, #EBEDF3);
   background: transparent;
   color: var(--ai-text-secondary, #666666);
-  font-family: inherit;
 
   &:hover {
     background: var(--ai-bg-hover, #E5EFF6);

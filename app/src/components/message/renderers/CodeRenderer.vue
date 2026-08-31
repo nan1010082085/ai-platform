@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { JsonCard, JsonDetailDialog } from '@apform-ui/core'
 /**
  * CodeRenderer — 代码/JSON 渲染组件
  *
@@ -12,8 +13,6 @@
 import { ref, computed } from 'vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import JsonCard from '@/components/JsonCard.vue'
-import JsonDetailDialog from '@/components/JsonDetailDialog.vue'
 
 export interface CodeRendererProps {
   /** 代码内容 */
@@ -112,7 +111,6 @@ function openJsonDialog(title: string, content: string): void {
         <span v-if="language" :class="$style.langLabel">{{ language }}</span>
         <button :class="$style.copyBtn" @click="handleCopy">
           <AppIcon name="copy-document" :size="12" />
-          复制
         </button>
       </div>
       <pre :class="$style.codePre"><code>{{ formattedContent }}</code></pre>
@@ -121,7 +119,7 @@ function openJsonDialog(title: string, content: string): void {
 
   <!-- JSON detail dialog -->
   <JsonDetailDialog
-    v-model:visible="jsonDialogVisible"
+    v-model="jsonDialogVisible"
     :title="jsonDialogTitle"
     :content="jsonDialogContent"
   />

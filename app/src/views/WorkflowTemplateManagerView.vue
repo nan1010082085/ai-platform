@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PageShell, PageHeader } from '@apform-ui/core'
 /**
  * WorkflowTemplateManagerView - 工作流模板管理
  *
@@ -8,8 +9,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import PageShell from '@/components/common/PageShell.vue'
 import { useAiLocale } from '@/composables/useAiLocale'
 import {
   listTemplates,

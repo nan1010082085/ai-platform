@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PageShell, PageHeader } from '@apform-ui/core'
 /**
  * RAG 知识库管理页面
  *
@@ -10,8 +11,6 @@ import { useRouter } from 'vue-router'
 import { message, confirmDanger } from '@schema-platform/platform-shared/utils/message'
 import { useDataLoading } from '@schema-platform/platform-shared/utils/useDataLoading'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import PageShell from '@/components/common/PageShell.vue'
 import {
   getRagStatus,
   reindexAllRag,

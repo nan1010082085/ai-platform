@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PageShell, PageHeader } from '@apform-ui/core'
 /**
  * MemoryManagementView - 长程记忆管理
  *
@@ -10,8 +11,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import PageShell from '@/components/common/PageShell.vue'
 import { useAuthStore } from '@schema-platform/platform-shared/utils/stores/authStore'
 import { listMemory, deleteMemory, recallMemory, type MemoryItem, type MemoryNamespace } from '@/api/aiApi'
 

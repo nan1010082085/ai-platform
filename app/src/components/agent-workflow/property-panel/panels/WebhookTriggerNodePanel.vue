@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import SectionToggle from '../SectionToggle.vue'
 import FieldRow from '../FieldRow.vue'
 import VariableReferencePanel from './VariableReferencePanel.vue'
@@ -67,7 +68,9 @@ function copySecret() {
         size="small"
       >
         <template #append>
-          <el-button @click="copySecret">复制</el-button>
+          <el-button @click="copySecret">
+            <AppIcon name="copy-document" :size="12" />
+          </el-button>
         </template>
       </el-input>
     </FieldRow>

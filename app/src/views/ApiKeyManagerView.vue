@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PageShell, PageHeader, CardTable, TableRowActions, type TableRowAction } from '@apform-ui/core'
 /**
  * 我的集成密钥 — 管理 /api/keys CRUD
  *
@@ -11,8 +12,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from '@schema-platform/platform-shared'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
-import CardTable from '@/components/common/CardTable.vue'
-import TableRowActions, { type TableRowAction } from '@/components/common/TableRowActions.vue'
 import {
   createApiKey,
   getApiKeys,
@@ -22,8 +21,6 @@ import {
   type ApiKeyStatus,
 } from '@/api/apiKeyApi'
 import styles from './ApiKeyManagerView.module.scss'
-import PageShell from '@/components/common/PageShell.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
 import AppPagination from '@schema-platform/platform-shared/components/common/AppPagination.vue'
 import { DEFAULT_PAGE_SIZE } from '@schema-platform/platform-shared/utils/pagination'
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PageShell, PageHeader } from '@apform-ui/core'
 /**
  * RagDebugView - RAG 检索调试界面
  *
@@ -13,8 +14,6 @@
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import PageShell from '@/components/common/PageShell.vue'
 import { debugRagSearch } from '@/api/aiApi'
 import { resolveErrorText } from '@/constants/errorCodes'
 import type { RagDebugItem, RagDebugFilter, RagDebugResult } from '@/types'

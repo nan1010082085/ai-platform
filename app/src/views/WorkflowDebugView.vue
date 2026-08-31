@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PageShell, PageHeader } from '@apform-ui/core'
 /**
  * WorkflowDebugView - 工作流调用调试界面
  *
@@ -11,8 +12,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import PageShell from '@/components/common/PageShell.vue'
 import NodeTraceList, { NODE_STATUS_TAG_TYPE, NODE_STATUS_LABELS } from '@/components/agent-workflow/NodeTraceList.vue'
 import AgentNodeExecutionDetail from '@/components/agent-workflow/AgentNodeExecutionDetail.vue'
 import * as api from '@/api/agentWorkflowApi'

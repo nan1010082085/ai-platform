@@ -89,7 +89,7 @@ function sendBack() {
         >预览</button>
         <button v-if="isJson" type="button" :class="styles.toolBtn" @click="formatJson">格式化</button>
         <button type="button" :class="styles.toolBtn" @click="copy">
-          <AppIcon name="document-copy" :size="12" /> 复制
+          <AppIcon name="document-copy" :size="12" />
         </button>
       </div>
     </div>

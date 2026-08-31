@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PageShell, PageHeader, CardTable } from '@apform-ui/core'
 /**
  * 插件中心 — 只读浏览服务端 Registry（Expert / Tool / MCP / Skill）。
  * 配置变更通过 Git / config/plugins 或 plugin:install 完成。
@@ -7,9 +8,6 @@
 import { ref, computed, onMounted } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
-import CardTable from '@/components/common/CardTable.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import PageShell from '@/components/common/PageShell.vue'
 import PluginEditor from '@/components/plugins/PluginEditor.vue'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
 import { usePluginRuntime } from '@/composables/usePluginRuntime'

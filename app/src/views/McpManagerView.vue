@@ -1,12 +1,11 @@
 <script setup lang="ts">
+import { PageShell, PageHeader } from '@apform-ui/core'
 /**
  * MCP 管理页面 - 浏览、测试、健康监控 MCP 工具
  */
 import { ref, computed, onMounted } from 'vue'
 import { message } from '@schema-platform/platform-shared/utils/message'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import PageShell from '@/components/common/PageShell.vue'
 import {
   testMcpTool,
   type McpTestResult,

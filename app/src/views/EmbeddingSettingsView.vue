@@ -5,12 +5,11 @@
  */
 
 <script setup lang="ts">
+import { PageShell, PageHeader } from '@apform-ui/core'
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import PageShell from '@/components/common/PageShell.vue'
 import {
   getEmbeddingConfig,
   updateEmbeddingConfig,

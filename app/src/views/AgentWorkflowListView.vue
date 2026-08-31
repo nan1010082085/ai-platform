@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PageShell, PageHeader } from '@apform-ui/core'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -9,7 +10,6 @@ import AppDialog from '@schema-platform/platform-shared/components/common/AppDia
 import AgentWorkflowTemplatePreviewDialog from '@/components/agent-workflow/AgentWorkflowTemplatePreviewDialog.vue'
 import WorkflowTemplateCard from '@/components/agent-workflow/WorkflowTemplateCard.vue'
 import WorkflowInvokeInfo from '@/components/WorkflowInvokeInfo.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
 import * as api from '@/api/agentWorkflowApi'
 import {
   TEMPLATE_ICONS,
@@ -18,7 +18,6 @@ import {
 } from '@/composables/useWorkflowTemplates'
 import { useWorkflowActions } from '@/composables/useWorkflowActions'
 import styles from './AgentWorkflowListView.module.scss'
-import PageShell from '@/components/common/PageShell.vue'
 import AppPagination from '@schema-platform/platform-shared/components/common/AppPagination.vue'
 import { useClientPagination } from '@schema-platform/platform-shared/utils/useClientPagination'
 

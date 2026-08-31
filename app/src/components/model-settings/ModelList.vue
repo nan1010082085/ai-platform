@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { TableRowActions, type TableRowAction } from '@apform-ui/core'
 import { computed } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import TableRowActions, { type TableRowAction } from '@/components/common/TableRowActions.vue'
 import AppPagination from '@schema-platform/platform-shared/components/common/AppPagination.vue'
 import { useClientPagination } from '@schema-platform/platform-shared/utils/useClientPagination'
 import type { Provider } from '@/api/providerApi'

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { LoadingDots } from '@apform-ui/core'
 /**
  * AiMessageContent — 消息内容调度器
  *
@@ -17,7 +18,6 @@ function getRenderer(step: StepData) {
 import DocumentRenderer from './renderers/DocumentRenderer.vue'
 import DocumentAttachmentCard from '@/components/document/DocumentAttachmentCard.vue'
 import DocumentSummaryCard from '@/components/document/DocumentSummaryCard.vue'
-import AiLoadingDots from '@/components/AiLoadingDots.vue'
 import WorkflowExecutionTimeline from '@/components/workflow/WorkflowExecutionTimeline.vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import { getDocumentFileUrl } from '@/api/aiApi'
@@ -270,7 +270,7 @@ const documentEvents = computed(() => ({
       v-if="loading && steps.length === 0 && !workflowExecution?.nodeRecords?.length"
       :class="$style.loadingPlaceholder"
     >
-      <AiLoadingDots />
+      <LoadingDots />
     </div>
 
     <!-- Step card list -->
