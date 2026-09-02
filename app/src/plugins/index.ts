@@ -1,7 +1,7 @@
 /**
  * 插件适配层唯一出口。
  *
- * 铁律（见 ai/docs/design/dsh-cordis-integration.md）：
+ * 铁律（见 ai/docs/design/plugin-architecture-principles.md）：
  * - 业务代码只允许 `import ... from '@/plugins'`，禁止直接 import `@deepseek-ai/cordis`
  * - 插件（代码）静态装载；工具（数据）动态注册
  * - 配置分层：builtin < registry overlay < local patch
