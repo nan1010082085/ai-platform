@@ -59,12 +59,15 @@ cd shared && pnpm build  # tsc 编译
 
 ## 插件体系规则（Cordis 启发，现行）
 
-依据：`ai/docs/design/plugin-architecture-principles.md`。app 侧适配层在 `app/src/plugins/`。独立 harness 运行时已清理；保留客户端 Cordis 容器。
+依据：`ai/docs/design/plugin-architecture-principles.md` · 完整说明 `ai/docs/design/plugin-foundation-complete.md` · Registry 加载 `ai/docs/design/cordis-centric-registry-loading.md`。  
+app 侧适配层在 `app/src/plugins/`。独立 harness 已清理；保留客户端 Cordis 容器。
 
-1. **优先插件化**：分支路由、测试探针、工具/节点/渲染等扩展点走 Service 注册，禁止在业务里堆砌常量/switch/散落 registry。
-2. **适配层唯一出口**：业务代码只允许 `import ... from '@/plugins'`，禁止直接 import `@deepseek-ai/cordis`。API 变更只影响适配层内部。
+1. **优先插件化**：分支路由、导航、测试探针、工具/节点/渲染/属性面板等扩展点走 Service 或功能模块贡献，禁止在业务里堆砌常量/switch/散落 registry。
+2. **适配层唯一出口**：业务代码只允许 `import ... from '@/plugins'`，禁止直接 import `@deepseek-ai/cordis`。
 3. **版本锁定**：`@deepseek-ai/cordis` 精确版本（无 `^`）；升级须读 changelog 评审后统一升。
-4. **静态插件 / 动态数据**：插件代码随宿主静态装载；工具、workflow、skill 是数据，由 Service 动态注册。workflow 永远是数据不是插件；浏览器端禁止 loader 运行时动态 import。
-5. **禁双轨**：扩展点迁入 Service 后必须删除旧常量/旧实现，逐个回归 `__tests__`，行为不变。
-6. **server/ 隔离**：app 不得修改 `server/`；跨项目改动先告知用户再动。
+4. **静态插件 / 动态数据**：插件代码随宿主静态装载；工具、workflow、skill 是数据。功能模块在 `shellRoutesPlugin` apply 内同步 `register` 路由（保证 Service 已注入）。浏览器端禁止 loader 运行时动态 import。
+5. **禁双轨**：扩展点迁入 Service 后必须删除旧常量/旧 Map；Palette/Canvas/Layout/router 不得再维护第二套清单。
+6. **壳层 Service**：`nodePanels` / `shellNav` / `shellRoutes`；能力 Service：`chatTools` / `nodeTypes` / `renderers` / `skillDefs` / `mcpDefs`；Registry 灌数唯一入口：`registryBridge.ingest`（业务禁止直写 `setOverlay`/`setDynamic`/`syncFromRegistry`）。
+7. **官方 Pack**：静态适配器写入 **builtin**（如 `packs/example-support`），须 `ctx.inject([...services], …)`；租户/市场包仍走 snapshot → bridge overlay。
+8. **server/ 隔离**：app 不得修改 `server/`；跨项目改动先告知用户再动。
 

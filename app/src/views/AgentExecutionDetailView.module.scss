@@ -40,6 +40,29 @@
   justify-self: end;
 }
 
+/** 本次执行运行时摘要：排障不必另开监控页 */
+.runtimeStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 6px 12px;
+  flex-shrink: 0;
+  background: var(--el-fill-color-lighter, #f5f7fa);
+  border-bottom: 1px solid var(--border-color-lighter);
+  font-size: 12px;
+  color: var(--el-text-color-secondary, #909399);
+}
+
+.runtimeItem strong {
+  color: var(--el-text-color-primary, #303133);
+  font-weight: 600;
+}
+
+.runtimeWarn {
+  color: var(--el-color-danger);
+}
+
 .iconBtn {
   display: flex;
   align-items: center;

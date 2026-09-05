@@ -62,7 +62,7 @@ async function handleExport(command: string, id: string): Promise<void> {
         <div :class="$style.itemTitle">{{ conv.title }}</div>
         <div :class="$style.itemMeta">
           <el-tag size="small" :type="conv.activeAgent === 'editor' ? 'success' : 'primary'">
-            {{ conv.activeAgent === 'editor' ? 'Editor' : 'Flow' }}
+            {{ conv.activeAgent === 'editor' ? '表单' : conv.activeAgent === 'flow' ? '流程' : '对话' }}
           </el-tag>
           <span :class="$style.itemTime">{{ formatTime(conv.updatedAt) }}</span>
           <el-dropdown trigger="click" @command="(cmd: string) => handleExport(cmd, conv.id)" @click.stop>

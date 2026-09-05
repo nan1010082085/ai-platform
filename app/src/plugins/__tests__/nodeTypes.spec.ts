@@ -29,12 +29,13 @@ describe('nodeTypes service', () => {
     await stopPluginHost()
   })
 
-  it('宿主启动后内置目录可用，行为与迁移前一致', async () => {
+  it('内置含合流；tools 分类无预填 toolName 的平铺项', async () => {
     const host = await startPluginHost()
-    expect(AGENT_PALETTE_ITEMS.length).toBeGreaterThan(30)
-    expect(AGENT_NODE_COLORS['manual-trigger']).toBe('#67C23A')
-    expect(host.nodeTypes.get('llm')?.label).toBe('LLM')
-    expect(host.nodeTypes.list()).toHaveLength(AGENT_PALETTE_ITEMS.length)
+    expect(host.nodeTypes.get('merge')?.label).toBe('合流')
+    const toolsWithName = host.nodeTypes
+      .list()
+      .filter((i) => i.category === 'tools' && Boolean(i.defaultData.toolName))
+    expect(toolsWithName).toHaveLength(0)
   })
 
   it('静态兜底：expert/tool 泛型类型返回占位条目', () => {
@@ -52,7 +53,7 @@ describe('nodeTypes service', () => {
     host.nodeTypes.setDynamic([makeItem('llm', { label: 'LLM 覆盖' })])
     expect(host.nodeTypes.get('llm')?.label).toBe('LLM 覆盖')
     expect(host.nodeTypes.listDynamic()).toHaveLength(1)
-    expect(host.nodeTypes.get('agent-team')?.label).toBe('Agent 团队') // 已回落内置
+    expect(host.nodeTypes.get('agent-team')?.label).toBe('智能团队') // 已回落内置
   })
 
   it('同 type 多条目共存（registry 专家/工具泛型类型）', async () => {

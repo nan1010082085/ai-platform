@@ -14,6 +14,8 @@ import { useAuthStore } from '@schema-platform/platform-shared/utils/stores/auth
 import { stopTokenRefreshSchedule } from '@schema-platform/platform-shared/utils/authSession'
 import { useShellEmbed } from '@/composables/useShellEmbed'
 import { useAiLocale } from '@/composables/useAiLocale'
+import { getPluginHost, serviceState } from '@/plugins'
+import type { ShellSettingsGroup } from '@/plugins/plugins/shell-nav/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,17 +23,22 @@ const authStore = useAuthStore()
 const { isShellEmbedded, shouldHideSubAppMenu, goToShellHome } = useShellEmbed()
 const { t, locale, toggleLocale } = useAiLocale()
 
-// 功能项：平铺顶导
-const primaryNav = computed(() => [
-  { path: '/', label: t('layout.nav.chat'), icon: 'chat-dot-round' },
-  { path: '/workflows', label: t('layout.nav.workflows'), icon: 'connection' },
-  { path: '/rag', label: t('layout.nav.rag'), icon: 'notebook' },
-  { path: '/plugins', label: t('layout.nav.plugins'), icon: 'box' },
-  { path: '/monitor', label: t('layout.nav.monitor'), icon: 'data-line' },
-])
+const host = getPluginHost()
+const navItems = serviceState(host, 'shellNav/changed', () => host.shellNav.list())
 
-// 设置项：收进右上角下拉，按组分隔
-type SettingsGroup = 'config' | 'integration' | 'ops'
+/** 主路由仅对话 / 工作流（由 shellNav 贡献） */
+const primaryNav = computed(() =>
+  navItems.value
+    .filter((i) => i.group === 'primary')
+    .map((i) => ({
+      path: i.path,
+      label: t(i.labelKey),
+      icon: i.icon,
+    })),
+)
+
+/** 设置项：收进右上角下拉，按组分隔 */
+type SettingsGroup = ShellSettingsGroup
 
 interface SettingsNavItem {
   path: string
@@ -40,19 +47,16 @@ interface SettingsNavItem {
   group: SettingsGroup
 }
 
-const settingsNav = computed<SettingsNavItem[]>(() => [
-  { path: '/settings/models', label: t('layout.nav.models'), icon: 'cpu', group: 'config' },
-  { path: '/settings/embedding', label: t('layout.nav.embedding'), icon: 'collection', group: 'config' },
-  { path: '/settings/templates', label: t('layout.nav.templates'), icon: 'document-checked', group: 'config' },
-  { path: '/memory', label: t('layout.nav.memory'), icon: 'data-board', group: 'config' },
-  { path: '/integration', label: t('layout.nav.integration'), icon: 'link', group: 'integration' },
-  { path: '/settings/keys', label: t('layout.nav.keys'), icon: 'key', group: 'integration' },
-  { path: '/mcp', label: t('layout.nav.mcp'), icon: 'set-up', group: 'integration' },
-  { path: '/schedules', label: t('layout.nav.schedules'), icon: 'alarm-clock', group: 'ops' },
-  { path: '/evaluation', label: t('layout.nav.evaluation'), icon: 'data-analysis', group: 'ops' },
-  { path: '/debug/routing', label: t('layout.nav.routingDebug'), icon: 'search', group: 'ops' },
-  { path: '/debug/rag', label: t('layout.nav.ragDebug'), icon: 'filter', group: 'ops' },
-])
+const settingsNav = computed<SettingsNavItem[]>(() =>
+  navItems.value
+    .filter((i) => i.group === 'settings')
+    .map((i) => ({
+      path: i.path,
+      label: t(i.labelKey),
+      icon: i.icon,
+      group: i.settingsGroup ?? 'config',
+    })),
+)
 
 const settingsGroups = computed(() => {
   const groupOrder: SettingsGroup[] = ['config', 'integration', 'ops']
@@ -69,7 +73,9 @@ const languageLabel = computed(() =>
 const activeNav = computed(() => {
   if (route.path === '/') return '/'
   if (route.path.startsWith('/workflows') || route.path.startsWith('/executions')) return '/workflows'
+  if (route.path.startsWith('/rag')) return '/rag'
   if (route.path.startsWith('/plugins')) return '/plugins'
+  if (route.path.startsWith('/monitor')) return '/monitor'
   if (route.path.startsWith('/settings/models')) return '/settings/models'
   if (route.path.startsWith('/settings/embedding')) return '/settings/embedding'
   if (route.path.startsWith('/settings/templates')) return '/settings/templates'
@@ -77,6 +83,9 @@ const activeNav = computed(() => {
   if (route.path.startsWith('/debug')) return route.path
   if (route.path.startsWith('/evaluation')) return '/evaluation'
   if (route.path.startsWith('/schedules')) return '/schedules'
+  if (route.path.startsWith('/memory')) return '/memory'
+  if (route.path.startsWith('/integration')) return '/integration'
+  if (route.path.startsWith('/mcp')) return '/mcp'
   return route.path
 })
 
@@ -109,7 +118,7 @@ function handleLogout() {
           </button>
         </el-tooltip>
         <div :class="$style.logo" @click="router.push('/')">
-          <div :class="$style.logoIcon">AI</div>
+          <div :class="$style.logoIcon">{{ locale === 'zh-CN' ? '智' : 'AI' }}</div>
           <span :class="$style.logoText">{{ t('layout.logo') }}</span>
         </div>
       </div>

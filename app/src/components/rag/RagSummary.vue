@@ -6,13 +6,14 @@
         <span :class="$style.ringLabel">覆盖率</span>
       </div>
       <div :class="$style.heroBody">
-        <div :class="$style.heroTitle">知识库健康度</div>
+        <div :class="$style.heroTitle">资产覆盖</div>
         <p :class="$style.heroDesc">{{ healthDesc }}</p>
         <div :class="$style.heroMeta">
           <span>向量 {{ status?.totalEmbeddings ?? 0 }} 条</span>
-          <span>Schema {{ status?.indexed ?? 0 }}/{{ status?.totalSchemas ?? 0 }}</span>
+          <span>表单 {{ status?.indexed ?? 0 }}/{{ status?.totalSchemas ?? 0 }}</span>
           <span>流程 {{ status?.indexedFlows ?? 0 }}/{{ status?.totalFlows ?? 0 }}</span>
         </div>
+        <p v-if="nextAction" :class="$style.nextAction">下一步：{{ nextAction }}</p>
       </div>
     </div>
 
@@ -61,15 +62,25 @@ const healthDesc = computed(() => {
     return '未配置嵌入模型，当前会退回关键词匹配，建议先完成嵌入配置。'
   }
   if (props.healthPercent >= 90) {
-    return '索引覆盖良好，语义检索可直接用于对话与工作流召回。'
+    return '表单与流程索引覆盖良好，对话与工作流可稳定召回资产知识。'
   }
   if ((props.status.unindexed ?? 0) + (props.status.unindexedFlows ?? 0) > 0) {
-    return '仍有资源未建索引，补建后可提升召回准确率。'
+    return '仍有资产未建索引，优先补齐待办可提升召回准确率。'
   }
   if ((props.status.stale ?? 0) > 0) {
-    return '存在过期索引，建议重建以保持与最新 Schema/流程一致。'
+    return '存在过期索引，建议对变更过的表单 / 流程重新同步。'
   }
-  return '索引状态正常，可持续观测嵌入质量与覆盖变化。'
+  return '索引状态正常，可持续关注覆盖与过期情况。'
+})
+
+/** 首屏「下一步」一句话 */
+const nextAction = computed(() => {
+  if (!props.status) return ''
+  if (!props.status.embeddingConfigured) return '前往嵌入模型设置完成配置'
+  const pending = (props.status.unindexed ?? 0) + (props.status.unindexedFlows ?? 0)
+  if (pending > 0) return `为 ${pending} 项待索引资产建立索引`
+  if ((props.status.stale ?? 0) > 0) return `重建 ${props.status.stale} 条过期索引`
+  return '可用下方「召回试跑」验证命中质量'
 })
 
 const cards = computed(() => {
@@ -81,7 +92,7 @@ const cards = computed(() => {
   return [
     {
       key: 'schema',
-      label: 'Schema',
+      label: '表单',
       icon: 'document' as const,
       color: '#3b82f6',
       value: schemaTotal,
@@ -206,6 +217,13 @@ const cards = computed(() => {
   gap: 8px 12px;
   font-size: 11px;
   color: var(--el-text-color-regular);
+}
+
+.nextAction {
+  margin: 10px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-color-primary);
 }
 
 .card {

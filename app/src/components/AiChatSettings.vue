@@ -109,11 +109,11 @@ function handleSave(): void {
         </FieldRow>
       </SectionToggle>
 
-      <SectionToggle title="Agent 编排" :count="1">
+      <SectionToggle title="工作流" :count="1">
         <FieldRow
           label="工作流"
           textarea
-          hint="选择已发布编排后，发送将触发该工作流而非默认对话"
+          hint="选择已发布工作流后，发送将触发该工作流而非默认对话"
         >
           <AgentWorkflowPicker
             v-model="localSettings.agentWorkflowId"
@@ -122,7 +122,7 @@ function handleSave(): void {
         </FieldRow>
         <div :class="styles.navLinks">
           <el-button link type="primary" @click="router.push('/workflows')">
-            打开 Agent 编排
+            打开工作流
           </el-button>
           <el-button link type="primary" @click="router.push('/plugins')">
             插件中心

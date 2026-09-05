@@ -21,17 +21,17 @@ type LayerTab = 'experts' | 'tools' | 'mcp' | 'skills' | 'runtime'
 type ToolKindTab = 'all' | 'mcp' | 'graph' | 'http'
 
 const layerTabs = [
-  { label: '运行时 Runtime', value: 'runtime' as LayerTab },
-  { label: '专家 Experts', value: 'experts' as LayerTab },
-  { label: '工具 Tools', value: 'tools' as LayerTab },
-  { label: 'MCP Server', value: 'mcp' as LayerTab },
-  { label: '技能 Skills', value: 'skills' as LayerTab },
+  { label: '运行时', value: 'runtime' as LayerTab },
+  { label: '专家', value: 'experts' as LayerTab },
+  { label: '工具', value: 'tools' as LayerTab },
+  { label: '工具服务', value: 'mcp' as LayerTab },
+  { label: '技能', value: 'skills' as LayerTab },
 ]
 
 const toolKindTabs = [
   { label: '全部', value: 'all' as ToolKindTab },
-  { label: 'MCP', value: 'mcp' as ToolKindTab },
-  { label: 'LangGraph', value: 'graph' as ToolKindTab },
+  { label: '工具服务', value: 'mcp' as ToolKindTab },
+  { label: '对话图', value: 'graph' as ToolKindTab },
   { label: 'HTTP', value: 'http' as ToolKindTab },
 ]
 
@@ -141,7 +141,7 @@ onMounted(() => {
   <PageShell>
       <PageHeader
         title="插件中心"
-        subtitle="浏览已注册的专家、工具、MCP 服务器和技能"
+        subtitle="浏览已注册的专家、工具、工具服务和技能"
       >
         <template #actions>
           <el-button :loading="loading" @click="load(); refreshRuntime()">
@@ -178,7 +178,7 @@ onMounted(() => {
             <div :class="styles.summaryValue">{{ tools.length }}</div>
           </div>
           <div :class="styles.summaryCard">
-            <div :class="styles.summaryLabel">MCP Server</div>
+            <div :class="styles.summaryLabel">工具服务</div>
             <div :class="styles.summaryValue">{{ mcpServers.length }}</div>
           </div>
           <div :class="styles.summaryCard">

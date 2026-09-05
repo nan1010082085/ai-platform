@@ -25,7 +25,7 @@ function update(key: string, value: unknown) {
     <div :class="styles.hint">
       专家类型：意图识别（自动路由）
     </div>
-    <FieldRow label="任务指令" textarea hint="可选，覆盖上游输出作为 Agent 输入">
+    <FieldRow label="任务指令" textarea hint="可选，覆盖上游输出作为专家输入">
       <el-input
         type="textarea"
         :rows="3"

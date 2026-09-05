@@ -40,3 +40,8 @@ export {
 } from './config/nodeTypes'
 export type { AgentPaletteItem } from './config/nodeTypes'
 export type { MessageRenderer } from './plugins/renderers/types'
+export type { ShellNavItem, ShellNavGroup, ShellSettingsGroup } from './plugins/shell-nav/types'
+export type { ShellRouteContribution, ShellLayout } from './plugins/shell-routes/types'
+export type { NodePanelEntry } from './plugins/node-panels/types'
+export type { McpServerDef } from './plugins/mcp-defs/types'
+export { exampleSupportPack } from './packs/example-support'

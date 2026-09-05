@@ -1,95 +1,103 @@
+/**
+ * 插件 Registry composable：fetch + 租户 + 只读 Cordis 投影。
+ * Cordis overlay 写入只允许经 registryBridge.ingest。
+ */
+
 import { ref, computed } from 'vue'
-import { fetchPluginRegistry, type PluginExpertSummary, type PluginToolSummary, type PluginSkillSummary, type PluginMcpServerSummary } from '@/api/pluginApi'
+import {
+  fetchPluginRegistry,
+  type PluginExpertSummary,
+  type PluginSkillSummary,
+  type PluginToolSummary,
+  type PluginMcpServerSummary,
+  type PluginWorkflowTemplateSummary,
+} from '@/api/pluginApi'
 import { fetchTenants, type TenantInfo } from '@/api/tenantApi'
 import { useAuth } from '@schema-platform/platform-shared/utils/useAuth'
-import type { AgentPaletteItem } from '@/plugins'
-import type { AgentNodeType } from '@/types/agentWorkflow'
 import {
   ensurePluginHost,
   getBuiltInTool,
+  getPluginHost,
   getToolsByCategory,
-  registryToolsToDefs,
-  TOOL_CATEGORY_LABELS,
   type ToolCategory,
   type ToolDef,
 } from '@/plugins'
+import {
+  expertToPaletteItem,
+  toolToPaletteItem,
+  LEGACY_EXPERT_COLOR,
+} from '@/plugins/plugins/registry-bridge/palette'
 
 const experts = ref<PluginExpertSummary[]>([])
 const skills = ref<PluginSkillSummary[]>([])
 const tools = ref<PluginToolSummary[]>([])
 const toolDefs = ref<ToolDef[]>([])
 const mcpServers = ref<PluginMcpServerSummary[]>([])
+const workflows = ref<PluginWorkflowTemplateSummary[]>([])
 const loaded = ref(false)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-// ── 租户隔离 ──
 const tenants = ref<TenantInfo[]>([])
 const tenantsLoading = ref(false)
 const selectedTenantId = ref<string>('')
 
-const LEGACY_EXPERT_ICON: Record<string, string> = {
-  editor: 'document',
-  flow: 'connection',
-  page: 'monitor',
-  general: 'user',
-}
+let cordisBound = false
 
-const LEGACY_EXPERT_COLOR: Record<string, string> = {
-  editor: '#409EFF',
-  flow: '#00D4FF',
-  page: '#67C23A',
-  general: '#909399',
-}
-
-const TOOL_NS_ICON: Record<string, string> = {
-  schema: 'document',
-  flow: 'connection',
-  widget: 'grid',
-  rag: 'search',
-  industry: 'office-building',
-}
-
-function toolPaletteItem(tool: ToolDef): AgentPaletteItem {
-  const ns = tool.name.includes('__') ? tool.name.split('__')[0] : tool.category
-  const categoryHint = TOOL_CATEGORY_LABELS[tool.category] ?? tool.category
-  const sourceHint = tool.source ? ` · ${tool.source}` : ''
-  return {
-    type: 'tool' as AgentNodeType,
-    label: tool.label,
-    icon: TOOL_NS_ICON[ns] ?? (tool.category === 'langgraph' ? 'cpu' : 'setting'),
-    category: 'tools',
-    description: `${categoryHint}${sourceHint}`,
-    defaultData: {
-      label: tool.label,
-      toolName: tool.name,
-    },
+/**
+ * 从 Cordis bridge / Service 投影刷新本地 UI ref（第二份状态仅为 Vue 消费缓存）。
+ */
+function syncFromCordis(): void {
+  const host = getPluginHost()
+  const snap = host.registryBridge.getSnapshot()
+  if (snap) {
+    experts.value = snap.experts
+    skills.value = snap.skills
+    tools.value = snap.tools
+    workflows.value = snap.workflows ?? []
   }
+  toolDefs.value = host.chatTools.listOverlay()
+  mcpServers.value = host.mcpDefs.list().map((d) => ({
+    id: d.id,
+    transport: d.transport,
+    namespace: d.namespace,
+    builtin: d.builtin,
+  }))
 }
 
-
-function expertPaletteItem(expert: PluginExpertSummary): AgentPaletteItem {
-  const legacy = expert.legacyAgentKey ?? ''
-  return {
-    type: 'expert' as AgentNodeType,
-    label: expert.label,
-    icon: LEGACY_EXPERT_ICON[legacy] ?? 'cpu',
-    category: 'experts',
-    description: expert.description ?? expert.id,
-    defaultData: {
-      label: expert.label,
-      expertId: expert.id,
-    },
+/**
+ * 绑定 Service 变更 → 投影（幂等）；保证 UI 只读 Cordis。
+ * @returns 宿主 Context
+ */
+async function bindCordis() {
+  const host = await ensurePluginHost()
+  if (!cordisBound) {
+    cordisBound = true
+    host.on('registryBridge/changed', () => {
+      syncFromCordis()
+    })
+    host.on('chatTools/changed', () => {
+      toolDefs.value = host.chatTools.listOverlay()
+    })
+    host.on('mcpDefs/changed', () => {
+      mcpServers.value = host.mcpDefs.list().map((d) => ({
+        id: d.id,
+        transport: d.transport,
+        namespace: d.namespace,
+        builtin: d.builtin,
+      }))
+    })
   }
+  return host
 }
 
 export function usePluginRegistry() {
-  const toolPaletteItems = computed(() => toolDefs.value.map(toolPaletteItem))
+  const toolPaletteItems = computed(() => toolDefs.value.map(toolToPaletteItem))
 
   const expertPaletteItems = computed(() =>
     experts.value
       .filter((e) => !e.runtime?.length || e.runtime.includes('workflow'))
-      .map(expertPaletteItem),
+      .map(expertToPaletteItem),
   )
 
   async function load() {
@@ -99,22 +107,9 @@ export function usePluginRegistry() {
     try {
       const tenantId = selectedTenantId.value || undefined
       const data = await fetchPluginRegistry(tenantId)
-      experts.value = data.experts
-      skills.value = data.skills
-      tools.value = data.tools
-      mcpServers.value = data.mcpServers
-      const host = await ensurePluginHost()
-      host.chatTools.setOverlay(registryToolsToDefs(data.tools))
-      toolDefs.value = host.chatTools.listOverlay()
-      // 动态节点条目同步进 nodeTypes 服务（palette 扩展点，M6 智能体节点同源注册）
-      host.nodeTypes.setDynamic([
-        ...toolDefs.value.map(toolPaletteItem),
-        ...experts.value
-          .filter((e) => !e.runtime?.length || e.runtime.includes('workflow'))
-          .map(expertPaletteItem),
-      ])
-      // skills 同步进 skillDefs 服务（DSH SKILL.md 契约，M4 能力接线）
-      host.skillDefs.syncFromRegistry(data.skills)
+      const host = await bindCordis()
+      host.registryBridge.ingest(data)
+      syncFromCordis()
       loaded.value = true
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err)
@@ -128,7 +123,6 @@ export function usePluginRegistry() {
     tenantsLoading.value = true
     try {
       tenants.value = await fetchTenants()
-      // 默认选中当前用户的租户
       if (!selectedTenantId.value) {
         const { user } = useAuth()
         const currentTenantId = user.value?.tenantId
@@ -155,18 +149,21 @@ export function usePluginRegistry() {
   }
 
   function getToolsForPanel(category?: ToolCategory): ToolDef[] {
-    const fromRegistry = (category
-      ? tools.value.filter((t) => registryToolsToDefs([t])[0].category === category)
-      : tools.value
-    ).map((t) => registryToolsToDefs([t])[0])
-    if (fromRegistry.length > 0) return fromRegistry
-    return category ? getToolsByCategory(category) : registryToolsToDefs(tools.value)
+    const host = getPluginHost()
+    const fromCordis = category
+      ? host.chatTools.getByCategory(category, 'all')
+      : host.chatTools.list()
+    if (fromCordis.length > 0) return fromCordis
+    return category ? getToolsByCategory(category) : []
   }
 
   function resolveToolDef(name: string): ToolDef | undefined {
-    const fromRegistry = tools.value.find((t) => t.name === name)
-    if (fromRegistry) return registryToolsToDefs([fromRegistry])[0]
-    return getBuiltInTool(name)
+    try {
+      const host = getPluginHost()
+      return host.chatTools.get(name) ?? getBuiltInTool(name)
+    } catch {
+      return getBuiltInTool(name)
+    }
   }
 
   return {
@@ -174,6 +171,7 @@ export function usePluginRegistry() {
     skills,
     tools,
     mcpServers,
+    workflows,
     loaded,
     loading,
     error,
@@ -183,7 +181,6 @@ export function usePluginRegistry() {
     expertColor,
     getToolsForPanel,
     resolveToolDef,
-    // ── 租户隔离 ──
     tenants,
     tenantsLoading,
     selectedTenantId,
@@ -193,5 +190,5 @@ export function usePluginRegistry() {
 }
 
 export function getExpertColorByLegacy(legacy?: string): string {
-  return LEGACY_EXPERT_COLOR[legacy ?? ''] ?? '#9B59B6'
+  return LEGACY_EXPERT_COLOR[legacy ?? ''] ?? '#909399'
 }

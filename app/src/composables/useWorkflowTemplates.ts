@@ -1,70 +1,23 @@
 /**
  * useWorkflowTemplates - 工作流模板相关的状态和逻辑
  *
- * 从 AgentWorkflowListView.vue 提取，减少主文件行数。
+ * 合并内置 AGENT_WORKFLOW_TEMPLATES 与插件 Registry workflows（同 id 以插件为准）。
  */
-import { ref, computed } from 'vue'
+import { ref, computed, type Ref } from 'vue'
 import type {
   AgentWorkflowTemplateId,
   AgentWorkflowTemplateMeta,
+  AgentWorkflowGraph,
 } from '@/types/agentWorkflow'
 import { AGENT_WORKFLOW_TEMPLATES } from '@/types/agentWorkflow'
+import type { PluginWorkflowTemplateSummary } from '@/api/pluginApi'
 
-export const TEMPLATE_DEFAULT_NAMES: Record<AgentWorkflowTemplateId, string> = {
-  'blank': '空白工作流',
-  'document-summary': '文档摘要',
-  'doc-image-recognition': '文档 / 图片识别',
-  'intelligent-assistant': '智能助手问答',
-  'contract-extract': '合同条款提取',
-  'kb-faq': '知识库 FAQ 生成',
-  'http-notify': 'HTTP 回调通知',
-  'rag-ingest-qa': 'RAG 入库质检',
-  'multi-doc-batch': '多文档批量处理',
-  'smart-suggestions': '智能建议',
-  'smart-action-proposals': '智能拟办',
-  'image-text-generation': '图文生成',
-  'ppt-generation': 'PPT 生成',
-  'image-analysis': '图片智能分析',
-  'chat-parity-assistant': '智能助手 v2',
-  'requirement-gated-build': '需求门控构建',
-  'cs-ticket-triage': '客服工单智能分流',
-  'cs-kb-reply': '客服知识库回复',
-  'cs-sentiment-escalate': '情绪检测与升级',
-  'excel-report': 'Excel 报表洞察',
-  'multi-doc-compare': '多文档对比',
-  'structured-extract': '结构化字段提取',
-  'webhook-batch-dispatch': '批量任务分发',
-  'content-compliance': '内容合规审查',
-  'contract-risk-tag': '合同风险标注',
-  'faq-quality-check': 'FAQ 质检',
-  'multimodal-image-text': '图文批量生成',
-  'multimodal-video-promo': '视频营销生成',
-  'resume-screening': '简历筛选',
-  'expense-audit': '报销单审核',
-  'feedback-analysis': '客户反馈分析',
-  'memory-assistant': '记忆增强助手',
-  'medical-record-extract': '病历结构化提取',
-  'education-homework-grading': '作业批改',
-  'manufacturing-quality-report': '质检报告生成',
-  'legal-case-summary': '案件摘要提取',
-  'government-petition-classify': '政务诉求分类',
-  'retail-inventory-forecast': '库存补货预测',
-  'finance-loan-review': '贷款风险评估',
-  'energy-consumption-report': '能耗分析报告',
-  'vote-decision': '团队投票决策',
-  'multimodal-llm-analyze': '多模态图文分析',
-  'smart-form-search': '智能表单检索',
-  'scheduled-report': '定时数据报告',
-  'code-execute-demo': '代码执行演示',
-  'switch-demo': '条件分支演示',
-  'parallel-team-demo': '并行团队分析',
-  'dashboard-assist': 'Dashboard Assist',
-  'handoff-demo': '会话交接演示',
-  'form-query-demo': '表单查询演示',
-}
+/** @deprecated 优先读模板 meta.name / defaultName；保留作内置回退 */
+export const TEMPLATE_DEFAULT_NAMES: Record<string, string> = Object.fromEntries(
+  AGENT_WORKFLOW_TEMPLATES.map((t) => [t.id, t.name]),
+)
 
-
-export const TEMPLATE_CATEGORY_LABELS: Record<AgentWorkflowTemplateMeta['category'], string> = {
+export const TEMPLATE_CATEGORY_LABELS: Record<string, string> = {
   general: '通用',
   document: '文档',
   assistant: '助手',
@@ -84,11 +37,72 @@ export const TEMPLATE_CATEGORY_LABELS: Record<AgentWorkflowTemplateMeta['categor
   energy: '能源',
 }
 
-export function useWorkflowTemplates() {
-  const workflowTemplates = AGENT_WORKFLOW_TEMPLATES
+/** @deprecated 优先读模板 icon 字段；保留作内置回退 */
+export const TEMPLATE_ICONS: Record<string, string> = Object.fromEntries(
+  AGENT_WORKFLOW_TEMPLATES.map((t) => [t.id, t.icon ?? 'document']),
+)
+
+export type WorkflowTemplateListItem = AgentWorkflowTemplateMeta & {
+  /** 插件模板可携带完整 graph，供预览直渲 */
+  graph?: AgentWorkflowGraph
+  defaultName?: string
+  source?: 'builtin' | 'plugin'
+}
+
+/**
+ * 合并内置与插件模板列表（插件覆盖同 id）。
+ */
+export function mergeWorkflowTemplates(
+  builtin: AgentWorkflowTemplateMeta[],
+  plugin: PluginWorkflowTemplateSummary[],
+): WorkflowTemplateListItem[] {
+  const map = new Map<string, WorkflowTemplateListItem>()
+  for (const tpl of builtin) {
+    map.set(tpl.id, {
+      ...tpl,
+      source: 'builtin',
+      defaultName: TEMPLATE_DEFAULT_NAMES[tpl.id] ?? tpl.name,
+    })
+  }
+  for (const tpl of plugin) {
+    map.set(tpl.id, {
+      id: tpl.id as AgentWorkflowTemplateId,
+      name: tpl.name,
+      description: tpl.description,
+      category: tpl.category as AgentWorkflowTemplateMeta['category'],
+      icon: tpl.icon,
+      tags: tpl.tags,
+      defaultName: tpl.defaultName ?? tpl.name,
+      graph: tpl.graph as AgentWorkflowGraph | undefined,
+      source: 'plugin',
+    })
+  }
+  return [...map.values()]
+}
+
+/**
+ * 解析模板图标：meta.icon → 内置表 → 默认 document
+ */
+export function resolveTemplateIcon(tpl: { id: string; icon?: string }): string {
+  return tpl.icon || TEMPLATE_ICONS[tpl.id] || 'document'
+}
+
+/**
+ * 解析创建默认名
+ */
+export function resolveTemplateDefaultName(tpl: { id: string; name: string; defaultName?: string }): string {
+  return tpl.defaultName || TEMPLATE_DEFAULT_NAMES[tpl.id] || tpl.name
+}
+
+export function useWorkflowTemplates(pluginWorkflows?: Ref<PluginWorkflowTemplateSummary[]>) {
+  const mergedTemplates = computed(() =>
+    mergeWorkflowTemplates(AGENT_WORKFLOW_TEMPLATES, pluginWorkflows?.value ?? []),
+  )
+
+  const workflowTemplates = computed(() => mergedTemplates.value)
 
   const systemTemplates = computed(() =>
-    workflowTemplates.filter((tpl) => tpl.id !== 'blank'),
+    mergedTemplates.value.filter((tpl) => tpl.id !== 'blank'),
   )
 
   const templateCategory = ref<'all' | AgentWorkflowTemplateMeta['category']>('all')
@@ -105,7 +119,7 @@ export function useWorkflowTemplates() {
     return opts
   })
 
-  function matchesTemplateSearch(tpl: AgentWorkflowTemplateMeta, searchQuery: string): boolean {
+  function matchesTemplateSearch(tpl: WorkflowTemplateListItem, searchQuery: string): boolean {
     if (templateCategory.value !== 'all' && tpl.category !== templateCategory.value) return false
     if (!searchQuery) return true
     const q = searchQuery.toLowerCase()
@@ -115,7 +129,7 @@ export function useWorkflowTemplates() {
     )
   }
 
-  const filteredTemplates = ref<AgentWorkflowTemplateMeta[]>([])
+  const filteredTemplates = ref<WorkflowTemplateListItem[]>([])
 
   function updateFilteredTemplates(searchQuery: string) {
     filteredTemplates.value = systemTemplates.value.filter((tpl) =>
@@ -132,55 +146,4 @@ export function useWorkflowTemplates() {
     updateFilteredTemplates,
     matchesTemplateSearch,
   }
-}export const TEMPLATE_ICONS: Record<AgentWorkflowTemplateId, string> = {
-  'blank': 'set-up',
-  'document-summary': 'document',
-  'doc-image-recognition': 'picture',
-  'intelligent-assistant': 'chat-dot-round',
-  'contract-extract': 'document-checked',
-  'kb-faq': 'notebook',
-  'http-notify': 'bell',
-  'rag-ingest-qa': 'search',
-  'multi-doc-batch': 'files',
-  'smart-suggestions': 'magic-stick',
-  'smart-action-proposals': 'finished',
-  'image-text-generation': 'picture-outline',
-  'ppt-generation': 'data-board',
-  'image-analysis': 'view',
-  'chat-parity-assistant': 'chat-line-round',
-  'requirement-gated-build': 'key',
-  'cs-ticket-triage': 'message',
-  'cs-kb-reply': 'chat-dot-round',
-  'cs-sentiment-escalate': 'warning',
-  'excel-report': 'data-line',
-  'multi-doc-compare': 'document',
-  'structured-extract': 'edit',
-  'webhook-batch-dispatch': 'connection',
-  'content-compliance': 'warning-filled',
-  'contract-risk-tag': 'warning',
-  'faq-quality-check': 'circle-check',
-  'multimodal-image-text': 'picture',
-  'multimodal-video-promo': 'video-camera',
-  'resume-screening': 'user',
-  'expense-audit': 'credit-card',
-  'feedback-analysis': 'chat-line-round',
-  'memory-assistant': 'data-board',
-  'medical-record-extract': 'document',
-  'education-homework-grading': 'edit',
-  'manufacturing-quality-report': 'data-analysis',
-  'legal-case-summary': 'document-checked',
-  'government-petition-classify': 'message',
-  'retail-inventory-forecast': 'data-line',
-  'finance-loan-review': 'credit-card',
-  'energy-consumption-report': 'data-line',
-  'vote-decision': 'circle-check',
-  'multimodal-llm-analyze': 'view',
-  'smart-form-search': 'search',
-  'scheduled-report': 'alarm-clock',
-  'code-execute-demo': 'document',
-  'switch-demo': 'share',
-  'parallel-team-demo': 'user',
-  'dashboard-assist': 'data-board',
-  'handoff-demo': 'switch',
-  'form-query-demo': 'search',
 }

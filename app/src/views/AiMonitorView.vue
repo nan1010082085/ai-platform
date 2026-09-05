@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { PageShell, PageHeader } from '@apform-ui/core'
 /**
- * Agent 性能监控面板
+ * 用量与成本汇总（设置极简入口；日常排障看执行详情运行时条）
  */
 import { ElMessage } from 'element-plus'
 import FilterTabs from '@schema-platform/platform-shared/components/common/FilterTabs.vue'
@@ -78,8 +78,8 @@ onMounted(() => {
   <PageShell>
     <div :class="$style.dashboard" v-loading="loading">
     <PageHeader
-      title="Agent 性能监控"
-      subtitle="观察成功率、时延与 Token，快速定位慢调用与失败链路"
+      title="用量与成本"
+      subtitle="跨专家汇总：成本趋势与异常一览。日常排障请看工作流执行详情中的本次耗时。"
     >
       <template #actions>
         <div :class="$style.timeRangeGroup">
@@ -87,7 +87,7 @@ onMounted(() => {
         </div>
         <el-select
           v-model="selectedAgent"
-          placeholder="所有 Agent"
+          placeholder="所有专家"
           clearable
           size="small"
           :class="$style.filterSelect"
@@ -136,14 +136,6 @@ onMounted(() => {
     <div :class="$style.panelRow">
       <CallPulse :metrics="filteredRecent" />
       <AgentDistribution :distribution="agentDistribution" />
-      <AlertList
-        :alerts="alerts"
-        :total="alertsTotal"
-        :current-page="alertsPage"
-        :page-size="alertsPageSize"
-        @page-change="handleAlertPageChange"
-        @size-change="handleAlertPageSizeChange"
-      />
     </div>
 
     <div :class="$style.tokenRow" v-if="topTokenOps.length">
@@ -168,8 +160,22 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 节点类型统计 -->
     <CostTrendCard :class="$style.costSection" />
+
+    <div :class="$style.section">
+      <div :class="$style.sectionHeader">
+        <h3 :class="$style.sectionTitle">平台异常（次级）</h3>
+        <span :class="$style.sectionHint">日常排障优先看工作流执行详情</span>
+      </div>
+      <AlertList
+        :alerts="alerts"
+        :total="alertsTotal"
+        :current-page="alertsPage"
+        :page-size="alertsPageSize"
+        @page-change="handleAlertPageChange"
+        @size-change="handleAlertPageSizeChange"
+      />
+    </div>
 
     <div v-if="nodeTypeStats.length" :class="$style.section">
       <div :class="$style.sectionHeader">
@@ -283,7 +289,7 @@ onMounted(() => {
     <div :class="$style.tableRow">
       <div :class="$style.section">
         <div :class="$style.sectionHeader">
-          <h3 :class="$style.sectionTitle">Agent 统计</h3>
+          <h3 :class="$style.sectionTitle">专家统计</h3>
           <span :class="$style.sectionHint">{{ filteredStats.length }} 组指标</span>
         </div>
         <div :class="$style.tableBody">

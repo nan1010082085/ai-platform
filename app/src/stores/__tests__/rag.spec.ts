@@ -78,7 +78,7 @@ describe('rag store', () => {
       { id: 's1', name: 'UserForm', score: 95, widgetTypes: ['input', 'select'] },
     ]
     const content = store.consumeRagContextContent()
-    expect(content).toContain('RAG 上下文')
+    expect(content).toContain('知识库上下文')
     expect(content).toContain('UserForm')
     expect(content).toContain('95%')
     expect(content).toContain('input, select')

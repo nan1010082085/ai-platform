@@ -11,9 +11,18 @@ import { useAgentWorkflowDesignerStore } from '@/stores/agentWorkflowDesigner'
 import AgentFlowNode from './nodes/AgentFlowNode.vue'
 import AgentFlowEdge from './edges/AgentFlowEdge.vue'
 import type { AgentNodeType } from '@/types/agentWorkflow'
-import { AGENT_PALETTE_ITEMS } from '@/plugins'
+import { getPluginHost, serviceState } from '@/plugins'
 import styles from './AgentWorkflowCanvas.module.scss'
 import { EDGE_LINE_STYLE_KEY } from '@/types/edgeLineStyle'
+
+const host = getPluginHost()
+/** VueFlow 按 type 注册槽位；含 builtin + dynamic，并保证 tool/expert */
+const nodeSlotTypes = serviceState(host, 'nodeTypes/changed', () => {
+  const types = new Set(host.nodeTypes.listAll().map((i) => i.type))
+  types.add('tool')
+  types.add('expert')
+  return [...types]
+})
 
 const props = withDefaults(
   defineProps<{
@@ -267,14 +276,7 @@ function onKeyDown(e: KeyboardEvent) {
       :min-zoom="readOnly ? 0.15 : 0.2"
       :fit-view-on-init="!!readOnly && fitViewOnLoad"
     >
-      <template v-for="item in AGENT_PALETTE_ITEMS" :key="item.type" #[`node-${item.type}`]="nodeProps">
-        <AgentFlowNode v-bind="nodeProps" />
-      </template>
-      <!-- tool / expert 来自插件中心动态注入，不在 AGENT_PALETTE_ITEMS，需单独注册槽位 -->
-      <template #node-tool="nodeProps">
-        <AgentFlowNode v-bind="nodeProps" />
-      </template>
-      <template #node-expert="nodeProps">
+      <template v-for="type in nodeSlotTypes" :key="type" #[`node-${type}`]="nodeProps">
         <AgentFlowNode v-bind="nodeProps" />
       </template>
       <template #edge-agent-edge="edgeProps">

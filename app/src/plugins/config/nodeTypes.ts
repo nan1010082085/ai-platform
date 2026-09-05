@@ -41,12 +41,12 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
   },
   {
     type: 'agent-team',
-    label: 'Agent 团队',
+    label: '智能团队',
     icon: 'user',
     category: 'ai',
-    description: '多 Agent 协作：Supervisor 调度团队成员（各自人设/模型/工具），讨论或顺序完成任务',
+    description: '多智能体协作：主管调度团队成员（各自人设/模型/工具），讨论或顺序完成任务',
     defaultData: {
-      label: 'Agent 团队',
+      label: '智能团队',
       agentTeamMembers: [
         { name: '产品', persona: '产品经理，负责需求分析和方案设计', tools: [] },
         { name: '开发', persona: '开发工程师，负责技术实现和代码编写', tools: [] },
@@ -203,6 +203,14 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
     defaultData: { label: 'IF', expression: 'lastOutput' },
   },
   {
+    type: 'merge',
+    label: '合流',
+    icon: 'connection',
+    category: 'logic',
+    description: '等待多路上游完成后合并上下文',
+    defaultData: { label: '合流', mergeWait: 'all', mergeTextTemplate: '' },
+  },
+  {
     type: 'hitl',
     label: '人工确认',
     icon: 'bell',
@@ -214,6 +222,22 @@ export const AGENT_PALETTE_ITEMS: AgentPaletteItem[] = [
       confirmQuestions: [],
       inheritUpstreamQuestions: true,
     },
+  },
+  {
+    type: 'tool',
+    label: '工具',
+    icon: 'setting',
+    category: 'tools',
+    description: '在属性面板中选择具体工具（不再平铺全部工具）',
+    defaultData: { label: '工具' },
+  },
+  {
+    type: 'expert',
+    label: '专家',
+    icon: 'user',
+    category: 'experts',
+    description: '在属性面板中选择注册专家',
+    defaultData: { label: '专家' },
   },
   {
     type: 'end',
@@ -522,6 +546,7 @@ export const AGENT_NODE_COLORS: Record<string, string> = {
   expert: '#9B59B6',
   tool: '#E6A23C',
   if: '#9B59B6',
+  merge: '#409EFF',
   hitl: '#F56C6C',
   end: '#909399',
   'image-generate': '#FF6B35',
@@ -565,7 +590,7 @@ export function getPaletteItem(type: AgentNodeType): AgentPaletteItem | undefine
       label: '工具',
       icon: 'set-up',
       category: 'tools',
-      description: '从插件中心选择 MCP / 内置工具',
+      description: '从插件中心选择外部工具服务或内置工具',
       defaultData: { label: '工具' },
     }
   }

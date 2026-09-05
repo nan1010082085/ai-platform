@@ -9,7 +9,7 @@ import { PageShell, PageHeader } from '@apform-ui/core'
  * 业务逻辑在 useModelCenter composable，视图只负责编排与渲染。
  */
 
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
 import AppDialog from '@schema-platform/platform-shared/components/common/AppDialog.vue'
 import QuickAddPresets from '@/components/model-settings/QuickAddPresets.vue'
@@ -19,7 +19,23 @@ import ModelList from '@/components/model-settings/ModelList.vue'
 import ModelDialog from '@/components/model-settings/ModelDialog.vue'
 import { useModelCenter } from '@/composables/useModelCenter'
 import { PROVIDER_PRESETS } from '@/components/model-settings/providerPresets'
+import { apiClient } from '@schema-platform/platform-shared/utils/apiClient'
 import styles from './ModelSettingsView.module.scss'
+
+interface EffectiveQuota {
+  dailyCostLimitRmb: number
+  allowPlatformKey: boolean
+}
+
+const myQuota = ref<EffectiveQuota | null>(null)
+
+async function loadMyQuota(): Promise<void> {
+  try {
+    myQuota.value = await apiClient.get<EffectiveQuota>('/ai/me/llm-quota')
+  } catch {
+    myQuota.value = null
+  }
+}
 
 const {
   providers,
@@ -64,6 +80,7 @@ const {
 
 onMounted(() => {
   void loadProviders()
+  void loadMyQuota()
 })
 </script>
 
@@ -74,6 +91,13 @@ onMounted(() => {
         title="模型中心"
         subtitle="管理 LLM 供应商与模型配置，测试连通性，设置默认模型。"
       >
+        <div v-if="myQuota" :class="styles.activeModelHint" style="margin-top: 8px">
+          <AppIcon name="coin" :size="14" />
+          <span>
+            今日有效额度上限：<strong>{{ myQuota.dailyCostLimitRmb }}</strong> RMB
+            <span :class="styles.hintExtra">（平台 Key {{ myQuota.allowPlatformKey ? '允许' : '禁用' }}）</span>
+          </span>
+        </div>
         <div v-if="globalDefaultModel" :class="styles.activeModelHint">
           <AppIcon name="circle-check-filled" :size="14" />
           <span>

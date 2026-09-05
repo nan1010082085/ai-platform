@@ -72,7 +72,7 @@ function setOptionsFromText(id: string, text: string) {
     <FieldRow label="继承上游问题">
       <el-switch v-model="inheritUpstream" />
       <HintText>
-        开启后，自动合并上游 Agent / LLM 输出 JSON 中的 confirmQuestions（与 Chat 需求分析格式一致）
+        开启后，自动合并上游专家 / 模型输出 JSON 中的 confirmQuestions（与对话需求分析格式一致）
       </HintText>
     </FieldRow>
 

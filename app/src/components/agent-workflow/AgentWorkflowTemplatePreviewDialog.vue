@@ -58,7 +58,11 @@ function loadPreviewGraph() {
   if (store.nodes.length > 0) {
     savedGraph.value = store.getGraph()
   }
-  store.loadGraph(createAgentWorkflowGraphByTemplate(props.template.id))
+  const fromPlugin = (props.template as { graph?: AgentWorkflowGraph }).graph
+  const graph = fromPlugin
+    ? structuredClone(fromPlugin)
+    : createAgentWorkflowGraphByTemplate(props.template.id)
+  store.loadGraph(graph)
   store.selectNode(null)
 }
 

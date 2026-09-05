@@ -5,7 +5,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import RagKnowledgeBase from '@/views/RagKnowledgeBase.vue'
 
-// Mock API module
 vi.mock('@/api/aiApi', () => ({
   getRagStatus: vi.fn(),
   reindexAllRag: vi.fn(),
@@ -27,15 +26,26 @@ const mockReindexAllRag = vi.mocked(reindexAllRag)
 vi.mocked(reindexSingleRag)
 const mockSearchRag = vi.mocked(searchRag)
 
-// Stub Element Plus components
-const ElButtonStub = { template: '<button :disabled="loading" @click="$emit(\'click\')"><slot /></button>', props: ['type', 'size', 'loading'], emits: ['click'] }
-const ElInputStub = { template: '<input :value="modelValue" :placeholder="placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" @keyup.enter="$emit(\'keyup.enter\')" />', props: ['modelValue', 'placeholder', 'clearable'], emits: ['update:modelValue', 'keyup.enter'] }
+const ElButtonStub = {
+  template: '<button :disabled="loading" @click="$emit(\'click\')"><slot /></button>',
+  props: ['type', 'size', 'loading'],
+  emits: ['click'],
+}
+const ElInputStub = {
+  template:
+    '<input :value="modelValue" :placeholder="placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" @keyup.enter="$emit(\'keyup.enter\')" />',
+  props: ['modelValue', 'placeholder', 'clearable'],
+  emits: ['update:modelValue', 'keyup.enter'],
+}
 const ElTagStub = { template: '<span><slot /></span>', props: ['size', 'type'] }
 const ElTableStub = {
   template: '<div><slot /><div v-if="!data || data.length === 0">{{ emptyText }}</div></div>',
   props: { data: { default: () => [] }, emptyText: { default: '' } },
 }
-const ElTableColumnStub = { template: '<div><slot name="default" :row="{}" /></div>', props: ['prop', 'label', 'width', 'minWidth', 'fixed'] }
+const ElTableColumnStub = {
+  template: '<div><slot name="default" :row="{}" /></div>',
+  props: ['prop', 'label', 'width', 'minWidth', 'fixed'],
+}
 const ElPaginationStub = {
   template: '<div class="el-pagination-stub" />',
   props: ['currentPage', 'pageSize', 'total', 'layout', 'small'],
@@ -49,15 +59,36 @@ const globalStubs = {
   'el-table': ElTableStub,
   'el-table-column': ElTableColumnStub,
   'el-pagination': ElPaginationStub,
+  'el-collapse': { template: '<div class="el-collapse-stub"><slot /></div>', props: ['modelValue'] },
+  'el-collapse-item': {
+    props: ['name', 'title'],
+    template: '<div class="el-collapse-item-stub"><div class="collapse-title">{{ title }}</div><slot /></div>',
+  },
+  'el-dropdown': { template: '<div class="el-dropdown-stub"><slot /><slot name="dropdown" /></div>' },
+  'el-dropdown-menu': { template: '<div><slot /></div>' },
+  'el-dropdown-item': {
+    template: '<button type="button" @click="$emit(\'click\')"><slot /></button>',
+    props: ['disabled', 'divided'],
+    emits: ['click'],
+  },
+  'el-tooltip': { template: '<div><slot /></div>', props: ['content', 'placement'] },
   AppPagination: {
     props: ['currentPage', 'pageSize', 'total'],
     template: '<div v-if="total > 0" class="el-pagination-stub" data-testid="app-pagination" />',
   },
-  AppDialog: { template: '<div v-if="modelValue"><slot /><slot name="footer" /></div>', props: ['modelValue', 'title', 'width', 'closeOnClickModal'] },
+  AppDialog: {
+    template: '<div v-if="modelValue"><slot /><slot name="footer" /></div>',
+    props: ['modelValue', 'title', 'width', 'closeOnClickModal'],
+  },
   'el-upload': { template: '<div><slot /></div>' },
   'el-checkbox': { template: '<input type="checkbox" />' },
   'router-link': { template: '<a><slot /></a>', props: ['to'] },
   AppIcon: { template: '<span />', props: ['name', 'size'] },
+  PageShell: { template: '<div><slot /></div>', props: ['class'] },
+  PageHeader: {
+    props: ['title', 'subtitle'],
+    template: '<div><h1>{{ title }}</h1><p>{{ subtitle }}</p><slot name="actions" /><slot /></div>',
+  },
 }
 
 function createStatus(overrides: Record<string, unknown> = {}) {
@@ -104,18 +135,31 @@ describe('RagKnowledgeBase', () => {
     expect(wrapper.text()).toContain('69%')
   })
 
-  it('renders summary card labels', async () => {
+  it('renders asset-coverage narrative on first screen', async () => {
     const wrapper = mountComponent()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Schema')
+    expect(wrapper.text()).toContain('资产覆盖')
+    expect(wrapper.text()).toContain('表单')
     expect(wrapper.text()).toContain('流程')
     expect(wrapper.text()).toContain('待索引')
+    expect(wrapper.text()).toContain('过期')
     expect(wrapper.text()).toContain('覆盖率')
-    expect(wrapper.text()).toContain('知识库健康度')
+    expect(wrapper.text()).toContain('下一步')
+    expect(wrapper.text()).not.toContain('知识库健康度')
   })
 
-  it('triggers batch reindex when button is clicked', async () => {
+  it('keeps search and ops as secondary collapse titles', async () => {
+    const wrapper = mountComponent()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('召回试跑')
+    expect(wrapper.text()).toContain('索引动态与运维')
+    expect(wrapper.text()).toContain('文档辅线')
+    expect(wrapper.text()).toContain('待补齐资产')
+  })
+
+  it('triggers batch reindex from ops / more menu', async () => {
     mockReindexAllRag.mockResolvedValue({
       total: 10, created: 3, updated: 2, skipped: 5, errors: 0,
     })
@@ -123,7 +167,8 @@ describe('RagKnowledgeBase', () => {
     const wrapper = mountComponent()
     await flushPromises()
 
-    const reindexBtn = wrapper.findAll('button').find((b) => b.text().includes('重建索引'))
+    const reindexBtn = wrapper.findAll('button').find((b) => b.text().includes('全量重建索引'))
+    expect(reindexBtn).toBeTruthy()
     await reindexBtn!.trigger('click')
     await flushPromises()
 
@@ -139,7 +184,7 @@ describe('RagKnowledgeBase', () => {
     const wrapper = mountComponent()
     await flushPromises()
 
-    const reindexBtn = wrapper.findAll('button').find((b) => b.text().includes('重建索引'))
+    const reindexBtn = wrapper.findAll('button').find((b) => b.text().includes('全量重建索引'))
     await reindexBtn!.trigger('click')
     await flushPromises()
 
@@ -267,7 +312,7 @@ describe('RagKnowledgeBase', () => {
     const wrapper = mountComponent()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('所有 Schema 均已索引')
+    expect(wrapper.text()).toContain('暂无待索引表单，资产覆盖良好')
   })
 
   it('refreshes status when refresh button is clicked', async () => {
@@ -286,7 +331,7 @@ describe('RagKnowledgeBase', () => {
   it('renders topbar with correct title', async () => {
     const wrapper = mountComponent()
     await flushPromises()
-    expect(wrapper.text()).toContain('RAG 知识库')
+    expect(wrapper.text()).toContain('知识库')
   })
 
   it('renders search input with correct placeholder', async () => {

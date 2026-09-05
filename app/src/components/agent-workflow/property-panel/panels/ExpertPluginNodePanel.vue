@@ -65,7 +65,7 @@ function onExpertChange(expertId: string) {
     <div v-if="selectedExpert?.description" :class="styles.hint">
       {{ selectedExpert.description }}
     </div>
-    <FieldRow label="任务指令" textarea hint="可选，覆盖上游输出作为 Agent 输入">
+    <FieldRow label="任务指令" textarea hint="可选，覆盖上游输出作为专家输入">
       <el-input
         type="textarea"
         :rows="3"

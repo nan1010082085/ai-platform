@@ -65,7 +65,7 @@ async function loadTools() {
       selectTool(first.id, first.tools[0].name)
     }
   } catch (err) {
-    message.error(err instanceof Error ? err.message : '加载 MCP 工具失败')
+    message.error(err instanceof Error ? err.message : '加载工具服务失败')
   }
 }
 
@@ -167,7 +167,7 @@ onMounted(() => {
 <template>
   <PageShell fill>
     <div :class="$style.container">
-    <PageHeader title="MCP 管理" :subtitle="headerSubtitle">
+    <PageHeader title="工具服务" :subtitle="headerSubtitle">
       <template #actions>
         <el-button :loading="checking" @click="handlePingAll">
           <AppIcon name="refresh" :size="14" />

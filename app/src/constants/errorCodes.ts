@@ -33,14 +33,14 @@ export const ERROR_CODE_TEXT: Record<string, string> = {
   workflow_rate_limited: '调用频率超限，请稍后重试',
   // LLM 日成本额度
   DAILY_QUOTA_EXCEEDED: '今日 LLM 额度已用尽，请明日再试或联系管理员提升额度',
-  // MCP
-  mcp_tool_unavailable: 'MCP 工具不可用，服务可能未启动',
-  mcp_tool_timeout: 'MCP 工具调用超时',
-  mcp_tool_error: 'MCP 工具执行出错',
-  mcp_server_disconnected: 'MCP 服务器已断开连接',
-  // RAG
-  rag_index_stale: 'RAG 索引过期，请重新索引',
-  rag_embedding_failed: '向量化失败，请检查 embedding 配置',
+  // 工具服务
+  mcp_tool_unavailable: '工具服务不可用，服务可能未启动',
+  mcp_tool_timeout: '工具调用超时',
+  mcp_tool_error: '工具执行出错',
+  mcp_server_disconnected: '工具服务已断开连接',
+  // 知识库
+  rag_index_stale: '知识库索引过期，请重新索引',
+  rag_embedding_failed: '向量化失败，请检查嵌入模型配置',
   rag_search_failed: '语义检索失败',
   rag_upload_failed: '文件上传失败',
   // 通用资源

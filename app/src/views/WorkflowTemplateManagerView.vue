@@ -18,6 +18,7 @@ import {
   deleteTemplate,
   exportTemplate,
   importTemplate,
+  setTemplateEnabled,
   type WorkflowTemplate,
   type WorkflowTemplateCategory,
   type WorkflowTemplateInput,
@@ -253,6 +254,22 @@ async function remove(tp: WorkflowTemplate) {
     await loadTemplates()
   } catch (err) {
     ElMessage.error(resolveErrorText(err, '删除失败'))
+  }
+}
+
+/** 启用 / 禁用模板 */
+async function toggleEnabled(tp: WorkflowTemplate): Promise<void> {
+  const next = !(tp.enabled !== false)
+  try {
+    const updated = await setTemplateEnabled(tp.templateId, next)
+    ElMessage.success(next ? '已启用' : '已禁用')
+    const idx = templates.value.findIndex((t) => t.templateId === tp.templateId)
+    if (idx >= 0) templates.value[idx] = { ...templates.value[idx], enabled: updated.enabled }
+    if (selectedTemplate.value?.templateId === tp.templateId) {
+      selectedTemplate.value = { ...selectedTemplate.value, enabled: updated.enabled }
+    }
+  } catch (err) {
+    ElMessage.error(resolveErrorText(err, '更新启用状态失败'))
   }
 }
 
@@ -492,6 +509,10 @@ onMounted(() => {
               <el-button size="small" @click="exportTpl(selectedTemplate)">
                 <AppIcon name="download" :size="14" />
                 {{ t('workflowTemplates.export') }}
+              </el-button>
+              <el-button size="small" @click="toggleEnabled(selectedTemplate)">
+                <AppIcon name="switch-button" :size="14" />
+                {{ selectedTemplate.enabled === false ? '启用' : '禁用' }}
               </el-button>
               <el-button
                 size="small"

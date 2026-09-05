@@ -6,7 +6,7 @@
  * - code/json：可编辑 textarea + 复制 + 回传
  * - html：可编辑 + iframe 实时预览 + 回传
  *
- * 「回传给 Agent」把编辑后的内容作为下一条消息发送，形成修改-优化闭环。
+ * 「回传给助手」把编辑后的内容作为下一条消息发送，形成修改-优化闭环。
  */
 import { ref, computed } from 'vue'
 import { message as elMessage } from '@schema-platform/platform-shared/utils/message'
@@ -112,9 +112,9 @@ function sendBack() {
     </div>
 
     <div :class="styles.footer">
-      <span :class="styles.hint">编辑后可回传给 Agent 继续优化</span>
+      <span :class="styles.hint">编辑后可回传给助手继续优化</span>
       <el-button type="primary" size="small" @click="sendBack">
-        <AppIcon name="magic-stick" :size="12" /> 回传给 Agent
+        <AppIcon name="magic-stick" :size="12" /> 回传给助手
       </el-button>
     </div>
   </div>

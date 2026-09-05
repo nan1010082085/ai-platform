@@ -12,10 +12,11 @@ import WorkflowTemplateCard from '@/components/agent-workflow/WorkflowTemplateCa
 import WorkflowInvokeInfo from '@/components/WorkflowInvokeInfo.vue'
 import * as api from '@/api/agentWorkflowApi'
 import {
-  TEMPLATE_ICONS,
   TEMPLATE_CATEGORY_LABELS,
+  resolveTemplateIcon,
   useWorkflowTemplates,
 } from '@/composables/useWorkflowTemplates'
+import { usePluginRegistry } from '@/composables/usePluginRegistry'
 import { useWorkflowActions } from '@/composables/useWorkflowActions'
 import styles from './AgentWorkflowListView.module.scss'
 import AppPagination from '@schema-platform/platform-shared/components/common/AppPagination.vue'
@@ -68,6 +69,8 @@ async function handleBulkDelete() {
 const activeTab = ref<ListTab>('all')
 const sortBy = ref<'updated' | 'name'>('updated')
 
+const { workflows: pluginWorkflows, load: loadPluginRegistry } = usePluginRegistry()
+
 const {
   workflowTemplates,
   systemTemplates,
@@ -75,7 +78,7 @@ const {
   templateCategoryOptions,
   filteredTemplates,
   updateFilteredTemplates,
-} = useWorkflowTemplates()
+} = useWorkflowTemplates(pluginWorkflows)
 
 const {
   loading,
@@ -178,22 +181,23 @@ function formatVersion(v: string): string {
   return `${v.slice(0, 8)}.${v.slice(8, 10)}${v.slice(10, 12)}`
 }
 
-// 模板 tab 的 filteredTemplates 需主动填充：切到模板 tab、搜索词或分类变化时刷新。
-// （filteredTemplates 初始为空数组，useWorkflowTemplates 不会自动计算）
+// 模板 tab 的 filteredTemplates 需主动填充：切到模板 tab、搜索词、分类或插件列表变化时刷新。
 watch(
-  [isTemplatesTab, searchInput, templateCategory],
+  [isTemplatesTab, searchInput, templateCategory, pluginWorkflows],
   ([onTemplates]) => {
     if (onTemplates) updateFilteredTemplates(searchInput.value)
   },
   { immediate: true },
 )
 
-onMounted(load)
+onMounted(async () => {
+  await Promise.all([load(), loadPluginRegistry()])
+})
 </script>
 
 <template>
   <PageShell>
-      <PageHeader title="Agent 编排" subtitle="可视化编排 AI 工作流">
+      <PageHeader title="工作流" subtitle="可视化编排智能工作流">
         <template #actions>
           <el-button @click="router.push({ name: 'agent-executions' })">
             <AppIcon name="list" :size="14" style="margin-right: 4px" />
@@ -267,8 +271,8 @@ onMounted(load)
         <div :class="styles.emptyIcon">
           <AppIcon name="set-up" :size="64" />
         </div>
-        <h2 :class="styles.emptyTitle">还没有 Agent 工作流</h2>
-        <p :class="styles.emptyDesc">创建您的第一个工作流来开始编排 AI 节点</p>
+        <h2 :class="styles.emptyTitle">还没有工作流</h2>
+        <p :class="styles.emptyDesc">创建您的第一个工作流来开始编排智能节点</p>
         <div :class="styles.emptyActions">
           <el-button type="primary" size="large" @click="activeTab = 'templates'">
             <AppIcon name="magic-stick" class="el-icon--left" :size="14" />浏览模板
@@ -303,8 +307,8 @@ onMounted(load)
             v-for="(tpl, idx) in filteredTemplates"
             :key="tpl.id"
             :template="tpl"
-            :icon="TEMPLATE_ICONS[tpl.id]"
-            :category-label="TEMPLATE_CATEGORY_LABELS[tpl.category]"
+            :icon="resolveTemplateIcon(tpl)"
+            :category-label="TEMPLATE_CATEGORY_LABELS[tpl.category] ?? tpl.category"
             :trying="tryingTemplateId === tpl.id"
             :style="{ animationDelay: `${idx * 0.04}s` }"
             @preview="onPreviewTemplate(tpl)"
@@ -429,7 +433,7 @@ onMounted(load)
 
     <AppDialog
       v-model="createDialogVisible"
-      title="新建 Agent 工作流"
+      title="新建工作流"
       width="640px"
     >
       <div :style="{ display: 'flex', flexDirection: 'column', flex: '1', minHeight: '0' }">

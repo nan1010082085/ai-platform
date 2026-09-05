@@ -353,7 +353,12 @@ function handleHostData(data: Record<string, unknown>) {
               >
                 <div :class="$style.historyTitle">{{ conv.title }}</div>
                 <div :class="$style.historyMeta">
-                  <span :class="$style.historyAgent">{{ conv.activeAgent }}</span>
+                  <span :class="$style.historyAgent">{{
+                    conv.activeAgent === 'editor' ? '表单'
+                    : conv.activeAgent === 'flow' ? '流程'
+                    : conv.activeAgent === 'page' ? '页面'
+                    : '对话'
+                  }}</span>
                   <span :class="$style.historyTime">{{ new Date(conv.updatedAt).toLocaleString('zh-CN') }}</span>
                 </div>
               </div>
@@ -383,8 +388,8 @@ function handleHostData(data: Record<string, unknown>) {
           <template #reference>
             <el-button
               :class="[$style.historyBtn, { [$style.workflowBtnActive]: !!selectedWorkflowId }]"
-              title="Agent 编排"
-              aria-label="Agent 编排"
+              title="工作流"
+              aria-label="工作流"
               link
             >
               <AppIcon name="set-up" :size="14" />

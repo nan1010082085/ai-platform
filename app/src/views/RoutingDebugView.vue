@@ -139,7 +139,7 @@ const routeReasonColor = computed(() => {
                 <span :class="[styles.value, styles.mono]">{{ result.expertId }}</span>
               </div>
               <div :class="styles.resultField">
-                <span :class="styles.label">Legacy Agent Key</span>
+                <span :class="styles.label">调度键</span>
                 <span :class="[styles.value, styles.mono]">{{ result.legacyAgentKey }}</span>
               </div>
               <div v-if="result.chainPreview?.length" :class="styles.resultField">

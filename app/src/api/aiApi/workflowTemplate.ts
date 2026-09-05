@@ -21,6 +21,8 @@ export interface WorkflowTemplate {
   tags?: string[]
   graph: Record<string, unknown>
   builtin: boolean
+  /** 是否启用（管理面板可禁用） */
+  enabled?: boolean
   createdBy: string
   tenantId: string
   createdAt: string
@@ -124,4 +126,27 @@ export async function importTemplate(data: WorkflowTemplateInput): Promise<Workf
     method: 'POST',
     body: data,
   })
+}
+
+/** 启用 / 禁用模板 */
+export async function setTemplateEnabled(
+  templateId: string,
+  enabled: boolean,
+): Promise<WorkflowTemplate> {
+  return request<WorkflowTemplate>(`/ai/workflow-templates/${encodeURIComponent(templateId)}/enabled`, {
+    method: 'PUT',
+    body: { enabled },
+  })
+}
+
+/** 租户市场列表 */
+export async function listMarketplaceTemplates(params?: {
+  category?: string
+  search?: string
+}): Promise<WorkflowTemplate[]> {
+  const query = new URLSearchParams()
+  if (params?.category) query.set('category', params.category)
+  if (params?.search) query.set('search', params.search)
+  const qs = query.toString()
+  return request<WorkflowTemplate[]>(`/ai/workflow-templates/marketplace${qs ? `?${qs}` : ''}`)
 }

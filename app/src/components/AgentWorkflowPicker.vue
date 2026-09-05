@@ -71,7 +71,7 @@ function handleVisibleChange(visible: boolean) {
 
 <template>
   <div class="workflow-picker">
-    <label v-if="showLabel">Agent 编排</label>
+    <label v-if="showLabel">工作流</label>
     <el-select
       v-model="selectedValue"
       :size="size"

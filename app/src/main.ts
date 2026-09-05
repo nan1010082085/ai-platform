@@ -32,8 +32,8 @@ let disposeRouteSync: (() => void) | null = null
 
 let currentRouteBase: string | undefined
 
-function render() {
-  void ensurePluginHost()
+async function render() {
+  await ensurePluginHost()
   router = createAiRouter(currentRouteBase)
   const pinia = createPinia()
   app = createApp(AppRoot)
@@ -85,8 +85,7 @@ renderWithQiankun({
       }
     }
 
-    render()
-    aiLog.lifecycle('mount done')
+    void render().then(() => aiLog.lifecycle('mount done'))
   },
   unmount() {
     aiLog.lifecycle('unmount')
@@ -110,13 +109,14 @@ renderWithQiankun({
 // call mount() within 500ms, treat as standalone and render directly.
 let mounted = false
 if (!qiankunWindow.__POWERED_BY_QIANKUN__) {
-  render()
-  mounted = true
+  void render().then(() => {
+    mounted = true
+  })
 } else {
   setTimeout(() => {
     if (!mounted) {
       aiLog.lifecycle('standalone fallback: qiankun mount() not called within 500ms')
-      render()
+      void render()
     }
   }, 500)
 }

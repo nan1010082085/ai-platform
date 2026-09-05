@@ -30,12 +30,12 @@ export interface ToolGroup {
 }
 
 export const TOOL_CATEGORY_LABELS: Record<ToolCategory, string> = {
-  'mcp-schema': 'MCP · Schema',
-  'mcp-flow': 'MCP · Flow',
-  'mcp-widget': 'MCP · Widget',
-  'mcp-rag': 'MCP · RAG',
-  'mcp-industry': 'MCP · Industry',
-  langgraph: 'LangGraph 专有',
+  'mcp-schema': '工具 · 表单',
+  'mcp-flow': '工具 · 流程',
+  'mcp-widget': '工具 · 组件',
+  'mcp-rag': '工具 · 知识库',
+  'mcp-industry': '工具 · 行业',
+  langgraph: '对话图专有',
   workflow: '工作流专用',
 }
 

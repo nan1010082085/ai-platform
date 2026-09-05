@@ -2,6 +2,9 @@ import { describe, it, expect, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
+import { ensurePluginHost } from '@/plugins'
+
+await ensurePluginHost()
 
 vi.mock('@/api/agentWorkflowApi', () => ({
   getWorkflow: vi.fn().mockResolvedValue({

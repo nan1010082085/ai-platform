@@ -1,19 +1,63 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, reactive } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
-import { AGENT_PALETTE_ITEMS, AGENT_NODE_COLORS } from '@/plugins'
+import {
+  AGENT_NODE_COLORS,
+  getPluginHost,
+  serviceState,
+  type AgentPaletteItem,
+} from '@/plugins'
 import { usePluginRegistry } from '@/composables/usePluginRegistry'
 import type { AgentNodeType } from '@/types/agentWorkflow'
-import type { AgentPaletteItem } from '@/plugins'
 import styles from './AgentWorkflowPalette.module.scss'
 
-const { expertPaletteItems, toolPaletteItems, load, expertColor } = usePluginRegistry()
+const { load, expertColor } = usePluginRegistry()
+
+const host = getPluginHost()
+const paletteItems = serviceState(host, 'nodeTypes/changed', () => host.nodeTypes.list())
+
+const searchQuery = ref('')
+
+/** 可折叠分类：默认仅展开触发器/智能/逻辑 */
+const collapsed = reactive<Record<string, boolean>>({
+  experts: true,
+  tools: true,
+  action: true,
+})
+
+const RECENT_KEY = 'ai.workflow.palette.recent'
+const recentIds = ref<string[]>([])
 
 onMounted(() => {
   void load()
+  try {
+    const raw = localStorage.getItem(RECENT_KEY)
+    if (raw) recentIds.value = JSON.parse(raw) as string[]
+  } catch {
+    recentIds.value = []
+  }
 })
 
-const searchQuery = ref('')
+/**
+ * 记录最近拖入的节点类型
+ * @param type 节点类型
+ */
+function pushRecent(type: string) {
+  const next = [type, ...recentIds.value.filter((t) => t !== type)].slice(0, 8)
+  recentIds.value = next
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next))
+  } catch {
+    /* ignore quota */
+  }
+}
+
+const recentItems = computed(() => {
+  const byType = new Map(paletteItems.value.map((i) => [i.type, i]))
+  return recentIds.value
+    .map((t) => byType.get(t as AgentNodeType))
+    .filter(Boolean) as AgentPaletteItem[]
+})
 
 function matchesQuery(item: AgentPaletteItem): boolean {
   if (!searchQuery.value.trim()) return true
@@ -26,45 +70,21 @@ const isSearching = computed(() => searchQuery.value.trim().length > 0)
 
 const flatResults = computed<AgentPaletteItem[]>(() => {
   if (!isSearching.value) return []
-  const all = [
-    ...AGENT_PALETTE_ITEMS,
-    ...expertPaletteItems.value,
-    ...toolPaletteItems.value,
-  ]
-  return all.filter(matchesQuery)
+  return paletteItems.value.filter(matchesQuery)
 })
 
 const categories = [
   { key: 'trigger', label: '触发器', icon: 'video-play' },
-  { key: 'ai', label: 'AI', icon: 'cpu' },
-  { key: 'experts', label: '专家 Agent', icon: 'user' },
-  { key: 'tools', label: 'MCP 工具', icon: 'setting' },
+  { key: 'ai', label: '智能', icon: 'cpu' },
+  { key: 'experts', label: '专家', icon: 'user' },
+  { key: 'tools', label: '工具', icon: 'setting' },
   { key: 'logic', label: '逻辑', icon: 'share' },
   { key: 'action', label: '动作', icon: 'circle-check' },
 ] as const
 
-const staticByCategory = computed(() => {
-  const map = new Map<string, AgentPaletteItem[]>()
-  for (const item of AGENT_PALETTE_ITEMS) {
-    const list = map.get(item.category) ?? []
-    list.push(item)
-    map.set(item.category, list)
-  }
-  return map
-})
-
 function itemsForCategory(key: string): AgentPaletteItem[] {
-  if (key === 'experts') {
-    return [...(staticByCategory.value.get('experts') ?? []), ...expertPaletteItems.value]
-  }
-  if (key === 'tools') {
-    return toolPaletteItems.value
-  }
-  return staticByCategory.value.get(key) ?? []
+  return paletteItems.value.filter((item) => item.category === key)
 }
-
-/** 可折叠分类状态（默认展开） */
-const collapsed = reactive<Record<string, boolean>>({})
 
 function toggleCollapse(key: string) {
   collapsed[key] = !collapsed[key]
@@ -80,6 +100,7 @@ function itemColor(type: AgentNodeType, expertId?: string): string {
 }
 
 function onDragStart(e: DragEvent, item: AgentPaletteItem) {
+  pushRecent(item.type)
   e.dataTransfer?.setData(
     'application/agent-node',
     JSON.stringify({
@@ -137,6 +158,30 @@ function onDragStart(e: DragEvent, item: AgentPaletteItem) {
     </template>
 
     <template v-else>
+      <div v-if="recentItems.length" :class="styles.section">
+        <div :class="styles.sectionTitle">
+          <span :class="styles.sectionLabel">最近</span>
+        </div>
+        <div :class="styles.items">
+          <div
+            v-for="item in recentItems"
+            :key="`recent-${item.type}-${item.label}`"
+            :class="styles.item"
+            :style="{ '--item-accent': itemColor(item.type, item.defaultData.expertId) }"
+            draggable="true"
+            @dragstart="onDragStart($event, item)"
+          >
+            <div :class="styles.iconWrap">
+              <AppIcon :name="item.icon" :size="15" />
+            </div>
+            <div :class="styles.itemText">
+              <span :class="styles.itemLabel">{{ item.label }}</span>
+              <span :class="styles.itemDesc">{{ item.description }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div v-for="cat in categories" :key="cat.key" :class="styles.section">
         <div
           :class="styles.sectionTitle"

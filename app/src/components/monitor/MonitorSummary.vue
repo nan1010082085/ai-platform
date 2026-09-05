@@ -61,7 +61,7 @@ const healthText = computed(() => {
   if (healthScore.value >= 85) return '调用整体稳定，成功率与时延处于健康区间。'
   if ((props.summary.successRate ?? 0) < 95) return '成功率偏低，请优先排查失败告警与模型依赖。'
   if ((props.summary.avgDuration ?? 0) > 3000) return '平均耗时偏高，建议关注慢调用与工具链瓶颈。'
-  return '存在可优化空间，结合告警与 Agent 分布继续诊断。'
+  return '存在可优化空间，结合告警与专家分布继续诊断。'
 })
 
 const cards = computed(() => {

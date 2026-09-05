@@ -1,12 +1,7 @@
 /**
  * usePluginRuntime — Cordis 运行时视图（PluginCenterView 的"运行时"tab 数据源）。
  *
- * 只读暴露三个服务的分层状态：
- * - chatTools：builtin / registry overlay / 前端 patch 三层清单与分类分组
- * - nodeTypes：内置目录 + 动态注册条目
- * - renderers：已注册渲染器清单
- *
- * 响应式桥接：订阅三个服务的变更事件，组件 scope 内自动退订。
+ * 只读暴露能力 / 桥接 / MCP 元数据分层状态（不在浏览器建 MCP 连接）。
  */
 
 import { ref, computed, getCurrentScope, onScopeDispose, type Ref } from 'vue'
@@ -59,6 +54,9 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
     const chatTools = host.chatTools
     const nodeTypes = host.nodeTypes
     const renderers = host.renderers
+    const skillDefs = host.skillDefs
+    const mcpDefs = host.mcpDefs
+    const bridge = host.registryBridge
 
     const baseTools = chatTools.listBase()
     const overlayTools = chatTools.listOverlay()
@@ -68,6 +66,7 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
     const nodeTypeList = nodeTypes.list()
     const nodeTypeDynamic = nodeTypes.listDynamic()
     const allRenderers = renderers.getAllRenderers()
+    const snap = bridge.getSnapshot()
 
     const disabledCount = chatTools.listDisabled().length
     return {
@@ -83,6 +82,23 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
           `内置: ${nodeTypeList.length - nodeTypeDynamic.length}`,
           `动态注册: ${nodeTypeDynamic.length}`,
           `合计: ${nodeTypeList.length}`,
+        ]),
+        probeService('skillDefs（技能）', () => [
+          `base: ${skillDefs.listBase().length}`,
+          `overlay: ${skillDefs.listOverlay().length}`,
+          `patch: ${skillDefs.listPatch().length}`,
+          `合并后: ${skillDefs.list().length}`,
+        ]),
+        probeService('mcpDefs（MCP 元数据）', () => [
+          `base: ${mcpDefs.listBase().length}`,
+          `overlay: ${mcpDefs.listOverlay().length}`,
+          `合并后: ${mcpDefs.list().length}`,
+          '连接在 server，浏览器仅元数据',
+        ]),
+        probeService('registryBridge（Registry 灌数）', () => [
+          snap
+            ? `已 ingest：tools=${snap.tools.length} experts=${snap.experts.length} skills=${snap.skills.length} mcp=${snap.mcpServers.length}`
+            : '尚未 ingest',
         ]),
         probeService('renderers（渲染器）', () => [
           `已注册: ${allRenderers.length}`,
@@ -117,12 +133,18 @@ export function usePluginRuntime(): { view: Ref<PluginRuntimeView>; refresh: () 
   const offTools = host.on('chatTools/changed', () => { rebuild() })
   const offNodes = host.on('nodeTypes/changed', () => { rebuild() })
   const offRenderers = host.on('renderers/changed', () => { rebuild() })
+  const offSkills = host.on('skillDefs/changed', () => { rebuild() })
+  const offMcp = host.on('mcpDefs/changed', () => { rebuild() })
+  const offBridge = host.on('registryBridge/changed', () => { rebuild() })
 
   if (getCurrentScope()) {
     onScopeDispose(() => {
       offTools()
       offNodes()
       offRenderers()
+      offSkills()
+      offMcp()
+      offBridge()
     })
   }
 

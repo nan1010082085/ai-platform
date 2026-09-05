@@ -78,8 +78,8 @@ export const BUILT_IN_TOOLS: ToolDef[] = [
   builtinTool(UPDATE_FLOW, 'langgraph', '提交流程修改（Chat 场景需用户确认）', '{"flow":{"nodes":[],"edges":[]},"summary":"更新说明"}'),
   builtinTool(SAVE_AND_BIND_SCHEMA, 'langgraph', '保存表单并绑定到流程节点', '{"flowId":"<id>","nodeId":"<nodeId>","widgets":[]}'),
   builtinTool(BIND_SCHEMA_TO_FLOW_NODE, 'langgraph', '将已有 Schema 绑定到流程节点', '{"flowId":"<id>","nodeId":"<nodeId>","schemaId":"<id>"}'),
-  builtinTool(REQUEST_COLLABORATION, 'langgraph', '请求其他 Agent 专家协作（Chat 图路由）', '{"targetAgent":"editor","reason":"需要生成表单"}'),
-  builtinTool(RAG_INDEX, 'langgraph', '写入 RAG 向量索引（管理类操作）', '{"schemaId":"<id>"}'),
+  builtinTool(REQUEST_COLLABORATION, 'langgraph', '请求其他专家协作（对话图路由）', '{"targetAgent":"editor","reason":"需要生成表单"}'),
+  builtinTool(RAG_INDEX, 'langgraph', '写入知识库向量索引（管理类操作）', '{"schemaId":"<id>"}'),
   builtinTool('http_request', 'workflow', '发起自定义 HTTP 请求（工作流专用，非 MCP）', '{"method":"GET","url":"https://api.example.com","headers":{}}'),
 ]
 

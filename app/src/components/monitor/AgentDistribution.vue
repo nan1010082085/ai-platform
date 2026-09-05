@@ -1,7 +1,7 @@
 <template>
   <div :class="$style.container">
     <div :class="$style.header">
-      <h3 :class="$style.title">Agent 分布</h3>
+      <h3 :class="$style.title">专家分布</h3>
       <span :class="$style.meta">按调用量</span>
     </div>
 
@@ -61,13 +61,13 @@ const sorted = computed(() =>
 )
 
 const agentLabels: Record<string, string> = {
-  router: 'Router 路由',
-  thinker: 'Thinker 思考',
-  editor: 'Editor 表单',
-  flow: 'Flow 流程',
-  page: 'Page 页面',
-  general: 'General 通用',
-  summarizer: 'Summarizer 总结',
+  router: '路由',
+  thinker: '思考',
+  editor: '表单',
+  flow: '流程',
+  page: '页面',
+  general: '通用',
+  summarizer: '总结',
 }
 
 const agentColors: Record<string, string> = {

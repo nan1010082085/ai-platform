@@ -16,6 +16,34 @@
   }
 }
 
+.personalSection {
+  margin-bottom: 24px;
+  padding: 16px;
+  border: 1px solid var(--border-color-lighter);
+  border-radius: 8px;
+  background: var(--bg-color);
+}
+
+.personalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.personalTitle {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.personalHint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-color-secondary);
+}
+
 .hintExtra {
   color: var(--text-color-secondary);
   font-size: 12px;

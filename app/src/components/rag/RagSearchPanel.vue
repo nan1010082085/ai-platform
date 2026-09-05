@@ -1,8 +1,8 @@
 <template>
   <div :class="$style.container">
     <div :class="$style.header">
-      <h3 :class="$style.title">语义搜索测试</h3>
-      <p :class="$style.desc">用自然语言验证召回质量，观察相关分与字段命中</p>
+      <h3 :class="$style.title">召回试跑</h3>
+      <p :class="$style.desc">验证召回质量，观察相关分与字段命中</p>
     </div>
 
     <div :class="$style.searchBox">

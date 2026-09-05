@@ -37,8 +37,13 @@ Pinia 不管能力注册；插件不管页面状态。二者不互相替代。
 | `nodeTypes` | 工作流 palette / 节点类型 |
 | `renderers` | 消息内容渲染分发 |
 | `skillDefs` | Skill 注册（SKILL.md 契约对齐） |
+| `nodePanels` | 节点属性面板（真正的插件面板槽位） |
+| `shellNav` | 顶导 / 设置导航贡献 |
+| `shellRoutes` | 功能模块路由贡献；`createAiRouter` 工厂合并 |
 
-新扩展点：注册表型（多源、优先级、可启停）→ Cordis Service；纯 UI 状态 → 留在 composable。
+功能模块：`plugins/modules/{chat,workflow,rag,plugins-center,settings,ops}`。
+
+完整说明：`plugin-foundation-complete.md`。
 
 ## 5. 明确不做
 

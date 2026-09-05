@@ -1,16 +1,23 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { useAgentNodePropertyPanel } from '@/composables/useAgentNodePropertyPanel'
-import { AGENT_PALETTE_ITEMS, getPaletteItem } from '@/plugins'
+import { AGENT_PALETTE_ITEMS, getPaletteItem, startPluginHost, stopPluginHost } from '@/plugins'
 
 describe('useAgentNodePropertyPanel', () => {
-  const { getPanelComponent, getNodeTypeLabel } = useAgentNodePropertyPanel()
+  beforeEach(async () => {
+    await startPluginHost()
+  })
+  afterEach(async () => {
+    await stopPluginHost()
+  })
 
   it('returns labels for known node types', () => {
+    const { getNodeTypeLabel } = useAgentNodePropertyPanel()
     expect(getNodeTypeLabel('llm')).toBe('LLM')
     expect(getNodeTypeLabel('manual-trigger')).toBe('手动触发')
   })
 
   it('returns panel components for node types', () => {
+    const { getPanelComponent } = useAgentNodePropertyPanel()
     expect(getPanelComponent('llm')).toBeTruthy()
     expect(getPanelComponent('tool')).toBeTruthy()
     expect(getPanelComponent('expert')).toBeTruthy()
@@ -19,13 +26,19 @@ describe('useAgentNodePropertyPanel', () => {
   })
 
   it('returns labels for expert node types', () => {
+    const { getNodeTypeLabel } = useAgentNodePropertyPanel()
     expect(getNodeTypeLabel('expert')).toBe('插件专家')
     expect(getNodeTypeLabel('agent-intent')).toBe('意图识别')
   })
 })
 
 describe('agentNodes palette + panel registration', () => {
-  const { getPanelComponent } = useAgentNodePropertyPanel()
+  beforeEach(async () => {
+    await startPluginHost()
+  })
+  afterEach(async () => {
+    await stopPluginHost()
+  })
 
   const CASES: Array<{ type: string; label: string; category: string }> = [
     { type: 'code-execute', label: '代码执行', category: 'tools' },
@@ -34,7 +47,7 @@ describe('agentNodes palette + panel registration', () => {
     { type: 'memory-write', label: '长程记忆写入', category: 'logic' },
     { type: 'memory-extract', label: '长程记忆提取', category: 'ai' },
     { type: 'handoff', label: '会话交接', category: 'logic' },
-    { type: 'agent-team', label: 'Agent 团队', category: 'ai' },
+    { type: 'agent-team', label: '智能团队', category: 'ai' },
   ]
 
   for (const c of CASES) {
@@ -46,6 +59,7 @@ describe('agentNodes palette + panel registration', () => {
     })
 
     it(`${c.type} has panel component registered`, () => {
+      const { getPanelComponent } = useAgentNodePropertyPanel()
       expect(getPanelComponent(c.type)).toBeTruthy()
     })
   }

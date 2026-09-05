@@ -205,6 +205,29 @@ const durationLabel = computed(() => {
   return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`
 })
 
+/** 本次执行运行时摘要（排障不必另开监控页） */
+const runtimeSummary = computed(() => {
+  const ex = execution.value
+  if (!ex) return null
+  const records = ex.nodeRecords ?? []
+  const failed = records.filter((r) => r.status === 'error')
+  const slow = [...records]
+    .filter((r) => typeof r.durationMs === 'number')
+    .sort((a, b) => (b.durationMs ?? 0) - (a.durationMs ?? 0))
+    .slice(0, 3)
+  return {
+    status: ex.status,
+    durationLabel: durationLabel.value,
+    nodeCount: records.length,
+    failedCount: failed.length,
+    failedNames: failed.map((r) => r.nodeName).slice(0, 3),
+    slowNodes: slow.map((r) => ({
+      name: r.nodeName,
+      ms: r.durationMs ?? 0,
+    })),
+  }
+})
+
 const selectedNodeData = computed((): AgentWorkflowNodeData | null => {
   if (!selectedRecord.value) return null
   const node = store.nodes.find((n) => n.id === selectedRecord.value!.nodeId)
@@ -373,6 +396,35 @@ function togglePanelExpand() {
         </template>
       </div>
     </header>
+
+    <div v-if="runtimeSummary" :class="styles.runtimeStrip" data-testid="runtime-summary">
+      <span :class="styles.runtimeItem">
+        本次耗时 <strong>{{ runtimeSummary.durationLabel }}</strong>
+      </span>
+      <span :class="styles.runtimeItem">
+        节点 {{ runtimeSummary.nodeCount }}
+      </span>
+      <span
+        :class="[
+          styles.runtimeItem,
+          runtimeSummary.failedCount > 0 ? styles.runtimeWarn : '',
+        ]"
+      >
+        失败 {{ runtimeSummary.failedCount }}
+        <template v-if="runtimeSummary.failedNames.length">
+          （{{ runtimeSummary.failedNames.join('、') }}）
+        </template>
+      </span>
+      <span
+        v-if="runtimeSummary.slowNodes.length"
+        :class="styles.runtimeItem"
+      >
+        最慢
+        <template v-for="(n, i) in runtimeSummary.slowNodes" :key="n.name">
+          <span v-if="i > 0"> · </span>{{ n.name }} {{ n.ms }}ms
+        </template>
+      </span>
+    </div>
 
     <!-- Canvas -->
     <div :class="styles.body">

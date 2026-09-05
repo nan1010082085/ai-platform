@@ -146,7 +146,7 @@ onMounted(() => {
   <PageShell>
       <PageHeader
         title="嵌入模型"
-        subtitle="配置 RAG 检索等场景使用的向量嵌入模型（与对话 LLM 分开管理）。"
+        subtitle="配置知识库检索等场景使用的向量嵌入模型（与对话模型分开管理）。"
       >
         <template #actions>
           <el-button :loading="embeddingLoading" @click="loadEmbeddingConfig">

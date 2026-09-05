@@ -58,7 +58,7 @@ export const useRAGStore = defineStore('rag', () => {
       .join('\n')
     // 发送后清除 RAG context
     ragContext.value = []
-    return `[RAG 上下文]\n${ragBlock}\n\n`
+    return `[知识库上下文]\n${ragBlock}\n\n`
   }
 
   return {

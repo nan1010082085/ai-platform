@@ -14,6 +14,7 @@ import AgentWorkflowPalette from '@/components/agent-workflow/AgentWorkflowPalet
 import AgentWorkflowCanvas from '@/components/agent-workflow/AgentWorkflowCanvas.vue'
 import AgentWorkflowPropertyPanel from '@/components/agent-workflow/AgentWorkflowPropertyPanel.vue'
 import * as api from '@/api/agentWorkflowApi'
+import { createTemplate } from '@/api/aiApi/workflowTemplate'
 import { useAiStore } from '@/stores/ai'
 import { useWorkflowSelfTest } from '@/composables/useWorkflowSelfTest'
 import { validateObjectId } from '@/utils/objectId'
@@ -87,6 +88,12 @@ async function onSave(): Promise<boolean> {
       message.error(errors[0].message)
       return false
     }
+    const fanInWarn = issues.find(
+      (i) => i.level === 'warning' && i.message.includes('请使用「合流」'),
+    )
+    if (fanInWarn) {
+      message.warning(fanInWarn.message)
+    }
     const id = store.workflowId ?? workflowId()
     const validation = validateObjectId(id, '工作流 ID')
     if (!validation.valid) {
@@ -117,6 +124,40 @@ async function onSave(): Promise<boolean> {
   }
 }
 
+/**
+ * 将当前草稿图另存为用户模板（写入 workflow-templates）。
+ */
+async function onSaveAsTemplate(): Promise<void> {
+  const graph = store.getGraph()
+  const issues = validateAgentWorkflowGraph(graph)
+  const errors = issues.filter((i) => i.level === 'error')
+  if (errors.length) {
+    message.error(errors[0].message)
+    return
+  }
+  try {
+    const { value } = await ElMessageBox.prompt('模板显示名称', '另存为模板', {
+      inputValue: `${store.workflowName || '未命名'}（模板）`,
+      confirmButtonText: '保存',
+      cancelButtonText: '取消',
+    })
+    const name = String(value ?? '').trim()
+    if (!name) return
+    const slug = `user-${Date.now().toString(36)}`
+    await createTemplate({
+      templateId: slug,
+      name,
+      description: store.workflowDescription || '',
+      category: 'general',
+      graph: graph as unknown as Record<string, unknown>,
+    })
+    ElMessage.success('已另存为模板，可在模板管理中查看')
+  } catch (e) {
+    if (e === 'cancel' || e === 'close') return
+    message.error(e instanceof Error ? e.message : '另存为模板失败')
+  }
+}
+
 async function onPublish() {
   publishing.value = true
   try {
@@ -138,7 +179,7 @@ async function onPublish() {
       if (res.invokeKeyMasked) store.invokeKeyMasked = res.invokeKeyMasked
       if (res.invokePath) store.invokePath = res.invokePath
       aiStore.updateAgentWorkflowId(validation.id)
-      ElMessage.success(`已发布 v${res.publishedVersion}，已同步到对话中的 Agent 编排`)
+      ElMessage.success(`已发布 v${res.publishedVersion}，已同步到对话中的工作流`)
       await loadVersions()
     }
   } catch (e) {
@@ -281,6 +322,7 @@ onUnmounted(() => {
       :edge-line-style="store.edgeLineStyle"
       @update:title="onTitleUpdate"
       @save="onSave"
+      @save-as-template="onSaveAsTemplate"
       @publish="onPublish"
       @debug="onDebug"
       @validate="onValidate"

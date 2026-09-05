@@ -13,7 +13,7 @@ export type ExecutionTrigger = AgentWorkflowExecution['trigger']
 export const EXECUTION_TRIGGER_LABELS: Record<ExecutionTrigger, string> = {
   manual: '手动执行',
   webhook: 'Webhook',
-  chat: 'AI 对话',
+  chat: '对话',
   api: 'API / 脚本',
 }
 
@@ -37,8 +37,8 @@ export const INVOCATION_METHODS: InvocationMethodInfo[] = [
   },
   {
     id: 'chat',
-    label: 'AI 对话',
-    description: '在 Chat 设置中选择已发布工作流后发送消息，trigger 记为 chat',
+    label: '对话',
+    description: '在对话设置中选择已发布工作流后发送消息，trigger 记为 chat',
   },
   {
     id: 'webhook',

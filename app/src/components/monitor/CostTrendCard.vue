@@ -112,7 +112,7 @@ onMounted(loadData)
 
     <!-- 按 Agent 分布 -->
     <div v-if="topAgents.length" :class="styles.agentSection">
-      <h4 :class="styles.subTitle">按 Agent 分布</h4>
+      <h4 :class="styles.subTitle">按专家分布</h4>
       <div :class="styles.agentList">
         <div v-for="agent in topAgents" :key="agent.agentName" :class="styles.agentRow">
           <span :class="styles.agentName">{{ agent.agentName || '未命名' }}</span>

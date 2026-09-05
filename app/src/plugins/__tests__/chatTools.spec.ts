@@ -51,8 +51,9 @@ describe('plugin host lifecycle', () => {
     for (const name of BUILT_IN_TOOL_NAMES) {
       expect(host.chatTools.get(name)).toBeDefined()
     }
-    // list() = overlay ∪ base，无 overlay 时等于内置层
-    expect(host.chatTools.list()).toHaveLength(BUILT_IN_TOOLS.length)
+    // list() = overlay ∪ base；base 含 BUILT_IN + 官方 pack（如 kb__search）
+    expect(host.chatTools.listBase().length).toBeGreaterThanOrEqual(BUILT_IN_TOOLS.length)
+    expect(host.chatTools.list()).toHaveLength(host.chatTools.listBase().length)
   })
 
   it('stopPluginHost 释放宿主，getPluginHost 显式报错', async () => {
@@ -86,7 +87,7 @@ describe('chatTools service layers', () => {
     expect(host.chatTools.get('overlay_only_tool')).toBeDefined()
     // 动态层只含 overlay，内置层不被清空
     expect(host.chatTools.listOverlay()).toHaveLength(1)
-    expect(host.chatTools.list()).toHaveLength(BUILT_IN_TOOLS.length + 1)
+    expect(host.chatTools.list()).toHaveLength(host.chatTools.listBase().length + 1)
   })
 
   it('patch 层优先级最高（patch > overlay > base），setPatch 整体替换', async () => {
@@ -103,7 +104,7 @@ describe('chatTools service layers', () => {
     expect(host.chatTools.get(builtinName)?.label).toBe('overlay 标签') // patch 清空后回落 overlay
     expect(host.chatTools.get('patch_only_tool')).toBeDefined()
     // 全量 = base ∪ overlay ∪ patch，同名高层优先
-    expect(host.chatTools.list()).toHaveLength(BUILT_IN_TOOLS.length + 1)
+    expect(host.chatTools.list()).toHaveLength(host.chatTools.listBase().length + 1)
     expect(host.chatTools.listPatch()).toHaveLength(1)
   })
 

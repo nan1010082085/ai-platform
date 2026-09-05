@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { PageShell, PageHeader } from '@apform-ui/core'
 /**
- * RAG 知识库管理页面
- *
- * 布局对齐 Agent 性能监控：dashboard 顶栏 + 摘要卡片 + 双列面板 + 全宽表格
+ * 平台资产知识库 — 按任务流：覆盖与待办首屏，召回试跑 / 文档 / 运维次级
  */
 
 import { ref, onMounted, computed, watch } from 'vue'
@@ -45,6 +43,8 @@ const searchResults = ref<RagSearchResult[]>([])
 const searchPerformed = ref(false)
 
 const uploadDialogVisible = ref(false)
+/** 次级面板：召回试跑 / 运维默认折叠 */
+const secondaryPanels = ref<string[]>([])
 
 const healthPercent = computed(() => {
   if (!status.value) return 0
@@ -190,20 +190,20 @@ onMounted(() => {
 
 <template>
   <PageShell>
-    <div :class="$style.dashboard" v-loading="loading">
+    <div :class="$style.page" v-loading="loading">
     <PageHeader
-      title="RAG 知识库"
-      subtitle="管理 Schema / 流程向量索引，验证语义召回，保障对话上下文质量"
+      title="知识库"
+      subtitle="管好表单与流程资产索引：看覆盖、补待办、再试召回"
     >
       <template #actions>
-        <el-button size="small" @click="router.push('/debug/rag')">
-          <AppIcon name="filter" :size="14" />
-          检索调试
+        <el-button size="small" :loading="loading" @click="loadStatus">
+          <AppIcon name="refresh" :size="14" />
+          刷新
         </el-button>
         <el-tooltip
           v-if="status"
           :content="status.embeddingConfigured
-            ? '嵌入模型已就绪，语义检索可用'
+            ? '嵌入模型已就绪'
             : '嵌入模型未配置，点击前往设置'"
           placement="bottom"
         >
@@ -222,18 +222,25 @@ onMounted(() => {
             />
           </button>
         </el-tooltip>
-        <el-button type="success" size="small" @click="openUploadDialog">
-          <AppIcon name="upload" :size="14" />
-          上传文档
-        </el-button>
-        <el-button type="primary" size="small" :loading="reindexing" @click="handleReindexAll">
-          <AppIcon name="refresh" :size="14" />
-          {{ reindexing ? '索引中...' : '重建索引' }}
-        </el-button>
-        <el-button size="small" :loading="loading" @click="loadStatus">
-          <AppIcon name="refresh" :size="14" />
-          刷新
-        </el-button>
+        <el-dropdown trigger="click">
+          <el-button size="small">
+            更多
+            <AppIcon name="arrow-down" :size="12" style="margin-left: 4px" />
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="openUploadDialog">上传文档（辅线）</el-dropdown-item>
+              <el-dropdown-item @click="router.push('/debug/rag')">检索调试</el-dropdown-item>
+              <el-dropdown-item
+                :disabled="reindexing"
+                divided
+                @click="handleReindexAll"
+              >
+                {{ reindexing ? '全量重建中…' : '全量重建索引' }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </template>
     </PageHeader>
 
@@ -243,7 +250,7 @@ onMounted(() => {
     >
       <AppIcon name="warning" :size="16" />
       <span>
-        嵌入模型未配置，RAG 只做关键词兜底。前往
+        嵌入模型未配置，知识库只做关键词兜底。前往
         <router-link to="/settings/embedding">嵌入模型设置</router-link>
         后，可启用向量索引与语义召回。
       </span>
@@ -255,26 +262,13 @@ onMounted(() => {
       :class="$style.summaryRow"
     />
 
-    <div :class="$style.panelRow">
-      <RagSearchPanel
-        v-model:query="searchQuery"
-        :loading="searchLoading"
-        :performed="searchPerformed"
-        :results="searchResults"
-        @search="handleSearch"
-        @reindex="handleReindexSingle"
-      />
-      <RagIndexOverview
-        :status="status"
-        :last-reindex-result="lastReindexResult"
-      />
-    </div>
-
-    <div :class="$style.section">
+    <div :class="$style.section" data-testid="pending-section">
       <div :class="$style.sectionHeader">
         <h3 :class="$style.sectionTitle">
-          索引管理
-          <span v-if="status" :class="$style.sectionCount">（待索引 {{ status.unindexed }}）</span>
+          待补齐资产
+          <span v-if="status" :class="$style.sectionCount">
+            （表单待索引 {{ status.unindexed }} · 流程待索引 {{ status.unindexedFlows ?? 0 }}）
+          </span>
         </h3>
         <div :class="$style.sectionActions">
           <el-button size="small" :type="bulkMode ? 'danger' : 'default'" @click="toggleBulkMode">
@@ -308,7 +302,7 @@ onMounted(() => {
         :class="$style.table"
         stripe
         size="small"
-        empty-text="所有 Schema 均已索引 ✓"
+        empty-text="暂无待索引表单，资产覆盖良好"
       >
         <el-table-column v-if="bulkMode" label="" width="48">
           <template #default="{ row }">
@@ -342,6 +336,47 @@ onMounted(() => {
       />
     </div>
 
+    <el-collapse v-model="secondaryPanels" :class="$style.collapse">
+      <el-collapse-item name="search" title="召回试跑（验证能不能用）">
+        <div :class="$style.collapseBody">
+          <RagSearchPanel
+            v-model:query="searchQuery"
+            :loading="searchLoading"
+            :performed="searchPerformed"
+            :results="searchResults"
+            @search="handleSearch"
+            @reindex="handleReindexSingle"
+          />
+        </div>
+      </el-collapse-item>
+      <el-collapse-item name="ops" title="索引动态与运维">
+        <div :class="$style.collapseBody">
+          <RagIndexOverview
+            :status="status"
+            :last-reindex-result="lastReindexResult"
+          />
+          <div :class="$style.opsBar">
+            <el-button type="primary" size="small" :loading="reindexing" @click="handleReindexAll">
+              <AppIcon name="refresh" :size="14" />
+              {{ reindexing ? '重建中…' : '全量重建索引' }}
+            </el-button>
+            <span :class="$style.opsHint">全量重建耗时较长，请在低峰操作；日常优先用上方「建立索引」。</span>
+          </div>
+        </div>
+      </el-collapse-item>
+      <el-collapse-item name="docs" title="文档辅线（上传）">
+        <div :class="$style.collapseBody">
+          <p :class="$style.docsHint">
+            文档切片为辅，不替代表单 / 流程资产知识。需要时再上传。
+          </p>
+          <el-button type="success" size="small" @click="openUploadDialog">
+            <AppIcon name="upload" :size="14" />
+            上传文档
+          </el-button>
+        </div>
+      </el-collapse-item>
+    </el-collapse>
+
     <RagUploadDialog
       v-model:visible="uploadDialogVisible"
       @uploaded="loadStatus"
@@ -351,7 +386,7 @@ onMounted(() => {
 </template>
 
 <style module>
-.dashboard {
+.page {
   min-height: 100%;
   background: var(--el-bg-color-page, #f5f7fa);
 }
@@ -399,23 +434,12 @@ onMounted(() => {
   margin-bottom: var(--ai-card-gap);
 }
 
-.panelRow {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: var(--ai-card-gap);
-  margin-bottom: var(--ai-card-gap);
-  height: 420px;
-}
-
-.panelRow > * {
-  min-height: 0;
-}
-
 .section {
   background: var(--el-bg-color, #fff);
   border-radius: 12px;
   padding: 16px;
   border: 1px solid var(--el-border-color-lighter, #e4e7ed);
+  margin-bottom: var(--ai-card-gap);
 }
 
 .sectionHeader {
@@ -450,14 +474,35 @@ onMounted(() => {
   width: 100%;
 }
 
-@media (max-width: 900px) {
-  .panelRow {
-    grid-template-columns: 1fr;
-    height: auto;
-  }
+.collapse {
+  background: var(--el-bg-color, #fff);
+  border-radius: 12px;
+  border: 1px solid var(--el-border-color-lighter, #e4e7ed);
+  padding: 0 12px;
+}
 
-  .panelRow > * {
-    height: 320px;
-  }
+.collapseBody {
+  padding: 4px 0 12px;
+  min-height: 200px;
+}
+
+.opsBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.opsHint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.docsHint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
 }
 </style>

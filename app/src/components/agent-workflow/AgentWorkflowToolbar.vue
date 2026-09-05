@@ -119,6 +119,12 @@
                 <span>保存工作流</span>
               </span>
             </el-dropdown-item>
+            <el-dropdown-item command="save-as-template" divided>
+              <span :class="styles.dropdownItem">
+                <AppIcon name="folder-add" :size="14" />
+                <span>另存为模板</span>
+              </span>
+            </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -170,6 +176,7 @@ const edgeLineStyleOptions = EDGE_LINE_STYLE_OPTIONS
 
 const emit = defineEmits<{
   save: []
+  'save-as-template': []
   publish: []
   execute: []
   debug: []
@@ -208,5 +215,6 @@ function goToList() {
 
 function handleSaveCommand(command: string) {
   if (command === 'save') emit('save')
+  if (command === 'save-as-template') emit('save-as-template')
 }
 </script>

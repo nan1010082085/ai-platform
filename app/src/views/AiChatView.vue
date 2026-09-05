@@ -202,7 +202,7 @@ async function handlePublish(): Promise<void> {
 
 function handleRagSearch(query: string): void {
   store.searchRagAction(query).catch(() => {
-    message.error('RAG 搜索失败，请稍后重试')
+    message.error('知识库搜索失败，请稍后重试')
   })
 }
 

@@ -12,19 +12,35 @@ const props = defineProps<{
   step: StepData
 }>()
 
+const EXPERT_LABELS: Record<string, string> = {
+  editor: '表单专家',
+  flow: '流程专家',
+  page: '页面专家',
+  general: '通用助手',
+  auto: '自动',
+  router: '路由',
+}
+
+/**
+ * @param key 专家调度键或展示名
+ */
+function formatExpertLabel(key: string): string {
+  return EXPERT_LABELS[key] ?? key
+}
+
 const handoffData = computed(() => {
   const data = props.step.handoffData
   if (!data) return null
   return {
-    sourceAgent: data.sourceAgent ?? '未知',
-    targetAgent: data.targetAgent ?? '未知',
+    sourceAgent: formatExpertLabel(data.sourceAgent ?? '未知'),
+    targetAgent: formatExpertLabel(data.targetAgent ?? '未知'),
     reason: data.reason ?? '',
     timestamp: data.timestamp,
   }
 })
 
 const sourceIcon = computed(() => {
-  const agent = handoffData.value?.sourceAgent
+  const agent = props.step.handoffData?.sourceAgent
   if (agent?.includes('editor')) return 'edit'
   if (agent?.includes('flow')) return 'connection'
   if (agent?.includes('page')) return 'document'
@@ -32,7 +48,7 @@ const sourceIcon = computed(() => {
 })
 
 const targetIcon = computed(() => {
-  const agent = handoffData.value?.targetAgent
+  const agent = props.step.handoffData?.targetAgent
   if (agent?.includes('editor')) return 'edit'
   if (agent?.includes('flow')) return 'connection'
   if (agent?.includes('page')) return 'document'

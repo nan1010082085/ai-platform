@@ -87,9 +87,9 @@ const friendlyErrorDescription = computed(() => {
 })
 
 const agentLabels: Record<string, string> = {
-  editor: 'Editor 专家',
-  flow: 'Flow 专家',
-  page: 'Page 专家',
+  editor: '表单专家',
+  flow: '流程专家',
+  page: '页面专家',
   general: '通用助手',
 }
 

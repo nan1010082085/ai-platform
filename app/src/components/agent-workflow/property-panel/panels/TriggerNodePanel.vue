@@ -19,7 +19,7 @@ const store = useAgentWorkflowDesignerStore()
       />
     </FieldRow>
     <div :class="styles.hint">
-      手动触发是画布<strong>入口节点</strong>，不表示「只能人手点一次」；设计器测试、开放 API、AI 对话等通道均可从此入口执行。
+      手动触发是画布<strong>入口节点</strong>，不表示「只能人手点一次」；设计器测试、开放 API、对话等通道均可从此入口执行。
     </div>
   </SectionToggle>
   <VariableReferencePanel :node="props.node" />

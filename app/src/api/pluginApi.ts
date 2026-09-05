@@ -46,11 +46,25 @@ export interface PluginMcpServerSummary {
   builtin?: string
 }
 
+export interface PluginWorkflowTemplateSummary {
+  id: string
+  name: string
+  description: string
+  category: string
+  icon?: string
+  defaultName?: string
+  author?: string
+  version?: string
+  tags?: string[]
+  graph?: Record<string, unknown>
+}
+
 export interface PluginRegistrySnapshot {
   experts: PluginExpertSummary[]
   skills: PluginSkillSummary[]
   tools: PluginToolSummary[]
   mcpServers: PluginMcpServerSummary[]
+  workflows?: PluginWorkflowTemplateSummary[]
 }
 
 export async function fetchPluginRegistry(tenantId?: string): Promise<PluginRegistrySnapshot> {
@@ -63,7 +77,7 @@ export async function fetchPluginRegistry(tenantId?: string): Promise<PluginRegi
   })
 }
 
-export type PluginLocalLayer = 'mcp' | 'tools' | 'experts' | 'skills'
+export type PluginLocalLayer = 'mcp' | 'tools' | 'experts' | 'skills' | 'workflows'
 
 export interface PluginLocalWriteResult {
   path: string
