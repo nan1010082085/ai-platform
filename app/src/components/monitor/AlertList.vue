@@ -1,8 +1,8 @@
 <template>
-  <div :class="$style.container">
+  <div :class="[$style.container, embedded ? $style.embedded : '']">
     <div :class="$style.header">
-      <h3 :class="$style.title">
-        告警
+      <h3 v-if="!embedded" :class="$style.title">
+        平台异常
         <el-badge v-if="total > 0" :value="total" :class="$style.badge" />
       </h3>
       <div :class="$style.filters">
@@ -20,7 +20,7 @@
 
     <div v-if="visibleAlerts.length === 0" :class="$style.empty">
       <AppIcon name="circle-check" :size="24" />
-      <span>{{ total === 0 ? '暂无告警' : '当前筛选下无告警' }}</span>
+      <span>{{ total === 0 ? '暂无平台异常' : '当前筛选下无记录' }}</span>
     </div>
 
     <div v-else :class="$style.list">
@@ -75,12 +75,17 @@ import AppPagination from '@schema-platform/platform-shared/components/common/Ap
 import type { AgentAlert } from '@/types'
 import { formatMonitorTime, formatMonitorDuration } from '@/utils/monitorFormat'
 
-const props = defineProps<{
-  alerts: AgentAlert[]
-  total: number
-  currentPage: number
-  pageSize: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    alerts: AgentAlert[]
+    total: number
+    currentPage: number
+    pageSize: number
+    /** 嵌入父级区块时隐藏自带标题与外框 */
+    embedded?: boolean
+  }>(),
+  { embedded: false },
+)
 
 const emit = defineEmits<{
   pageChange: [page: number]
@@ -135,6 +140,15 @@ function typeTag(type: AgentAlert['alertType']): 'danger' | 'warning' | 'info' {
   overflow: hidden;
 }
 
+.embedded {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  height: auto;
+  min-height: 200px;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -143,6 +157,10 @@ function typeTag(type: AgentAlert['alertType']): 'danger' | 'warning' | 'info' {
   margin-bottom: 12px;
   flex-shrink: 0;
   flex-wrap: wrap;
+}
+
+.embedded .header {
+  justify-content: flex-start;
 }
 
 .title {

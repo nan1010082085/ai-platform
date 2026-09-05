@@ -71,6 +71,22 @@ export async function mentionSearch(
 
 // ---- RAG Knowledge Base Management ----
 
+export interface RagPendingItem {
+  id: string
+  name: string
+  type: string
+  entityKind: 'schema' | 'flow'
+  /** 仅流程未索引时可能有 */
+  status?: string
+}
+
+export interface RagStaleItem {
+  id: string
+  name: string
+  type: string
+  entityKind: 'schema' | 'flow'
+}
+
 export interface RagStatusData {
   embeddingConfigured: boolean
   autoIndexEnabled: boolean
@@ -82,7 +98,11 @@ export interface RagStatusData {
   indexedFlows: number
   unindexedFlows: number
   stale: number
-  unindexedSchemas: Array<{ id: string; name: string; type: string }>
+  unindexedSchemas: RagPendingItem[]
+  /** 流程待索引清单 */
+  unindexedFlowsList?: RagPendingItem[]
+  /** 过期索引清单（源已变更未重同步） */
+  staleItems?: RagStaleItem[]
 }
 
 export interface RagReindexResult {

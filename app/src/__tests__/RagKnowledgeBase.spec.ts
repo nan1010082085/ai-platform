@@ -5,6 +5,31 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import RagKnowledgeBase from '@/views/RagKnowledgeBase.vue'
 
+vi.mock('@schema-platform/platform-shared/utils/useDataLoading', async () => {
+  const { ref } = await import('vue')
+  return {
+    useDataLoading: () => {
+      const loading = ref(false)
+      return {
+        loading,
+        withLoading: async (fn: () => Promise<unknown>) => {
+          loading.value = true
+          try {
+            return await fn()
+          } finally {
+            loading.value = false
+          }
+        },
+      }
+    },
+  }
+})
+
+vi.mock('@schema-platform/platform-shared/utils/message', () => ({
+  message: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
+  confirmDanger: vi.fn().mockResolvedValue(true),
+}))
+
 vi.mock('@/api/aiApi', () => ({
   getRagStatus: vi.fn(),
   reindexAllRag: vi.fn(),
@@ -103,7 +128,9 @@ function createStatus(overrides: Record<string, unknown> = {}) {
     indexedFlows: 2,
     unindexedFlows: 1,
     stale: 1,
-    unindexedSchemas: [] as Array<{ id: string; name: string; type: string }>,
+    unindexedSchemas: [] as Array<{ id: string; name: string; type: string; entityKind: 'schema' }>,
+    unindexedFlowsList: [] as Array<{ id: string; name: string; type: string; entityKind: 'flow' }>,
+    staleItems: [] as Array<{ id: string; name: string; type: string; entityKind: 'schema' | 'flow' }>,
     ...overrides,
   }
 }
@@ -306,13 +333,70 @@ describe('RagKnowledgeBase', () => {
     expect(scoreElements[2].classes().some((c: string) => c.includes('scoreLow'))).toBe(true)
   })
 
-  it('shows empty table text when no unindexed schemas', async () => {
-    mockGetRagStatus.mockResolvedValue(createStatus({ unindexed: 0, unindexedSchemas: [] }))
+  it('shows empty table text when no pending assets', async () => {
+    mockGetRagStatus.mockResolvedValue(createStatus({
+      unindexed: 0,
+      unindexedFlows: 0,
+      stale: 0,
+      unindexedSchemas: [],
+      unindexedFlowsList: [],
+      staleItems: [],
+    }))
 
     const wrapper = mountComponent()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('暂无待索引表单，资产覆盖良好')
+    expect(wrapper.text()).toContain('暂无待补齐资产，覆盖良好')
+  })
+
+  it('lists unindexed flows and stale items in pending section', async () => {
+    mockGetRagStatus.mockResolvedValue(createStatus({
+      unindexed: 1,
+      unindexedFlows: 1,
+      stale: 1,
+      unindexedSchemas: [{ id: 's1', name: '请假单', type: 'form', entityKind: 'schema' }],
+      unindexedFlowsList: [{ id: 'f1', name: '审批流', type: 'flow', entityKind: 'flow' }],
+      staleItems: [{ id: 's2', name: '旧表单', type: 'form', entityKind: 'schema' }],
+    }))
+
+    // 覆盖 stub：把真实 row 渲出来，便于断言名称
+    const wrapper = mount(RagKnowledgeBase, {
+      global: {
+        stubs: {
+          ...globalStubs,
+          'el-table': {
+            props: { data: { default: () => [] }, emptyText: { default: '' } },
+            template: `
+              <div>
+                <div v-for="row in data" :key="row.key">{{ row.name }}-{{ row.reason }}</div>
+                <div v-if="!data || data.length === 0">{{ emptyText }}</div>
+              </div>
+            `,
+          },
+        },
+      },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('请假单-unindexed')
+    expect(wrapper.text()).toContain('审批流-unindexed')
+    expect(wrapper.text()).toContain('旧表单-stale')
+    expect(wrapper.text()).toContain('过期 1')
+  })
+
+  it('reindexes flow with entityKind=flow', async () => {
+    const mockReindex = vi.mocked(reindexSingleRag)
+    mockReindex.mockResolvedValue({ schemaId: 'f1', entityKind: 'flow', action: 'created' })
+
+    const wrapper = mountComponent()
+    await flushPromises()
+
+    await (wrapper.vm as unknown as {
+      handleReindexSingle: (id: string, kind?: 'schema' | 'flow') => Promise<void>
+    }).handleReindexSingle('f1', 'flow')
+    await flushPromises()
+
+    expect(mockReindex).toHaveBeenCalledWith('f1', 'flow')
   })
 
   it('refreshes status when refresh button is clicked', async () => {

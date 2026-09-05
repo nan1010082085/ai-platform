@@ -7,6 +7,7 @@
  */
 import { ref, onMounted, computed } from 'vue'
 import AppIcon from '@schema-platform/platform-shared/components/common/AppIcon.vue'
+import { message } from '@schema-platform/platform-shared/utils/message'
 import { getCostTrend, getBudgetStatus, type CostTrendData, type BudgetStatus } from '@/api/aiApi/monitor'
 import styles from './CostTrendCard.module.scss'
 
@@ -40,6 +41,7 @@ async function loadData() {
     budget.value = b
   } catch (err) {
     console.error('[CostTrendCard] 加载失败:', err)
+    message.error(err instanceof Error ? err.message : '加载成本趋势失败')
   } finally {
     loading.value = false
   }
@@ -50,6 +52,8 @@ function formatTokens(n: number): string {
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
   return String(n)
 }
+
+defineExpose({ reload: loadData })
 
 onMounted(loadData)
 </script>

@@ -16,7 +16,7 @@ import {
   deleteRagEmbedding,
   searchRag,
 } from '@/api/aiApi'
-import type { RagStatusData, RagReindexResult } from '@/api/aiApi'
+import type { RagStatusData, RagReindexResult, RagPendingItem, RagStaleItem } from '@/api/aiApi'
 import type { RagSearchResult } from '@/types'
 import RagSummary from '@/components/rag/RagSummary.vue'
 import RagSearchPanel from '@/components/rag/RagSearchPanel.vue'
@@ -34,7 +34,8 @@ const status = ref<RagStatusData | null>(null)
 const lastReindexResult = ref<RagReindexResult | null>(null)
 
 const bulkMode = ref(false)
-const selectedIds = ref<Set<string>>(new Set())
+/** 选中键：`${entityKind}:${id}` */
+const selectedKeys = ref<Set<string>>(new Set())
 const bulkProcessing = ref(false)
 
 const searchQuery = ref('')
@@ -46,6 +47,18 @@ const uploadDialogVisible = ref(false)
 /** 次级面板：召回试跑 / 运维默认折叠 */
 const secondaryPanels = ref<string[]>([])
 
+/**
+ * 待补齐行：过期优先，再表单未索引，再流程未索引
+ */
+interface PendingRow {
+  key: string
+  id: string
+  name: string
+  type: string
+  entityKind: 'schema' | 'flow'
+  reason: 'unindexed' | 'stale'
+}
+
 const healthPercent = computed(() => {
   if (!status.value) return 0
   const total = (status.value.totalSchemas ?? 0) + (status.value.totalFlows ?? 0)
@@ -54,42 +67,101 @@ const healthPercent = computed(() => {
   return Math.round((indexed / total) * 100)
 })
 
-const unindexedSchemas = computed(() => status.value?.unindexedSchemas ?? [])
+/**
+ * @param item - 待索引或过期项
+ * @param reason - 原因
+ */
+function toPendingRow(
+  item: RagPendingItem | RagStaleItem,
+  reason: 'unindexed' | 'stale',
+): PendingRow {
+  const entityKind = item.entityKind ?? (item.type === 'flow' ? 'flow' : 'schema')
+  return {
+    key: `${entityKind}:${item.id}`,
+    id: item.id,
+    name: item.name,
+    type: item.type,
+    entityKind,
+    reason,
+  }
+}
+
+const pendingRows = computed(() => {
+  const s = status.value
+  if (!s) return [] as PendingRow[]
+
+  const rows: PendingRow[] = []
+  const seen = new Set<string>()
+
+  for (const item of s.staleItems ?? []) {
+    const row = toPendingRow(item, 'stale')
+    if (seen.has(row.key)) continue
+    seen.add(row.key)
+    rows.push(row)
+  }
+  for (const item of s.unindexedSchemas ?? []) {
+    const row = toPendingRow({ ...item, entityKind: item.entityKind ?? 'schema' }, 'unindexed')
+    if (seen.has(row.key)) continue
+    seen.add(row.key)
+    rows.push(row)
+  }
+  for (const item of s.unindexedFlowsList ?? []) {
+    const row = toPendingRow({ ...item, entityKind: 'flow', type: item.type || 'flow' }, 'unindexed')
+    if (seen.has(row.key)) continue
+    seen.add(row.key)
+    rows.push(row)
+  }
+  return rows
+})
 
 const {
   currentPage: indexPage,
   pageSize: indexPageSize,
-  pagedItems: paginatedUnindexed,
-} = useClientPagination(unindexedSchemas)
+  pagedItems: paginatedPending,
+} = useClientPagination(pendingRows)
 
 watch(indexPage, () => {
-  selectedIds.value.clear()
+  selectedKeys.value.clear()
 })
 
 watch(indexPageSize, () => {
-  selectedIds.value.clear()
+  selectedKeys.value.clear()
 })
 
 function toggleBulkMode(): void {
   bulkMode.value = !bulkMode.value
-  selectedIds.value.clear()
+  selectedKeys.value.clear()
 }
 
-function toggleSelect(id: string): void {
-  const next = new Set(selectedIds.value)
-  if (next.has(id)) next.delete(id)
-  else next.add(id)
-  selectedIds.value = next
+/**
+ * @param key - `${entityKind}:${id}`
+ */
+function toggleSelect(key: string): void {
+  const next = new Set(selectedKeys.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  selectedKeys.value = next
+}
+
+/**
+ * @param key - 选中键
+ */
+function parseSelectedKey(key: string): { id: string; entityKind: 'schema' | 'flow' } {
+  const sep = key.indexOf(':')
+  const entityKind = key.slice(0, sep) as 'schema' | 'flow'
+  const id = key.slice(sep + 1)
+  return { id, entityKind }
 }
 
 async function handleBulkReindex(): Promise<void> {
-  if (selectedIds.value.size === 0) return
+  if (selectedKeys.value.size === 0) return
   bulkProcessing.value = true
   let success = 0
   let fail = 0
-  for (const id of selectedIds.value) {
+  for (const key of selectedKeys.value) {
+    const { id, entityKind } = parseSelectedKey(key)
     try {
-      await reindexSingleRag(id)
+      await reindexSingleRag(id, entityKind)
       success++
     } catch {
       fail++
@@ -98,15 +170,15 @@ async function handleBulkReindex(): Promise<void> {
   bulkProcessing.value = false
   if (fail === 0) message.success(`批量索引完成: ${success} 个`)
   else message.warning(`索引 ${success} 个成功，${fail} 个失败`)
-  selectedIds.value.clear()
+  selectedKeys.value.clear()
   bulkMode.value = false
   await loadStatus()
 }
 
 async function handleBulkDeleteEmbedding(): Promise<void> {
-  if (selectedIds.value.size === 0) return
+  if (selectedKeys.value.size === 0) return
   try {
-    await confirmDanger('批量删除', `确认删除选中的 ${selectedIds.value.size} 个索引？`)
+    await confirmDanger('批量删除', `确认删除选中的 ${selectedKeys.value.size} 个索引？`)
   } catch {
     return
   }
@@ -114,9 +186,10 @@ async function handleBulkDeleteEmbedding(): Promise<void> {
   bulkProcessing.value = true
   let success = 0
   let fail = 0
-  for (const id of selectedIds.value) {
+  for (const key of selectedKeys.value) {
+    const { id, entityKind } = parseSelectedKey(key)
     try {
-      await deleteRagEmbedding(id)
+      await deleteRagEmbedding(id, entityKind)
       success++
     } catch {
       fail++
@@ -125,7 +198,7 @@ async function handleBulkDeleteEmbedding(): Promise<void> {
   bulkProcessing.value = false
   if (fail === 0) message.success(`已删除 ${success} 个索引`)
   else message.warning(`删除 ${success} 个成功，${fail} 个失败`)
-  selectedIds.value.clear()
+  selectedKeys.value.clear()
   bulkMode.value = false
   await loadStatus()
 }
@@ -148,13 +221,20 @@ async function handleReindexAll(): Promise<void> {
   })
 }
 
-async function handleReindexSingle(schemaId: string): Promise<void> {
+/**
+ * @param id - 资产 ID
+ * @param entityKind - schema | flow
+ */
+async function handleReindexSingle(
+  id: string,
+  entityKind: 'schema' | 'flow' = 'schema',
+): Promise<void> {
   try {
-    await reindexSingleRag(schemaId)
-    message.success('索引重建成功')
+    await reindexSingleRag(id, entityKind)
+    message.success(entityKind === 'flow' ? '流程索引已同步' : '表单索引已同步')
     await loadStatus()
   } catch {
-    message.error('索引重建失败')
+    message.error('索引同步失败')
   }
 }
 
@@ -175,12 +255,23 @@ async function handleSearch(): Promise<void> {
   }
 }
 
-function getSchemaTypeLabel(type: string): string {
+/**
+ * @param type - 资产类型码
+ */
+function getTypeLabel(type: string): string {
   const labels: Record<string, string> = {
     form: '表单',
     search_list: '查询列表',
+    flow: '流程',
   }
   return labels[type] ?? type
+}
+
+/**
+ * @param reason - 待办原因
+ */
+function getReasonLabel(reason: PendingRow['reason']): string {
+  return reason === 'stale' ? '过期' : '未索引'
 }
 
 onMounted(() => {
@@ -267,7 +358,7 @@ onMounted(() => {
         <h3 :class="$style.sectionTitle">
           待补齐资产
           <span v-if="status" :class="$style.sectionCount">
-            （表单待索引 {{ status.unindexed }} · 流程待索引 {{ status.unindexedFlows ?? 0 }}）
+            （未索引表单 {{ status.unindexed }} · 未索引流程 {{ status.unindexedFlows ?? 0 }} · 过期 {{ status.stale }}）
           </span>
         </h3>
         <div :class="$style.sectionActions">
@@ -278,52 +369,67 @@ onMounted(() => {
             <el-button
               size="small"
               type="primary"
-              :disabled="selectedIds.size === 0"
+              :disabled="selectedKeys.size === 0"
               :loading="bulkProcessing"
               @click="handleBulkReindex"
             >
-              批量索引 ({{ selectedIds.size }})
+              批量同步 ({{ selectedKeys.size }})
             </el-button>
             <el-button
               size="small"
               type="danger"
-              :disabled="selectedIds.size === 0"
+              :disabled="selectedKeys.size === 0"
               :loading="bulkProcessing"
               @click="handleBulkDeleteEmbedding"
             >
-              批量删除 ({{ selectedIds.size }})
+              批量删除 ({{ selectedKeys.size }})
             </el-button>
           </template>
         </div>
       </div>
 
       <el-table
-        :data="paginatedUnindexed"
+        :data="paginatedPending"
         :class="$style.table"
         stripe
         size="small"
-        empty-text="暂无待索引表单，资产覆盖良好"
+        empty-text="暂无待补齐资产，覆盖良好"
       >
         <el-table-column v-if="bulkMode" label="" width="48">
           <template #default="{ row }">
             <el-checkbox
-              :model-value="selectedIds.has(row.id)"
-              @change="toggleSelect(row.id)"
+              :model-value="selectedKeys.has(row.key)"
+              @change="toggleSelect(row.key)"
             />
           </template>
         </el-table-column>
         <el-table-column prop="name" label="名称" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="type" label="类型" min-width="100">
+        <el-table-column label="类型" min-width="88">
           <template #default="{ row }">
-            <el-tag size="small" :type="row.type === 'form' ? 'primary' : 'success'">
-              {{ getSchemaTypeLabel(row.type) }}
+            <el-tag
+              size="small"
+              :type="row.entityKind === 'flow' ? 'success' : row.type === 'form' ? 'primary' : 'info'"
+            >
+              {{ getTypeLabel(row.type) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="原因" min-width="88">
+          <template #default="{ row }">
+            <el-tag size="small" :type="row.reason === 'stale' ? 'warning' : 'info'" effect="plain">
+              {{ getReasonLabel(row.reason) }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" min-width="120">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="handleReindexSingle(row.id)">
-              建立索引
+            <el-button
+              type="primary"
+              link
+              size="small"
+              @click="handleReindexSingle(row.id, row.entityKind)"
+            >
+              {{ row.reason === 'stale' ? '重建索引' : '建立索引' }}
             </el-button>
           </template>
         </el-table-column>
@@ -332,7 +438,7 @@ onMounted(() => {
       <AppPagination
         v-model:current-page="indexPage"
         v-model:page-size="indexPageSize"
-        :total="unindexedSchemas.length"
+        :total="pendingRows.length"
       />
     </div>
 

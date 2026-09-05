@@ -69,13 +69,13 @@
               {{ item.description }}
             </div>
             <div :class="$style.resultMeta">
-              <el-tag size="small" :type="item.type === 'form' ? 'primary' : 'success'">
+              <el-tag size="small" :type="item.type === 'form' ? 'primary' : item.type === 'flow' ? 'success' : 'info'">
                 {{ getSchemaTypeLabel(item.type) }}
               </el-tag>
               <span
-                v-for="field in item.fieldNames.slice(0, 3)"
+                v-for="field in (item.matchedFields?.length ? item.matchedFields : item.fieldNames).slice(0, 3)"
                 :key="field"
-                :class="$style.fieldChip"
+                :class="[$style.fieldChip, item.matchedFields?.includes(field) ? $style.matchedChip : '']"
               >
                 {{ field }}
               </span>
@@ -85,7 +85,12 @@
               </span>
             </div>
           </div>
-          <el-button type="primary" link size="small" @click="emit('reindex', item.id)">
+          <el-button
+            type="primary"
+            link
+            size="small"
+            @click="emit('reindex', item.id, item.type === 'flow' ? 'flow' : 'schema')"
+          >
             重建索引
           </el-button>
         </div>
@@ -108,7 +113,7 @@ defineProps<{
 const emit = defineEmits<{
   'update:query': [value: string]
   search: []
-  reindex: [schemaId: string]
+  reindex: [schemaId: string, entityKind: 'schema' | 'flow']
 }>()
 
 const quickQueries = ['用户注册', '请假审批', '设备台账', '表单权限', '流程节点']
@@ -128,6 +133,7 @@ function getSchemaTypeLabel(type: string): string {
   const labels: Record<string, string> = {
     form: '表单',
     search_list: '查询列表',
+    flow: '流程',
   }
   return labels[type] ?? type
 }
@@ -328,6 +334,12 @@ function getSchemaTypeLabel(type: string): string {
   background: var(--el-bg-color);
   color: var(--el-text-color-regular);
   border: 1px solid var(--el-border-color-extra-light);
+}
+
+.matchedChip {
+  color: var(--el-color-primary);
+  border-color: color-mix(in srgb, var(--el-color-primary) 35%, transparent);
+  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
 }
 
 .resultWidgets {
